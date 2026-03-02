@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AreaChart,
   Area,
@@ -9,8 +10,15 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { ChevronDown } from "lucide-react";
-import { assetValueData } from "@/lib/data";
+import { assetValueDataByPeriod } from "@/lib/data";
+
+type Period = "7d" | "30d" | "90d";
+
+const PERIODS: { key: Period; label: string }[] = [
+  { key: "7d", label: "7 days" },
+  { key: "30d", label: "30 days" },
+  { key: "90d", label: "90 days" },
+];
 
 const CustomTooltip = ({
   active,
@@ -38,6 +46,10 @@ const CustomTooltip = ({
 };
 
 export default function AssetValueChart() {
+  const [period, setPeriod] = useState<Period>("7d");
+  const data = assetValueDataByPeriod[period];
+  const peak = Math.max(...data.map((d) => d.operational));
+
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-1">
@@ -52,23 +64,36 @@ export default function AssetValueChart() {
             </span>
           </div>
         </div>
-        <button className="flex items-center gap-1 text-xs text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
-          This Week <ChevronDown size={12} />
-        </button>
+        {/* Period toggle */}
+        <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
+          {PERIODS.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setPeriod(key)}
+              className={`text-xs px-2 py-1 rounded-md font-medium transition-all ${
+                period === key
+                  ? "bg-white text-indigo-600 shadow-sm border border-slate-200"
+                  : "text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="mt-1">
         <p className="text-2xl font-bold text-slate-900">
-          310 <span className="text-sm font-normal text-slate-400">peak this week</span>
+          {peak} <span className="text-sm font-normal text-slate-400">peak this period</span>
         </p>
         <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1">
-          +60% vs last week
+          +60% vs last period
         </span>
       </div>
 
       <div className="mt-4 h-36">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={assetValueData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradOperational" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.3} />
@@ -92,7 +117,7 @@ export default function AssetValueChart() {
               dot={false}
               activeDot={{ r: 4, fill: "#6366f1", stroke: "#fff", strokeWidth: 2 }}
               isAnimationActive
-              animationDuration={1000}
+              animationDuration={600}
             />
             <Area
               type="monotone"
@@ -103,7 +128,7 @@ export default function AssetValueChart() {
               dot={false}
               activeDot={{ r: 3, fill: "#a5b4fc", stroke: "#fff", strokeWidth: 2 }}
               isAnimationActive
-              animationDuration={1200}
+              animationDuration={700}
             />
           </AreaChart>
         </ResponsiveContainer>

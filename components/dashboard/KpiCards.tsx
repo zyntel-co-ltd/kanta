@@ -6,11 +6,10 @@ import { LineChart, Line, ResponsiveContainer } from "recharts";
 import clsx from "clsx";
 import { kpiCards } from "@/lib/data";
 
-// Sparkline data per card
 const sparklines = {
   alerts:      [{ v: 8 }, { v: 11 }, { v: 9 }, { v: 13 }, { v: 10 }, { v: 12 }, { v: 14 }],
   scanned:     [{ v: 180 }, { v: 210 }, { v: 240 }, { v: 265 }, { v: 290 }, { v: 300 }, { v: 312 }],
-  maintenance: [{ v: 33 }, { v: 30 }, { v: 35 }, { v: 32 }, { v: 29 }, { v: 31 }, { v: 28 }],
+  maintenance: [{ v: 82 }, { v: 79 }, { v: 85 }, { v: 80 }, { v: 76 }, { v: 78 }, { v: 74 }],
   health:      [{ v: 78 }, { v: 80 }, { v: 79 }, { v: 81 }, { v: 82 }, { v: 83 }, { v: 84 }],
 };
 
@@ -85,6 +84,53 @@ function AnimatedValue({ value, unit }: { value: number; unit?: string }) {
   );
 }
 
+// Severity pill row shown inside the Critical Alerts card
+function AlertSeverityBreakdown({
+  severity,
+}: {
+  severity: { critical: number; warning: number; info: number };
+}) {
+  return (
+    <div className="mt-2 flex items-center gap-1.5 relative z-10 flex-wrap">
+      <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-900/40 text-red-200 border border-red-400/30">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-300 animate-pulse" />
+        {severity.critical} critical
+      </span>
+      <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-900/30 text-orange-200 border border-orange-400/30">
+        <span className="w-1.5 h-1.5 rounded-full bg-orange-300" />
+        {severity.warning} warning
+      </span>
+      <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-white/10 text-white/60 border border-white/10">
+        <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+        {severity.info} info
+      </span>
+    </div>
+  );
+}
+
+// Compliance bar shown inside the Maintenance card
+function ComplianceBar({
+  compliance,
+}: {
+  compliance: { completed: number; total: number; overdue: number };
+}) {
+  const pct = Math.round((compliance.completed / compliance.total) * 100);
+  return (
+    <div className="mt-2 relative z-10">
+      <div className="flex justify-between text-xs text-white/70 mb-1">
+        <span>{compliance.completed} on time</span>
+        <span className="text-red-200">{compliance.overdue} overdue</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-white/20 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-white transition-all duration-1000"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function KpiCards() {
   return (
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
@@ -155,8 +201,18 @@ export default function KpiCards() {
               </ResponsiveContainer>
             </div>
 
-            {/* Alert card: pulsing change badge at bottom */}
-            {theme.pulse && (
+            {/* Alert card: severity breakdown */}
+            {"severity" in card && card.severity && (
+              <AlertSeverityBreakdown severity={card.severity} />
+            )}
+
+            {/* Maintenance card: compliance progress bar */}
+            {"compliance" in card && card.compliance && (
+              <ComplianceBar compliance={card.compliance} />
+            )}
+
+            {/* Other cards: pulsing change badge */}
+            {!("severity" in card) && !("compliance" in card) && theme.pulse && (
               <div className="mt-2 relative z-10">
                 <span className={clsx("flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full w-fit", theme.badge)}>
                   <TrendingUp size={11} />+{card.change} since yesterday

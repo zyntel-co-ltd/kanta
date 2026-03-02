@@ -7,6 +7,7 @@ import InventoryOverview from "@/components/dashboard/InventoryOverview";
 import ScanFeed from "@/components/dashboard/ScanFeed";
 import DepartmentsPanel from "@/components/dashboard/DepartmentsPanel";
 import ClientOnly from "@/components/dashboard/ClientOnly";
+import RightPanelDrawer from "@/components/dashboard/RightPanelDrawer";
 
 function SectionDivider({ label }: { label: string }) {
   return (
@@ -36,10 +37,20 @@ export default function DashboardPage() {
               Real-time equipment intelligence across your facility.
             </p>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-slate-800 to-slate-900 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-violet-700 transition-all shadow-sm hover:shadow-indigo-200">
-            <span className="text-base leading-none">+</span>
-            New Report
-          </button>
+          {/* New Report — disabled with tooltip until feature is ready */}
+          <div className="relative group">
+            <button
+              disabled
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-slate-300 to-slate-400 text-white/70 text-sm font-medium rounded-xl cursor-not-allowed shadow-sm select-none"
+            >
+              <span className="text-base leading-none">+</span>
+              New Report
+            </button>
+            <div className="absolute right-0 top-full mt-2 px-3 py-1.5 bg-slate-900 text-white text-xs rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10">
+              Coming soon
+              <span className="absolute -top-1 right-4 w-2 h-2 bg-slate-900 rotate-45" />
+            </div>
+          </div>
         </div>
 
         {/* KPI Cards */}
@@ -74,11 +85,16 @@ export default function DashboardPage() {
 
       </div>
 
-      {/* ── RIGHT PANEL ── sticky */}
+      {/* ── RIGHT PANEL — sticky, desktop only ── */}
       <div className="hidden xl:flex flex-col gap-4 w-72 2xl:w-80 flex-shrink-0 sticky top-0 animate-slide-up stagger-4">
         <ScanFeed />
         <DepartmentsPanel />
       </div>
+
+      {/* ── RIGHT PANEL — drawer, tablet/mobile ── */}
+      <ClientOnly>
+        <RightPanelDrawer />
+      </ClientOnly>
 
     </div>
   );

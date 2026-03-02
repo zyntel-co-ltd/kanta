@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, CheckCircle2, Clock, WifiOff } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Clock, WifiOff, Download } from "lucide-react";
 import clsx from "clsx";
 import { scanFeed, scheduleData } from "@/lib/data";
 
@@ -24,6 +24,40 @@ const statusConfig = {
     bg: "bg-red-50",
   },
 };
+
+const CURRENT_YEAR = 2026;
+
+function getAgeBadge(purchaseYear: number) {
+  const age = CURRENT_YEAR - purchaseYear;
+  if (age < 3) return { label: `${age}y`, color: "text-emerald-600 bg-emerald-50", title: "New" };
+  if (age < 7) return { label: `${age}y`, color: "text-amber-600 bg-amber-50", title: "Aging" };
+  return { label: `${age}y`, color: "text-red-500 bg-red-50", title: "Old — higher risk" };
+}
+
+function exportToCSV() {
+  const headers = ["Equipment", "Department", "Location", "Status", "Scanned By", "Time", "Age (years)"];
+  const rows = scanFeed.map((item) => [
+    item.equipment,
+    item.department,
+    item.location,
+    item.status,
+    item.scannedBy,
+    item.time,
+    String(CURRENT_YEAR - item.purchaseYear),
+  ]);
+
+  const csv = [headers, ...rows]
+    .map((row) => row.map((cell) => `"${cell}"`).join(","))
+    .join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `scan-feed-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function ScanFeed() {
   const { nextMaintenance, days, activeDay, month, year } = scheduleData;
@@ -89,15 +123,26 @@ export default function ScanFeed() {
               <span className="text-xs text-slate-400">Live</span>
             </div>
           </div>
-          <button className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 hover:bg-indigo-100 transition-colors">
-            <ArrowUpRight size={13} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* CSV Export */}
+            <button
+              onClick={exportToCSV}
+              title="Export to CSV"
+              className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+            >
+              <Download size={13} />
+            </button>
+            <button className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 hover:bg-indigo-100 transition-colors">
+              <ArrowUpRight size={13} />
+            </button>
+          </div>
         </div>
 
         <div className="space-y-1">
           {scanFeed.map((item) => {
             const config = statusConfig[item.status as keyof typeof statusConfig];
             const Icon = config.icon;
+            const age = getAgeBadge(item.purchaseYear);
             return (
               <div
                 key={item.id}
@@ -112,9 +157,18 @@ export default function ScanFeed() {
                   <Icon size={13} className={config.color} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-slate-800 truncate group-hover:text-indigo-600 transition-colors leading-snug">
-                    {item.equipment}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-semibold text-slate-800 truncate group-hover:text-indigo-600 transition-colors leading-snug">
+                      {item.equipment}
+                    </p>
+                    {/* Age badge */}
+                    <span
+                      title={age.title}
+                      className={clsx("text-xs font-bold px-1.5 py-0 rounded-full flex-shrink-0", age.color)}
+                    >
+                      {age.label}
+                    </span>
+                  </div>
                   <p className="text-xs text-slate-400 truncate">
                     {item.department} · {item.location}
                   </p>
