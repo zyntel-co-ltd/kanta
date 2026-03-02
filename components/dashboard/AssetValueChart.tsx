@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -23,8 +23,8 @@ const CustomTooltip = ({
 }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl">
-        <p className="font-semibold mb-1">{label}</p>
+      <div className="bg-slate-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl border border-white/10">
+        <p className="font-semibold mb-1 text-slate-300">{label}</p>
         {payload.map((p) => (
           <p key={p.name} className="text-slate-300">
             {p.name === "operational" ? "Operational" : "Maintenance"}:{" "}
@@ -39,20 +39,16 @@ const CustomTooltip = ({
 
 export default function AssetValueChart() {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-1">
         <div>
-          <h3 className="text-sm font-semibold text-slate-800">
-            Equipment Activity
-          </h3>
+          <h3 className="text-sm font-semibold text-slate-800">Equipment Activity</h3>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-xs text-slate-400 flex items-center gap-1">
-              <span className="inline-block w-2 h-2 rounded-sm bg-indigo-500" />
-              Operational
+              <span className="inline-block w-2 h-2 rounded-sm bg-indigo-500" />Operational
             </span>
             <span className="text-xs text-slate-400 flex items-center gap-1">
-              <span className="inline-block w-2 h-2 rounded-sm bg-indigo-200" />
-              Maintenance
+              <span className="inline-block w-2 h-2 rounded-sm bg-indigo-200" />Maintenance
             </span>
           </div>
         </div>
@@ -63,10 +59,7 @@ export default function AssetValueChart() {
 
       <div className="mt-1">
         <p className="text-2xl font-bold text-slate-900">
-          310{" "}
-          <span className="text-sm font-normal text-slate-400">
-            peak this week
-          </span>
+          310 <span className="text-sm font-normal text-slate-400">peak this week</span>
         </p>
         <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1">
           +60% vs last week
@@ -75,35 +68,44 @@ export default function AssetValueChart() {
 
       <div className="mt-4 h-36">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={assetValueData}
-            barSize={14}
-            barGap={3}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              vertical={false}
-              stroke="#f1f5f9"
-            />
-            <XAxis
-              dataKey="day"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 11, fill: "#94a3b8" }}
-            />
+          <AreaChart data={assetValueData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="gradOperational" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02} />
+              </linearGradient>
+              <linearGradient id="gradMaintenance" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#a5b4fc" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#a5b4fc" stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
             <YAxis hide />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f8fafc" }} />
-            <Bar
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#e0e7ff", strokeWidth: 1 }} />
+            <Area
+              type="monotone"
               dataKey="operational"
-              fill="#6366f1"
-              radius={[4, 4, 0, 0]}
+              stroke="#6366f1"
+              strokeWidth={2.5}
+              fill="url(#gradOperational)"
+              dot={false}
+              activeDot={{ r: 4, fill: "#6366f1", stroke: "#fff", strokeWidth: 2 }}
+              isAnimationActive
+              animationDuration={1000}
             />
-            <Bar
+            <Area
+              type="monotone"
               dataKey="maintenance"
-              fill="#e0e7ff"
-              radius={[4, 4, 0, 0]}
+              stroke="#a5b4fc"
+              strokeWidth={2}
+              fill="url(#gradMaintenance)"
+              dot={false}
+              activeDot={{ r: 3, fill: "#a5b4fc", stroke: "#fff", strokeWidth: 2 }}
+              isAnimationActive
+              animationDuration={1200}
             />
-          </BarChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
     </div>
