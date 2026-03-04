@@ -1,6 +1,8 @@
 # Kanta Deployment Guide (Phase 1)
 
-**Phase 1 architecture:** Vercel + Supabase + Cloudflare. No Railway.
+**Phase 1 architecture:** Vercel + Supabase + Cloudflare. No Railway.  
+**Live URL:** app.zyntel.net (kanta.app, zyntel.app in purchase)  
+**Domain vendor:** Cloudflare — required for all custom domains.
 
 ---
 
@@ -62,9 +64,13 @@ Add `public/icons/icon-192.png` and `public/icons/icon-512.png` for full install
 
 ---
 
-## 4. Cloudflare (Optional)
+## 4. Cloudflare (Required — Domain Vendor)
 
-Point your domain DNS to Cloudflare. Add a CNAME for your Vercel deployment. African PoPs improve load times.
+Cloudflare is the domain vendor. All custom domains are configured there.
+
+1. Add `app.zyntel.net` (or your domain) — CNAME `app` → `cname.vercel-dns.com`
+2. Vercel: Add custom domain in project settings
+3. SSL: Full (Strict) in Cloudflare
 
 ---
 
