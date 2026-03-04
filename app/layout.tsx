@@ -1,10 +1,35 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { OfflineSyncProvider } from "@/components/OfflineSyncProvider";
+
+const APP_NAME = "Kanta";
+const APP_DESCRIPTION =
+  "QR-first medical equipment tracking and operational intelligence for East African hospitals. Offline-capable PWA.";
 
 export const metadata: Metadata = {
-  title: "Kanta — Operational Intelligence",
-  description:
-    "Medical equipment tracking and operational intelligence for East African hospitals.",
+  applicationName: APP_NAME,
+  title: {
+    default: "Kanta — Hospital Asset Intelligence",
+    template: `%s | ${APP_NAME}`,
+  },
+  description: APP_DESCRIPTION,
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: APP_NAME,
+  },
+  formatDetection: { telephone: false },
+  openGraph: {
+    type: "website",
+    siteName: APP_NAME,
+    title: "Kanta — Hospital Asset Intelligence",
+    description: APP_DESCRIPTION,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1e293b",
 };
 
 export default function RootLayout({
@@ -14,7 +39,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <OfflineSyncProvider>{children}</OfflineSyncProvider>
+      </body>
     </html>
   );
 }

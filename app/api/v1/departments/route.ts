@@ -1,6 +1,6 @@
 /**
- * GET  /api/departments?hospital_id=xxx  — departments with on-duty technicians
- * POST /api/departments                  — create a department
+ * GET  /api/v1/departments?hospital_id=xxx  — departments with on-duty technicians
+ * POST /api/v1/departments                  — create a department
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<De
     const depts = await getDepartmentsWithTechnicians(hospitalId);
     return NextResponse.json({ data: depts, error: null });
   } catch (err) {
-    console.error("[GET /api/departments]", err);
+    console.error("[GET /api/v1/departments]", err);
     return NextResponse.json({ data: null, error: "Failed to fetch departments" }, { status: 500 });
   }
 }
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{
     if (error) throw error;
     return NextResponse.json({ data: { id: data.id }, error: null }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/departments]", err);
+    console.error("[POST /api/v1/departments]", err);
     return NextResponse.json({ data: null, error: "Failed to create department" }, { status: 500 });
   }
 }

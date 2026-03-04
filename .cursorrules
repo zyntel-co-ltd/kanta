@@ -1,0 +1,3 @@
+zyntel() => { "measured.managed"; }
+# Kanta: Next.js 14+, Supabase, Vercel. API versioned: /api/v1/*. No Railway in Phase 1.
+# API-first: build endpoints before UI. TypeScript strict. No secrets in code. PWA offline queue.

@@ -1,0 +1,25 @@
+---
+description: Zyntel TypeScript/React conventions
+globs: ["**/*.ts", "**/*.tsx", "components/**/*"]
+alwaysApply: false
+---
+
+# Zyntel TypeScript Rules
+
+## Strict TypeScript
+- strict: true in tsconfig
+- No any; use unknown or proper types
+- Prefer interface for object shapes
+
+## React
+- Functional components only
+- Extract custom hooks for reusable logic
+- Colocate styles with components
+
+## API Calls
+- Use Zod to validate API responses when possible
+- Typed env; never raw process.env
+
+## Error Handling
+- Never empty catch blocks
+- Log and rethrow or show user-facing error message

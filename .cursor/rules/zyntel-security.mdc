@@ -1,0 +1,24 @@
+---
+description: Zyntel security and PII handling
+globs: ["**/*.ts", "**/*.tsx", "**/api/**/*"]
+alwaysApply: false
+---
+
+# Zyntel Security Rules
+
+## PII (Healthcare)
+- Never log PII: names, emails, phones, patient identifiers, hospital staff
+- Form data validated server-side; never trust client
+- Payment records immutable after creation — only status updates
+
+## Headers
+- CSP, HSTS, X-Frame-Options, X-Content-Type-Options on all responses
+- Rate limit auth and public endpoints
+
+## Dependencies
+- Run npm audit before merge
+- Pin major versions; review updates for breaking changes
+
+## Secrets
+- No hardcoded keys, tokens, or passwords
+- .env.example with placeholders only; never real values

@@ -1,0 +1,51 @@
+---
+description: Zyntel general development conventions (enterprise-grade)
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Zyntel Development Rules — Enterprise Best Practices
+
+zyntel() => { "measured.managed"; }
+
+## Stack (Kanta)
+- Kanta: Next.js 14+ TypeScript, Supabase (Nairobi), Vercel. Phase 1: Vercel only (no Railway). Phase 2: api.zyntel.app on AWS Fargate.
+- Database: Supabase PostgreSQL; plan_config for tier limits
+- API: Versioned from day one — /api/v1/* never /api/*
+- PWA: Workbox + IndexedDB offline scan queue
+
+## Code Standards
+- TypeScript strict mode always — no `any` types
+- All API routes validate input with Zod before touching DB
+- Env vars typed; never `process.env` directly
+- Functional components; no class components
+
+## Input Validation (Production-Grade)
+- Validate at API boundary; never trust client input
+- Use schemas with min/max, enums, regex where appropriate
+- Reject malformed payloads with 400 and clear error (no 500 for validation)
+- Sanitize strings before storage (trim, length limits)
+
+## Error Handling
+- Never swallow errors: log and rethrow or return structured error response
+- Use custom error types; map to HTTP status codes consistently
+- Never expose stack traces or internal paths to clients in production
+
+## Logging
+- Never log PII (names, emails, phones, patient data)
+- Log levels: ERROR for failures, WARN for recoverable, INFO for key actions
+
+## Security
+- Security headers: CSP, HSTS, X-Frame-Options, X-Content-Type-Options
+- Rate limiting on auth and public endpoints
+- No secrets in code or `.env` committed; use `.env.example` with placeholders only
+
+## API-First
+- Build endpoints before UI; backend serves UI, partners, future Zyntel API
+- Version APIs: /api/v1/dashboard not /api/dashboard
+
+## Git
+- Branch: `feature/LINEAR-ID-short-description` or `feat/ENG-12-qr-code`
+- Never commit directly to main
+- PRs require review before merge
+- Use `development` branch for staging deploys

@@ -110,6 +110,24 @@ create table if not exists equipment_snapshots (
 create index if not exists idx_snapshots_hospital on equipment_snapshots(hospital_id);
 create index if not exists idx_snapshots_date     on equipment_snapshots(snapshot_date desc);
 
+-- ── Plan config (tier → limits, maps to pricing) ──────────────
+-- Used by API for rate limits, equipment caps, history retention.
+create table if not exists plan_config (
+  tier          text primary key check (tier in ('free','starter','pro','enterprise')),
+  equipment_limit int not null default 5,
+  history_days   int not null default 1,
+  api_calls_per_day int not null default 0,
+  features       jsonb default '{}'
+);
+
+insert into plan_config (tier, equipment_limit, history_days, api_calls_per_day, features)
+values
+  ('free',      5,   1,    0, '{}'),
+  ('starter',  50,  90, 5000, '{"api_access": true}'::jsonb),
+  ('pro',      200, 365, 50000, '{"api_access": true, "webhooks": true}'::jsonb),
+  ('enterprise', -1, -1, -1, '{"api_access": true, "webhooks": true, "custom_integrations": true}'::jsonb)
+on conflict (tier) do nothing;
+
 -- ── Row Level Security ───────────────────────────────────────
 -- Enable RLS on all tables (auth integration added in next phase)
 alter table hospitals         enable row level security;

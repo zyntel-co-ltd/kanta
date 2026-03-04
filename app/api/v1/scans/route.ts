@@ -1,6 +1,6 @@
 /**
- * GET  /api/scans?hospital_id=xxx&limit=10   — recent scan events
- * POST /api/scans                             — log a new scan event (from PWA)
+ * GET  /api/v1/scans?hospital_id=xxx&limit=10   — recent scan events
+ * POST /api/v1/scans                             — log a scan (PWA: works offline → sync on reconnect)
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -20,7 +20,6 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Sc
   }
 
   if (!supabaseConfigured) {
-    // Return mock scan feed shaped as ScanEvent[]
     const mock = scanFeed.map((s) => ({
       id: String(s.id),
       equipment_id: `eq-${s.id}`,
@@ -56,7 +55,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Sc
     const scans = await getRecentScans(hospitalId, limit);
     return NextResponse.json({ data: scans, error: null });
   } catch (err) {
-    console.error("[GET /api/scans]", err);
+    console.error("[GET /api/v1/scans]", err);
     return NextResponse.json({ data: null, error: "Failed to fetch scans" }, { status: 500 });
   }
 }
@@ -96,7 +95,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{
 
     if (error) throw error;
 
-    // Also update equipment's last_scanned fields
     await db
       .from("equipment")
       .update({
@@ -109,7 +107,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{
 
     return NextResponse.json({ data: { id: data.id }, error: null }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/scans]", err);
+    console.error("[POST /api/v1/scans]", err);
     return NextResponse.json({ data: null, error: "Failed to log scan" }, { status: 500 });
   }
 }

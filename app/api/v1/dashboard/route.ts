@@ -1,10 +1,7 @@
 /**
- * GET /api/dashboard
- * Returns all KPI and chart data for the dashboard page.
- * Query param: hospital_id (required)
- *
- * Falls back to mock data if Supabase env vars are not configured,
- * so the UI works during development without a live database.
+ * GET /api/v1/dashboard?hospital_id=xxx
+ * Zyntel API v1 — Dashboard KPI and chart data.
+ * Designed for future B2B consumers (EMRs, insurance, health registries).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -31,7 +28,6 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Da
     );
   }
 
-  // ── If Supabase is not yet configured, return mock data ──────────────────
   if (!supabaseConfigured) {
     const mockStats: DashboardStats = {
       kpi: {
@@ -56,7 +52,6 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Da
     return NextResponse.json({ data: mockStats, error: null });
   }
 
-  // ── Live Supabase path ───────────────────────────────────────────────────
   try {
     const {
       getDashboardKpi,
@@ -86,7 +81,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Da
 
     return NextResponse.json({ data: stats, error: null });
   } catch (err) {
-    console.error("[/api/dashboard]", err);
+    console.error("[/api/v1/dashboard]", err);
     return NextResponse.json(
       { data: null, error: "Failed to fetch dashboard data" },
       { status: 500 }

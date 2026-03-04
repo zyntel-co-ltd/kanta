@@ -1,6 +1,6 @@
 /**
- * GET  /api/equipment?hospital_id=xxx&status=operational&department_id=xxx
- * POST /api/equipment  — register new equipment
+ * GET  /api/v1/equipment?hospital_id=xxx&status=operational&department_id=xxx
+ * POST /api/v1/equipment  — register new equipment
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Eq
     const equipment = await getEquipment(hospitalId, { status, department_id: departmentId });
     return NextResponse.json({ data: equipment, error: null });
   } catch (err) {
-    console.error("[GET /api/equipment]", err);
+    console.error("[GET /api/v1/equipment]", err);
     return NextResponse.json({ data: null, error: "Failed to fetch equipment" }, { status: 500 });
   }
 }
@@ -52,7 +52,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
 
-    // Generate a unique QR code identifier
     const qrCode = `KNT-${hospital_id.slice(0, 4).toUpperCase()}-${Date.now()}`;
 
     const { data, error } = await db
@@ -74,7 +73,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{
     if (error) throw error;
     return NextResponse.json({ data: { id: data.id }, error: null }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/equipment]", err);
+    console.error("[POST /api/v1/equipment]", err);
     return NextResponse.json({ data: null, error: "Failed to create equipment" }, { status: 500 });
   }
 }
