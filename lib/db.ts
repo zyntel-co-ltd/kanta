@@ -435,7 +435,7 @@ export async function getDepartmentsWithTechnicians(hospitalId: string): Promise
 
 export async function getEquipment(
   hospitalId: string,
-  filters?: { status?: string; department_id?: string }
+  filters?: { status?: string; department_id?: string; qr_code?: string }
 ): Promise<Equipment[]> {
   const db = createAdminClient();
 
@@ -447,6 +447,7 @@ export async function getEquipment(
 
   if (filters?.status) query = query.eq("status", filters.status);
   if (filters?.department_id) query = query.eq("department_id", filters.department_id);
+  if (filters?.qr_code) query = query.eq("qr_code", filters.qr_code);
 
   const { data, error } = await query;
   if (error) throw error;

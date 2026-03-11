@@ -1,3 +1,4 @@
+import Link from "next/link";
 import KpiCards from "@/components/dashboard/KpiCards";
 import AssetValueChart from "@/components/dashboard/AssetValueChart";
 import CategoryDonut from "@/components/dashboard/CategoryDonut";
@@ -37,20 +38,13 @@ export default function DashboardPage() {
               Real-time equipment intelligence across your facility.
             </p>
           </div>
-          {/* New Report — disabled with tooltip until feature is ready */}
-          <div className="relative group">
-            <button
-              disabled
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-slate-300 to-slate-400 text-white/70 text-sm font-medium rounded-xl cursor-not-allowed shadow-sm select-none"
-            >
-              <span className="text-base leading-none">+</span>
-              New Report
-            </button>
-            <div className="absolute right-0 top-full mt-2 px-3 py-1.5 bg-slate-900 text-white text-xs rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10">
-              Coming soon
-              <span className="absolute -top-1 right-4 w-2 h-2 bg-slate-900 rotate-45" />
-            </div>
-          </div>
+          <Link
+            href="/dashboard/reports"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-indigo-600 to-violet-600 text-white text-sm font-medium rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <span className="text-base leading-none">+</span>
+            New Report
+          </Link>
         </div>
 
         {/* KPI Cards */}

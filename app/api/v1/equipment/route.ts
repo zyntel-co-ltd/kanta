@@ -14,6 +14,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Eq
   const hospitalId = req.nextUrl.searchParams.get("hospital_id");
   const status = req.nextUrl.searchParams.get("status") ?? undefined;
   const departmentId = req.nextUrl.searchParams.get("department_id") ?? undefined;
+  const qrCode = req.nextUrl.searchParams.get("qr_code") ?? undefined;
 
   if (!hospitalId) {
     return NextResponse.json({ data: null, error: "hospital_id is required" }, { status: 400 });
@@ -25,7 +26,11 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Eq
 
   try {
     const { getEquipment } = await import("@/lib/db");
-    const equipment = await getEquipment(hospitalId, { status, department_id: departmentId });
+    const equipment = await getEquipment(hospitalId, {
+      status,
+      department_id: departmentId,
+      qr_code: qrCode,
+    });
     return NextResponse.json({ data: equipment, error: null });
   } catch (err) {
     console.error("[GET /api/v1/equipment]", err);

@@ -63,7 +63,11 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handler = () => load();
     window.addEventListener("equipment-added", handler);
-    return () => window.removeEventListener("equipment-added", handler);
+    window.addEventListener("equipment-updated", handler);
+    return () => {
+      window.removeEventListener("equipment-added", handler);
+      window.removeEventListener("equipment-updated", handler);
+    };
   }, []);
 
   return (

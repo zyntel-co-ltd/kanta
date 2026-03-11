@@ -1,24 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchEquipment } from "@/lib/api";
+import { fetchEquipment, updateEquipmentStatus } from "@/lib/api";
 import { useEquipmentStore } from "@/lib/EquipmentStore";
 import type { Equipment } from "@/types";
+import type { EquipmentStatus } from "@/types";
+import EquipmentStatusSelect from "@/components/dashboard/EquipmentStatusSelect";
 
 const SEED_HOSPITAL_ID = "00000000-0000-0000-0000-000000000001";
-
-const statusColors: Record<string, string> = {
-  operational: "bg-emerald-100 text-emerald-700",
-  maintenance: "bg-amber-100 text-amber-700",
-  offline: "bg-red-100 text-red-700",
-  retired: "bg-slate-100 text-slate-600",
-};
 
 export default function EquipmentPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { sessionEquipment, refreshKey } = useEquipmentStore();
+  const { sessionEquipment, refreshKey, updateSessionEquipment } = useEquipmentStore();
+
+  const handleStatusChange = async (eq: Equipment, newStatus: EquipmentStatus) => {
+    if (eq.status === newStatus) return;
+    const isSessionOnly = eq.id.startsWith("mock-");
+    if (isSessionOnly) {
+      updateSessionEquipment(eq.id, { status: newStatus });
+      window.dispatchEvent(new CustomEvent("equipment-updated"));
+      return;
+    }
+    const res = await updateEquipmentStatus(eq.id, newStatus);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    setEquipment((prev) =>
+      prev.map((e) => (e.id === eq.id ? { ...e, status: newStatus } : e))
+    );
+    window.dispatchEvent(new CustomEvent("equipment-updated"));
+  };
 
   const loadEquipment = async () => {
     setLoading(true);
@@ -106,13 +120,10 @@ export default function EquipmentPage() {
                     <td className="px-4 py-3 text-slate-600">{eq.category ?? "Other"}</td>
                     <td className="px-4 py-3 text-slate-600">{eq.location ?? "—"}</td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                          statusColors[eq.status] ?? "bg-slate-100 text-slate-600"
-                        }`}
-                      >
-                        {eq.status}
-                      </span>
+                      <EquipmentStatusSelect
+                        value={eq.status}
+                        onChange={(status) => handleStatusChange(eq, status)}
+                      />
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-500">{eq.qr_code}</td>
                   </tr>

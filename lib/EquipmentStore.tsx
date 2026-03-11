@@ -13,6 +13,7 @@ import type { Equipment } from "@/types";
 type EquipmentStoreContextValue = {
   sessionEquipment: Equipment[];
   addSessionEquipment: (eq: Equipment) => void;
+  updateSessionEquipment: (equipmentId: string, updates: Partial<Equipment>) => void;
   clearSessionEquipment: () => void;
   refreshKey: number;
   triggerRefresh: () => void;
@@ -31,6 +32,12 @@ export function EquipmentStoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const updateSessionEquipment = useCallback((equipmentId: string, updates: Partial<Equipment>) => {
+    setSessionEquipment((prev) =>
+      prev.map((e) => (e.id === equipmentId ? { ...e, ...updates } : e))
+    );
+  }, []);
+
   const clearSessionEquipment = useCallback(() => setSessionEquipment([]), []);
 
   const triggerRefresh = useCallback(() => setRefreshKey((k) => k + 1), []);
@@ -40,6 +47,7 @@ export function EquipmentStoreProvider({ children }: { children: ReactNode }) {
       value={{
         sessionEquipment,
         addSessionEquipment,
+        updateSessionEquipment,
         clearSessionEquipment,
         refreshKey,
         triggerRefresh,
@@ -56,6 +64,7 @@ export function useEquipmentStore() {
     return {
       sessionEquipment: [],
       addSessionEquipment: () => {},
+      updateSessionEquipment: () => {},
       clearSessionEquipment: () => {},
       refreshKey: 0,
       triggerRefresh: () => {},

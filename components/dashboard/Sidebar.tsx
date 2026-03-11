@@ -7,6 +7,7 @@ import clsx from "clsx";
 import {
   LayoutDashboard,
   ScanLine,
+  ScanSearch,
   Wrench,
   Building2,
   BarChart3,
@@ -20,6 +21,7 @@ import {
 
 const navItems = [
   { label: "Dashboard",   icon: LayoutDashboard, href: "/dashboard" },
+  { label: "Scan",        icon: ScanSearch,       href: "/dashboard/scan" },
   { label: "Equipment",   icon: ScanLine,         href: "/dashboard/equipment" },
   { label: "Maintenance", icon: Wrench,           href: "/dashboard/maintenance" },
   { label: "Departments", icon: Building2,        href: "/dashboard/departments" },

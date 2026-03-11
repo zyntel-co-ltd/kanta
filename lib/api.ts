@@ -76,3 +76,22 @@ export async function createEquipment(payload: {
   });
   return res.json();
 }
+
+export async function updateEquipmentStatus(
+  equipmentId: string,
+  status: "operational" | "maintenance" | "offline" | "retired"
+) {
+  const res = await fetch(`${API_BASE}/equipment/${equipmentId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  return res.json();
+}
+
+export async function fetchEquipmentByQr(hospitalId: string, qrCode: string) {
+  const res = await fetch(
+    url("/equipment", { hospital_id: hospitalId, qr_code: qrCode })
+  );
+  return res.json();
+}
