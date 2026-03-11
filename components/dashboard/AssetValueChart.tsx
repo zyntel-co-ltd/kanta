@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { assetValueDataByPeriod } from "@/lib/data";
+import { useDashboardData } from "@/lib/DashboardDataContext";
 
 type Period = "7d" | "30d" | "90d";
 
@@ -47,8 +48,11 @@ const CustomTooltip = ({
 
 export default function AssetValueChart() {
   const [period, setPeriod] = useState<Period>("7d");
-  const data = assetValueDataByPeriod[period];
-  const peak = Math.max(...data.map((d) => d.operational));
+  const { dashboard, loading } = useDashboardData();
+  const apiData = dashboard?.asset_value_by_period?.[period];
+  const fallbackData = assetValueDataByPeriod[period];
+  const data = apiData && apiData.length > 0 ? apiData : fallbackData;
+  const peak = data.length > 0 ? Math.max(...data.map((d) => d.operational)) : 0;
 
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -84,11 +88,8 @@ export default function AssetValueChart() {
 
       <div className="mt-1">
         <p className="text-2xl font-bold text-slate-900">
-          {peak} <span className="text-sm font-normal text-slate-400">peak this period</span>
+          {loading ? "—" : peak} <span className="text-sm font-normal text-slate-400">peak this period</span>
         </p>
-        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1">
-          +60% vs last period
-        </span>
       </div>
 
       <div className="mt-4 h-36">

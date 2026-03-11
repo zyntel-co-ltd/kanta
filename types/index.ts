@@ -12,11 +12,12 @@ export type Department = {
 export type Equipment = {
   id: string;
   name: string;
-  model: string;
-  serial_number: string;
+  model?: string;
+  serial_number?: string;
   qr_code: string;
   department_id: string;
   department?: Department;
+  category?: string;
   status: EquipmentStatus;
   last_scanned_at: string | null;
   last_scanned_by: string | null;
@@ -48,6 +49,25 @@ export type Technician = {
 
 // ─── API response shapes ────────────────────────────────────────────────────
 
+export type AlertSeverityBreakdown = {
+  critical: number;  // offline equipment
+  warning: number;   // overdue maintenance
+  info: number;      // maintenance due soon
+};
+
+export type MaintenanceCompliance = {
+  completed: number;
+  total: number;
+  overdue: number;
+};
+
+export type KpiSparklines = {
+  alerts: number[];
+  scanned: number[];
+  maintenance: number[];
+  health: number[];
+};
+
 export type DashboardKpi = {
   critical_alerts: number;
   equipment_scanned_this_week: number;
@@ -56,6 +76,16 @@ export type DashboardKpi = {
   scanned_change: number;
   maintenance_change: number;
   health_change: number;
+  critical_alerts_change: number;
+  severity_breakdown: AlertSeverityBreakdown;
+  maintenance_compliance: MaintenanceCompliance;
+  sparklines: KpiSparklines;
+};
+
+export type AssetValuePoint = {
+  day: string;
+  operational: number;
+  maintenance: number;
 };
 
 export type DashboardStats = {
@@ -68,6 +98,11 @@ export type DashboardStats = {
     maintenance: number;
     retired: number;
   }[];
+  asset_value_by_period: {
+    "7d": AssetValuePoint[];
+    "30d": AssetValuePoint[];
+    "90d": AssetValuePoint[];
+  };
   inventory: {
     accuracy: number;
     restock_due_days: number;

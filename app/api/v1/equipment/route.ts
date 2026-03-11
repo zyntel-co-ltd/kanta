@@ -33,26 +33,29 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Eq
   }
 }
 
-export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{ id: string }>>> {
+export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{ id: string; qr_code: string }>>> {
   try {
     const body = await req.json();
-    const { name, model, serial_number, department_id, hospital_id, category, location } = body;
+    const { name, model, serial_number, department_id, hospital_id, category, location, next_maintenance_at } = body;
 
     if (!name || !hospital_id || !department_id) {
       return NextResponse.json(
-        { data: null, error: "name, hospital_id, department_id are required" },
+        { data: null, error: "name, hospital_id, and department_id are required" },
         { status: 400 }
       );
     }
 
+    const qrCode = `KNT-${String(hospital_id).slice(0, 8).toUpperCase()}-${Date.now()}`;
+
     if (!supabaseConfigured) {
-      return NextResponse.json({ data: { id: `mock-${Date.now()}` }, error: null }, { status: 201 });
+      return NextResponse.json(
+        { data: { id: `mock-${Date.now()}`, qr_code: qrCode }, error: null },
+        { status: 201 }
+      );
     }
 
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
-
-    const qrCode = `KNT-${hospital_id.slice(0, 4).toUpperCase()}-${Date.now()}`;
 
     const { data, error } = await db
       .from("equipment")
@@ -66,12 +69,13 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{
         location: location ?? null,
         qr_code: qrCode,
         status: "operational",
+        next_maintenance_at: next_maintenance_at ?? null,
       })
-      .select("id")
+      .select("id, qr_code")
       .single();
 
     if (error) throw error;
-    return NextResponse.json({ data: { id: data.id }, error: null }, { status: 201 });
+    return NextResponse.json({ data: { id: data.id, qr_code: data.qr_code }, error: null }, { status: 201 });
   } catch (err) {
     console.error("[POST /api/v1/equipment]", err);
     return NextResponse.json({ data: null, error: "Failed to create equipment" }, { status: 500 });

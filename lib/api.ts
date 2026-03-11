@@ -58,3 +58,21 @@ export async function fetchDepartments(hospitalId: string) {
   const res = await fetch(url("/departments", { hospital_id: hospitalId }));
   return res.json();
 }
+
+export async function createEquipment(payload: {
+  name: string;
+  hospital_id: string;
+  department_id: string;
+  model?: string;
+  serial_number?: string;
+  category?: string;
+  location?: string;
+  next_maintenance_at?: string;
+}) {
+  const res = await fetch(url("/equipment"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}

@@ -2,7 +2,8 @@
 
 import { ArrowUpRight, CheckCircle2, Clock, WifiOff, Download } from "lucide-react";
 import clsx from "clsx";
-import { scanFeed, scheduleData } from "@/lib/data";
+import { useDashboardData } from "@/lib/DashboardDataContext";
+import type { ScanEvent } from "@/types";
 
 const statusConfig = {
   operational: {
@@ -25,31 +26,32 @@ const statusConfig = {
   },
 };
 
-const CURRENT_YEAR = 2026;
-
-function getAgeBadge(purchaseYear: number) {
-  const age = CURRENT_YEAR - purchaseYear;
-  if (age < 3) return { label: `${age}y`, color: "text-emerald-600 bg-emerald-50", title: "New" };
-  if (age < 7) return { label: `${age}y`, color: "text-amber-600 bg-amber-50", title: "Aging" };
-  return { label: `${age}y`, color: "text-red-500 bg-red-50", title: "Old — higher risk" };
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins} min ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
 }
 
-function exportToCSV() {
-  const headers = ["Equipment", "Department", "Location", "Status", "Scanned By", "Time", "Age (years)"];
-  const rows = scanFeed.map((item) => [
-    item.equipment,
-    item.department,
-    item.location,
-    item.status,
-    item.scannedBy,
-    item.time,
-    String(CURRENT_YEAR - item.purchaseYear),
+function exportToCSV(scans: ScanEvent[]) {
+  const headers = ["Equipment", "Department", "Location", "Status", "Scanned By", "Time"];
+  const rows = scans.map((s) => [
+    s.equipment?.name ?? "—",
+    s.equipment?.department?.name ?? "—",
+    s.location ?? "—",
+    s.status_at_scan,
+    s.scanned_by,
+    formatTime(s.created_at),
   ]);
-
   const csv = [headers, ...rows]
     .map((row) => row.map((cell) => `"${cell}"`).join(","))
     .join("\n");
-
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -60,60 +62,24 @@ function exportToCSV() {
 }
 
 export default function ScanFeed() {
-  const { nextMaintenance, days, activeDay, month, year } = scheduleData;
+  const { scans, loading } = useDashboardData();
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+          <div className="h-24 rounded-xl bg-slate-100 animate-pulse" />
+        </div>
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+          <div className="h-48 rounded-xl bg-slate-100 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
-      {/* ── Next Maintenance Card ── */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-        {/* Equipment info */}
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-indigo-700 font-bold text-base">
-              {nextMaintenance.equipment.charAt(0)}
-            </span>
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-slate-800 truncate leading-snug">
-              {nextMaintenance.equipment}
-            </p>
-            <p className="text-xs text-slate-400 mt-0.5">{nextMaintenance.type}</p>
-            <div className="flex items-center gap-1 mt-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
-              <span className="text-xs text-slate-500 truncate">
-                {nextMaintenance.department} · {nextMaintenance.time}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Mini calendar */}
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-slate-600">Schedule</p>
-          <div className="flex items-center gap-1 text-xs text-slate-400">
-            <button className="px-1 hover:text-slate-700 transition-colors">‹</button>
-            <span>{month} {year}</span>
-            <button className="px-1 hover:text-slate-700 transition-colors">›</button>
-          </div>
-        </div>
-        <div className="flex gap-1">
-          {days.map((d) => (
-            <button
-              key={d}
-              className={clsx(
-                "flex-1 h-7 rounded-lg text-xs font-semibold transition-all",
-                d === activeDay
-                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
-                  : "text-slate-500 hover:bg-slate-100"
-              )}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Live Scan Feed ── */}
+      {/* Live Scan Feed */}
       <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -124,11 +90,11 @@ export default function ScanFeed() {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            {/* CSV Export */}
             <button
-              onClick={exportToCSV}
+              onClick={() => exportToCSV(scans)}
               title="Export to CSV"
-              className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+              disabled={scans.length === 0}
+              className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors disabled:opacity-50"
             >
               <Download size={13} />
             </button>
@@ -139,47 +105,41 @@ export default function ScanFeed() {
         </div>
 
         <div className="space-y-1">
-          {scanFeed.map((item) => {
-            const config = statusConfig[item.status as keyof typeof statusConfig];
-            const Icon = config.icon;
-            const age = getAgeBadge(item.purchaseYear);
-            return (
-              <div
-                key={item.id}
-                className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group"
-              >
+          {scans.length === 0 ? (
+            <p className="text-sm text-slate-500 py-4 text-center">No recent scans</p>
+          ) : (
+            scans.map((item) => {
+              const config = statusConfig[item.status_at_scan as keyof typeof statusConfig] ?? statusConfig.operational;
+              const Icon = config.icon;
+              return (
                 <div
-                  className={clsx(
-                    "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
-                    config.bg
-                  )}
+                  key={item.id}
+                  className="flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group"
                 >
-                  <Icon size={13} className={config.color} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-semibold text-slate-800 truncate group-hover:text-indigo-600 transition-colors leading-snug">
-                      {item.equipment}
-                    </p>
-                    {/* Age badge */}
-                    <span
-                      title={age.title}
-                      className={clsx("text-xs font-bold px-1.5 py-0 rounded-full flex-shrink-0", age.color)}
-                    >
-                      {age.label}
-                    </span>
+                  <div
+                    className={clsx(
+                      "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
+                      config.bg
+                    )}
+                  >
+                    <Icon size={13} className={config.color} />
                   </div>
-                  <p className="text-xs text-slate-400 truncate">
-                    {item.department} · {item.location}
-                  </p>
-                  <p className="text-xs text-slate-400 truncate">by {item.scannedBy}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-slate-800 truncate group-hover:text-indigo-600 transition-colors leading-snug">
+                      {item.equipment?.name ?? "Unknown"}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {item.equipment?.department?.name ?? "—"} · {item.location ?? "—"}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">by {item.scanned_by}</p>
+                  </div>
+                  <span className="text-xs text-slate-400 flex-shrink-0 mt-0.5 whitespace-nowrap">
+                    {formatTime(item.created_at)}
+                  </span>
                 </div>
-                <span className="text-xs text-slate-400 flex-shrink-0 mt-0.5 whitespace-nowrap">
-                  {item.time}
-                </span>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
     </>

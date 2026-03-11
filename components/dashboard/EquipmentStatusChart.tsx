@@ -10,15 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { equipmentStatusDataByPeriod } from "@/lib/data";
-
-type Period = "3m" | "6m" | "12m";
-
-const PERIODS: { key: Period; label: string }[] = [
-  { key: "3m", label: "3 mo" },
-  { key: "6m", label: "6 mo" },
-  { key: "12m", label: "12 mo" },
-];
+import { useDashboardData } from "@/lib/DashboardDataContext";
 
 const CustomTooltip = ({
   active,
@@ -45,9 +37,17 @@ const CustomTooltip = ({
 };
 
 export default function EquipmentStatusChart() {
-  const [period, setPeriod] = useState<Period>("12m");
-  const data = equipmentStatusDataByPeriod[period];
-  const latest = data[data.length - 1];
+  const { dashboard, loading } = useDashboardData();
+  const data = dashboard?.equipment_status_monthly ?? [];
+  const latest = data.length > 0 ? data[data.length - 1] : { month: "", operational: 0, maintenance: 0, retired: 0 };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm h-full">
+        <div className="h-64 rounded-xl bg-slate-100 animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow h-full">
@@ -65,22 +65,6 @@ export default function EquipmentStatusChart() {
               <span className="inline-block w-2 h-2 rounded-sm bg-slate-300" />Retired
             </span>
           </div>
-        </div>
-        {/* Period toggle */}
-        <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
-          {PERIODS.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setPeriod(key)}
-              className={`text-xs px-2 py-1 rounded-md font-medium transition-all ${
-                period === key
-                  ? "bg-white text-indigo-600 shadow-sm border border-slate-200"
-                  : "text-slate-400 hover:text-slate-600"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -101,7 +85,7 @@ export default function EquipmentStatusChart() {
 
       <div className="mt-4 h-40">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} barSize={10} barGap={1} barCategoryGap="30%">
+          <BarChart data={data.length ? data : [{ month: "—", operational: 0, maintenance: 0, retired: 0 }]} barSize={10} barGap={1} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis
               dataKey="month"

@@ -2,6 +2,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import TopBar from "@/components/dashboard/TopBar";
 import TickerBar from "@/components/dashboard/TickerBar";
 import FloatingActionButton from "@/components/dashboard/FloatingActionButton";
+import DashboardProviders from "@/components/dashboard/DashboardProviders";
 
 export default function DashboardLayout({
   children,
@@ -9,6 +10,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
+    <DashboardProviders>
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-indigo-50/40 via-white to-slate-50">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -22,5 +24,6 @@ export default function DashboardLayout({
       </div>
       <FloatingActionButton />
     </div>
+    </DashboardProviders>
   );
 }

@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { TrendingUp, TrendingDown, AlertTriangle, ScanLine, Wrench, Activity } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import clsx from "clsx";
-import { kpiCards } from "@/lib/data";
+import { useDashboardData } from "@/lib/DashboardDataContext";
 
-const sparklines = {
-  alerts:      [{ v: 8 }, { v: 11 }, { v: 9 }, { v: 13 }, { v: 10 }, { v: 12 }, { v: 14 }],
-  scanned:     [{ v: 180 }, { v: 210 }, { v: 240 }, { v: 265 }, { v: 290 }, { v: 300 }, { v: 312 }],
-  maintenance: [{ v: 82 }, { v: 79 }, { v: 85 }, { v: 80 }, { v: 76 }, { v: 78 }, { v: 74 }],
-  health:      [{ v: 78 }, { v: 80 }, { v: 79 }, { v: 81 }, { v: 82 }, { v: 83 }, { v: 84 }],
+const fallbackSparklines = {
+  alerts:      [0, 0, 0, 0, 0, 0, 0],
+  scanned:     [0, 0, 0, 0, 0, 0, 0],
+  maintenance: [0, 0, 0, 0, 0, 0, 0],
+  health:      [0, 0, 0, 0, 0, 0, 0],
 };
 
 const iconMap = {
@@ -131,14 +131,36 @@ function ComplianceBar({
   );
 }
 
+const cardConfig = [
+  { id: "critical_alerts" as const, label: "Critical Alerts", unit: "", color: "red" as const, iconKey: "alerts" as const, changeKey: "critical_alerts_change" as const },
+  { id: "equipment_scanned_this_week" as const, label: "Equipment Scanned", unit: "", color: "indigo" as const, iconKey: "scanned" as const, changeKey: "scanned_change" as const },
+  { id: "maintenance_due" as const, label: "Maintenance Compliance", unit: "%", color: "amber" as const, iconKey: "maintenance" as const, changeKey: "maintenance_change" as const },
+  { id: "fleet_health_score" as const, label: "Fleet Health Score", unit: "%", color: "emerald" as const, iconKey: "health" as const, changeKey: "health_change" as const },
+] as const;
+
 export default function KpiCards() {
+  const { dashboard, loading } = useDashboardData();
+  const kpi = dashboard?.kpi;
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-40 rounded-2xl bg-slate-100 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      {kpiCards.map((card, i) => {
-        const Icon = iconMap[card.id as keyof typeof iconMap];
-        const theme = cardThemes[card.color as keyof typeof cardThemes];
-        const spark = sparklines[card.id as keyof typeof sparklines];
-        const isUp = card.trend === "up";
+      {cardConfig.map((card, i) => {
+        const value = kpi ? (kpi[card.id] as number) ?? 0 : 0;
+        const change = kpi ? (kpi[card.changeKey] as number) ?? 0 : 0;
+        const isUp = card.id === "critical_alerts" ? change <= 0 : change >= 0;
+        const Icon = iconMap[card.iconKey];
+        const theme = cardThemes[card.color];
+        const sparkData = (kpi?.sparklines?.[card.iconKey] ?? fallbackSparklines[card.iconKey]).map((v) => ({ v }));
         const stagger = `stagger-${i + 1}` as string;
 
         return (
@@ -172,22 +194,22 @@ export default function KpiCards() {
               {!theme.pulse && (
                 <span className={clsx("flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full", theme.badge)}>
                   {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                  {isUp ? "+" : ""}{card.change}{card.unit ?? ""}
+                  {isUp ? "+" : ""}{change}{card.unit}
                 </span>
               )}
             </div>
 
             {/* Value */}
             <p className="text-3xl font-bold text-white tracking-tight relative z-10">
-              <AnimatedValue value={card.value as number} unit={card.unit} />
+              <AnimatedValue value={value} unit={card.unit} />
             </p>
             <p className="text-sm font-medium text-white/80 mt-1 relative z-10">{card.label}</p>
-            <p className="text-xs text-white/60 mt-0.5 relative z-10">{card.changeLabel}</p>
+            <p className="text-xs text-white/60 mt-0.5 relative z-10">Live data</p>
 
             {/* Sparkline */}
             <div className="mt-3 h-10 relative z-10 -mx-1">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={spark}>
+                <LineChart data={sparkData.length ? sparkData : [{ v: 0 }, { v: 0 }]}>
                   <Line
                     type="monotone"
                     dataKey="v"
@@ -201,23 +223,24 @@ export default function KpiCards() {
               </ResponsiveContainer>
             </div>
 
-            {/* Alert card: severity breakdown */}
-            {"severity" in card && card.severity && (
-              <AlertSeverityBreakdown severity={card.severity} />
+            {/* Alert card: severity breakdown - use real severity from API */}
+            {card.id === "critical_alerts" && (value > 0 || (kpi?.severity_breakdown && (kpi.severity_breakdown.critical + kpi.severity_breakdown.warning + kpi.severity_breakdown.info) > 0)) && (
+              <AlertSeverityBreakdown severity={kpi?.severity_breakdown ?? { critical: 0, warning: 0, info: 0 }} />
             )}
 
-            {/* Maintenance card: compliance progress bar */}
-            {"compliance" in card && card.compliance && (
-              <ComplianceBar compliance={card.compliance} />
-            )}
-
-            {/* Other cards: pulsing change badge */}
-            {!("severity" in card) && !("compliance" in card) && theme.pulse && (
+            {/* Critical alerts: change badge (fewer is better) */}
+            {card.id === "critical_alerts" && theme.pulse && (
               <div className="mt-2 relative z-10">
                 <span className={clsx("flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full w-fit", theme.badge)}>
-                  <TrendingUp size={11} />+{card.change} since yesterday
+                  {change > 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                  {change > 0 ? "+" : ""}{change} since yesterday
                 </span>
               </div>
+            )}
+
+            {/* Maintenance card: ComplianceBar */}
+            {card.id === "maintenance_due" && kpi?.maintenance_compliance && kpi.maintenance_compliance.total > 0 && (
+              <ComplianceBar compliance={kpi.maintenance_compliance} />
             )}
           </div>
         );

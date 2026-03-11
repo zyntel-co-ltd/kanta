@@ -206,49 +206,28 @@ export const scanFeed = [
   },
 ];
 
-export const departments = [
-  {
-    id: "icu",
-    name: "ICU",
-    equipmentCount: 48,
-    technicianCount: 3,
-    healthScore: 91,
-    expanded: true,
-    technicians: [
-      { name: "Tech. Omondi", time: "08:00 AM", avatar: "TO" },
-      { name: "Tech. Auma", time: "10:30 AM", avatar: "TA" },
-    ],
-  },
-  {
-    id: "theatre",
-    name: "Theatre",
-    equipmentCount: 62,
-    technicianCount: 4,
-    healthScore: 87,
-    expanded: false,
-    technicians: [
-      { name: "Tech. Mwangi", time: "07:00 AM", avatar: "TM" },
-    ],
-  },
-  {
-    id: "maternity",
-    name: "Maternity",
-    equipmentCount: 35,
-    technicianCount: 2,
-    healthScore: 94,
-    expanded: false,
-    technicians: [],
-  },
-  {
-    id: "casualty",
-    name: "Casualty",
-    equipmentCount: 41,
-    technicianCount: 3,
-    healthScore: 78,
-    expanded: false,
-    technicians: [],
-  },
+// Full list of standard hospital departments
+export const STANDARD_HOSPITAL_DEPARTMENTS = [
+  "ICU", "Theatre", "Maternity", "Casualty", "Paediatrics", "Emergency",
+  "Outpatient", "Radiology", "Laboratory", "Pharmacy", "Surgery",
+  "Cardiology", "Orthopaedics", "Anaesthesia", "Neonatology", "Oncology",
+  "Dialysis", "Physiotherapy", "Psychiatry", "General Medicine", "Ward",
 ];
+
+export const departments = STANDARD_HOSPITAL_DEPARTMENTS.map((name, i) => ({
+  id: `dept-${String(i + 1).padStart(2, "0")}`,
+  name,
+  equipmentCount: Math.floor(Math.random() * 50) + 5,
+  technicianCount: Math.floor(Math.random() * 4) + 1,
+  healthScore: 70 + Math.floor(Math.random() * 30),
+  expanded: i === 0,
+  technicians:
+    i < 3
+      ? [
+          { name: `Tech. ${["Omondi", "Auma", "Mwangi", "Nakato"][i]}`, time: "08:00 AM", avatar: "TO" },
+        ]
+      : [],
+}));
 
 export const scheduleData = {
   month: "Mar",
