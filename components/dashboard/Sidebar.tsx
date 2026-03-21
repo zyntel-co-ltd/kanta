@@ -26,6 +26,7 @@ import {
   ListTodo,
   Activity,
   Table2,
+  Hash,
 } from "lucide-react";
 
 const navItems = [
@@ -35,6 +36,7 @@ const navItems = [
   { label: "Maintenance", icon: Wrench,           href: "/dashboard/maintenance" },
   { label: "TAT",         icon: Clock,           href: "/dashboard/tat" },
   { label: "Tests",       icon: Beaker,          href: "/dashboard/tests" },
+  { label: "Numbers",     icon: Hash,           href: "/dashboard/numbers" },
   { label: "Meta",        icon: Database,        href: "/dashboard/meta" },
   { label: "Revenue",     icon: DollarSign,      href: "/dashboard/revenue" },
   { label: "Refrigerator", icon: Thermometer,    href: "/dashboard/refrigerator" },
