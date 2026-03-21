@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
+import HomeGate from "./HomeGate";
 
 export default function Home() {
-  // Middleware redirects unauthenticated users to /login
-  redirect("/dashboard/home");
+  return <HomeGate />;
 }

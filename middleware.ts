@@ -15,14 +15,12 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  // Protect dashboard and root — redirect to login if no session
-  const isProtected =
-    req.nextUrl.pathname.startsWith("/dashboard") || req.nextUrl.pathname === "/";
+  // Protect /dashboard only. Root `/` stays public so the client can read
+  // Supabase recovery tokens in the URL hash (fragments are never sent to the server).
+  const isProtected = req.nextUrl.pathname.startsWith("/dashboard");
   if (isProtected && !user) {
     const loginUrl = new URL("/login", req.url);
-    if (req.nextUrl.pathname !== "/") {
-      loginUrl.searchParams.set("redirect", req.nextUrl.pathname);
-    }
+    loginUrl.searchParams.set("redirect", req.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
 

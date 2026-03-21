@@ -17,10 +17,12 @@ Use this checklist before going live with a paying client.
 - [ ] **RLS** — Verify Row Level Security policies (replace dev `using (true)` with `facility_id = auth.jwt() ->> 'facility_id'` when Auth is enabled)
 - [ ] **Pro tier** — Upgrade to Pro for 7-day PITR before any paying client (required for production)
 - [ ] **Secrets** — `SUPABASE_SERVICE_ROLE_KEY` stored in Vercel (Production only, never Preview)
-- [ ] **Auth redirect URLs** — In Supabase Dashboard → Auth → URL Configuration, add:
+- [ ] **Auth redirect URLs** — In Supabase Dashboard → Auth → URL Configuration, add (exact origins you use):
   - `https://your-domain.com/auth/confirm`
   - `http://localhost:3000/auth/confirm` (for local dev)
-- [ ] **Password reset email** — Ensure "Reset Password" template uses `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery` (or `&next=/password-reset` appended)
+  - Optional wildcard preview: `https://*.vercel.app/auth/confirm` if Supabase allows it
+- [ ] **Site URL** — Set to your real app origin (e.g. `https://your-domain.com`). Recovery links that land on `/` with a `#access_token=…` hash are handled by the app; links to `/auth/confirm?…` are preferred.
+- [ ] **Password reset** — `resetPasswordForEmail` uses `redirectTo`: `{origin}/auth/confirm?next=/password-reset`. That URL must appear under **Redirect URLs**. Default Supabase templates (`{{ .ConfirmationURL }}`) usually work; custom templates should redirect to the same path so the session is established before `/password-reset`.
 
 ---
 
