@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Bell, Search, ChevronDown, Command } from "lucide-react";
+import { useSyncStatus } from "@/lib/SyncStatusContext";
 
 export default function TopBar() {
   const [secondsAgo, setSecondsAgo] = useState(0);
+  const { status, pendingCount, retry } = useSyncStatus();
 
   useEffect(() => {
     const interval = setInterval(() => setSecondsAgo((s) => s + 1), 1000);
@@ -14,6 +16,13 @@ export default function TopBar() {
   const lastUpdated = secondsAgo < 60
     ? `${secondsAgo}s ago`
     : `${Math.floor(secondsAgo / 60)}m ago`;
+
+  const syncDotColor =
+    status === "synced" ? "bg-emerald-400" :
+    status === "pending" ? "bg-amber-400" : "bg-red-500";
+  const syncTitle =
+    status === "synced" ? "Synced" :
+    status === "pending" ? `${pendingCount} pending` : "Sync failed";
 
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between px-6 py-3 bg-white/80 backdrop-blur-sm border-b border-slate-100">
@@ -33,6 +42,20 @@ export default function TopBar() {
             </kbd>
           </div>
         </div>
+
+        {/* Sync status indicator */}
+        <button
+          onClick={() => status === "failed" && retry()}
+          title={syncTitle}
+          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            status === "synced" ? "bg-emerald-50 text-emerald-700" :
+            status === "pending" ? "bg-amber-50 text-amber-700" :
+            "bg-red-50 text-red-700 hover:bg-red-100 cursor-pointer"
+          }`}
+        >
+          <span className={`w-2 h-2 rounded-full ${syncDotColor} ${status === "synced" ? "animate-pulse" : ""}`} />
+          {status === "synced" ? "Synced" : status === "pending" ? `${pendingCount} pending` : "Sync failed"}
+        </button>
 
         {/* Date + Live indicator */}
         <div className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-xl">

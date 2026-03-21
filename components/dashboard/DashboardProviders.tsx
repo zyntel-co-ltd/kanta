@@ -2,6 +2,7 @@
 
 import { EquipmentStoreProvider } from "@/lib/EquipmentStore";
 import { DashboardDataProvider } from "@/lib/DashboardDataContext";
+import { SyncStatusProvider } from "@/lib/SyncStatusContext";
 
 export default function DashboardProviders({
   children,
@@ -10,7 +11,9 @@ export default function DashboardProviders({
 }) {
   return (
     <EquipmentStoreProvider>
-      <DashboardDataProvider>{children}</DashboardDataProvider>
+      <SyncStatusProvider>
+        <DashboardDataProvider>{children}</DashboardDataProvider>
+      </SyncStatusProvider>
     </EquipmentStoreProvider>
   );
 }

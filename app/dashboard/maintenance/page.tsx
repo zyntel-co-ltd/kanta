@@ -1,14 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchEquipment } from "@/lib/api";
+import { fetchMaintenanceDue, markMaintained } from "@/lib/api";
 import { useEquipmentStore } from "@/lib/EquipmentStore";
 import type { Equipment } from "@/types";
-import { Wrench, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
+import { Wrench, AlertTriangle, Clock, CheckCircle2, Check } from "lucide-react";
 
 const SEED_HOSPITAL_ID = "00000000-0000-0000-0000-000000000001";
 
 type Tab = "overdue" | "upcoming" | "in-progress";
+
+type MaintenanceItem = Equipment & {
+  last_maintained_at: string | null;
+  next_due_at: string | null;
+  interval_days: number;
+  notes: string | null;
+};
 
 const statusColors: Record<string, string> = {
   operational: "bg-emerald-100 text-emerald-700",
@@ -33,52 +40,85 @@ function getDaysUntil(iso: string | null): number | null {
 }
 
 export default function MaintenancePage() {
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [items, setItems] = useState<MaintenanceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overdue");
+  const [markingId, setMarkingId] = useState<string | null>(null);
   const { sessionEquipment, refreshKey } = useEquipmentStore();
 
-  const loadEquipment = async () => {
+  const loadMaintenanceDue = async () => {
     setLoading(true);
     setError(null);
-    const res = await fetchEquipment(SEED_HOSPITAL_ID);
+    const res = await fetchMaintenanceDue(SEED_HOSPITAL_ID);
     setLoading(false);
     if (res.error) {
       setError(res.error);
-      setEquipment([]);
+      setItems([]);
       return;
     }
-    const fromApi = res.data ?? [];
-    const apiIds = new Set(fromApi.map((e: Equipment) => e.id));
-    const fromSession = sessionEquipment.filter((e) => !apiIds.has(e.id));
-    setEquipment([...fromApi, ...fromSession].sort((a, b) => a.name.localeCompare(b.name)));
+    const fromApi = (res.data ?? []) as MaintenanceItem[];
+    const fromSession = sessionEquipment
+      .filter((e) => !fromApi.some((a) => a.id === e.id))
+      .map((e) => ({
+        ...e,
+        next_maintenance_at: e.next_maintenance_at,
+        last_maintained_at: null,
+        next_due_at: e.next_maintenance_at,
+        interval_days: 90,
+        notes: null,
+      })) as MaintenanceItem[];
+    const merged = [...fromApi, ...fromSession].sort((a, b) => {
+      const aDue = a.next_due_at ?? a.next_maintenance_at;
+      const bDue = b.next_due_at ?? b.next_maintenance_at;
+      if (!aDue) return 1;
+      if (!bDue) return -1;
+      return new Date(aDue).getTime() - new Date(bDue).getTime();
+    });
+    setItems(merged);
   };
 
   useEffect(() => {
-    loadEquipment();
+    loadMaintenanceDue();
   }, [refreshKey, sessionEquipment]);
 
   useEffect(() => {
-    const handler = () => loadEquipment();
+    const handler = () => loadMaintenanceDue();
     window.addEventListener("equipment-added", handler);
     return () => window.removeEventListener("equipment-added", handler);
   }, [sessionEquipment]);
+
+  const handleMarkMaintained = async (eq: MaintenanceItem) => {
+    setMarkingId(eq.id);
+    const res = await markMaintained({
+      equipment_id: eq.id,
+      facility_id: SEED_HOSPITAL_ID,
+    });
+    setMarkingId(null);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    loadMaintenanceDue();
+  };
 
   const now = new Date();
   const thirtyDaysFromNow = new Date(now);
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-  const overdue = equipment.filter(
-    (eq) => eq.next_maintenance_at && new Date(eq.next_maintenance_at) < now
+  const getDueDate = (item: MaintenanceItem) =>
+    item.next_due_at ?? item.next_maintenance_at;
+
+  const overdue = items.filter(
+    (eq) => getDueDate(eq) && new Date(getDueDate(eq)!) < now
   );
-  const upcoming = equipment.filter(
+  const upcoming = items.filter(
     (eq) =>
-      eq.next_maintenance_at &&
-      new Date(eq.next_maintenance_at) >= now &&
-      new Date(eq.next_maintenance_at) <= thirtyDaysFromNow
+      getDueDate(eq) &&
+      new Date(getDueDate(eq)!) >= now &&
+      new Date(getDueDate(eq)!) <= thirtyDaysFromNow
   );
-  const inProgress = equipment.filter((eq) => eq.status === "maintenance");
+  const inProgress = items.filter((eq) => eq.status === "maintenance");
 
   const tabConfig: { id: Tab; label: string; count: number; icon: typeof Wrench }[] = [
     { id: "overdue", label: "Overdue", count: overdue.length, icon: AlertTriangle },
@@ -160,11 +200,14 @@ export default function MaintenancePage() {
                   <th className="text-left px-4 py-3 font-semibold text-slate-700">Due Date</th>
                   <th className="text-left px-4 py-3 font-semibold text-slate-700">Days</th>
                   <th className="text-left px-4 py-3 font-semibold text-slate-700">Status</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-700">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {displayList.map((eq) => {
-                  const days = getDaysUntil(eq.next_maintenance_at);
+                  const dueDate = getDueDate(eq);
+                  const days = getDaysUntil(dueDate);
+                  const isMarking = markingId === eq.id;
                   return (
                     <tr
                       key={eq.id}
@@ -180,7 +223,7 @@ export default function MaintenancePage() {
                         {eq.department?.name ?? "—"}
                       </td>
                       <td className="px-4 py-3 text-slate-600">
-                        {formatDate(eq.next_maintenance_at)}
+                        {formatDate(dueDate)}
                       </td>
                       <td className="px-4 py-3">
                         {days !== null ? (
@@ -203,6 +246,16 @@ export default function MaintenancePage() {
                         >
                           {eq.status}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => handleMarkMaintained(eq)}
+                          disabled={isMarking}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors disabled:opacity-50"
+                        >
+                          <Check size={14} />
+                          {isMarking ? "Saving…" : "Mark maintained"}
+                        </button>
                       </td>
                     </tr>
                   );

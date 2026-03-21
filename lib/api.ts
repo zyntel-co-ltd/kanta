@@ -95,3 +95,23 @@ export async function fetchEquipmentByQr(hospitalId: string, qrCode: string) {
   );
   return res.json();
 }
+
+export async function fetchMaintenanceDue(facilityId: string) {
+  const res = await fetch(
+    url("/maintenance/due", { facility_id: facilityId })
+  );
+  return res.json();
+}
+
+export async function markMaintained(payload: {
+  equipment_id: string;
+  facility_id: string;
+  notes?: string;
+}) {
+  const res = await fetch(`${API_BASE}/maintenance/mark-maintained`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}

@@ -1,10 +1,7 @@
 /**
- * Capability profile — cached in Redis, drives Adaptive Presence.
- * Every module tile reads from this.
+ * Capability profile — engine of Adaptive Presence
+ * Read facility_capability_profile.has_* to determine module presence
  */
-
-import { redis } from "./redis";
-import { createAdminClient } from "./supabase";
 
 export type CapabilityProfile = {
   facility_id: string;
@@ -15,35 +12,38 @@ export type CapabilityProfile = {
   has_equipment: boolean;
 };
 
-const TTL = 60 * 15; // 15 minutes
+export type ModulePresence = "active" | "partial" | "locked";
 
-export async function getCapabilityProfile(
-  facilityId: string
-): Promise<CapabilityProfile | null> {
-  const key = `cap:${facilityId}`;
-  const cached = await redis.get(key);
-  if (cached) return cached as CapabilityProfile;
-
-  try {
-    const supabase = createAdminClient();
-    const { data } = await supabase
-      .from("facility_capability_profile")
-      .select("*")
-      .eq("facility_id", facilityId)
-      .single();
-
-    if (data) {
-      await redis.set(key, data, { ex: TTL });
-      return data as CapabilityProfile;
-    }
-  } catch {
-    // Table may not exist yet
-  }
-  return null;
+export function getEquipmentPresence(
+  profile: CapabilityProfile | null,
+  equipmentCount: number
+): ModulePresence {
+  if (!profile?.has_equipment) return "locked";
+  if (equipmentCount === 0) return "partial";
+  return "active";
 }
 
-export async function invalidateCapabilityProfile(
-  facilityId: string
-): Promise<void> {
-  await redis.del(`cap:${facilityId}`);
+export function getTatPresence(profile: CapabilityProfile | null): ModulePresence {
+  return profile?.has_tat ? "active" : "locked";
+}
+
+export function getRevenuePresence(
+  profile: CapabilityProfile | null,
+  role: string
+): ModulePresence {
+  if (!["admin", "manager"].includes(role)) return "locked";
+  return profile?.has_revenue ? "active" : "locked";
+}
+
+export function getRefrigeratorPresence(
+  profile: CapabilityProfile | null,
+  unitCount: number
+): ModulePresence {
+  if (!profile?.has_refrigerator_monitoring) return "locked";
+  if (unitCount === 0) return "partial";
+  return "active";
+}
+
+export function getQcPresence(profile: CapabilityProfile | null): ModulePresence {
+  return profile?.has_qc ? "active" : "locked";
 }

@@ -17,6 +17,11 @@ import {
   ChevronRight,
   Zap,
   ArrowUpRight,
+  Clock,
+  DollarSign,
+  Thermometer,
+  Beaker,
+  Database,
 } from "lucide-react";
 
 const navItems = [
@@ -24,6 +29,12 @@ const navItems = [
   { label: "Scan",        icon: ScanSearch,       href: "/dashboard/scan" },
   { label: "Equipment",   icon: ScanLine,         href: "/dashboard/equipment" },
   { label: "Maintenance", icon: Wrench,           href: "/dashboard/maintenance" },
+  { label: "TAT",         icon: Clock,           href: "/dashboard/tat" },
+  { label: "Tests",       icon: Beaker,          href: "/dashboard/tests" },
+  { label: "Meta",        icon: Database,        href: "/dashboard/meta" },
+  { label: "Revenue",     icon: DollarSign,      href: "/dashboard/revenue" },
+  { label: "Refrigerator", icon: Thermometer,    href: "/dashboard/refrigerator" },
+  { label: "QC",          icon: Beaker,          href: "/dashboard/qc" },
   { label: "Departments", icon: Building2,        href: "/dashboard/departments" },
   { label: "Analytics",   icon: BarChart3,        href: "/dashboard/analytics" },
   { label: "Reports",     icon: FileText,         href: "/dashboard/reports" },
