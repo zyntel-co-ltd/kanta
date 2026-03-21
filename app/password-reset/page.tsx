@@ -13,7 +13,6 @@ export default function PasswordResetPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,6 +26,7 @@ export default function PasswordResetPage() {
       return;
     }
     setLoading(true);
+    const supabase = createClient();
     const { error } = await (supabase.auth as { updateUser: (p: { password: string }) => Promise<{ error: { message?: string } | null }> }).updateUser({ password });
     setLoading(false);
     if (error) {
@@ -34,7 +34,7 @@ export default function PasswordResetPage() {
       return;
     }
     setSuccess(true);
-    setTimeout(() => router.replace("/dashboard"), 2000);
+    setTimeout(() => router.replace("/dashboard/home"), 2000);
   }
 
   return (
