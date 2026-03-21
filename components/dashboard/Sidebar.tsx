@@ -22,6 +22,10 @@ import {
   Thermometer,
   Beaker,
   Database,
+  Shield,
+  ListTodo,
+  Activity,
+  Table2,
 } from "lucide-react";
 
 const navItems = [
@@ -38,6 +42,11 @@ const navItems = [
   { label: "Departments", icon: Building2,        href: "/dashboard/departments" },
   { label: "Analytics",   icon: BarChart3,        href: "/dashboard/analytics" },
   { label: "Reports",     icon: FileText,         href: "/dashboard/reports" },
+  { label: "Reception",   icon: Table2,          href: "/dashboard/reception" },
+  { label: "Tracker",    icon: ListTodo,         href: "/dashboard/tracker" },
+  { label: "Progress",   icon: Activity,         href: "/dashboard/progress" },
+  { label: "Performance", icon: BarChart3,      href: "/dashboard/performance" },
+  { label: "Admin",       icon: Shield,          href: "/dashboard/admin" },
 ];
 
 export default function Sidebar() {
