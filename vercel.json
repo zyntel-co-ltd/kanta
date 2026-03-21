@@ -1,8 +1,5 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run build",
-  "installCommand": "npm install",
-  "healthCheck": {
-    "path": "/api/healthcheck"
-  }
+  "installCommand": "npm install"
 }
