@@ -5,12 +5,17 @@
 
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+function sanitize(value: string | undefined): string {
+  if (!value) return "";
+  return value.replace(/^["']+|["']+$/g, "").trim();
+}
+
+const supabaseUrl = sanitize(process.env.NEXT_PUBLIC_SUPABASE_URL);
+const serviceRoleKey = sanitize(process.env.SUPABASE_SERVICE_ROLE_KEY);
+const anonKey = sanitize(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 export function createClient() {
-  const key = serviceRoleKey ?? anonKey;
+  const key = serviceRoleKey || anonKey;
   return createSupabaseClient(supabaseUrl, key, {
     auth: serviceRoleKey
       ? { autoRefreshToken: false, persistSession: false }

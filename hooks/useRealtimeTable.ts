@@ -6,8 +6,13 @@
 import { useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+function sanitize(value: string | undefined): string {
+  if (!value) return "";
+  return value.replace(/^["']+|["']+$/g, "").trim();
+}
+
+const supabaseUrl = sanitize(process.env.NEXT_PUBLIC_SUPABASE_URL);
+const supabaseAnonKey = sanitize(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 export function useRealtimeTable<T>(
   table: string,
