@@ -19,6 +19,10 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 ### What Is Built and Working
 
 - [x] Next.js 16 app with Supabase
+- [x] **Auth** — Email/password login (`/login`), password reset flow, middleware protection for `/dashboard/*`, cookie-based session (`@supabase/ssr`)
+- [x] **Post-login home** — `/dashboard/home` module grid (landing); `/dashboard` remains full assets overview
+- [x] **Sidebar** — Grouped nav (Home & overview, Operations, Clinical & quality, Insights, System); collapsible; **optional hide** (restore via top bar); **Kanta** brand links to home; **Sign out** in sidebar + **Log out** in top bar
+- [x] **Admin users** — Admins add users via **Admin → Users** (creates Supabase Auth user + `facility_users` row). Real **email required** for sign-in. List merges Auth emails via `auth.admin.listUsers`. Banner explains Dashboard-only Auth users must get a facility link
 - [x] Dashboard layout (sidebar, top bar, ticker)
 - [x] Equipment API routes (CRUD), departments, scans
 - [x] Dashboard KPI cards, charts (equipment status, daily scans, category donut, asset value)
@@ -37,7 +41,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 
 ### What Is In Progress
 
-- [ ] Supabase Auth + JWT facility_id claim
+- [ ] JWT `facility_id` claim + RLS tied to `auth.uid()` (currently DEFAULT_FACILITY_ID in several API paths)
 - [ ] Offline-first PWA sync
 - [ ] Vercel env vars: ensure `NEXT_PUBLIC_SUPABASE_URL`, `UPSTASH_REDIS_REST_URL` set without quotes
 
@@ -86,6 +90,8 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 | Lab-first launch | Laboratory is department one; radiology, pharmacy follow | March 2026 |
 | Repo structure | kanta — standalone Next.js | — |
 | Env var handling | Sanitize quotes from Vercel env vars in lib/supabase.ts and lib/redis.ts | March 2026 |
+| User provisioning | No public self-signup; **admins** add users in Admin panel (Auth + facility_users) | March 2026 |
+| Default after login | `/dashboard/home` (module hub); deep links unchanged | March 2026 |
 
 ---
 
@@ -112,6 +118,8 @@ cp .env.example .env.local
 npm run dev
 ```
 
+Open **http://localhost:3000** → redirects to `/dashboard/home` when logged in, or `/login` when not.
+
 ---
 
 ## Vercel Environment Variables
@@ -130,8 +138,12 @@ Set these in Vercel **without surrounding quotes**:
 
 - **Base branch:** `main` (or `development` for features)
 - **Key files:**
-  - `app/dashboard/page.tsx` — Dashboard
-  - `lib/supabase.ts` — Supabase client (sanitizes env quotes)
+  - `app/dashboard/home/page.tsx` — Post-login module hub
+  - `app/dashboard/page.tsx` — Assets overview (KPIs / charts)
+  - `components/dashboard/Sidebar.tsx` — Grouped nav, collapse/hide
+  - `lib/SidebarLayoutContext.tsx` — Sidebar collapse + hide state (localStorage)
+  - `lib/AuthContext.tsx` — Client auth state
+  - `lib/supabase.ts` — Admin client; `lib/supabase/client.ts` — browser session
   - `lib/redis.ts` — Redis client (sanitizes env quotes)
   - `supabase/migrations/` — Database migrations
 - **Do not touch:** Supabase schema without migration

@@ -33,16 +33,35 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
-    const users = (facilityUsers ?? []).map((u) => ({
-      id: u.id,
-      user_id: u.user_id,
-      username: u.user_id?.slice(0, 8) ?? "—",
-      email: "", // Populated from auth if available
-      role: u.role,
-      is_active: u.is_active ?? true,
-      last_login: null,
-      created_at: u.created_at,
-    }));
+    const emailById = new Map<string, string>();
+    const usernameById = new Map<string, string>();
+    try {
+      const listUsers = (db.auth as { admin?: { listUsers: (o: { page?: number; perPage?: number }) => Promise<{ data?: { users?: Array<{ id: string; email?: string; user_metadata?: { username?: string } }> } }> } }).admin?.listUsers;
+      if (listUsers) {
+        const { data: listData } = await listUsers({ page: 1, perPage: 1000 });
+        for (const au of listData?.users ?? []) {
+          emailById.set(au.id, au.email ?? "");
+          const un = au.user_metadata?.username;
+          if (un) usernameById.set(au.id, String(un));
+        }
+      }
+    } catch {
+      /* auth list optional */
+    }
+
+    const users = (facilityUsers ?? []).map((u) => {
+      const uid = u.user_id as string;
+      return {
+        id: u.id,
+        user_id: uid,
+        username: usernameById.get(uid) || uid?.slice(0, 8) || "—",
+        email: emailById.get(uid) ?? "",
+        role: u.role,
+        is_active: u.is_active ?? true,
+        last_login: null,
+        created_at: u.created_at,
+      };
+    });
 
     return NextResponse.json(users);
   } catch (err) {
@@ -55,9 +74,17 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { facility_id, username, email, password, role } = body;
 
-  if (!facility_id || !username || !password || !role) {
+  const emailTrim = typeof email === "string" ? email.trim() : "";
+  const usernameTrim = typeof username === "string" ? username.trim() : "";
+  const loginEmail =
+    emailTrim || (usernameTrim ? `${usernameTrim}@kanta.local` : "");
+
+  if (!facility_id || !password || !role || !loginEmail) {
     return NextResponse.json(
-      { error: "facility_id, username, password, role required" },
+      {
+        error:
+          "facility_id, password, role, and email (or username) required — use a real email for sign-in",
+      },
       { status: 400 }
     );
   }
@@ -72,11 +99,12 @@ export async function POST(req: NextRequest) {
 
     const authAdmin = (db.auth as { admin?: { createUser: (opts: { email: string; password: string; email_confirm?: boolean; user_metadata?: Record<string, unknown> }) => Promise<{ data: { user?: { id: string; email?: string } }; error: { message?: string } | null }> } }).admin;
     if (!authAdmin) throw new Error("Auth admin not available");
+    const displayName = usernameTrim || loginEmail.split("@")[0] || "user";
     const { data: authData, error: authError } = await authAdmin.createUser({
-      email: email || `${username}@kanta.local`,
+      email: loginEmail,
       password,
       email_confirm: true,
-      user_metadata: { username },
+      user_metadata: { username: displayName },
     });
 
     if (authError) {
@@ -105,7 +133,11 @@ export async function POST(req: NextRequest) {
     if (fuError) throw fuError;
 
     return NextResponse.json(
-      { id: fuData?.id ?? userId, username, email: authData.user?.email },
+      {
+        id: fuData?.id ?? userId,
+        username: displayName,
+        email: authData.user?.email ?? loginEmail,
+      },
       { status: 201 }
     );
   } catch (err) {

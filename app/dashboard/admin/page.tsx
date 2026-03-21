@@ -425,10 +425,10 @@ export default function AdminPage() {
           </p>
         </div>
         <Link
-          href="/dashboard"
+          href="/dashboard/home"
           className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
         >
-          ← Back to Dashboard
+          ← Home
         </Link>
       </div>
 
@@ -478,6 +478,22 @@ export default function AdminPage() {
       ) : (
         <>
           {activeTab === "users" && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-indigo-100 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
+                <p className="font-semibold text-indigo-900 mb-1">How users work</p>
+                <ul className="list-disc list-inside space-y-1 text-indigo-900/90">
+                  <li>
+                    <strong>Admins add staff here</strong> — creates the Supabase Auth account and links them to
+                    this facility with a role.
+                  </li>
+                  <li>
+                    If you only created a user in the Supabase Dashboard, add a matching row in{" "}
+                    <code className="text-xs bg-white/60 px-1 rounded">facility_users</code> or use{" "}
+                    <strong>Add User</strong> below so they can sign in to Kanta.
+                  </li>
+                  <li>New users need a <strong>real email</strong> (they sign in with email + password).</li>
+                </ul>
+              </div>
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                 <span className="font-semibold text-slate-800">User Management</span>
@@ -497,8 +513,8 @@ export default function AdminPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/50">
-                      <th className="text-left px-4 py-3 font-medium text-slate-600">Username</th>
                       <th className="text-left px-4 py-3 font-medium text-slate-600">Email</th>
+                      <th className="text-left px-4 py-3 font-medium text-slate-600">Display name</th>
                       <th className="text-left px-4 py-3 font-medium text-slate-600">Role</th>
                       <th className="text-left px-4 py-3 font-medium text-slate-600">Status</th>
                       <th className="text-left px-4 py-3 font-medium text-slate-600">Actions</th>
@@ -507,8 +523,8 @@ export default function AdminPage() {
                   <tbody>
                     {users.map((u) => (
                       <tr key={u.id} className="border-b border-slate-50">
-                        <td className="px-4 py-3 font-medium">{u.username}</td>
                         <td className="px-4 py-3">{u.email || "—"}</td>
+                        <td className="px-4 py-3 font-medium">{u.username}</td>
                         <td className="px-4 py-3">
                           <span
                             className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -576,6 +592,7 @@ export default function AdminPage() {
               {users.length === 0 && (
                 <div className="p-8 text-center text-slate-500">No users yet.</div>
               )}
+            </div>
             </div>
           )}
 
@@ -1155,22 +1172,30 @@ export default function AdminPage() {
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Email <span className="text-red-500">*</span>{" "}
+                  <span className="text-slate-400 font-normal">(sign-in)</span>
+                </label>
+                <input
+                  type="email"
+                  value={userForm.email}
+                  onChange={(e) => setUserForm((p) => ({ ...p, email: e.target.value }))}
+                  disabled={!!editingUser}
+                  className="w-full rounded border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50"
+                  placeholder="name@hospital.org"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Display name <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
                 <input
                   type="text"
                   value={userForm.username}
                   onChange={(e) => setUserForm((p) => ({ ...p, username: e.target.value }))}
                   disabled={!!editingUser}
                   className="w-full rounded border border-slate-200 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={userForm.email}
-                  onChange={(e) => setUserForm((p) => ({ ...p, email: e.target.value }))}
-                  className="w-full rounded border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="Shown in the app header"
                 />
               </div>
               {!editingUser && (
@@ -1208,10 +1233,7 @@ export default function AdminPage() {
               </button>
               <button
                 onClick={handleUserSubmit}
-                disabled={
-                  !userForm.username ||
-                  (!editingUser && !userForm.password)
-                }
+                disabled={!editingUser && (!userForm.email?.trim() || !userForm.password)}
                 className="flex-1 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
               >
                 {editingUser ? "Update" : "Create"}
