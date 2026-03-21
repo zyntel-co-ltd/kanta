@@ -1,0 +1,65 @@
+-- Phase 1: Audit log — append-only for critical changes
+-- Triggers on equipment, facility_users, scan_events
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  table_name text NOT NULL,
+  record_id uuid,
+  facility_id uuid REFERENCES hospitals(id) ON DELETE SET NULL,
+  action text NOT NULL CHECK (action IN ('INSERT', 'UPDATE', 'DELETE')),
+  old_data jsonb,
+  new_data jsonb,
+  actor_id text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_facility ON audit_log(facility_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_table ON audit_log(table_name);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at DESC);
+
+-- Generic audit trigger function
+CREATE OR REPLACE FUNCTION audit_trigger_fn()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE
+  fid uuid;
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    fid := OLD.facility_id;
+    IF fid IS NULL AND OLD.hospital_id IS NOT NULL THEN
+      fid := OLD.hospital_id;
+    END IF;
+    INSERT INTO audit_log (table_name, record_id, facility_id, action, old_data)
+    VALUES (TG_TABLE_NAME, OLD.id, fid, 'DELETE', to_jsonb(OLD));
+    RETURN OLD;
+  ELSIF TG_OP = 'UPDATE' THEN
+    fid := NEW.facility_id;
+    IF fid IS NULL AND NEW.hospital_id IS NOT NULL THEN
+      fid := NEW.hospital_id;
+    END IF;
+    INSERT INTO audit_log (table_name, record_id, facility_id, action, old_data, new_data)
+    VALUES (TG_TABLE_NAME, NEW.id, fid, 'UPDATE', to_jsonb(OLD), to_jsonb(NEW));
+    RETURN NEW;
+  ELSIF TG_OP = 'INSERT' THEN
+    fid := NEW.facility_id;
+    IF fid IS NULL AND NEW.hospital_id IS NOT NULL THEN
+      fid := NEW.hospital_id;
+    END IF;
+    INSERT INTO audit_log (table_name, record_id, facility_id, action, new_data)
+    VALUES (TG_TABLE_NAME, NEW.id, fid, 'INSERT', to_jsonb(NEW));
+    RETURN NEW;
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+-- Equipment audit
+DROP TRIGGER IF EXISTS audit_equipment ON equipment;
+CREATE TRIGGER audit_equipment
+  AFTER INSERT OR UPDATE OR DELETE ON equipment
+  FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();
+
+-- Scan events audit
+DROP TRIGGER IF EXISTS audit_scan_events ON scan_events;
+CREATE TRIGGER audit_scan_events
+  AFTER INSERT ON scan_events
+  FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();

@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** March 2026  
+**Last updated:** 21 March 2026  
 **Updated by:** Cursor
 
 ---
@@ -29,7 +29,9 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 
 ### What Is In Progress
 
-- [ ] Multi-tenant architecture (facility_id)
+- [x] Multi-tenant foundation — facility_id migrations, facility_capability_profile, facility_users RBAC, audit_log
+- [x] Infrastructure — health/healthcheck endpoints, Sentry, PostHog, Upstash Redis, rate limiting, error boundaries
+- [ ] Supabase Auth + JWT facility_id claim
 - [ ] Offline-first PWA sync
 - [ ] Equipment categories (A/B/C) full implementation
 - [ ] QC module integration planning

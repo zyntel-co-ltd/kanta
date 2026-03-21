@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { OfflineSyncProvider } from "@/components/OfflineSyncProvider";
+import { PostHogProvider } from "@/components/PostHogProvider";
 
 const APP_NAME = "Kanta";
 const APP_DESCRIPTION =
@@ -40,7 +41,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <OfflineSyncProvider>{children}</OfflineSyncProvider>
+        <PostHogProvider>
+          <OfflineSyncProvider>{children}</OfflineSyncProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

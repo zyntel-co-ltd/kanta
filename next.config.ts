@@ -9,6 +9,17 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  experimental: {
+    optimizePackageImports: ["recharts", "@sentry/nextjs"],
+  },
 };
 
-export default withPWA(nextConfig);
+// Sentry — wrap when package is installed
+let config = withPWA(nextConfig);
+try {
+  const { withSentryConfig } = require("@sentry/nextjs");
+  config = withSentryConfig(config, { silent: true });
+} catch {
+  // Sentry not installed
+}
+export default config;
