@@ -1,17 +1,29 @@
 /**
  * Edge middleware — auth + rate limiting (when configured).
- * Full Supabase auth integration when facility_id is in JWT.
+ * Protects /dashboard, allows /login, /forgot-password, /auth/*, /password-reset.
  */
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+  const { response: res, user } = await updateSession(req);
 
   // Skip health endpoints
   if (req.nextUrl.pathname.startsWith("/api/health")) {
     return res;
+  }
+
+  // Protect dashboard and root — redirect to login if no session
+  const isProtected =
+    req.nextUrl.pathname.startsWith("/dashboard") || req.nextUrl.pathname === "/";
+  if (isProtected && !user) {
+    const loginUrl = new URL("/login", req.url);
+    if (req.nextUrl.pathname !== "/") {
+      loginUrl.searchParams.set("redirect", req.nextUrl.pathname);
+    }
+    return NextResponse.redirect(loginUrl);
   }
 
   // Rate limiting (optional — requires Upstash Redis)
@@ -45,5 +57,13 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/:path*", "/dashboard/:path*"],
+  matcher: [
+    "/",
+    "/api/:path*",
+    "/dashboard/:path*",
+    "/login",
+    "/forgot-password",
+    "/password-reset",
+    "/auth/:path*",
+  ],
 };

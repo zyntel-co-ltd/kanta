@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
+import { useAuth } from "@/lib/AuthContext";
 import {
   LayoutDashboard,
   ScanLine,
@@ -27,6 +28,7 @@ import {
   Activity,
   Table2,
   Hash,
+  LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -51,9 +53,25 @@ const navItems = [
   { label: "Admin",       icon: Shield,          href: "/dashboard/admin" },
 ];
 
+function getInitials(email: string) {
+  const part = email.split("@")[0];
+  const words = part.split(/[._-]/);
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase().slice(0, 2);
+  }
+  return part.slice(0, 2).toUpperCase();
+}
+
+function getDisplayName(user: { email?: string; user_metadata?: { full_name?: string; name?: string } }) {
+  const name = user?.user_metadata?.full_name || user?.user_metadata?.name;
+  if (name) return name.split(" ").slice(0, 2).join(" ");
+  return user?.email?.split("@")[0] || "User";
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { user, signOut } = useAuth();
 
   return (
     <aside
@@ -115,20 +133,19 @@ export default function Sidebar() {
       <div className="flex-shrink-0 px-2 pb-4 border-t border-white/5 pt-3 space-y-2">
 
         {/* User avatar */}
-        {!collapsed && (
-          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors cursor-pointer">
+        {!collapsed && user && (
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors">
             <div className="relative flex-shrink-0">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-xs font-bold text-white">
-                WM
+                {getInitials(user.email || "")}
               </div>
-              {/* Online ring */}
               <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-slate-900" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-white truncate">Wycliffe M.</p>
-              <span className="inline-flex items-center gap-1 text-xs text-slate-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                Admin
+              <p className="text-xs font-semibold text-white truncate">{getDisplayName(user)}</p>
+              <span className="inline-flex items-center gap-1 text-xs text-slate-400 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
+                <span className="truncate">{user.email}</span>
               </span>
             </div>
           </div>
@@ -143,6 +160,18 @@ export default function Sidebar() {
           </div>
           {!collapsed && <span>Settings</span>}
         </Link>
+
+        {!collapsed && user && (
+          <button
+            onClick={() => signOut()}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all w-full text-left"
+          >
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center">
+              <LogOut size={15} className="text-slate-500" />
+            </div>
+            <span>Sign out</span>
+          </button>
+        )}
 
         {/* Upgrade CTA */}
         {!collapsed && (

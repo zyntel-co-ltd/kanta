@@ -3,6 +3,7 @@ import TopBar from "@/components/dashboard/TopBar";
 import TickerBar from "@/components/dashboard/TickerBar";
 import FloatingActionButton from "@/components/dashboard/FloatingActionButton";
 import DashboardProviders from "@/components/dashboard/DashboardProviders";
+import AuthGuard from "@/components/AuthGuard";
 
 export default function DashboardLayout({
   children,
@@ -10,6 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
+    <AuthGuard>
     <DashboardProviders>
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-indigo-50/40 via-white to-slate-50">
       <Sidebar />
@@ -25,5 +27,6 @@ export default function DashboardLayout({
       <FloatingActionButton />
     </div>
     </DashboardProviders>
+    </AuthGuard>
   );
 }

@@ -3,6 +3,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { OfflineSyncProvider } from "@/components/OfflineSyncProvider";
 import { PostHogProvider } from "@/components/PostHogProvider";
+import { AuthProvider } from "@/lib/AuthContext";
 
 const APP_NAME = "Kanta";
 const APP_DESCRIPTION =
@@ -43,7 +44,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <PostHogProvider>
-          <OfflineSyncProvider>{children}</OfflineSyncProvider>
+          <AuthProvider>
+            <OfflineSyncProvider>{children}</OfflineSyncProvider>
+          </AuthProvider>
           <Analytics />
         </PostHogProvider>
       </body>

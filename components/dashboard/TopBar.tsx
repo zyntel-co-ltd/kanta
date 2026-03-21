@@ -3,10 +3,27 @@
 import { useEffect, useState } from "react";
 import { Bell, Search, ChevronDown, Command } from "lucide-react";
 import { useSyncStatus } from "@/lib/SyncStatusContext";
+import { useAuth } from "@/lib/AuthContext";
+
+function getInitials(email: string) {
+  const part = email.split("@")[0];
+  const words = part.split(/[._-]/);
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase().slice(0, 2);
+  }
+  return part.slice(0, 2).toUpperCase();
+}
+
+function getDisplayName(u: { email?: string; user_metadata?: { full_name?: string; name?: string } }) {
+  const name = u?.user_metadata?.full_name || u?.user_metadata?.name;
+  if (name) return name.split(" ").slice(0, 2).join(" ");
+  return u?.email?.split("@")[0] || "User";
+}
 
 export default function TopBar() {
   const [secondsAgo, setSecondsAgo] = useState(0);
   const { status, pendingCount, retry } = useSyncStatus();
+  const { user } = useAuth();
 
   useEffect(() => {
     const interval = setInterval(() => setSecondsAgo((s) => s + 1), 1000);
@@ -81,20 +98,21 @@ export default function TopBar() {
         </button>
 
         {/* User */}
-        <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
-          <div className="relative">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white font-semibold text-xs shadow-md shadow-indigo-200">
-              WM
+        {user && (
+          <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
+            <div className="relative">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white font-semibold text-xs shadow-md shadow-indigo-200">
+                {getInitials(user.email || "")}
+              </div>
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-white" />
             </div>
-            {/* Online status ring */}
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-white" />
+            <div className="hidden sm:block">
+              <p className="text-sm font-medium text-slate-800 leading-tight">{getDisplayName(user)}</p>
+              <p className="text-xs text-slate-400 truncate max-w-[140px]">{user.email}</p>
+            </div>
+            <ChevronDown size={13} className="text-slate-400" />
           </div>
-          <div className="hidden sm:block">
-            <p className="text-sm font-medium text-slate-800 leading-tight">Wycliffe M.</p>
-            <p className="text-xs text-slate-400">Admin</p>
-          </div>
-          <ChevronDown size={13} className="text-slate-400" />
-        </div>
+        )}
       </div>
     </header>
   );
