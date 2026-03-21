@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { OfflineSyncProvider } from "@/components/OfflineSyncProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 const APP_NAME = "Kanta";
 const APP_DESCRIPTION =
@@ -41,6 +42,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <OfflineSyncProvider>{children}</OfflineSyncProvider>
+        <Analytics />
       </body>
     </html>
   );
