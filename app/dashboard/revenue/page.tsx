@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { DollarSign, TrendingUp, BarChart3, PieChart, XCircle } from "lucide-react";
 
-const SEED_FACILITY_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 type RevenueData = {
   today: number;
@@ -33,7 +33,7 @@ export default function RevenuePage() {
     const fetchData = async () => {
       try {
         const res = await fetch(
-          `/api/revenue?facility_id=${SEED_FACILITY_ID}&period=thisMonth`
+          `/api/revenue?facility_id=${DEFAULT_FACILITY_ID}&period=thisMonth`
         );
         const json = await res.json();
         setData(json.data);

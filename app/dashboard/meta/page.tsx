@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-const SEED_FACILITY_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 const LAB_SECTIONS = [
   "CHEMISTRY",
@@ -58,7 +58,7 @@ export default function MetaPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ facility_id: SEED_FACILITY_ID });
+      const params = new URLSearchParams({ facility_id: DEFAULT_FACILITY_ID });
       if (section !== "all") params.set("section", section);
       if (search.trim()) params.set("search", search.trim());
       const res = await fetch(`/api/meta?${params}`);
@@ -99,7 +99,7 @@ export default function MetaPage() {
       const body = editing
         ? { testName: form.testName, section: form.section, price: form.price, tatMinutes: form.tatMinutes }
         : {
-            facility_id: SEED_FACILITY_ID,
+            facility_id: DEFAULT_FACILITY_ID,
             testName: form.testName,
             section: form.section,
             price: form.price,

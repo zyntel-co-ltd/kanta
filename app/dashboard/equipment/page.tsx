@@ -7,7 +7,7 @@ import type { Equipment } from "@/types";
 import type { EquipmentStatus } from "@/types";
 import EquipmentStatusSelect from "@/components/dashboard/EquipmentStatusSelect";
 
-const SEED_HOSPITAL_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_HOSPITAL_ID } from "@/lib/constants";
 
 export default function EquipmentPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -37,7 +37,7 @@ export default function EquipmentPage() {
   const loadEquipment = async () => {
     setLoading(true);
     setError(null);
-    const res = await fetchEquipment(SEED_HOSPITAL_ID);
+    const res = await fetchEquipment(DEFAULT_HOSPITAL_ID);
     setLoading(false);
     if (res.error) {
       setError(res.error);

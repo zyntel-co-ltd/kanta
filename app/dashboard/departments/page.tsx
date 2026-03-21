@@ -6,7 +6,7 @@ import type { Department } from "@/types";
 import type { Equipment } from "@/types";
 import { Building2, ChevronDown, ChevronUp, Users, Package } from "lucide-react";
 
-const SEED_HOSPITAL_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_HOSPITAL_ID } from "@/lib/constants";
 
 type DeptWithStats = Department & {
   equipmentCount: number;
@@ -27,8 +27,8 @@ export default function DepartmentsPage() {
       setError(null);
       try {
         const [deptsRes, equipRes] = await Promise.all([
-          fetchDepartments(SEED_HOSPITAL_ID),
-          fetchEquipment(SEED_HOSPITAL_ID),
+          fetchDepartments(DEFAULT_HOSPITAL_ID),
+          fetchEquipment(DEFAULT_HOSPITAL_ID),
         ]);
 
         if (deptsRes.error) {

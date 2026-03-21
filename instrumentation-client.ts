@@ -11,7 +11,7 @@ if (typeof window !== "undefined") {
   if (key) {
     posthog.init(key, {
       api_host: host,
-      defaults: "2026-01-30",
+      defaults: "2025-05-24",
     });
   }
 }

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Thermometer } from "lucide-react";
 
-const SEED_FACILITY_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 type Reading = { temp: number; at: string };
 
@@ -22,7 +22,7 @@ export default function RefrigeratorUnitPage() {
     const fetchData = async () => {
       try {
         const [uRes, rRes] = await Promise.all([
-          fetch(`/api/refrigerator/units?facility_id=${SEED_FACILITY_ID}`),
+          fetch(`/api/refrigerator/units?facility_id=${DEFAULT_FACILITY_ID}`),
           fetch(`/api/refrigerator/readings?unit_id=${unitId}&range=${range}`),
         ]);
         const uData = await uRes.json();

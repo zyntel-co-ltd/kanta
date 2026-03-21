@@ -6,7 +6,7 @@ import LeveyJenningsChart from "@/components/qc/LeveyJenningsChart";
 import type { LJPoint } from "@/components/qc/LeveyJenningsChart";
 import { Beaker, AlertTriangle, Upload, Plus, BarChart3 } from "lucide-react";
 
-const SEED_FACILITY_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 type Material = {
   id: string;
@@ -40,8 +40,8 @@ export default function QCPage() {
   const fetchData = async () => {
     try {
       const [mRes, vRes] = await Promise.all([
-        fetch(`/api/qc/materials?facility_id=${SEED_FACILITY_ID}`),
-        fetch(`/api/qc/violations?facility_id=${SEED_FACILITY_ID}&limit=20`),
+        fetch(`/api/qc/materials?facility_id=${DEFAULT_FACILITY_ID}`),
+        fetch(`/api/qc/violations?facility_id=${DEFAULT_FACILITY_ID}&limit=20`),
       ]);
       const mData = await mRes.json();
       const vData = await vRes.json();
@@ -82,7 +82,7 @@ export default function QCPage() {
       form.append("file", importFile);
       const res = await fetch("/api/qc/import", {
         method: "POST",
-        headers: { "x-facility-id": SEED_FACILITY_ID },
+        headers: { "x-facility-id": DEFAULT_FACILITY_ID },
         body: form,
       });
       const json = await res.json();

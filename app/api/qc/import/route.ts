@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not configured" }, { status: 501 });
   }
 
-  const facilityId = req.headers.get("x-facility-id") ?? "00000000-0000-0000-0000-000000000001";
+  const facilityId = req.headers.get("x-facility-id") ?? "6eafdd6c-cc3b-47cf-8bf6-44d7254be4b5";
 
   try {
     const formData = await req.formData();

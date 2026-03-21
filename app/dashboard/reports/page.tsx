@@ -6,7 +6,7 @@ import { useEquipmentStore } from "@/lib/EquipmentStore";
 import type { Equipment } from "@/types";
 import { FileText, Download, Loader2, CheckCircle2 } from "lucide-react";
 
-const SEED_HOSPITAL_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_HOSPITAL_ID } from "@/lib/constants";
 
 type ReportType = "inventory" | "maintenance" | "scans" | "health";
 
@@ -44,8 +44,8 @@ export default function ReportsPage() {
     setGenerating(true);
     try {
       const [equipRes, dashRes] = await Promise.all([
-        fetchEquipment(SEED_HOSPITAL_ID),
-        fetchDashboard(SEED_HOSPITAL_ID),
+        fetchEquipment(DEFAULT_HOSPITAL_ID),
+        fetchDashboard(DEFAULT_HOSPITAL_ID),
       ]);
       const fromApi = (equipRes.data ?? []) as Equipment[];
       const apiIds = new Set(fromApi.map((e) => e.id));

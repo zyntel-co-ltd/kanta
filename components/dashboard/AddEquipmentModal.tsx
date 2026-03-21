@@ -8,7 +8,7 @@ import { departments as mockDepartments } from "@/lib/data";
 import QRCodeDisplay from "./QRCodeDisplay";
 import type { Department } from "@/types";
 
-const SEED_HOSPITAL_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_HOSPITAL_ID } from "@/lib/constants";
 const CATEGORIES = ["Diagnostic", "Surgical", "Monitoring", "Life Support", "Other"] as const;
 
 export type CreatedEquipment = {
@@ -52,7 +52,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
       setLoadingDepts(true);
       setError(null);
       setSuccessData(null);
-      fetchDepartments(SEED_HOSPITAL_ID)
+      fetchDepartments(DEFAULT_HOSPITAL_ID)
         .then((res) => {
           if (res.data && res.data.length > 0) {
             setDepartments(res.data);
@@ -61,7 +61,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
             const mock = mockDepartments.map((d) => ({
               id: d.id,
               name: d.name,
-              hospital_id: SEED_HOSPITAL_ID,
+              hospital_id: DEFAULT_HOSPITAL_ID,
               created_at: new Date().toISOString(),
             })) as Department[];
             setDepartments(mock);
@@ -71,7 +71,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
           const mock = mockDepartments.map((d) => ({
             id: d.id,
             name: d.name,
-            hospital_id: SEED_HOSPITAL_ID,
+            hospital_id: DEFAULT_HOSPITAL_ID,
             created_at: new Date().toISOString(),
           })) as Department[];
           setDepartments(mock);
@@ -135,7 +135,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
     setSubmitting(true);
     const res = await createEquipment({
       name: form.name.trim(),
-      hospital_id: SEED_HOSPITAL_ID,
+      hospital_id: DEFAULT_HOSPITAL_ID,
       department_id: form.department_id,
       model: form.model.trim() || undefined,
       serial_number: form.serial_number.trim() || undefined,

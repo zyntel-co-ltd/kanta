@@ -10,7 +10,7 @@ const supabaseConfigured =
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const facilityId = searchParams.get("facility_id") ?? "00000000-0000-0000-0000-000000000001";
+  const facilityId = searchParams.get("facility_id") ?? "6eafdd6c-cc3b-47cf-8bf6-44d7254be4b5";
 
   if (!supabaseConfigured) {
     return NextResponse.json({

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const SEED_FACILITY_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 const REFRESH_MS = 60000;
 
 type LRIDSItem = {
@@ -22,7 +22,7 @@ export default function LRIDSPage() {
   const fetchData = async () => {
     try {
       const res = await fetch(
-        `/api/tat/lrids?facility_id=${SEED_FACILITY_ID}&limit=100`
+        `/api/tat/lrids?facility_id=${DEFAULT_FACILITY_ID}&limit=100`
       );
       const json = await res.json();
       setData(json.data ?? []);

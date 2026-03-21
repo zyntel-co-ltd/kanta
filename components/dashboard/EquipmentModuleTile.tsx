@@ -6,7 +6,7 @@ import ModuleTile from "./ModuleTile";
 import { getEquipmentPresence } from "@/lib/capability";
 import type { CapabilityProfile } from "@/lib/capability";
 
-const SEED_FACILITY_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 export default function EquipmentModuleTile() {
   const [presence, setPresence] = useState<"active" | "partial" | "locked">("active");
@@ -16,8 +16,8 @@ export default function EquipmentModuleTile() {
     const load = async () => {
       try {
         const [capRes, eqRes] = await Promise.all([
-          fetch(`/api/capability?facility_id=${SEED_FACILITY_ID}`),
-          fetch(`/api/v1/equipment?hospital_id=${SEED_FACILITY_ID}`),
+          fetch(`/api/capability?facility_id=${DEFAULT_FACILITY_ID}`),
+          fetch(`/api/v1/equipment?hospital_id=${DEFAULT_FACILITY_ID}`),
         ]);
         const capData = await capRes.json();
         const eqData = await eqRes.json();

@@ -8,10 +8,9 @@ import {
   type ReactNode,
 } from "react";
 import { fetchDashboard, fetchScans, fetchDepartments } from "@/lib/api";
+import { DEFAULT_HOSPITAL_ID } from "@/lib/constants";
 import type { DashboardStats, Department } from "@/types";
 import type { ScanEvent } from "@/types";
-
-const SEED_HOSPITAL_ID = "00000000-0000-0000-0000-000000000001";
 
 type DashboardDataContextValue = {
   dashboard: DashboardStats | null;
@@ -36,9 +35,9 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const [dashRes, scansRes, deptsRes] = await Promise.all([
-        fetchDashboard(SEED_HOSPITAL_ID),
-        fetchScans(SEED_HOSPITAL_ID, 10),
-        fetchDepartments(SEED_HOSPITAL_ID),
+        fetchDashboard(DEFAULT_HOSPITAL_ID),
+        fetchScans(DEFAULT_HOSPITAL_ID, 10),
+        fetchDepartments(DEFAULT_HOSPITAL_ID),
       ]);
       if (dashRes.data) setDashboard(dashRes.data);
       else setDashboard(null);

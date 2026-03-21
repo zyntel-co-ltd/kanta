@@ -7,7 +7,7 @@ import { useLogScan } from "@/lib/useLogScan";
 import type { Equipment } from "@/types";
 import { CheckCircle2, Search, ScanLine, Loader2 } from "lucide-react";
 
-const SEED_HOSPITAL_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_HOSPITAL_ID } from "@/lib/constants";
 const DEFAULT_SCANNED_BY = "Staff"; // TODO: from auth
 
 const statusOptions = [
@@ -38,7 +38,7 @@ export default function ScanPage() {
   const handleQrDecode = useCallback(async (qrCode: string) => {
     setError(null);
     setSuccess(false);
-    const res = await fetchEquipmentByQr(SEED_HOSPITAL_ID, qrCode);
+    const res = await fetchEquipmentByQr(DEFAULT_HOSPITAL_ID, qrCode);
     if (res.error) {
       setError(res.error);
       return;
@@ -55,7 +55,7 @@ export default function ScanPage() {
     if (!searchQuery.trim()) return;
     setSearching(true);
     setError(null);
-    const res = await fetchEquipment(SEED_HOSPITAL_ID);
+    const res = await fetchEquipment(DEFAULT_HOSPITAL_ID);
     setSearching(false);
     if (res.error) {
       setError(res.error);
@@ -81,7 +81,7 @@ export default function ScanPage() {
     setSuccess(false);
     const result = await logScanFn({
       equipment_id: selectedEquipment.id,
-      hospital_id: SEED_HOSPITAL_ID,
+      hospital_id: DEFAULT_HOSPITAL_ID,
       scanned_by: DEFAULT_SCANNED_BY,
       status_at_scan: status,
     });

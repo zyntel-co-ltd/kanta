@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Clock, AlertTriangle, BarChart3, List, RefreshCw } from "lucide-react";
 
-const SEED_FACILITY_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 type QueueItem = {
   id: string;
@@ -42,9 +42,9 @@ export default function TATPage() {
     setLoading(true);
     try {
       const [qRes, sRes, bRes] = await Promise.all([
-        fetch(`/api/tat/queue?facility_id=${SEED_FACILITY_ID}`),
-        fetch(`/api/tat/summary?facility_id=${SEED_FACILITY_ID}&days=7`),
-        fetch(`/api/tat/breaches?facility_id=${SEED_FACILITY_ID}&limit=20`),
+        fetch(`/api/tat/queue?facility_id=${DEFAULT_FACILITY_ID}`),
+        fetch(`/api/tat/summary?facility_id=${DEFAULT_FACILITY_ID}&days=7`),
+        fetch(`/api/tat/breaches?facility_id=${DEFAULT_FACILITY_ID}&limit=20`),
       ]);
       const qData = await qRes.json();
       const sData = await sRes.json();

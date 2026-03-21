@@ -20,7 +20,7 @@ import {
   Bar,
 } from "recharts";
 
-const SEED_FACILITY_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 type TestsData = {
   totalTestsPerformed: number;
@@ -59,7 +59,7 @@ export default function TestsPage() {
       setLoading(true);
       try {
         const params = new URLSearchParams({
-          facility_id: SEED_FACILITY_ID,
+          facility_id: DEFAULT_FACILITY_ID,
           period,
           section,
         });
@@ -198,7 +198,7 @@ export default function TestsPage() {
         </div>
         <div className="p-4" style={{ minHeight: 280 }}>
           {d.testVolumeTrend.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={260} minHeight={144}>
               <AreaChart data={d.testVolumeTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis
@@ -247,7 +247,7 @@ export default function TestsPage() {
         </div>
         <div className="p-4" style={{ minHeight: 280 }}>
           {flatTopTests.length > 0 ? (
-            <ResponsiveContainer width="100%" height={Math.max(280, flatTopTests.length * 24)}>
+            <ResponsiveContainer width="100%" height={Math.max(280, flatTopTests.length * 24)} minHeight={160}>
               <BarChart
                 data={flatTopTests}
                 layout="vertical"

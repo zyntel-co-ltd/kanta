@@ -6,7 +6,7 @@ import { useEquipmentStore } from "@/lib/EquipmentStore";
 import type { Equipment } from "@/types";
 import { Wrench, AlertTriangle, Clock, CheckCircle2, Check } from "lucide-react";
 
-const SEED_HOSPITAL_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_HOSPITAL_ID } from "@/lib/constants";
 
 type Tab = "overdue" | "upcoming" | "in-progress";
 
@@ -50,7 +50,7 @@ export default function MaintenancePage() {
   const loadMaintenanceDue = async () => {
     setLoading(true);
     setError(null);
-    const res = await fetchMaintenanceDue(SEED_HOSPITAL_ID);
+    const res = await fetchMaintenanceDue(DEFAULT_HOSPITAL_ID);
     setLoading(false);
     if (res.error) {
       setError(res.error);
@@ -92,7 +92,7 @@ export default function MaintenancePage() {
     setMarkingId(eq.id);
     const res = await markMaintained({
       equipment_id: eq.id,
-      facility_id: SEED_HOSPITAL_ID,
+      facility_id: DEFAULT_HOSPITAL_ID,
     });
     setMarkingId(null);
     if (res.error) {

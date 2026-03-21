@@ -207,8 +207,8 @@ export default function KpiCards() {
             <p className="text-xs text-white/60 mt-0.5 relative z-10">Live data</p>
 
             {/* Sparkline */}
-            <div className="mt-3 h-10 min-h-[40px] min-w-[1px] relative z-10 -mx-1">
-              <ResponsiveContainer width="100%" height="100%" minHeight={40}>
+            <div className="mt-3 h-10 min-h-[40px] min-w-[80px] relative z-10 -mx-1">
+              <ResponsiveContainer width="100%" height="100%" minHeight={40} minWidth={80}>
                 <LineChart data={sparkData.length ? sparkData : [{ v: 0 }, { v: 0 }]}>
                   <Line
                     type="monotone"

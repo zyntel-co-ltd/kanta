@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Thermometer, AlertTriangle, Clock } from "lucide-react";
 
-const SEED_FACILITY_ID = "00000000-0000-0000-0000-000000000001";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 type Unit = {
   id: string;
@@ -34,8 +34,8 @@ export default function RefrigeratorPage() {
     const fetchData = async () => {
       try {
         const [uRes, bRes] = await Promise.all([
-          fetch(`/api/refrigerator/units?facility_id=${SEED_FACILITY_ID}`),
-          fetch(`/api/refrigerator/breaches?facility_id=${SEED_FACILITY_ID}&limit=20`),
+          fetch(`/api/refrigerator/units?facility_id=${DEFAULT_FACILITY_ID}`),
+          fetch(`/api/refrigerator/breaches?facility_id=${DEFAULT_FACILITY_ID}&limit=20`),
         ]);
         const uData = await uRes.json();
         const bData = await bRes.json();
