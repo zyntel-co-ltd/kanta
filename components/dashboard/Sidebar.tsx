@@ -58,13 +58,13 @@ export default function Sidebar() {
   return (
     <aside
       className={clsx(
-        "relative flex flex-col text-white transition-all duration-300 ease-in-out",
+        "relative flex flex-col h-screen text-white transition-all duration-300 ease-in-out overflow-hidden",
         "bg-gradient-to-b from-slate-900 to-slate-950",
         collapsed ? "w-16" : "w-60"
       )}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5">
+      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-5 border-b border-white/5">
         <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
           <Zap size={15} className="text-white" />
         </div>
@@ -77,7 +77,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-4 space-y-0.5">
+      <nav className="flex-1 min-h-0 overflow-y-auto px-2 py-4 space-y-0.5">
         {navItems.map(({ label, icon: Icon, href }) => {
           const active = pathname === href;
           return (
@@ -112,7 +112,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom section */}
-      <div className="px-2 pb-4 border-t border-white/5 pt-3 space-y-2">
+      <div className="flex-shrink-0 px-2 pb-4 border-t border-white/5 pt-3 space-y-2">
 
         {/* User avatar */}
         {!collapsed && (
