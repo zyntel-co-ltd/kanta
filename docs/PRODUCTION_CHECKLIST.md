@@ -27,7 +27,7 @@ Use this checklist before going live with a paying client.
 - [ ] **Environment variables** — Set all from `.env.example`:
   - Production only: `SUPABASE_SERVICE_ROLE_KEY`, `SENTRY_AUTH_TOKEN`, `RESEND_API_KEY`, `UPSTASH_REDIS_REST_TOKEN`, `NEON_DATABASE_URL` (if used)
   - Production + Preview: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_POSTHOG_KEY`
-- [ ] **Health check** — `vercel.json` has `healthCheck.path: "/api/healthcheck"`
+  - **Important:** Enter values WITHOUT surrounding quotes in Vercel (e.g. `https://xxx.supabase.co` not `"https://xxx.supabase.co"`)
 - [ ] **Domain** — Custom domain configured (e.g. `kanta.zyntel.net`)
 
 ---
@@ -60,7 +60,7 @@ Use this checklist before going live with a paying client.
 ## 5. Upstash Redis (optional but recommended)
 
 - [ ] **Database** — Create Redis database at upstash.com
-- [ ] **URL + Token** — Add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` to Vercel
+- [ ] **URL + Token** — Add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` to Vercel (without quotes)
 - [ ] **Use cases** — Capability profile cache, rate limiting, idempotency keys, KPI cache
 
 ---

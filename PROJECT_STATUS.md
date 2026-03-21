@@ -14,33 +14,37 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 ## Current State
 
 **Status:** In development  
-**Phase:** MVP — Equipment module being built
+**Phase:** MVP — Phases 1–7 implemented, deployed to Vercel
 
 ### What Is Built and Working
 
-- [x] Next.js 14+ app with Supabase
+- [x] Next.js 16 app with Supabase
 - [x] Dashboard layout (sidebar, top bar, ticker)
-- [x] Equipment API routes (CRUD)
-- [x] Departments API
-- [x] Scans API
+- [x] Equipment API routes (CRUD), departments, scans
 - [x] Dashboard KPI cards, charts (equipment status, daily scans, category donut, asset value)
 - [x] QR code scanning (html5-qrcode)
 - [x] PWA setup (@ducanh2912/next-pwa)
+- [x] Multi-tenant foundation — facility_id migrations, facility_capability_profile, facility_users RBAC, audit_log, maintenance_schedule
+- [x] Infrastructure — health/healthcheck endpoints, Sentry, PostHog, Upstash Redis, error boundaries
+- [x] Phase 2: Equipment A/B/C, maintenance due, sync status
+- [x] Phase 3: TAT module (test_requests, tat_targets, tat_breaches), LRIDS
+- [x] Phase 4: Revenue module
+- [x] Phase 5: Refrigerator monitoring (telemetry API)
+- [x] Phase 6: QC module (Westgard, Levey-Jennings, Lab-hub import)
+- [x] Phase 7: ModuleTile, operational_alerts, milestones
+- [x] Tests module (volume vs target, charts)
+- [x] Meta module (test metadata CRUD)
 
 ### What Is In Progress
 
-- [x] Multi-tenant foundation — facility_id migrations, facility_capability_profile, facility_users RBAC, audit_log
-- [x] Infrastructure — health/healthcheck endpoints, Sentry, PostHog, Upstash Redis, rate limiting, error boundaries
 - [ ] Supabase Auth + JWT facility_id claim
 - [ ] Offline-first PWA sync
-- [ ] Equipment categories (A/B/C) full implementation
-- [ ] QC module integration planning
+- [ ] Vercel env vars: ensure `NEXT_PUBLIC_SUPABASE_URL`, `UPSTASH_REDIS_REST_URL` set without quotes
 
 ### What Is Planned (Next Up)
 
 - [ ] First paying hospital on equipment module
-- [ ] TAT module (inherits from Nakasero dashboard)
-- [ ] Lab-hub QC integration
+- [ ] Lab-hub QC integration (live)
 
 ---
 
@@ -48,11 +52,11 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 
 | Layer | Technology | Environment |
 |-------|------------|-------------|
-| Frontend | Next.js 16 + TypeScript | Vercel — free |
+| Frontend | Next.js 16 + TypeScript | Vercel |
 | Backend | Next.js API Routes | Vercel |
 | Database | Supabase PostgreSQL | Kanta project |
-| Storage | Cloudflare R2 | Planned |
-| Cache | Upstash Redis | Planned |
+| Cache | Upstash Redis | Upstash |
+| Monitoring | Sentry, PostHog | — |
 
 ---
 
@@ -60,17 +64,18 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 
 | Environment | URL | Status |
 |-------------|-----|--------|
-| Production | N/A | Not deployed |
-| Staging | N/A | N/A |
+| Production | app.zyntel.net | Deployed (Vercel) |
+| Staging | — | Same as main |
 | Local dev | http://localhost:3000 | Standard |
 
 ---
 
 ## Active Issues / Blockers
 
-| Issue | Linear ID | Status | Notes |
-|-------|-----------|--------|-------|
-| — | — | — | Check Linear for current |
+| Issue | Status | Notes |
+|-------|--------|-------|
+| Invalid supabaseUrl | Fixed | Env vars may have quotes — code now sanitizes. Set values in Vercel without quotes. |
+| Redis URL invalid | Fixed | Same quote-stripping applied to Redis env vars. |
 
 ---
 
@@ -79,7 +84,8 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 | Decision | Outcome | Date |
 |----------|---------|------|
 | Lab-first launch | Laboratory is department one; radiology, pharmacy follow | March 2026 |
-| Repo structure | kanta (not hospital-os) — standalone Next.js | — |
+| Repo structure | kanta — standalone Next.js | — |
+| Env var handling | Sanitize quotes from Vercel env vars in lib/supabase.ts and lib/redis.ts | March 2026 |
 
 ---
 
@@ -87,8 +93,9 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 
 | Branch | Purpose | Last active |
 |--------|---------|-------------|
-| `main` | Production (when deployed) | — |
-| `development` | Integration / staging | March 2026 |
+| `main` | Production | March 2026 |
+| `staging` | Staging (mirrors main) | March 2026 |
+| `development` | Integration | March 2026 |
 
 ---
 
@@ -100,22 +107,33 @@ cd kanta
 
 npm install
 cp .env.example .env.local
-# Fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+# Fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 
 npm run dev
 ```
 
 ---
 
+## Vercel Environment Variables
+
+Set these in Vercel **without surrounding quotes**:
+
+- `NEXT_PUBLIC_SUPABASE_URL` — e.g. `https://xxx.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `UPSTASH_REDIS_REST_URL` — e.g. `https://xxx.upstash.io`
+- `UPSTASH_REDIS_REST_TOKEN`
+
+---
+
 ## Cursor Context (Read Before Writing Any Code)
 
-- **Base branch:** `development` (never commit directly to `main`)
-- **Linear team:** Engineering (ENG)
+- **Base branch:** `main` (or `development` for features)
 - **Key files:**
   - `app/dashboard/page.tsx` — Dashboard
-  - `app/api/equipment/route.ts` — Equipment API
-  - `lib/supabase.ts` — Supabase client
-  - `supabase/schema.sql` — Database schema
+  - `lib/supabase.ts` — Supabase client (sanitizes env quotes)
+  - `lib/redis.ts` — Redis client (sanitizes env quotes)
+  - `supabase/migrations/` — Database migrations
 - **Do not touch:** Supabase schema without migration
 - **Code style:** TypeScript strict — see `.cursor/rules/`
 
