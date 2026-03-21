@@ -92,8 +92,8 @@ export default function AssetValueChart() {
         </p>
       </div>
 
-      <div className="mt-4 h-36">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="mt-4 h-36 min-h-[144px] min-w-[1px]">
+        <ResponsiveContainer width="100%" height="100%" minHeight={144}>
           <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradOperational" x1="0" y1="0" x2="0" y2="1">

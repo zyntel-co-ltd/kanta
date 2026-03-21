@@ -33,6 +33,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+ANTHROPIC_API_KEY
 
 # vercel
 .vercel
@@ -49,3 +50,7 @@ public/fallback-*.js
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Sentry Config File
+.env.sentry-build-plugin
+.env.local

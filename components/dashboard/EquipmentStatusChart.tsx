@@ -83,8 +83,8 @@ export default function EquipmentStatusChart() {
         </div>
       </div>
 
-      <div className="mt-4 h-40">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="mt-4 h-40 min-h-[160px] min-w-[1px]">
+        <ResponsiveContainer width="100%" height="100%" minHeight={160}>
           <BarChart data={data.length ? data : [{ month: "—", operational: 0, maintenance: 0, retired: 0 }]} barSize={10} barGap={1} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis

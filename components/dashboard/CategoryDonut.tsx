@@ -52,8 +52,8 @@ export default function CategoryDonut() {
         </button>
       </div>
 
-      <div className="relative flex items-center justify-center h-36">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="relative flex items-center justify-center h-36 min-h-[144px] min-w-[1px]">
+        <ResponsiveContainer width="100%" height="100%" minHeight={144}>
           <PieChart>
             <Pie
               data={data.length ? data : [{ name: "No data", value: 1, color: "#e2e8f0" }]}

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import { OfflineSyncProvider } from "@/components/OfflineSyncProvider";
 import { PostHogProvider } from "@/components/PostHogProvider";
 
@@ -43,6 +44,7 @@ export default function RootLayout({
       <body>
         <PostHogProvider>
           <OfflineSyncProvider>{children}</OfflineSyncProvider>
+          <Analytics />
         </PostHogProvider>
       </body>
     </html>
