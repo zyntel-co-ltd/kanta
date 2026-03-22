@@ -17,6 +17,7 @@ import {
 import { useSyncStatus } from "@/lib/SyncStatusContext";
 import { useAuth } from "@/lib/AuthContext";
 import NLQueryBar from "@/components/ai/NLQueryBar";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 const HOSPITAL_NAME =
   process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Nakasero Hospital";
@@ -56,7 +57,7 @@ function getAvatarUrl(u: {
   return u?.user_metadata?.avatar_url || u?.user_metadata?.picture || null;
 }
 
-/* ── Mock alerts (replace with Supabase query when operational_alerts table is used) ── */
+/* ── Operational alerts (Supabase-backed) ── */
 type AlertItem = {
   id: string;
   title: string;
@@ -66,40 +67,27 @@ type AlertItem = {
   read: boolean;
 };
 
-const MOCK_ALERTS: AlertItem[] = [
-  {
-    id: "1",
-    title: "TAT Breach",
-    message: "Haematology exceeded 2h TAT target (3 samples)",
-    severity: "warning",
-    created_at: new Date(Date.now() - 12 * 60000).toISOString(),
-    read: false,
-  },
-  {
-    id: "2",
-    title: "QC Westgard Violation",
-    message: "13s rule triggered on Glucose control material",
-    severity: "error",
-    created_at: new Date(Date.now() - 45 * 60000).toISOString(),
-    read: false,
-  },
-  {
-    id: "3",
-    title: "Refrigerator Temp Alert",
-    message: "Fridge #2 temperature above 8°C for 15 minutes",
-    severity: "error",
-    created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
-    read: true,
-  },
-  {
-    id: "4",
-    title: "Equipment Maintenance Due",
-    message: "Haematology Analyser service overdue by 3 days",
-    severity: "info",
-    created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
-    read: true,
-  },
-];
+async function fetchAlerts(facilityId: string): Promise<{ alerts: AlertItem[]; unread_count: number }> {
+  try {
+    const res = await fetch(`/api/alerts?facility_id=${facilityId}&limit=20`);
+    if (!res.ok) return { alerts: [], unread_count: 0 };
+    const data = await res.json();
+    return {
+      alerts: (data.alerts ?? []).map((a: {
+        id: string; title: string; description?: string;
+        severity: string; created_at: string; acknowledged_at: string | null;
+      }) => ({
+        id: a.id,
+        title: a.title,
+        message: a.description ?? "",
+        severity: (a.severity === "critical" ? "error" : a.severity) as "info" | "warning" | "error",
+        created_at: a.created_at,
+        read: !!a.acknowledged_at,
+      })),
+      unread_count: data.unread_count ?? 0,
+    };
+  } catch { return { alerts: [], unread_count: 0 }; }
+}
 
 function timeAgo(iso: string) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -127,20 +115,33 @@ export default function TopBar() {
   const { user, signOut } = useAuth();
   const router = useRouter();
 
-  /* ── Alerts panel ── */
-  const [alerts, setAlerts] = useState<AlertItem[]>(MOCK_ALERTS);
+  /* ── Alerts panel (Supabase-backed) ── */
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const alertsRef = useRef<HTMLDivElement>(null);
-  const unreadCount = alerts.filter((a) => !a.read).length;
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const loadAlerts = async () => {
+    const { alerts: fetched, unread_count } = await fetchAlerts(DEFAULT_FACILITY_ID);
+    setAlerts(fetched);
+    setUnreadCount(unread_count);
+  };
 
   /* ── User dropdown ── */
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  /* ── Live ticker ── */
+  /* ── Live ticker + alert polling ── */
   useEffect(() => {
     const interval = setInterval(() => setSecondsAgo((s) => s + 1), 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    loadAlerts();
+    const alertInterval = setInterval(loadAlerts, 60_000);
+    return () => clearInterval(alertInterval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ── Close panels on outside click ── */
@@ -164,12 +165,24 @@ export default function TopBar() {
     status === "synced" ? "bg-emerald-400" :
     status === "pending" ? "bg-amber-400" : "bg-red-500";
 
-  function markAllRead() {
+  async function markAllRead() {
     setAlerts((prev) => prev.map((a) => ({ ...a, read: true })));
+    setUnreadCount(0);
+    await fetch("/api/alerts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ acknowledge_all: true, facility_id: DEFAULT_FACILITY_ID }),
+    });
   }
 
-  function dismissAlert(id: string) {
+  async function dismissAlert(id: string) {
     setAlerts((prev) => prev.filter((a) => a.id !== id));
+    setUnreadCount((n) => Math.max(0, n - 1));
+    await fetch("/api/alerts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
   }
 
   const avatarUrl = user ? getAvatarUrl(user as Parameters<typeof getAvatarUrl>[0]) : null;

@@ -4,6 +4,16 @@ import { useEffect, useState } from "react";
 import { DollarSign, TrendingUp, BarChart3, PieChart, XCircle } from "lucide-react";
 
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import ModuleTabBar from "@/components/dashboard/ModuleTabBar";
+import { Clock, Activity, Target, TrendingUp } from "lucide-react";
+
+const MODULE_TABS = [
+  { label: "Overview",    href: "/dashboard/tat",         icon: Clock      },
+  { label: "Tests",       href: "/dashboard/tests",       icon: Activity   },
+  { label: "Numbers",     href: "/dashboard/numbers",     icon: Target     },
+  { label: "Revenue",     href: "/dashboard/revenue",     icon: DollarSign },
+  { label: "Performance", href: "/dashboard/performance", icon: TrendingUp },
+];
 
 type RevenueData = {
   today: number;
@@ -68,7 +78,9 @@ export default function RevenuePage() {
       : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col min-h-0">
+      <ModuleTabBar tabs={MODULE_TABS} />
+      <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Revenue</h1>
         <p className="text-sm text-slate-500 mt-0.5">
@@ -185,6 +197,7 @@ export default function RevenuePage() {
             </table>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

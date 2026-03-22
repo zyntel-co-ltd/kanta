@@ -21,6 +21,15 @@ import {
 } from "recharts";
 
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import ModuleTabBar from "@/components/dashboard/ModuleTabBar";
+
+const MODULE_TABS = [
+  { label: "Overview",    href: "/dashboard/tat",         icon: Beaker   },
+  { label: "Tests",       href: "/dashboard/tests",       icon: Beaker   },
+  { label: "Numbers",     href: "/dashboard/numbers",     icon: Target   },
+  { label: "Revenue",     href: "/dashboard/revenue",     icon: Calendar },
+  { label: "Performance", href: "/dashboard/performance", icon: TrendingUp },
+];
 
 type TestsData = {
   totalTestsPerformed: number;
@@ -97,7 +106,9 @@ export default function TestsPage() {
   ).sort((a, b) => b.count - a.count).slice(0, 30);
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col min-h-0">
+      <ModuleTabBar tabs={MODULE_TABS} />
+      <div className="space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
           Tests
@@ -280,6 +291,7 @@ export default function TestsPage() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

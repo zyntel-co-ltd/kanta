@@ -1,33 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import "@/components/charts/registry";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import {
   Clock,
   AlertTriangle,
   BarChart3,
-  RefreshCw,
   CheckCircle2,
   XCircle,
   Calendar,
   TrendingUp,
+  Target,
+  Activity,
+  Monitor,
 } from "lucide-react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-
+import { Doughnut, Line } from "react-chartjs-2";
+import type { ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import AnomalyPanel from "@/components/ai/AnomalyPanel";
+import ModuleTabBar from "@/components/dashboard/ModuleTabBar";
+
+const MODULE_TABS = [
+  { label: "Overview",     href: "/dashboard/tat",         icon: BarChart3   },
+  { label: "Performance",  href: "/dashboard/performance", icon: TrendingUp  },
+  { label: "Tests",        href: "/dashboard/tests",       icon: Activity    },
+  { label: "Numbers",      href: "/dashboard/numbers",     icon: Target      },
+  { label: "Revenue",      href: "/dashboard/revenue",     icon: Calendar    },
+  { label: "LRIDS",        href: "/dashboard/lrids",       icon: Monitor     },
+];
 
 type QueueItem = {
   id: string;
@@ -78,26 +79,60 @@ type AnalyticsData = {
 };
 
 const PERIODS = [
-  { value: "today", label: "Today" },
-  { value: "thisWeek", label: "This Week" },
+  { value: "today",     label: "Today"      },
+  { value: "thisWeek",  label: "This Week"  },
   { value: "thisMonth", label: "This Month" },
   { value: "lastMonth", label: "Last Month" },
 ];
 
-const PIE_COLORS = {
-  onTime: "#22c55e",
-  delayedLess15: "#eab308",
-  overDelayed: "#ef4444",
-  notUploaded: "#94a3b8",
+/* ── Doughnut chart options (data labels fully inside container) ── */
+const doughnutOptions: ChartOptions<"doughnut"> = {
+  responsive: true,
+  maintainAspectRatio: false,
+  cutout: "60%",
+  layout: { padding: 28 },
+  plugins: {
+    legend: { position: "bottom", labels: { font: { size: 11 }, padding: 12, boxWidth: 12 } },
+    tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed}` } },
+    datalabels: {
+      display: true,
+      color: "#fff",
+      font: { size: 11, weight: "bold" },
+      formatter: (value: number, ctx) => {
+        const total = (ctx.dataset.data as number[]).reduce((a: number, b: number) => a + b, 0);
+        if (total === 0 || value === 0) return "";
+        return `${((value / total) * 100).toFixed(0)}%`;
+      },
+      anchor: "center",
+      align: "center",
+      clip: false,
+    },
+  },
 };
 
+const lineOptions = (title: string): ChartOptions<"line"> => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { mode: "index", intersect: false },
+  plugins: {
+    legend: { position: "bottom", labels: { font: { size: 11 }, padding: 12, boxWidth: 12 } },
+    title: { display: false, text: title },
+    datalabels: { display: false },
+  },
+  scales: {
+    x: { grid: { color: "#f1f5f9" }, ticks: { font: { size: 10 } } },
+    y: { grid: { color: "#f1f5f9" }, ticks: { font: { size: 11 } }, beginAtZero: true },
+  },
+});
+
 export default function TATPage() {
-  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [queue, setQueue]       = useState<QueueItem[]>([]);
   const [sections, setSections] = useState<SectionSummary[]>([]);
   const [breaches, setBreaches] = useState<BreachItem[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [period, setPeriod] = useState("thisMonth");
-  const [loading, setLoading] = useState(true);
+  const [period, setPeriod]     = useState("thisMonth");
+  const [loading, setLoading]   = useState(true);
+  const intervalRef             = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -108,19 +143,13 @@ export default function TATPage() {
         fetch(`/api/tat/breaches?facility_id=${DEFAULT_FACILITY_ID}&limit=20`),
         fetch(`/api/tat/analytics?facility_id=${DEFAULT_FACILITY_ID}&period=${period}`),
       ]);
-      const qData = await qRes.json();
-      const sData = await sRes.json();
-      const bData = await bRes.json();
-      const aData = await aRes.json();
+      const [qData, sData, bData, aData] = await Promise.all([qRes.json(), sRes.json(), bRes.json(), aRes.json()]);
       setQueue(qData.data ?? []);
       setSections(sData.data?.sections ?? []);
       setBreaches(bData.data ?? []);
       setAnalytics(aData.error ? null : aData);
     } catch {
-      setQueue([]);
-      setSections([]);
-      setBreaches([]);
-      setAnalytics(null);
+      setQueue([]); setSections([]); setBreaches([]); setAnalytics(null);
     } finally {
       setLoading(false);
     }
@@ -128,429 +157,277 @@ export default function TATPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
+    intervalRef.current = setInterval(fetchData, 30_000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
-  const pieData = analytics?.pieData
-    ? [
-        { name: "On Time", value: analytics.pieData.onTime, color: PIE_COLORS.onTime },
-        {
-          name: "Delayed <15 min",
-          value: analytics.pieData.delayedLess15,
-          color: PIE_COLORS.delayedLess15,
-        },
-        {
-          name: "Over Delayed",
-          value: analytics.pieData.overDelayed,
-          color: PIE_COLORS.overDelayed,
-        },
-        {
-          name: "Not Uploaded",
-          value: analytics.pieData.notUploaded,
-          color: PIE_COLORS.notUploaded,
-        },
-      ].filter((d) => d.value > 0)
-    : [];
+  /* ── Doughnut dataset ── */
+  const doughnutData = analytics?.pieData
+    ? {
+        labels: ["On Time", "Delayed <15 min", "Over Delayed", "Not Uploaded"],
+        datasets: [{
+          data: [
+            analytics.pieData.onTime,
+            analytics.pieData.delayedLess15,
+            analytics.pieData.overDelayed,
+            analytics.pieData.notUploaded,
+          ],
+          backgroundColor: ["#22c55e", "#eab308", "#ef4444", "#94a3b8"],
+          borderWidth: 2,
+          borderColor: "#fff",
+        }],
+      }
+    : null;
+
+  /* ── Daily trend dataset ── */
+  const trendLabels = (analytics?.dailyTrend ?? []).map((d) =>
+    d.date.length === 7
+      ? new Date(d.date + "-01").toLocaleDateString("en-US", { month: "short", year: "2-digit" })
+      : new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  );
+  const dailyDataset = analytics?.dailyTrend?.length
+    ? {
+        labels: trendLabels,
+        datasets: [
+          { label: "On Time",      data: analytics.dailyTrend.map((d) => d.onTime),      borderColor: "#22c55e", backgroundColor: "rgba(34,197,94,0.08)",  tension: 0.3, fill: true,  pointRadius: 2, borderWidth: 2 },
+          { label: "Delayed",      data: analytics.dailyTrend.map((d) => d.delayed),     borderColor: "#ef4444", backgroundColor: "rgba(239,68,68,0.08)",   tension: 0.3, fill: false, pointRadius: 2, borderWidth: 2 },
+          { label: "Not Uploaded", data: analytics.dailyTrend.map((d) => d.notUploaded), borderColor: "#94a3b8", backgroundColor: "rgba(148,163,184,0.08)", tension: 0.3, fill: false, pointRadius: 2, borderWidth: 2 },
+        ],
+      }
+    : null;
+
+  /* ── Hourly trend dataset ── */
+  const hourlyDataset = analytics?.hourlyTrend?.some((h) => h.delayed + h.onTime + h.notUploaded > 0)
+    ? {
+        labels: analytics.hourlyTrend.map((h) => `${h.hour}:00`),
+        datasets: [
+          { label: "On Time",      data: analytics.hourlyTrend.map((h) => h.onTime),      borderColor: "#22c55e", tension: 0.3, fill: false, pointRadius: 3, borderWidth: 2 },
+          { label: "Delayed",      data: analytics.hourlyTrend.map((h) => h.delayed),     borderColor: "#ef4444", tension: 0.3, fill: false, pointRadius: 3, borderWidth: 2 },
+          { label: "Not Uploaded", data: analytics.hourlyTrend.map((h) => h.notUploaded), borderColor: "#94a3b8", tension: 0.3, fill: false, pointRadius: 3, borderWidth: 2 },
+        ],
+      }
+    : null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            TAT — Turnaround Time
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Performance distribution, daily/hourly trends, queue, breach log — full Nakasero parity.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white"
-          >
-            {PERIODS.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-          <Link
-            href="/dashboard/lrids"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
-          >
-            LRIDS Display
-          </Link>
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            Refresh
-          </button>
-        </div>
-      </div>
+    <div className="flex flex-col min-h-0">
+      {/* Module tab bar */}
+      <ModuleTabBar tabs={MODULE_TABS} />
 
-      {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-500">
-          Loading...
+      <div className="space-y-6 p-6">
+        {/* Page header */}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">TAT — Turnaround Time</h1>
+            <p className="text-sm text-slate-500 mt-0.5">Performance distribution, daily/hourly trends, queue, breach log</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white"
+            >
+              {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+            </select>
+            <Link
+              href="/dashboard/lrids"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+            >
+              LRIDS Display
+            </Link>
+          </div>
         </div>
-      ) : (
-        <>
-          {/* KPI cards + progress (Nakasero style) */}
-          {analytics?.kpis && (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
-                  <XCircle size={12} />
-                  Delayed
-                </div>
-                <p className="text-xl font-bold text-red-600">
-                  {analytics.kpis.delayedRequests}
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  of {analytics.kpis.totalRequests} total
-                </p>
+
+        {loading ? (
+          <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-500">
+            <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            Loading…
+          </div>
+        ) : (
+          <>
+            {/* KPI cards */}
+            {analytics?.kpis && (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {[
+                  { icon: XCircle,     label: "Delayed",           value: analytics.kpis.delayedRequests, sub: `of ${analytics.kpis.totalRequests} total`, color: "text-red-600" },
+                  { icon: CheckCircle2,label: "On Time",           value: analytics.kpis.onTimeRequests,  sub: "",                                          color: "text-emerald-600" },
+                  { icon: null,        label: "Avg Daily On Time", value: analytics.kpis.avgDailyOnTime,  sub: "",                                          color: "text-slate-900" },
+                  { icon: null,        label: "Avg Daily Delays",  value: analytics.kpis.avgDailyDelayed, sub: "",                                          color: "text-slate-900" },
+                  { icon: Clock,       label: "Peak Delay Hour",   value: analytics.kpis.mostDelayedHour, sub: "",                                          color: "text-slate-900" },
+                  { icon: Calendar,    label: "Peak Delay Day",    value: analytics.kpis.mostDelayedDay,  sub: "",                                          color: "text-slate-900" },
+                ].map((card) => (
+                  <div key={card.label} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                    <div className="flex items-center gap-1.5 text-slate-400 text-xs mb-1">
+                      {card.icon && <card.icon size={12} />}
+                      {card.label}
+                    </div>
+                    <p className={`text-xl font-bold ${card.color}`}>{card.value}</p>
+                    {card.sub && <p className="text-xs text-slate-400 mt-0.5">{card.sub}</p>}
+                  </div>
+                ))}
               </div>
-              <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
-                  <CheckCircle2 size={12} />
-                  On Time
+            )}
+
+            {/* Charts row */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Doughnut — TAT Performance Distribution */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                  <BarChart3 size={16} className="text-emerald-600" />
+                  <span className="font-semibold text-slate-800 text-sm">TAT Performance Distribution</span>
                 </div>
-                <p className="text-xl font-bold text-emerald-600">
-                  {analytics.kpis.onTimeRequests}
-                </p>
+                <div className="p-4" style={{ height: 300 }}>
+                  {doughnutData ? (
+                    <Doughnut data={doughnutData} options={doughnutOptions} />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                      <BarChart3 size={40} className="opacity-40 mb-2" />
+                      <p className="text-sm">No TAT data for selected period</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
-                  Avg Daily On Time
+
+              {/* Line — Daily / Monthly trend */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden lg:col-span-2">
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                  <TrendingUp size={16} className="text-emerald-600" />
+                  <span className="font-semibold text-slate-800 text-sm">
+                    {analytics?.granularity === "monthly" ? "Monthly" : "Daily"} TAT Performance Trend
+                  </span>
                 </div>
-                <p className="text-xl font-bold text-slate-900">
-                  {analytics.kpis.avgDailyOnTime}
-                </p>
-              </div>
-              <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
-                  Avg Daily Delays
+                <div className="p-4" style={{ height: 300 }}>
+                  {dailyDataset ? (
+                    <Line data={dailyDataset} options={lineOptions("Daily TAT")} />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                      <TrendingUp size={40} className="opacity-40 mb-2" />
+                      <p className="text-sm">No trend data</p>
+                    </div>
+                  )}
                 </div>
-                <p className="text-xl font-bold text-slate-900">
-                  {analytics.kpis.avgDailyDelayed}
-                </p>
-              </div>
-              <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
-                  <Clock size={12} />
-                  Most Delayed Hour
-                </div>
-                <p className="text-lg font-bold text-slate-900">
-                  {analytics.kpis.mostDelayedHour}
-                </p>
-              </div>
-              <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
-                  <Calendar size={12} />
-                  Most Delayed Day
-                </div>
-                <p className="text-lg font-bold text-slate-900">
-                  {analytics.kpis.mostDelayedDay}
-                </p>
               </div>
             </div>
-          )}
 
-          {/* Charts row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* TAT Performance Distribution (pie) */}
+            {/* Hourly trend */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                <BarChart3 size={16} className="text-indigo-600" />
-                <span className="font-semibold text-slate-800">
-                  TAT Performance Distribution
-                </span>
+                <Clock size={16} className="text-emerald-600" />
+                <span className="font-semibold text-slate-800 text-sm">Hourly TAT Performance Trend</span>
               </div>
-              <div className="p-4" style={{ minHeight: 280 }}>
-                {pieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={260} minHeight={144}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={2}
-                        dataKey="value"
-                        nameKey="name"
-                        label={({ name, percent }) =>
-                          `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                        }
-                      >
-                        {pieData.map((entry, i) => (
-                          <Cell key={i} fill={entry.color} />
+              <div className="p-4" style={{ height: 260 }}>
+                {hourlyDataset ? (
+                  <Line data={hourlyDataset} options={lineOptions("Hourly TAT")} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                    <Clock size={40} className="opacity-40 mb-2" />
+                    <p className="text-sm">No hourly data</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Queue */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                <Clock size={16} className="text-emerald-600" />
+                <span className="font-semibold text-slate-800 text-sm">In-Progress Queue</span>
+                {queue.length > 0 && (
+                  <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{queue.length}</span>
+                )}
+              </div>
+              <div className="overflow-x-auto max-h-64 overflow-y-auto">
+                {queue.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 text-sm">No tests in progress</div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-white border-b border-slate-100">
+                      <tr>
+                        {["Lab #", "Test", "Section", "Elapsed (min)"].map((h) => (
+                          <th key={h} className="text-left px-4 py-2 font-semibold text-slate-600 text-xs uppercase tracking-wide">{h}</th>
                         ))}
-                      </Pie>
-                      <Tooltip formatter={(v: number | undefined) => [v ?? 0, "Requests"]} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-64 text-slate-500">
-                    <BarChart3 size={48} className="opacity-50 mb-2" />
-                    <p>No TAT data for selected period</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Daily TAT Trend */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden lg:col-span-2">
-              <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                <TrendingUp size={16} className="text-indigo-600" />
-                <span className="font-semibold text-slate-800">
-                  {analytics?.granularity === "monthly" ? "Monthly" : "Daily"} TAT Performance Trend
-                </span>
-              </div>
-              <div className="p-4" style={{ minHeight: 280 }}>
-                {analytics?.dailyTrend && analytics.dailyTrend.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={260} minHeight={144}>
-                    <LineChart data={analytics.dailyTrend}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 11 }}
-                        tickFormatter={(v) =>
-                          v.length === 7
-                            ? new Date(v + "-01").toLocaleDateString("en-US", {
-                                month: "short",
-                                year: "2-digit",
-                              })
-                            : new Date(v).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })
-                        }
-                      />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="delayed"
-                        stroke="#ef4444"
-                        strokeWidth={2}
-                        dot={false}
-                        name="Delayed"
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="onTime"
-                        stroke="#22c55e"
-                        strokeWidth={2}
-                        dot={false}
-                        name="On Time"
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="notUploaded"
-                        stroke="#94a3b8"
-                        strokeWidth={2}
-                        dot={false}
-                        name="Not Uploaded"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-64 text-slate-500">
-                    <TrendingUp size={48} className="opacity-50 mb-2" />
-                    <p>No trend data</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Hourly TAT Trend */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-              <Clock size={16} className="text-indigo-600" />
-              <span className="font-semibold text-slate-800">
-                Hourly TAT Performance Trend
-              </span>
-            </div>
-            <div className="p-4" style={{ minHeight: 280 }}>
-              {analytics?.hourlyTrend && analytics.hourlyTrend.some((h) => h.delayed + h.onTime + h.notUploaded > 0) ? (
-                <ResponsiveContainer width="100%" height={260} minHeight={144}>
-                  <LineChart data={analytics.hourlyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis
-                      dataKey="hour"
-                      tick={{ fontSize: 11 }}
-                      tickFormatter={(h) => `${h}:00`}
-                    />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="delayed"
-                      stroke="#ef4444"
-                      strokeWidth={2}
-                      dot={{ r: 2 }}
-                      name="Delayed"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="onTime"
-                      stroke="#22c55e"
-                      strokeWidth={2}
-                      dot={{ r: 2 }}
-                      name="On Time"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="notUploaded"
-                      stroke="#94a3b8"
-                      strokeWidth={2}
-                      dot={{ r: 2 }}
-                      name="Not Uploaded"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-slate-500">
-                  <Clock size={48} className="opacity-50 mb-2" />
-                  <p>No hourly data</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Queue + Per-section + Breaches */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-              <Clock size={16} className="text-indigo-600" />
-              <span className="font-semibold text-slate-800">In-Progress Queue</span>
-            </div>
-            <div className="overflow-x-auto max-h-64 overflow-y-auto">
-              {queue.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 text-sm">
-                  No tests in progress
-                </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white">
-                    <tr className="border-b border-slate-100">
-                      <th className="text-left px-4 py-2 font-semibold text-slate-700">Lab #</th>
-                      <th className="text-left px-4 py-2 font-semibold text-slate-700">Test</th>
-                      <th className="text-left px-4 py-2 font-semibold text-slate-700">Section</th>
-                      <th className="text-left px-4 py-2 font-semibold text-slate-700">Elapsed (min)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {queue.map((r) => (
-                      <tr
-                        key={r.id}
-                        className={`border-b border-slate-50 ${
-                          r.elapsed_minutes != null && r.elapsed_minutes > 60 ? "bg-red-50" : ""
-                        }`}
-                      >
-                        <td className="px-4 py-2 font-mono">{r.lab_number ?? "—"}</td>
-                        <td className="px-4 py-2">{r.test_name}</td>
-                        <td className="px-4 py-2">{r.section}</td>
-                        <td className="px-4 py-2">
-                          <span
-                            className={
-                              r.elapsed_minutes != null && r.elapsed_minutes > 60
-                                ? "text-red-600 font-semibold"
-                                : ""
-                            }
-                          >
-                            {r.elapsed_minutes ?? "—"}
-                          </span>
-                        </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                <BarChart3 size={16} className="text-indigo-600" />
-                <span className="font-semibold text-slate-800">Per-Section Summary (7d)</span>
-              </div>
-              <div className="p-4">
-                {sections.length === 0 ? (
-                  <p className="text-sm text-slate-500">No data</p>
-                ) : (
-                  <div className="space-y-2">
-                    {sections.map((s) => (
-                      <div
-                        key={s.section}
-                        className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0"
-                      >
-                        <span className="font-medium text-slate-800">{s.section}</span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-slate-600 text-sm">
-                            {s.avg_tat} min avg (target: {s.target})
-                          </span>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                              s.on_target ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                            }`}
-                          >
-                            {s.on_target ? "On target" : "Over"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                    </thead>
+                    <tbody>
+                      {queue.map((r) => (
+                        <tr key={r.id} className={`border-b border-slate-50 ${r.elapsed_minutes != null && r.elapsed_minutes > 60 ? "bg-red-50" : ""}`}>
+                          <td className="px-4 py-2 font-mono text-slate-700">{r.lab_number ?? "—"}</td>
+                          <td className="px-4 py-2 text-slate-700">{r.test_name}</td>
+                          <td className="px-4 py-2 text-slate-500">{r.section}</td>
+                          <td className="px-4 py-2">
+                            <span className={r.elapsed_minutes != null && r.elapsed_minutes > 60 ? "text-red-600 font-semibold" : "text-slate-700"}>
+                              {r.elapsed_minutes ?? "—"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                <AlertTriangle size={16} className="text-red-600" />
-                <span className="font-semibold text-slate-800">Breach Log</span>
-              </div>
-              <div className="p-4 max-h-64 overflow-y-auto">
-                {breaches.length === 0 ? (
-                  <p className="text-sm text-slate-500">No breaches</p>
-                ) : (
-                  <div className="space-y-2">
-                    {breaches.map((b) => (
-                      <div
-                        key={b.id}
-                        className="py-2 border-b border-slate-50 last:border-0 text-sm"
-                      >
-                        <div className="flex justify-between">
-                          <span className="font-medium">
-                            {b.request?.lab_number ?? "—"} · {b.request?.test_name}
-                          </span>
-                          <span className="text-red-600 font-semibold">
-                            +{b.breach_minutes} min over target
-                          </span>
+            {/* Section summary + Breach log */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                  <BarChart3 size={16} className="text-emerald-600" />
+                  <span className="font-semibold text-slate-800 text-sm">Per-Section Summary (7d)</span>
+                </div>
+                <div className="p-4">
+                  {sections.length === 0 ? (
+                    <p className="text-sm text-slate-400">No data</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {sections.map((s) => (
+                        <div key={s.section} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                          <span className="font-medium text-slate-800 text-sm">{s.section}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-slate-500 text-xs">{s.avg_tat} min avg (target: {s.target})</span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${s.on_target ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                              {s.on_target ? "On target" : "Over"}
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {b.request?.section} · {new Date(b.detected_at).toLocaleString()}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                  <AlertTriangle size={16} className="text-red-500" />
+                  <span className="font-semibold text-slate-800 text-sm">Breach Log</span>
+                  {breaches.length > 0 && (
+                    <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-600">{breaches.length}</span>
+                  )}
+                </div>
+                <div className="p-4 max-h-64 overflow-y-auto">
+                  {breaches.length === 0 ? (
+                    <p className="text-sm text-slate-400">No breaches</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {breaches.map((b) => (
+                        <div key={b.id} className="py-2 border-b border-slate-50 last:border-0 text-sm">
+                          <div className="flex justify-between">
+                            <span className="font-medium text-slate-800">{b.request?.lab_number ?? "—"} · {b.request?.test_name}</span>
+                            <span className="text-red-600 font-semibold">+{b.breach_minutes} min</span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5">{b.request?.section} · {new Date(b.detected_at).toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* ── AI Anomaly Detection (inline, not a separate section) ── */}
-          <AnomalyPanel facilityId={DEFAULT_FACILITY_ID} days={7} />
-        </>
-      )}
+            {/* AI Anomaly Detection — inline */}
+            <AnomalyPanel facilityId={DEFAULT_FACILITY_ID} days={7} />
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026 (Phase 10 — AI Intelligence Layer)  
+**Last updated:** 22 March 2026 (Phase 11 — Chart.js, Module Tabs, Quantitative QC, Live Alerts)  
 **Updated by:** Cursor
 
 ---
@@ -46,6 +46,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 8f: Homepage teal redesign + LRIDS fix** *(22 March 2026)* — Homepage hero banner + all three app cards converted to unified teal/cyan palette; LRIDS font sizes normalised and layout fixed to work within dashboard wrapper
 - [x] **Phase 9: Brand identity, sidebar redesign, Samples module** *(22 March 2026)* — see section below
 - [x] **Phase 10: AI Intelligence Layer** *(22 March 2026)* — see section below
+- [x] **Phase 11: Chart.js migration, module tabs, Quantitative QC, live alerts** *(22 March 2026)* — see section below
 
 ### Phase 9 — Brand Identity, Sidebar, Samples, LRIDS (22 March 2026)
 
@@ -74,6 +75,24 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Supabase migration** — `20260322000002_ai_intelligence.sql` creates: `tat_anomaly_baselines`, `tat_anomaly_flags`, `weekly_summaries`, `ai_inference_log`, `equipment_telemetry_log`. All tables have RLS enabled.
 - [x] **Vercel Cron** — `vercel.json` updated: `/api/cron/weekly-summary` runs Mondays 07:00 UTC; `/api/tat/anomalies` (baseline refresh) runs nightly 02:00 UTC.
 
+### Phase 11 — Chart.js, Module Tabs, Quantitative QC, Live Alerts (22 March 2026)
+
+- [x] **Chart.js installed** — `chart.js@4.5.1`, `react-chartjs-2@5.3.1`, `chartjs-plugin-datalabels@2.2.0` added to `package.json` and `node_modules`. `components/charts/registry.ts` registers all chart types and disables datalabels globally (enable per-dataset).
+- [x] **TAT page migrated to Chart.js** — Recharts `PieChart` replaced by Chart.js `Doughnut` with `layout.padding: 28` so percentage labels never clip. Recharts `LineChart` ×2 replaced by Chart.js `Line` with filled area for on-time trend, consistent emerald/red/slate brand colours. Manual refresh button removed; 30s auto-refresh retained.
+- [x] **TAT data label cutoff fixed** — `layout.padding: 28` on the Doughnut, `anchor:"center"`, `clip: false` on datalabels plugin. Percentage labels always readable inside the donut slices.
+- [x] **ModuleTabBar component** — `components/dashboard/ModuleTabBar.tsx` — reusable horizontal tab strip with emerald underline active state, scroll-overflow on mobile, icon support, exact/prefix matching.
+- [x] **Module tabs added to all Lab Metrics pages** — TAT, Tests, Numbers, Revenue, Performance pages each show a `ModuleTabBar` at the top linking across all Lab Metrics modules. Easier navigation when sidebar is collapsed.
+- [x] **Quantitative QC tab** — `components/qc/QuantitativeQCTab.tsx` fully implemented:
+  - Run entry form: date, value, operator, notes — saves to `qc_results` with `result_type = "quantitative"`
+  - Live z-score preview while typing the value, with "will trigger 1-3S" warning
+  - Westgard rule checking: 1-2S, 1-3S, 2-2S, 4-1S, 10-X computed client-side
+  - Chart.js Line chart (Levey-Jennings style) with Mean, ±1SD, ±2SD, ±3SD reference lines in dashed colours (blue/amber/red)
+  - Data points coloured by status: emerald (pass), amber (warning), red (reject)
+  - Stats row: Mean, SD, CV%, Run count, Min, Max
+  - Run log table sorted newest first with colour-coded rows
+  - QC module tab bar updated to include "Quantitative QC" as 5th tab
+- [x] **Supabase-backed alerts** — Mock alerts array removed from `TopBar.tsx`. `GET /api/alerts` fetches from `operational_alerts` table. `PATCH /api/alerts` acknowledges individual or all alerts. TopBar polls every 60 seconds. Dismiss/mark-all-read calls API and updates DB.
+
 ### What Is In Progress
 
 - [ ] JWT `facility_id` claim + RLS tied to `auth.uid()` (currently DEFAULT_FACILITY_ID in several API paths)
@@ -83,12 +102,12 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 ### What Is Planned (Next Up)
 
 - [ ] First paying hospital on equipment module
-- [ ] Chart.js migration (replace Recharts on TAT, Tests, Numbers, Revenue, Analytics, Performance, Home pages)
-- [ ] TAT Performance card data label cutoff fix (chartjs-plugin-datalabels)
-- [ ] Module-level horizontal tab bars for TAT, Assets, Lab Metrics, Admin, Settings
-- [ ] Quantitative QC tab — full run entry form + Chart.js line chart with ±SD reference lines
-- [ ] Supabase-backed alerts in TopBar (query `operational_alerts` table, replace mock data)
+- [ ] Chart.js migration — remaining pages: Tests, Numbers, Revenue, Analytics, Performance, Home (Charts are still Recharts on those pages)
 - [ ] Brand Management — Supabase Storage logo upload + `facility_branding` table persistence
+- [x] TAT Performance card data label cutoff fix — resolved with Chart.js `layout.padding` + `clip: false`
+- [x] Module-level horizontal tabs — implemented on all Lab Metrics pages
+- [x] Quantitative QC tab — complete with Levey-Jennings chart + ±SD reference lines + Westgard rules
+- [x] Supabase-backed alerts — live from `operational_alerts` table
 - [ ] AI: Wire `days_to_failure` labels into `equipment_telemetry_log` on equipment failure events
 - [ ] AI: Enrich anomaly reasons with Anthropic for higher-severity flags (z > 3.5)
 - [ ] AI: Facility 2 onboarding — confirm `DATA_FLYWHEEL_ENABLED` opt-in before signing up second customer

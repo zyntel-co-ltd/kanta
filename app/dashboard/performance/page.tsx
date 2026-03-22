@@ -1,9 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BarChart3, TrendingUp, AlertTriangle } from "lucide-react";
+import { BarChart3, TrendingUp, AlertTriangle, Clock, Activity, Target, Calendar, Monitor } from "lucide-react";
 import Link from "next/link";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import ModuleTabBar from "@/components/dashboard/ModuleTabBar";
+
+const MODULE_TABS = [
+  { label: "Overview",    href: "/dashboard/tat",         icon: Clock     },
+  { label: "Performance", href: "/dashboard/performance", icon: TrendingUp },
+  { label: "Tests",       href: "/dashboard/tests",       icon: Activity  },
+  { label: "Numbers",     href: "/dashboard/numbers",     icon: Target    },
+  { label: "Revenue",     href: "/dashboard/revenue",     icon: Calendar  },
+  { label: "LRIDS",       href: "/dashboard/lrids",       icon: Monitor   },
+];
 
 type PerfData = {
   totalResulted: number;
@@ -31,17 +41,22 @@ export default function PerformancePage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="flex flex-col min-h-0">
+        <ModuleTabBar tabs={MODULE_TABS} />
+        <div className="space-y-6 p-6">
         <h1 className="text-2xl font-bold text-slate-900">Performance</h1>
         <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center text-slate-500">
           Loading...
+        </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col min-h-0">
+      <ModuleTabBar tabs={MODULE_TABS} />
+      <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -147,6 +162,7 @@ export default function PerformancePage() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

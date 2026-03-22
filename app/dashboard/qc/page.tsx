@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import LeveyJenningsChart from "@/components/qc/LeveyJenningsChart";
 import type { LJPoint } from "@/components/qc/LeveyJenningsChart";
+import QuantitativeQCTab from "@/components/qc/QuantitativeQCTab";
 import {
   ShieldCheck,
   AlertTriangle,
@@ -69,16 +70,17 @@ type QCRun = {
   pass: boolean;
 };
 
-type Tab = "overview" | "lj" | "westgard" | "qualitative" | "calculator" | "stats" | "samples";
+type Tab = "overview" | "lj" | "westgard" | "qualitative" | "quantitative" | "calculator" | "stats" | "samples";
 
 const TABS: { id: Tab; label: string; icon: typeof ShieldCheck }[] = [
-  { id: "overview",    label: "Overview",       icon: ShieldCheck    },
-  { id: "lj",          label: "L-J Chart",      icon: BarChart3      },
-  { id: "westgard",    label: "Westgard",        icon: AlertTriangle  },
-  { id: "qualitative", label: "Qualitative QC",  icon: TestTube       },
-  { id: "calculator",  label: "QC Calculator",   icon: Calculator     },
-  { id: "stats",       label: "QC Stats",        icon: TrendingUp     },
-  { id: "samples",     label: "Samples",         icon: FlaskConical   },
+  { id: "overview",     label: "Overview",        icon: ShieldCheck    },
+  { id: "lj",           label: "L-J Chart",       icon: BarChart3      },
+  { id: "westgard",     label: "Westgard",         icon: AlertTriangle  },
+  { id: "qualitative",  label: "Qualitative QC",   icon: TestTube       },
+  { id: "quantitative", label: "Quantitative QC",  icon: TrendingUp     },
+  { id: "calculator",   label: "QC Calculator",    icon: Calculator     },
+  { id: "stats",        label: "QC Stats",         icon: BarChart3      },
+  { id: "samples",      label: "Samples",          icon: FlaskConical   },
 ];
 
 /* ─── Stat card ─── */
@@ -244,13 +246,14 @@ export default function QCPage() {
 
       {/* ── Tab content ── */}
       <div className="animate-fade-in">
-        {activeTab === "overview"    && <OverviewTab materials={materials} violations={violations} selectedMaterial={selectedMaterial} setSelectedMaterial={setSelectedMaterial} />}
-        {activeTab === "lj"          && <LJTab materials={materials} chartData={chartData} selectedMaterial={selectedMaterial} setSelectedMaterial={setSelectedMaterial} />}
-        {activeTab === "westgard"    && <WestgardTab violations={violations} />}
-        {activeTab === "qualitative" && <QualitativeTab configs={qualConfigs} entries={qualEntries} facilityId={DEFAULT_FACILITY_ID} onRefresh={fetchData} />}
-        {activeTab === "calculator"  && <CalculatorTab />}
-        {activeTab === "stats"       && <StatsTab materials={materials} />}
-        {activeTab === "samples"     && <SamplesTab />}
+        {activeTab === "overview"     && <OverviewTab materials={materials} violations={violations} selectedMaterial={selectedMaterial} setSelectedMaterial={setSelectedMaterial} />}
+        {activeTab === "lj"           && <LJTab materials={materials} chartData={chartData} selectedMaterial={selectedMaterial} setSelectedMaterial={setSelectedMaterial} />}
+        {activeTab === "westgard"     && <WestgardTab violations={violations} />}
+        {activeTab === "qualitative"  && <QualitativeTab configs={qualConfigs} entries={qualEntries} facilityId={DEFAULT_FACILITY_ID} onRefresh={fetchData} />}
+        {activeTab === "quantitative" && <QuantitativeQCTab facilityId={DEFAULT_FACILITY_ID} materials={materials} />}
+        {activeTab === "calculator"   && <CalculatorTab />}
+        {activeTab === "stats"        && <StatsTab materials={materials} />}
+        {activeTab === "samples"      && <SamplesTab />}
       </div>
     </div>
   );

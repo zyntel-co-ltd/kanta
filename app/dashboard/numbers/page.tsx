@@ -21,6 +21,16 @@ import {
 } from "recharts";
 
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import ModuleTabBar from "@/components/dashboard/ModuleTabBar";
+import { Clock, Activity, Calendar } from "lucide-react";
+
+const MODULE_TABS = [
+  { label: "Overview",    href: "/dashboard/tat",         icon: Clock     },
+  { label: "Tests",       href: "/dashboard/tests",       icon: Activity  },
+  { label: "Numbers",     href: "/dashboard/numbers",     icon: Users     },
+  { label: "Revenue",     href: "/dashboard/revenue",     icon: Calendar  },
+  { label: "Performance", href: "/dashboard/performance", icon: TrendingUp },
+];
 
 type NumbersData = {
   totalRequests: number;
@@ -89,7 +99,9 @@ export default function NumbersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col min-h-0">
+      <ModuleTabBar tabs={MODULE_TABS} />
+      <div className="space-y-6 p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -343,6 +355,7 @@ export default function NumbersPage() {
           Failed to load numbers data
         </div>
       )}
+      </div>
     </div>
   );
 }
