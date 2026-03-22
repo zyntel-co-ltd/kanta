@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026 (late night)  
+**Last updated:** 22 March 2026 (Phase 8e)  
 **Updated by:** Cursor
 
 ---
@@ -14,7 +14,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 ## Current State
 
 **Status:** In development  
-**Phase:** MVP — Phases 1–8d implemented, deployed to Vercel. Major UI/UX overhaul complete (Phase 8d).
+**Phase:** MVP — Phases 1–8e implemented, deployed to Vercel. Medicare dashboard theme, LRIDS hospital display board, and sidebar toggle polish complete (Phase 8e).
 
 ### What Is Built and Working
 
@@ -42,6 +42,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 8b: Theme refinement & Login redesign** *(22 March 2026)* — neutral palette, split-layout login
 - [x] **Phase 8c: Lab-hub QC features + Sample Management** *(22 March 2026)* — QC Calculator, QC Stats, Sample Management tab with Lab-hub integration
 - [x] **Phase 8d: Navigation & Design overhaul** *(22 March 2026)* — Sidebar restored (white/slate, collapsible), login re-coloured (forest green), QC tabs underline-style, homepage cards as full links, search moved to Assets page
+- [x] **Phase 8e: Medicare theme, LRIDS hospital board, sidebar toggle** *(22 March 2026)* — Teal/cyan hero header on Assets Overview, KPI card cyan accent, LRIDS fully redesigned as a hospital display board, sidebar collapse button redesigned as a pill-tab
 
 ### What Is In Progress
 
@@ -54,6 +55,43 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [ ] First paying hospital on equipment module
 - [ ] Lab-hub Sample Management — connect to live Lab-hub instance on LAN (configure URL in Sample Mgmt tab)
 - [ ] Supabase tables for native sample/rack data (long term — remove Lab-hub dependency)
+
+---
+
+## Phase 8e — Medicare Theme, LRIDS Board & Sidebar Toggle (22 March 2026)
+
+### Changes Made
+| Area | Before | After |
+|------|--------|-------|
+| **Assets Overview header** | Plain text heading + flat buttons | Teal/cyan gradient hero banner (`#0e7490 → #06b6d4`) with breadcrumb label, white CTA |
+| **KPI cards** | Indigo "Equipment Scanned" card | Cyan/sky (`from-cyan-500 to-sky-600`) — matches Medicare dashboard palette |
+| **AssetsSearchBar** | Default slate style only | Added `variant="light"` for rendering inside teal hero header (white/translucent) |
+| **Section dividers** | Slate dot + slate gradient line | Cyan dot + cyan-tinted gradient line |
+| **LRIDS (`/dashboard/lrids`)** | Basic dark table, single list | Full hospital display board — two-column layout (Ready / In Progress), live clock, stats pills, auto-refresh countdown, navy-teal gradient background |
+| **Sidebar collapse button** | Tiny 24px circle on sidebar edge | Pill-shaped vertical tab (`w-5 h-14`) extending from sidebar right edge, turns cyan on hover |
+
+### LRIDS Hospital Display Board
+`/dashboard/lrids` now renders as a professional patient-facing display board:
+
+| Feature | Detail |
+|---------|--------|
+| **Header** | FlaskConical icon + teal glow, "Laboratory Report Information Display" title |
+| **Live clock** | Large digital time (hh:mm:ss AM/PM) + full date, updates every second |
+| **Stats pills** | Total Results · Ready for Collection · In Progress counts with icons |
+| **Refresh countdown** | Live "Refreshing in Xs" counter (30 s cycle) |
+| **Two-column layout** | "Ready for Collection" (emerald) | "In Progress" (amber) — side by side on xl screens |
+| **Result rows** | Large monospace lab number, test name, section, animated status badge (CheckCircle / spinning Loader) |
+| **Background** | Dark navy-teal gradient (`#0f172a → #0c4a6e → #164e63`) |
+| **Footer** | System name + last-updated timestamp |
+
+### Files Changed (Phase 8e)
+| File | Change |
+|------|--------|
+| `app/dashboard/page.tsx` | Replaced plain page header with teal/cyan gradient hero banner; updated `SectionDivider` with cyan dot |
+| `app/dashboard/lrids/page.tsx` | Full rewrite — hospital display board (LiveClock, StatPill, ResultRow, RefreshCountdown components) |
+| `components/dashboard/KpiCards.tsx` | `indigo` card theme changed from `from-indigo-500 to-violet-600` to `from-cyan-500 to-sky-600` |
+| `components/dashboard/AssetsSearchBar.tsx` | Added `variant` prop (`"default"` \| `"light"`) for teal-header glass style |
+| `components/dashboard/Sidebar.tsx` | Collapse toggle redesigned: small circle → vertical pill tab extending from sidebar right edge |
 
 ---
 
@@ -262,8 +300,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | Phase 8d — Navigation & Design overhaul | Live on Vercel |
-| `development` | Integration / Preview | Phase 8d — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | Phase 8e — Medicare theme, LRIDS board, sidebar toggle | Live on Vercel |
+| `development` | Integration / Preview | Phase 8e — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---
