@@ -6,7 +6,6 @@ import {
   FlaskConical,
   CheckCircle2,
   Loader2,
-  RefreshCw,
   Activity,
   Users,
   ListChecks,
@@ -48,7 +47,7 @@ function LiveClock() {
   );
 }
 
-/* ─── Refresh countdown ─── */
+/* ─── Refresh countdown (display only, no button) ─── */
 function RefreshCountdown({ refreshMs }: { refreshMs: number }) {
   const [remaining, setRemaining] = useState(Math.round(refreshMs / 1000));
   useEffect(() => {
@@ -58,7 +57,7 @@ function RefreshCountdown({ refreshMs }: { refreshMs: number }) {
     }, 1000);
     return () => clearInterval(t);
   }, [refreshMs]);
-  return <span className="tabular-nums">Refreshing in {remaining}s</span>;
+  return <span className="tabular-nums text-xs text-slate-400">Auto-refresh in {remaining}s</span>;
 }
 
 /* ─── Result row ─── */
@@ -165,10 +164,7 @@ export default function LRIDSPage() {
             Laboratory Report Information Display System
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <RefreshCw size={12} />
-          <RefreshCountdown refreshMs={REFRESH_MS} />
-        </div>
+        <RefreshCountdown refreshMs={REFRESH_MS} />
       </div>
 
       {/* ── Stat cards ── */}

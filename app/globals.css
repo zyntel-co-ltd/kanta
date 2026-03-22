@@ -10,6 +10,16 @@
   --page-bg-start: #f8fafc;
   --page-bg-mid:   #ffffff;
   --page-bg-end:   #f1f5f9;
+
+  /* ── Brand green (matches login page) ── */
+  --brand:          #059669;   /* emerald-600 — primary accent */
+  --brand-dark:     #047857;   /* emerald-700 */
+  --brand-darker:   #065f46;   /* emerald-800 — sidebar bg */
+  --brand-deepest:  #042f2e;   /* login gradient start */
+  --brand-light:    #d1fae5;   /* emerald-100 */
+  --brand-muted:    #6ee7b7;   /* emerald-300 — highlights */
+  --brand-text:     #065f46;   /* on-light brand text */
+  --brand-sidebar:  #065f46;   /* sidebar background */
 }
 
 /* ── Base ── */

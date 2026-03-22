@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026 (Phase 8f)  
+**Last updated:** 22 March 2026 (Phase 9)  
 **Updated by:** Cursor
 
 ---
@@ -14,7 +14,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 ## Current State
 
 **Status:** In development  
-**Phase:** MVP — Phases 1–8f implemented, deployed to Vercel. Homepage Medicare teal theme, LRIDS layout/font fixes, sidebar toggle polish complete (Phase 8f).
+**Phase:** MVP — Phase 9 implemented. Brand green theme, Medicare-style sidebar, hospital header with name/logo, LRIDS waiting-area display, Samples module (Supabase), brand management (Pro), user dropdown with alerts panel.
 
 ### What Is Built and Working
 
@@ -44,6 +44,22 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 8d: Navigation & Design overhaul** *(22 March 2026)* — Sidebar restored (white/slate, collapsible), login re-coloured (forest green), QC tabs underline-style, homepage cards as full links, search moved to Assets page
 - [x] **Phase 8e: Medicare theme, LRIDS hospital board, sidebar toggle** *(22 March 2026)* — Teal/cyan hero header on Assets Overview, KPI card cyan accent, LRIDS fully redesigned as a hospital display board, sidebar collapse button redesigned as a pill-tab
 - [x] **Phase 8f: Homepage teal redesign + LRIDS fix** *(22 March 2026)* — Homepage hero banner + all three app cards converted to unified teal/cyan palette; LRIDS font sizes normalised and layout fixed to work within dashboard wrapper
+- [x] **Phase 9: Brand identity, sidebar redesign, Samples module** *(22 March 2026)* — see section below
+
+### Phase 9 — Brand Identity, Sidebar, Samples, LRIDS (22 March 2026)
+
+- [x] **Brand green theme** — CSS variables (`--brand`, `--brand-dark`, etc.) derived from the login forest-green palette applied throughout. Active sidebar items, buttons and accents all use `#059669`/`#065f46`.
+- [x] **Medicare-style sidebar** — Dark green gradient background (`#042f2e` → `#065f46` → `#047857`), white icon-only collapsed mode, white-pill active state, smooth 300ms transition. New nav items: LRIDS, Samples, Performance, QC sub-items (L-J, Westgard, Qualitative, Quantitative, QC Stats).
+- [x] **Header redesign** — Hospital name + logo (from `NEXT_PUBLIC_HOSPITAL_NAME` / `NEXT_PUBLIC_HOSPITAL_LOGO_URL` env vars) shown on the left. Standalone Log Out button removed. Username shows first name only with initials avatar (Pro: photo avatar from user metadata). Clicking the user opens a dropdown with Settings, Brand (Pro), and Log Out.
+- [x] **Alerts bell wired up** — Clicking the bell opens a slide-in panel with operational alerts, unread count badge, mark-all-read, and per-alert dismiss.
+- [x] **"Lab Hub" renamed to "Samples"** — QC tab label updated; standalone `/dashboard/samples` page created.
+- [x] **Samples module migrated to Supabase** — New migration `20260322000001_samples_module.sql` creates `lab_racks` + `lab_samples` tables with auto-status trigger. API routes: `/api/samples`, `/api/samples/stats`, `/api/samples/search`, `/api/samples/rack`. Full dashboard page at `/dashboard/samples` (Dashboard / Racks / Search sub-tabs). No localhost dependency.
+- [x] **LRIDS waiting-area display** — `kanta/[facility]/lrids` fully redesigned as a full-screen hospital display board: hospital name + logo header, live clock, single two-column table (Patient Identifier + Status), most recent at top, auto-refresh every 30 s, no buttons/sidebar/nav.
+- [x] **Dashboard LRIDS** — Manual refresh button removed; auto-refresh label kept.
+- [x] **Brand Management page** (`/dashboard/settings/brand`) — Pro-gated page for logo upload, hospital name/tagline, primary/secondary colour pickers with live preview strip. Non-Pro users see a locked feature screen explaining what Pro unlocks.
+- [x] **New env vars** — `NEXT_PUBLIC_PRO_FEATURES`, `NEXT_PUBLIC_HOSPITAL_NAME`, `NEXT_PUBLIC_HOSPITAL_LOGO_URL` added to `.env.example`.
+
+---
 
 ### What Is In Progress
 
@@ -54,8 +70,12 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 ### What Is Planned (Next Up)
 
 - [ ] First paying hospital on equipment module
-- [ ] Lab-hub Sample Management — connect to live Lab-hub instance on LAN (configure URL in Sample Mgmt tab)
-- [ ] Supabase tables for native sample/rack data (long term — remove Lab-hub dependency)
+- [ ] Chart.js migration (replace Recharts on TAT, Tests, Numbers, Revenue, Analytics, Performance, Home pages)
+- [ ] TAT Performance card data label cutoff fix (chartjs-plugin-datalabels)
+- [ ] Module-level horizontal tab bars for TAT, Assets, Lab Metrics, Admin, Settings
+- [ ] Quantitative QC tab — full run entry form + Chart.js line chart with ±SD reference lines
+- [ ] Supabase-backed alerts in TopBar (query `operational_alerts` table, replace mock data)
+- [ ] Brand Management — Supabase Storage logo upload + `facility_branding` table persistence
 
 ---
 

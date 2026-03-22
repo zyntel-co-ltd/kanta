@@ -78,7 +78,7 @@ const TABS: { id: Tab; label: string; icon: typeof ShieldCheck }[] = [
   { id: "qualitative", label: "Qualitative QC",  icon: TestTube       },
   { id: "calculator",  label: "QC Calculator",   icon: Calculator     },
   { id: "stats",       label: "QC Stats",        icon: TrendingUp     },
-  { id: "samples",     label: "Sample Mgmt",     icon: FlaskConical   },
+  { id: "samples",     label: "Samples",         icon: FlaskConical   },
 ];
 
 /* ─── Stat card ─── */
