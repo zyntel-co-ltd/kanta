@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 
-const COLLAPSED_KEY = "kanta-sidebar-collapsed";
+const COLLAPSED_KEY = "kanta-sidebar-collapsed-v2";
 const HIDDEN_KEY = "kanta-sidebar-hidden";
 
 type SidebarLayoutContextType = {
@@ -25,13 +25,17 @@ type SidebarLayoutContextType = {
 const SidebarLayoutContext = createContext<SidebarLayoutContextType | null>(null);
 
 export function SidebarLayoutProvider({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsedState] = useState(false);
+  // Default to collapsed so the green icon-only sidebar is the primary experience.
+  // Expand only if the user previously explicitly expanded it (saved "0" in localStorage).
+  const [collapsed, setCollapsedState] = useState(true);
   const [hidden, setHiddenState] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     try {
-      setCollapsedState(localStorage.getItem(COLLAPSED_KEY) === "1");
+      const saved = localStorage.getItem(COLLAPSED_KEY);
+      // "0" means user explicitly expanded; anything else (including null) stays collapsed
+      if (saved === "0") setCollapsedState(false);
       setHiddenState(localStorage.getItem(HIDDEN_KEY) === "1");
     } catch {
       /* ignore */

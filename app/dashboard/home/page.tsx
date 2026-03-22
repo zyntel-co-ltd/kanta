@@ -151,71 +151,49 @@ export default function DashboardHomePage() {
       </div>
 
       {/* ── 3 App Cards ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-slide-up stagger-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-slide-up stagger-2">
         {apps.map((app) => {
           const AppIcon = app.icon;
           return (
             <Link
               key={app.title}
               href={app.href}
-              className={`relative flex flex-col rounded-2xl bg-white border-2 ${app.accent} shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1.5 hover:border-emerald-500/80 transition-all duration-300 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2`}
-              style={{ minHeight: 320 }}
+              className="flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2"
             >
-              {/* Top accent bar */}
+              {/* Card header with gradient */}
               <div
-                className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl opacity-80"
-                style={{ background: "linear-gradient(90deg, #065f46 0%, #047857 50%, #059669 100%)" }}
-              />
+                className="px-6 py-5 flex items-center gap-4"
+                style={{ background: "linear-gradient(135deg, #042f2e 0%, #065f46 100%)" }}
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+                  <AppIcon size={20} className="text-white" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-300">{app.eyebrow}</p>
+                  <h2 className="text-white font-semibold text-base leading-tight">{app.title}</h2>
+                </div>
+              </div>
 
-              {/* Decorative gradient blob */}
-              <div
-                className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-[0.07] group-hover:opacity-[0.12] transition-opacity duration-300 pointer-events-none"
-                style={{ background: "radial-gradient(circle, #047857, transparent 70%)" }}
-              />
+              {/* Card body */}
+              <div className="flex flex-col flex-1 p-6 gap-4">
+                <p className="text-slate-500 text-sm leading-relaxed">{app.description}</p>
 
-              <div className="relative flex flex-col flex-1 p-6 pt-7">
-
-                {/* Icon + eyebrow */}
-                <div className="flex items-start justify-between mb-5">
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${app.iconGradient} flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform duration-300`}>
-                    <AppIcon size={22} className="text-white drop-shadow-sm" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{app.eyebrow}</span>
+                {/* Modules list */}
+                <div className="flex flex-wrap gap-1.5">
+                  {app.tabs.map((tab) => (
+                    <span
+                      key={tab.href + tab.label}
+                      className="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium"
+                    >
+                      {tab.label}
+                    </span>
+                  ))}
                 </div>
 
-                {/* Title */}
-                <h2 className="text-slate-900 mb-2 group-hover:text-emerald-800 transition-colors duration-200" style={{ fontSize: "1.2rem", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.25 }}>
-                  {app.title}
-                </h2>
-
-                {/* Description */}
-                <p className="flex-1 text-slate-500" style={{ fontSize: "0.875rem", lineHeight: 1.65 }}>
-                  {app.description}
-                </p>
-
-                {/* Sub-tab pills */}
-                <div className="flex flex-wrap gap-1.5 mt-5">
-                  {app.tabs.map((tab) => {
-                    const TabIcon = tab.icon;
-                    return (
-                      <span
-                        key={tab.href + tab.label}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-emerald-100 ${app.pillBg} ${app.pillText}`}
-                        style={{ fontSize: "0.6875rem", fontWeight: 600 }}
-                      >
-                        <TabIcon size={9} className="opacity-80" />
-                        {tab.label}
-                      </span>
-                    );
-                  })}
-                </div>
-
-                {/* Divider + CTA row */}
-                <div className="mt-5 pt-5 border-t border-slate-100">
-                  <div className="flex items-center gap-1.5 text-slate-400 group-hover:text-emerald-600 transition-colors duration-200">
-                    <span className="text-sm font-semibold">Open {app.title}</span>
-                    <ArrowRight size={14} className="group-hover:translate-x-1.5 transition-transform duration-200" />
-                  </div>
+                {/* CTA */}
+                <div className="flex items-center gap-1 text-emerald-700 text-sm font-semibold mt-auto pt-2">
+                  Open
+                  <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-150" />
                 </div>
               </div>
             </Link>

@@ -156,9 +156,9 @@ export default function Sidebar() {
   return (
     <aside
       className={clsx(
-        "relative flex flex-col h-screen flex-shrink-0",
+        "relative flex flex-col h-screen flex-shrink-0 overflow-visible",
         "transition-all duration-300 ease-in-out",
-        collapsed ? "w-[64px] overflow-visible" : "w-[260px] overflow-hidden",
+        collapsed ? "w-[64px]" : "w-[260px]",
         !collapsed && "border-r border-slate-200/80"
       )}
       style={
@@ -170,7 +170,7 @@ export default function Sidebar() {
       {/* ── Logo ── */}
       <div
         className={clsx(
-          "flex-shrink-0 flex items-center gap-3 border-b py-4",
+          "flex-shrink-0 flex items-center gap-3 border-b py-4 overflow-hidden",
           collapsed ? "justify-center px-0 border-white/10" : "px-5 border-slate-100"
         )}
       >
@@ -203,7 +203,7 @@ export default function Sidebar() {
       </div>
 
       {/* ── Nav ── */}
-      <nav className="flex-1 min-h-0 overflow-y-auto py-4 space-y-5 flex flex-col">
+      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-4 space-y-5 flex flex-col">
         <div className={collapsed ? "flex-1 flex flex-col items-center gap-1 px-2" : "space-y-5 px-3"}>
           {navGroups.map((group) => (
             <div key={group.title} className={collapsed ? "" : "space-y-1"}>

@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026 (Phase 12 — Emerald Theme, Sidebar Cutout, App Cards, Logout)  
+**Last updated:** 22 March 2026 (Phase 13 — Sidebar Fix, App Cards Simplified)  
 **Updated by:** Cursor
 
 ---
@@ -48,6 +48,14 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 10: AI Intelligence Layer** *(22 March 2026)* — see section below
 - [x] **Phase 11: Chart.js migration, module tabs, Quantitative QC, live alerts** *(22 March 2026)* — see section below
 - [x] **Phase 12: Emerald theme, sidebar cutout, app cards, logout** *(22 March 2026)* — see section below
+- [x] **Phase 13: Sidebar toggle fix, app cards simplified, TypeScript fix** *(22 March 2026)* — see section below
+
+### Phase 13 — Sidebar Toggle Fix & App Cards Simplified (22 March 2026)
+
+- [x] **Sidebar toggle now always visible** — `overflow-hidden` on the `<aside>` was clipping the collapse button (positioned at `-right-4`). Fixed by setting `overflow-visible` on the aside and moving clipping to the inner logo (`overflow-hidden`) and nav (`overflow-x-hidden`) elements.
+- [x] **Sidebar defaults to collapsed** — `useState(true)` so new users land on the green icon-only sidebar. Old localStorage key renamed from `kanta-sidebar-collapsed` to `kanta-sidebar-collapsed-v2` to reset any expanded state saved by previous visits.
+- [x] **App cards redesigned (simpler)** — Removed decorative blob, top accent bar, icon scale animation, pill borders, and divider. New design: dark green gradient header band with icon + title, clean white body with description, flat module tags, and a minimal "Open →" CTA. Much cleaner and more professional.
+- [x] **TypeScript build fix** — `NavItem` icon type extended to include `strokeWidth` and `style` props, fixing Vercel build error: `Property 'strokeWidth' does not exist on type`.
 
 ### Phase 12 — Emerald Theme, Sidebar Cutout, App Cards & Logout (22 March 2026)
 
