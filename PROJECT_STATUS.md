@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026 (evening)  
+**Last updated:** 22 March 2026 (night)  
 **Updated by:** Cursor
 
 ---
@@ -14,7 +14,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 ## Current State
 
 **Status:** In development  
-**Phase:** MVP — Phases 1–7 implemented, deployed to Vercel. UI/UX redesign (Phase 8) complete.
+**Phase:** MVP — Phases 1–8c implemented, deployed to Vercel. QC module fully expanded with Lab-hub integration.
 
 ### What Is Built and Working
 
@@ -40,6 +40,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] Meta module (test metadata CRUD)
 - [x] **Phase 8: UI/UX Redesign** *(completed 22 March 2026)* — see section below
 - [x] **Phase 8b: Theme refinement & Login redesign** *(22 March 2026)* — neutral palette, split-layout login
+- [x] **Phase 8c: Lab-hub QC features + Sample Management** *(22 March 2026)* — QC Calculator, QC Stats, Sample Management tab with Lab-hub integration
 
 ### What Is In Progress
 
@@ -50,7 +51,46 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 ### What Is Planned (Next Up)
 
 - [ ] First paying hospital on equipment module
-- [ ] Lab-hub QC integration (live)
+- [ ] Lab-hub Sample Management — connect to live Lab-hub instance on LAN (configure URL in Sample Mgmt tab)
+- [ ] Supabase tables for native sample/rack data (long term — remove Lab-hub dependency)
+
+---
+
+## Phase 8c — Lab-hub QC Integration & Sample Management (22 March 2026)
+
+### QC Module Expanded to 7 Tabs
+`/dashboard/qc` now has a full 7-tab interface:
+
+| Tab | Source | Description |
+|-----|--------|-------------|
+| **Overview** | Kanta | Active materials, recent Westgard violations |
+| **L-J Chart** | Kanta | Levey-Jennings chart with mean/SD annotations |
+| **Westgard** | Kanta | Full violations table with rule badges |
+| **Qualitative QC** | Kanta | Qualitative test configs & entries, submit workflow |
+| **QC Calculator** | Lab-hub | Enter up to 25 values → mean, SD, CV% (localStorage persisted) |
+| **QC Stats** | Lab-hub | Date-range filtered run statistics (count/mean/SD/min/max) + run table |
+| **Sample Mgmt** | Lab-hub | Full sample management connected to Lab-hub backend |
+
+### Sample Management Tab — Lab-hub Integration
+The Sample Mgmt tab (`SamplesTab` component) connects directly to the Lab-hub backend API:
+
+**Sub-tabs:**
+- **Dashboard** — Stats cards (total racks, samples, partial, pending discard) + recent racks list with progress bars
+- **Racks** — Filterable rack list by date range & status; create new rack (name / date / type / description); delete rack; CSV export
+- **Search** — Search samples by barcode, patient ID, or all fields; results show barcode, patient ID, type, position, collection date, notes with active/discarded badges
+
+**Connection:**
+- Configurable Lab-hub URL stored in `localStorage` (key: `kanta-lab-hub-url`)
+- Connection banner shows live status (connected / unreachable) with Configure and Retry buttons
+- Settings modal to enter custom Lab-hub base URL (e.g. `http://192.168.1.10:8000`)
+- "View in Lab-hub ↗" links open the full rack detail page in Lab-hub UI
+
+### Files Changed (Phase 8c)
+
+| File | Change |
+|------|--------|
+| `app/dashboard/qc/page.tsx` | Added 7th tab `samples`, `SamplesTab` component, helper types (Rack, SampleResult, LabHubStats), connection logic, sub-tab UI |
+| `components/dashboard/AppTabBar.tsx` | Added "Sample Mgmt" as 7th tab in Quality Management app config |
 
 ---
 
@@ -68,7 +108,7 @@ Inspired by **Typeform** typography and the **Medicare Dashboard** (Dribbble) ae
 | App | Accent | Tabs |
 |-----|--------|------|
 | **Lab Metrics** | Indigo → Violet | TAT · Tests · Numbers · Meta · Revenue |
-| **Quality Management** | Emerald → Teal | QC Overview · L-J Charts · Westgard · Qualitative QC |
+| **Quality Management** | Emerald → Teal | QC Overview · L-J Chart · Westgard · Qualitative QC · Calculator · QC Stats · Sample Mgmt |
 | **Asset Management** | Amber → Orange | Assets Overview · Scan · Equipment · Maintenance · Refrigerator · Analytics · Reports |
 
 ### Navigation — Sidebar Removed
@@ -186,8 +226,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | `78feb67` — Phase 8b theme + login redesign | Live on Vercel |
-| `development` | Integration / Preview | `78feb67` — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | `7e81858` — Phase 8c: Sample Management tab | Live on Vercel |
+| `development` | Integration / Preview | `7e81858` — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---
