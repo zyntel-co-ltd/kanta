@@ -192,7 +192,6 @@ export default function DashboardHomePage() {
                         key={tab.href + tab.label}
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${app.pill} ${app.pillText}`}
                         style={{ fontSize: "0.7rem", fontWeight: 600 }}
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <TabIcon size={10} />
                         {tab.label}
