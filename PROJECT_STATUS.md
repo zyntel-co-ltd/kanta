@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026 (Phase 9)  
+**Last updated:** 22 March 2026 (Phase 9 — env update)  
 **Updated by:** Cursor
 
 ---
@@ -57,7 +57,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **LRIDS waiting-area display** — `kanta/[facility]/lrids` fully redesigned as a full-screen hospital display board: hospital name + logo header, live clock, single two-column table (Patient Identifier + Status), most recent at top, auto-refresh every 30 s, no buttons/sidebar/nav.
 - [x] **Dashboard LRIDS** — Manual refresh button removed; auto-refresh label kept.
 - [x] **Brand Management page** (`/dashboard/settings/brand`) — Pro-gated page for logo upload, hospital name/tagline, primary/secondary colour pickers with live preview strip. Non-Pro users see a locked feature screen explaining what Pro unlocks.
-- [x] **New env vars** — `NEXT_PUBLIC_PRO_FEATURES`, `NEXT_PUBLIC_HOSPITAL_NAME`, `NEXT_PUBLIC_HOSPITAL_LOGO_URL` added to `.env.example`.
+- [x] **New env vars** — `NEXT_PUBLIC_PRO_FEATURES`, `NEXT_PUBLIC_HOSPITAL_NAME`, `NEXT_PUBLIC_HOSPITAL_LOGO_URL` added to `.env.example`. Default hospital name set to **Zyntel Hospital** in `.env.example`.
 
 ---
 
