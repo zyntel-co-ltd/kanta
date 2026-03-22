@@ -21,10 +21,12 @@ import {
 
 /* ─────────────────────────── types ─────────────────────────── */
 
+type IconProps = { size?: number; className?: string; strokeWidth?: number; style?: React.CSSProperties };
+
 type SubTab = {
   label: string;
   href: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<IconProps>;
 };
 
 type AppCard = {
@@ -32,7 +34,7 @@ type AppCard = {
   title: string;
   description: string;
   href: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<IconProps>;
   accent: string;       // Tailwind border/text accent class
   accentBg: string;     // icon bg
   pillBg: string;
