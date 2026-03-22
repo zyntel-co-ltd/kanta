@@ -30,9 +30,9 @@ const cardThemes = {
     pulse: true,
   },
   indigo: {
-    gradient: "from-indigo-500 to-violet-600",
-    glow: "shadow-indigo-200",
-    sparkColor: "#a5b4fc",
+    gradient: "from-cyan-500 to-sky-600",
+    glow: "shadow-cyan-200",
+    sparkColor: "#67e8f9",
     badge: "bg-white/20 text-white",
     iconBg: "bg-white/20",
     pulse: false,

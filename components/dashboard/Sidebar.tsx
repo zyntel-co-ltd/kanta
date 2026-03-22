@@ -205,14 +205,16 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* ── Collapse toggle ── */}
+      {/* ── Collapse toggle — pill tab extending from sidebar edge ── */}
       <button
         type="button"
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-[22px] w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-400 shadow-sm transition-all z-10"
+        className="absolute -right-5 top-20 w-5 h-14 bg-slate-900 rounded-r-2xl flex items-center justify-center text-white/60 hover:text-white hover:bg-cyan-600 shadow-lg transition-all duration-200 z-20 group"
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
-        {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+        <span className="transition-transform duration-200 group-hover:scale-110">
+          {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+        </span>
       </button>
     </aside>
   );
