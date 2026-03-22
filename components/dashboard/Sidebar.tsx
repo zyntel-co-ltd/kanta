@@ -33,6 +33,8 @@ import {
   FlaskRound,
   TrendingUp,
   Package,
+  Brain,
+  Activity,
 } from "lucide-react";
 
 type NavItem = {
@@ -87,6 +89,12 @@ const navGroups: NavGroup[] = [
       { label: "Refrigerator", icon: Thermometer,     href: "/dashboard/refrigerator"  },
       { label: "Analytics",    icon: BarChart3,       href: "/dashboard/analytics"     },
       { label: "Reports",      icon: FileText,        href: "/dashboard/reports"       },
+    ],
+  },
+  {
+    title: "Intelligence",
+    items: [
+      { label: "AI Insights",  icon: Brain,    href: "/dashboard/intelligence" },
     ],
   },
   {

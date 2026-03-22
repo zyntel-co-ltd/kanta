@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useSyncStatus } from "@/lib/SyncStatusContext";
 import { useAuth } from "@/lib/AuthContext";
+import NLQueryBar from "@/components/ai/NLQueryBar";
 
 const HOSPITAL_NAME =
   process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Nakasero Hospital";
@@ -221,8 +222,13 @@ export default function TopBar() {
         </span>
       </div>
 
-      {/* ── Right: Alerts + User ── */}
+      {/* ── Right: AI Query + Alerts + User ── */}
       <div className="flex items-center gap-1.5">
+
+        {/* ── NL Query ── */}
+        <div className="hidden lg:block">
+          <NLQueryBar />
+        </div>
 
         {/* ── Alerts bell ── */}
         <div className="relative" ref={alertsRef}>

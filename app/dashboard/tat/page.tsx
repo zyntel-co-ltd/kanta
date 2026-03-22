@@ -27,6 +27,7 @@ import {
 } from "recharts";
 
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import AnomalyPanel from "@/components/ai/AnomalyPanel";
 
 type QueueItem = {
   id: string;
@@ -545,6 +546,9 @@ export default function TATPage() {
               </div>
             </div>
           </div>
+
+          {/* ── AI Anomaly Detection (inline, not a separate section) ── */}
+          <AnomalyPanel facilityId={DEFAULT_FACILITY_ID} days={7} />
         </>
       )}
     </div>

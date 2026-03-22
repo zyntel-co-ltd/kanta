@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026 (Phase 9 — env update)  
+**Last updated:** 22 March 2026 (Phase 10 — AI Intelligence Layer)  
 **Updated by:** Cursor
 
 ---
@@ -14,7 +14,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 ## Current State
 
 **Status:** In development  
-**Phase:** MVP — Phase 9 implemented. Brand green theme, Medicare-style sidebar, hospital header with name/logo, LRIDS waiting-area display, Samples module (Supabase), brand management (Pro), user dropdown with alerts panel.
+**Phase:** MVP — Phase 10 implemented. AI Intelligence Layer: TAT anomaly detection (Z-score/rolling baseline), natural language dashboard queries, weekly operational summaries, predictive fault signal infrastructure, and legal architecture for the data flywheel.
 
 ### What Is Built and Working
 
@@ -45,6 +45,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 8e: Medicare theme, LRIDS hospital board, sidebar toggle** *(22 March 2026)* — Teal/cyan hero header on Assets Overview, KPI card cyan accent, LRIDS fully redesigned as a hospital display board, sidebar collapse button redesigned as a pill-tab
 - [x] **Phase 8f: Homepage teal redesign + LRIDS fix** *(22 March 2026)* — Homepage hero banner + all three app cards converted to unified teal/cyan palette; LRIDS font sizes normalised and layout fixed to work within dashboard wrapper
 - [x] **Phase 9: Brand identity, sidebar redesign, Samples module** *(22 March 2026)* — see section below
+- [x] **Phase 10: AI Intelligence Layer** *(22 March 2026)* — see section below
 
 ### Phase 9 — Brand Identity, Sidebar, Samples, LRIDS (22 March 2026)
 
@@ -61,6 +62,18 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 
 ---
 
+### Phase 10 — AI Intelligence Layer (22 March 2026)
+
+- [x] **TAT Anomaly Detection** — Rolling 90-day baseline per section × test type stored in `tat_anomaly_baselines`. Every TAT event scored with a Z-score. Events exceeding ±2 SD flagged in `tat_anomaly_flags`. Consecutive flags on the same section grouped as a cluster. Confidence score combines sample-size factor and Z magnitude. Plain-English reason generated rule-based (no AI cost). API: `GET /api/tat/anomalies` (live flags), `POST /api/tat/anomalies` (nightly baseline refresh). Displayed inline in `/dashboard/tat` via `AnomalyPanel` component — not in a separate AI section.
+- [x] **Natural Language Dashboard Queries** — `POST /api/ai/query` accepts a plain-English question from a lab manager. System prompt scopes responses strictly to facility operational data (Class A only). Clinical/patient inference explicitly prohibited. Answers arrive via Anthropic Claude Haiku. Every call logged to `ai_inference_log`. `NLQueryBar` component embedded in the TopBar (desktop) and accessible from `/dashboard/intelligence`.
+- [x] **Weekly Operational Summaries** — `POST /api/ai/weekly-summary` generates a Markdown summary (top anomalies, volume by section, week-over-week delta, items requiring attention). Stored in `weekly_summaries` table. Delivered via Resend email when `email_recipients` provided. In-app reading at `/dashboard/intelligence`. Vercel Cron triggers every Monday at 07:00 UTC via `/api/cron/weekly-summary`.
+- [x] **Predictive Fault Signal Infrastructure** — `equipment_telemetry_log` table created. Records TAT, Z-score, hour-of-day, day-of-week, sample volume per day. `days_to_failure` and `failure_type` columns left nullable — filled retroactively when equipment failure is recorded. Minimum 12–18 months across 3+ facilities required before model training begins.
+- [x] **AI Inference Audit Log** — `ai_inference_log` table records every AI call: model, feature, data sources (table names only, no values), row count referenced, SHA-256 hash of output, latency, error. 24-month retention. Compliance evidence for ISO 15189 and regional data protection frameworks.
+- [x] **Legal Architecture** — `docs/legal/DATA_CLASSIFICATION.md` defines Class A (operational, permitted in AI), Class B (patient-adjacent, never in AI), and Class C (facility-identifying, hashed before training). `docs/legal/TOS_CLAUSE_AI_TRAINING.md` provides the draft Section 8 clause: opt-in consent for data flywheel, anonymisation standard, audit trail disclosure, no-clinical-use boundary. `DATA_FLYWHEEL_ENABLED` and `FACILITY_HASH_SALT` env vars added to `.env.example`.
+- [x] **Sidebar — Intelligence entry** — "AI Insights" (`Brain` icon) added under new "Intelligence" nav group, linking to `/dashboard/intelligence`.
+- [x] **Supabase migration** — `20260322000002_ai_intelligence.sql` creates: `tat_anomaly_baselines`, `tat_anomaly_flags`, `weekly_summaries`, `ai_inference_log`, `equipment_telemetry_log`. All tables have RLS enabled.
+- [x] **Vercel Cron** — `vercel.json` updated: `/api/cron/weekly-summary` runs Mondays 07:00 UTC; `/api/tat/anomalies` (baseline refresh) runs nightly 02:00 UTC.
+
 ### What Is In Progress
 
 - [ ] JWT `facility_id` claim + RLS tied to `auth.uid()` (currently DEFAULT_FACILITY_ID in several API paths)
@@ -76,6 +89,9 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [ ] Quantitative QC tab — full run entry form + Chart.js line chart with ±SD reference lines
 - [ ] Supabase-backed alerts in TopBar (query `operational_alerts` table, replace mock data)
 - [ ] Brand Management — Supabase Storage logo upload + `facility_branding` table persistence
+- [ ] AI: Wire `days_to_failure` labels into `equipment_telemetry_log` on equipment failure events
+- [ ] AI: Enrich anomaly reasons with Anthropic for higher-severity flags (z > 3.5)
+- [ ] AI: Facility 2 onboarding — confirm `DATA_FLYWHEEL_ENABLED` opt-in before signing up second customer
 
 ---
 
@@ -343,8 +359,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | Phase 8f — Homepage teal redesign + LRIDS fix | Live on Vercel |
-| `development` | Integration / Preview | Phase 8f — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | Phase 10 — AI Intelligence Layer | Live on Vercel |
+| `development` | Integration/Preview | Phase 10 — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---
@@ -376,6 +392,14 @@ Set these in Vercel **without surrounding quotes** — for **both Production and
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `UPSTASH_REDIS_REST_URL` — e.g. `https://xxx.upstash.io`
 - `UPSTASH_REDIS_REST_TOKEN`
+
+**Phase 10 — AI Intelligence additions:**
+
+- `ANTHROPIC_API_KEY` — Required for NL queries and weekly summaries
+- `NEXT_PUBLIC_APP_URL` — e.g. `https://app.zyntel.net` (used by cron jobs)
+- `CRON_SECRET` — Random string to protect `/api/cron/*` endpoints
+- `DATA_FLYWHEEL_ENABLED` — `false` until customer opts in to ToS Section 8
+- `FACILITY_HASH_SALT` — Random 32-char string; rotate annually
 
 ---
 
