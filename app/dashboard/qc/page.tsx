@@ -39,6 +39,7 @@ type Material = {
   id: string;
   name: string;
   analyte: string;
+  level: string;
   last_value: number | null;
   last_run_at: string | null;
   pass: boolean | null;
