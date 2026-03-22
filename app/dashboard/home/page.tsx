@@ -51,11 +51,11 @@ const apps: AppCard[] = [
       "Monitor turnaround times, test volumes, patient numbers, test catalogue and revenue — all in one place.",
     href: "/dashboard/tat",
     icon: FlaskConical,
-    accent: "border-cyan-400",
-    accentBg: "bg-cyan-50",
-    pillBg: "bg-cyan-50",
-    pillText: "text-cyan-700",
-    iconGradient: "from-cyan-500 to-teal-600",
+    accent: "border-emerald-400",
+    accentBg: "bg-emerald-50",
+    pillBg: "bg-emerald-50",
+    pillText: "text-emerald-700",
+    iconGradient: "from-emerald-500 to-emerald-700",
     tabs: [
       { label: "TAT", href: "/dashboard/tat", icon: Clock },
       { label: "Tests", href: "/dashboard/tests", icon: Beaker },
@@ -71,11 +71,11 @@ const apps: AppCard[] = [
       "Run Westgard rules, plot Levey-Jennings charts and manage qualitative QC to keep results accurate and compliant.",
     href: "/dashboard/qc",
     icon: ShieldCheck,
-    accent: "border-sky-400",
-    accentBg: "bg-sky-50",
-    pillBg: "bg-sky-50",
-    pillText: "text-sky-700",
-    iconGradient: "from-sky-500 to-cyan-600",
+    accent: "border-emerald-500",
+    accentBg: "bg-emerald-50",
+    pillBg: "bg-emerald-50",
+    pillText: "text-emerald-700",
+    iconGradient: "from-emerald-600 to-emerald-800",
     tabs: [
       { label: "QC Overview", href: "/dashboard/qc", icon: ShieldCheck },
       { label: "L-J Charts", href: "/dashboard/qc", icon: Activity },
@@ -90,11 +90,11 @@ const apps: AppCard[] = [
       "Track every piece of equipment, schedule maintenance, monitor cold-chain temperatures and review fleet analytics.",
     href: "/dashboard",
     icon: Layers,
-    accent: "border-teal-400",
-    accentBg: "bg-teal-50",
-    pillBg: "bg-teal-50",
-    pillText: "text-teal-700",
-    iconGradient: "from-teal-500 to-cyan-700",
+    accent: "border-emerald-400",
+    accentBg: "bg-emerald-50",
+    pillBg: "bg-emerald-50",
+    pillText: "text-emerald-700",
+    iconGradient: "from-emerald-500 to-emerald-700",
     tabs: [
       { label: "Assets Overview", href: "/dashboard", icon: LayoutDashboard },
       { label: "Scan", href: "/dashboard/scan", icon: ScanSearch },
@@ -112,10 +112,10 @@ export default function DashboardHomePage() {
   return (
     <div className="max-w-[1280px] mx-auto space-y-6 pb-10">
 
-      {/* ── Medicare-style teal hero banner ── */}
+      {/* ── Login-page emerald hero banner ── */}
       <div
         className="rounded-2xl overflow-hidden animate-slide-up stagger-1"
-        style={{ background: "linear-gradient(135deg, #0e7490 0%, #0891b2 55%, #06b6d4 100%)" }}
+        style={{ background: "linear-gradient(145deg, #042f2e 0%, #065f46 55%, #047857 100%)" }}
       >
         <div className="px-7 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -123,7 +123,7 @@ export default function DashboardHomePage() {
               <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
                 <Zap size={17} className="text-white" />
               </div>
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-cyan-200">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-emerald-200">
                 Kanta · Operational Intelligence
               </span>
             </div>
@@ -133,7 +133,7 @@ export default function DashboardHomePage() {
             >
               Welcome back
             </h1>
-            <p className="text-cyan-100 mt-1.5" style={{ fontSize: "0.9375rem", lineHeight: 1.6 }}>
+            <p className="text-emerald-100 mt-1.5" style={{ fontSize: "0.9375rem", lineHeight: 1.6 }}>
               Choose a workspace below — data, charts and controls in one focused view.
             </p>
           </div>
@@ -144,7 +144,7 @@ export default function DashboardHomePage() {
               <span className="text-sm font-semibold text-white">System Online</span>
             </div>
             <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2">
-              <span className="text-xs text-cyan-200">3 modules active</span>
+              <span className="text-xs text-emerald-200">3 modules active</span>
             </div>
           </div>
         </div>
@@ -158,21 +158,33 @@ export default function DashboardHomePage() {
             <Link
               key={app.title}
               href={app.href}
-              className={`relative flex flex-col rounded-2xl bg-white border-2 ${app.accent} shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400`}
+              className={`relative flex flex-col rounded-2xl bg-white border-2 ${app.accent} shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1.5 hover:border-emerald-500/80 transition-all duration-300 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2`}
               style={{ minHeight: 320 }}
             >
-              <div className="relative flex flex-col flex-1 p-6">
+              {/* Top accent bar */}
+              <div
+                className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl opacity-80"
+                style={{ background: "linear-gradient(90deg, #065f46 0%, #047857 50%, #059669 100%)" }}
+              />
+
+              {/* Decorative gradient blob */}
+              <div
+                className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-[0.07] group-hover:opacity-[0.12] transition-opacity duration-300 pointer-events-none"
+                style={{ background: "radial-gradient(circle, #047857, transparent 70%)" }}
+              />
+
+              <div className="relative flex flex-col flex-1 p-6 pt-7">
 
                 {/* Icon + eyebrow */}
                 <div className="flex items-start justify-between mb-5">
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${app.iconGradient} flex items-center justify-center flex-shrink-0 shadow-md`}>
-                    <AppIcon size={22} className="text-white" />
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${app.iconGradient} flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-105 group-hover:shadow-lg transition-transform duration-300`}>
+                    <AppIcon size={22} className="text-white drop-shadow-sm" />
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{app.eyebrow}</span>
                 </div>
 
                 {/* Title */}
-                <h2 className="text-slate-900 mb-2" style={{ fontSize: "1.2rem", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.25 }}>
+                <h2 className="text-slate-900 mb-2 group-hover:text-emerald-800 transition-colors duration-200" style={{ fontSize: "1.2rem", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.25 }}>
                   {app.title}
                 </h2>
 
@@ -188,20 +200,22 @@ export default function DashboardHomePage() {
                     return (
                       <span
                         key={tab.href + tab.label}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg ${app.pillBg} ${app.pillText}`}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-emerald-100 ${app.pillBg} ${app.pillText}`}
                         style={{ fontSize: "0.6875rem", fontWeight: 600 }}
                       >
-                        <TabIcon size={9} />
+                        <TabIcon size={9} className="opacity-80" />
                         {tab.label}
                       </span>
                     );
                   })}
                 </div>
 
-                {/* CTA row */}
-                <div className="flex items-center gap-1.5 mt-5 text-slate-400 group-hover:text-cyan-600 transition-colors">
-                  <span className="text-sm font-semibold">Open {app.title}</span>
-                  <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                {/* Divider + CTA row */}
+                <div className="mt-5 pt-5 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5 text-slate-400 group-hover:text-emerald-600 transition-colors duration-200">
+                    <span className="text-sm font-semibold">Open {app.title}</span>
+                    <ArrowRight size={14} className="group-hover:translate-x-1.5 transition-transform duration-200" />
+                  </div>
                 </div>
               </div>
             </Link>
@@ -213,7 +227,7 @@ export default function DashboardHomePage() {
       <div className="animate-slide-up stagger-4 border-t border-slate-100 pt-5">
         <p style={{ fontSize: "0.8125rem", fontWeight: 400, color: "#94a3b8" }}>
           Kanta · QR-first asset intelligence for East African laboratories ·{" "}
-          <span style={{ fontWeight: 600, color: "#0891b2" }}>Offline-capable</span>
+          <span style={{ fontWeight: 600, color: "#047857" }}>Offline-capable</span>
         </p>
       </div>
     </div>

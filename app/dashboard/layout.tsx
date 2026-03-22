@@ -13,7 +13,7 @@ export default function DashboardLayout({
     <AuthGuard>
     <DashboardProviders>
     <SidebarLayoutProvider>
-      <div className="flex h-screen overflow-hidden bg-slate-50">
+      <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#F8F9FB" }}>
         {/* Collapsible sidebar */}
         <Sidebar />
 

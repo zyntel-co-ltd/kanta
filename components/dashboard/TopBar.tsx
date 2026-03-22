@@ -98,13 +98,13 @@ function timeAgo(iso: string) {
 }
 
 const severityIcon = {
-  info: <Info size={14} className="text-blue-500 flex-shrink-0 mt-0.5" />,
+  info: <Info size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />,
   warning: <AlertCircle size={14} className="text-amber-500 flex-shrink-0 mt-0.5" />,
   error: <AlertCircle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />,
 };
 
 const severityBg = {
-  info: "bg-blue-50 border-blue-100",
+  info: "bg-emerald-50 border-emerald-100",
   warning: "bg-amber-50 border-amber-100",
   error: "bg-red-50 border-red-100",
 };

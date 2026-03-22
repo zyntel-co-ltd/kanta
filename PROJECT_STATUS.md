@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026 (Phase 11 — Chart.js, Module Tabs, Quantitative QC, Live Alerts)  
+**Last updated:** 22 March 2026 (Phase 12 — Emerald Theme, Sidebar Cutout, App Cards, Logout)  
 **Updated by:** Cursor
 
 ---
@@ -47,6 +47,15 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 9: Brand identity, sidebar redesign, Samples module** *(22 March 2026)* — see section below
 - [x] **Phase 10: AI Intelligence Layer** *(22 March 2026)* — see section below
 - [x] **Phase 11: Chart.js migration, module tabs, Quantitative QC, live alerts** *(22 March 2026)* — see section below
+- [x] **Phase 12: Emerald theme, sidebar cutout, app cards, logout** *(22 March 2026)* — see section below
+
+### Phase 12 — Emerald Theme, Sidebar Cutout, App Cards & Logout (22 March 2026)
+
+- [x] **Unified emerald theme** — Dashboard theme switched from teal/cyan to login-page emerald (`#042f2e`, `#065f46`, `#047857`, `#6ee7b7`). Sidebar, TopBar info toasts, intelligence page, and homepage all use emerald palette.
+- [x] **Sidebar cutout selection** — Collapsed sidebar uses green gradient background with white "cutout" pill for active item (inverted corner notches via pseudo-elements). Expanded sidebar remains white with emerald accents. Toggle logic and selection styling aligned with Medicare Dashboard reference.
+- [x] **Homepage emerald** — Hero banner and app cards converted from teal/cyan to emerald. Hero gradient matches login (`#042f2e → #065f46 → #047857`). All three app cards use emerald accents (`border-emerald-400/500`, `bg-emerald-50`, `from-emerald-500 to-emerald-700`).
+- [x] **App cards design polish** — Top accent bar (emerald gradient), decorative gradient blob (intensifies on hover), enhanced hover states (stronger shadow, emerald tint, lift), icon scale on hover, title colour shift, pill borders, divider before CTA, improved focus ring.
+- [x] **Logout button refinement** — Better separation (`mt-2`), red-tinted hover states (expanded: `hover:bg-red-50`, `hover:border-red-100`; collapsed: `hover:bg-red-500/20`), left accent bar on hover (expanded), `aria-label` for accessibility, smoother transitions.
 
 ### Phase 9 — Brand Identity, Sidebar, Samples, LRIDS (22 March 2026)
 
@@ -116,11 +125,13 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 
 ## Phase 8f — Homepage Teal Redesign + LRIDS Fix (22 March 2026)
 
+*Note: Phase 12 later converted homepage from teal/cyan to emerald palette.*
+
 ### Changes Made
 | Area | Before | After |
 |------|--------|-------|
-| **Homepage hero** | Plain text heading (`Welcome to Kanta`) | Teal/cyan gradient banner with Kanta logo, "System Online" chip, module count |
-| **App cards accent** | Indigo (Lab Metrics) · Emerald (QC) · Orange (Assets) | Unified teal/cyan palette — all cards use `border-cyan-400`, `border-sky-400`, `border-teal-400` with matching icon gradients |
+| **Homepage hero** | Plain text heading (`Welcome to Kanta`) | Teal/cyan gradient banner with Kanta logo, "System Online" chip, module count → *Phase 12: emerald gradient* |
+| **App cards accent** | Indigo (Lab Metrics) · Emerald (QC) · Orange (Assets) | Unified teal/cyan palette — *Phase 12: emerald palette for all cards* |
 | **App card border** | Thin `border border-slate-200` | `border-2` with colour-matched accent border — much more prominent and clickable |
 | **Card CTA hover** | `text-slate-700` on hover | `text-cyan-600` on hover — matches theme |
 | **"Offline-capable" tag** | Green (#059669) | Teal/cyan (#0891b2) — consistent palette |

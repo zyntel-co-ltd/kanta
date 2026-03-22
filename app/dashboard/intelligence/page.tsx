@@ -145,7 +145,7 @@ export default function IntelligencePage() {
         {[
           { icon: BarChart3, color: "amber", label: "TAT Anomaly Detection", desc: "Z-score flagging against 90-day rolling baseline" },
           { icon: Sparkles, color: "emerald", label: "Natural Language Queries", desc: "Ask questions in plain English about your data" },
-          { icon: Calendar, color: "blue", label: "Weekly Summaries", desc: "Auto-generated every Monday, delivered by email" },
+          { icon: Calendar, color: "emerald", label: "Weekly Summaries", desc: "Auto-generated every Monday, delivered by email" },
         ].map(({ icon: Icon, color, label, desc }) => (
           <div key={label} className={`rounded-2xl border border-${color}-100 bg-${color}-50/50 p-4`}>
             <Icon size={16} className={`text-${color}-600 mb-2`} />
