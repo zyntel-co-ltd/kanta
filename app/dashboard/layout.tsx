@@ -15,7 +15,7 @@ export default function DashboardLayout({
     <AuthGuard>
     <DashboardProviders>
     <SidebarLayoutProvider>
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-indigo-50/40 via-white to-slate-50">
+    <div className="flex h-screen overflow-hidden" style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #ffffff 50%, #eff6ff 100%)" }}>
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Bloomberg-style live ticker */}

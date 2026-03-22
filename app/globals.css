@@ -1,20 +1,121 @@
 @import "tailwindcss";
 
+/* ── CSS Variables ── */
 :root {
-  --background: #f8fafc;
+  --background: #fafaff;
   --foreground: #0f172a;
+  --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Smooth page gradient */
+  --page-bg-start: #f5f3ff;
+  --page-bg-mid:   #ffffff;
+  --page-bg-end:   #eff6ff;
 }
 
+/* ── Base ── */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-inter);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+/* Use CSS variable so Inter loads from next/font */
+html {
+  font-family: var(--font-inter);
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* ── Typeform-style Typography ── */
+
+/* Display / Hero headings */
+.text-display {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+}
+
+/* Section headings */
+.text-heading {
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+}
+
+/* Card titles */
+.text-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+/* Body / descriptions */
+.text-body {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.65;
+  color: #64748b;
+}
+
+/* Small labels / eyebrows */
+.text-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+/* Gradient text */
+.gradient-text-indigo {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-emerald {
+  background: linear-gradient(135deg, #10b981 0%, #0d9488 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-amber {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Smooth page background ── */
+.page-bg {
+  background: linear-gradient(
+    135deg,
+    var(--page-bg-start) 0%,
+    var(--page-bg-mid) 50%,
+    var(--page-bg-end) 100%
+  );
+}
+
+/* ── Glass card ── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
 }
 
 /* ── Scrollbar ── */
@@ -25,8 +126,13 @@ body {
 
 /* ── Animations ── */
 @keyframes slide-up-fade {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes count-up {
@@ -40,7 +146,7 @@ body {
 }
 
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.25); }
   70%  { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
   100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
 }
@@ -50,8 +156,17 @@ body {
   100% { background-position: 200% 0; }
 }
 
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
 .animate-slide-up {
-  animation: slide-up-fade 0.5s ease both;
+  animation: slide-up-fade 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease both;
 }
 
 .animate-count-up {
@@ -66,11 +181,15 @@ body {
   animation: pulse-ring 2s ease-out infinite;
 }
 
-/* Stagger delays for cards */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Stagger delays */
 .stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.10s; }
-.stagger-3 { animation-delay: 0.15s; }
-.stagger-4 { animation-delay: 0.20s; }
+.stagger-2 { animation-delay: 0.12s; }
+.stagger-3 { animation-delay: 0.19s; }
+.stagger-4 { animation-delay: 0.26s; }
 
 /* Skeleton shimmer */
 .skeleton {

@@ -43,47 +43,46 @@ type NavGroup = { title: string; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
   {
-    title: "Home & overview",
+    title: "Home",
     items: [
       { label: "Home", icon: Home, href: "/dashboard/home" },
-      { label: "Assets overview", icon: LayoutDashboard, href: "/dashboard" },
-      { label: "Scan", icon: ScanSearch, href: "/dashboard/scan" },
     ],
   },
   {
-    title: "Operations",
+    title: "Lab Metrics",
     items: [
-      { label: "Equipment", icon: ScanLine, href: "/dashboard/equipment" },
-      { label: "Maintenance", icon: Wrench, href: "/dashboard/maintenance" },
       { label: "TAT", icon: Clock, href: "/dashboard/tat" },
       { label: "Tests", icon: Beaker, href: "/dashboard/tests" },
       { label: "Numbers", icon: Hash, href: "/dashboard/numbers" },
-    ],
-  },
-  {
-    title: "Clinical & quality",
-    items: [
       { label: "Meta", icon: Database, href: "/dashboard/meta" },
       { label: "Revenue", icon: DollarSign, href: "/dashboard/revenue" },
-      { label: "Refrigerator", icon: Thermometer, href: "/dashboard/refrigerator" },
-      { label: "QC", icon: Beaker, href: "/dashboard/qc" },
-      { label: "Departments", icon: Building2, href: "/dashboard/departments" },
     ],
   },
   {
-    title: "Insights",
+    title: "Quality Management",
     items: [
+      { label: "QC", icon: Beaker, href: "/dashboard/qc" },
+    ],
+  },
+  {
+    title: "Asset Management",
+    items: [
+      { label: "Assets Overview", icon: LayoutDashboard, href: "/dashboard" },
+      { label: "Scan", icon: ScanSearch, href: "/dashboard/scan" },
+      { label: "Equipment", icon: ScanLine, href: "/dashboard/equipment" },
+      { label: "Maintenance", icon: Wrench, href: "/dashboard/maintenance" },
+      { label: "Refrigerator", icon: Thermometer, href: "/dashboard/refrigerator" },
       { label: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
       { label: "Reports", icon: FileText, href: "/dashboard/reports" },
-      { label: "Reception", icon: Table2, href: "/dashboard/reception" },
-      { label: "Tracker", icon: ListTodo, href: "/dashboard/tracker" },
-      { label: "Progress", icon: Activity, href: "/dashboard/progress" },
-      { label: "Performance", icon: BarChart3, href: "/dashboard/performance" },
     ],
   },
   {
     title: "System",
     items: [
+      { label: "Departments", icon: Building2, href: "/dashboard/departments" },
+      { label: "Reception", icon: Table2, href: "/dashboard/reception" },
+      { label: "Tracker", icon: ListTodo, href: "/dashboard/tracker" },
+      { label: "Progress", icon: Activity, href: "/dashboard/progress" },
       { label: "Admin", icon: Shield, href: "/dashboard/admin" },
       { label: "Settings", icon: Settings, href: "/dashboard/settings" },
     ],
@@ -131,9 +130,12 @@ export default function Sidebar() {
     <aside
       className={clsx(
         "relative flex flex-col h-screen text-white transition-all duration-300 ease-in-out overflow-hidden",
-        "bg-gradient-to-b from-slate-900 to-slate-950",
+        "border-r border-white/40",
         collapsed ? "w-16" : "w-60"
       )}
+      style={{
+        background: "linear-gradient(180deg, #1e1b4b 0%, #1e1b4b 40%, #1a1040 100%)",
+      }}
     >
       {/* Logo — links to post-login home */}
       <div className="flex-shrink-0 flex items-center gap-3 px-4 py-5 border-b border-white/5">
@@ -178,7 +180,8 @@ export default function Sidebar() {
         {navGroups.map((group) => (
           <div key={group.title}>
             {!collapsed && (
-              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-indigo-300/70"
+                style={{ letterSpacing: "0.1em" }}>
                 {group.title}
               </p>
             )}

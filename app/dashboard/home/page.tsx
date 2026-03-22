@@ -1,188 +1,311 @@
 import Link from "next/link";
-import type { ComponentType } from "react";
 import {
-  LayoutDashboard,
-  ScanSearch,
-  ScanLine,
-  Wrench,
   Clock,
   Beaker,
   Hash,
   Database,
   DollarSign,
+  ShieldCheck,
+  LayoutDashboard,
+  ScanSearch,
+  ScanLine,
+  Wrench,
   Thermometer,
-  Building2,
   BarChart3,
   FileText,
+  ArrowRight,
+  Activity,
+  FlaskConical,
+  Layers,
   Table2,
   ListTodo,
-  Activity,
-  Shield,
   Settings,
+  Shield,
 } from "lucide-react";
 
-type Panel = {
+/* ─────────────────────────── types ─────────────────────────── */
+
+type SubTab = {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+};
+
+type AppCard = {
+  eyebrow: string;
   title: string;
   description: string;
   href: string;
-  icon: ComponentType<{ size?: number; className?: string }>;
-  accent: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  gradient: string;
+  iconBg: string;
+  ring: string;
+  pill: string;
+  pillText: string;
+  ctaColor: string;
+  tabs: SubTab[];
+  blob: string;
 };
 
-const panels: Panel[] = [
+/* ─────────────────────────── data ─────────────────────────── */
+
+const apps: AppCard[] = [
   {
-    title: "Assets overview",
-    description: "KPIs, charts, fleet status",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    accent: "from-indigo-500 to-violet-600",
-  },
-  {
-    title: "Scan",
-    description: "QR capture & lookup",
-    href: "/dashboard/scan",
-    icon: ScanSearch,
-    accent: "from-cyan-500 to-blue-600",
-  },
-  {
-    title: "Equipment",
-    description: "Register & track assets",
-    href: "/dashboard/equipment",
-    icon: ScanLine,
-    accent: "from-emerald-500 to-teal-600",
-  },
-  {
-    title: "Maintenance",
-    description: "Schedules & due work",
-    href: "/dashboard/maintenance",
-    icon: Wrench,
-    accent: "from-amber-500 to-orange-600",
-  },
-  {
-    title: "TAT",
-    description: "Turnaround intelligence",
+    eyebrow: "Lab Intelligence",
+    title: "Lab Metrics",
+    description:
+      "Monitor turnaround times, test volumes, patient numbers, test catalogue and revenue — all in one place.",
     href: "/dashboard/tat",
-    icon: Clock,
-    accent: "from-violet-500 to-purple-600",
+    icon: FlaskConical,
+    gradient: "from-indigo-500 via-violet-500 to-purple-600",
+    iconBg: "bg-indigo-50",
+    ring: "ring-indigo-100",
+    pill: "bg-indigo-50",
+    pillText: "text-indigo-700",
+    ctaColor:
+      "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 shadow-md",
+    blob: "from-indigo-200/40 to-violet-200/30",
+    tabs: [
+      { label: "TAT", href: "/dashboard/tat", icon: Clock },
+      { label: "Tests", href: "/dashboard/tests", icon: Beaker },
+      { label: "Numbers", href: "/dashboard/numbers", icon: Hash },
+      { label: "Meta", href: "/dashboard/meta", icon: Database },
+      { label: "Revenue", href: "/dashboard/revenue", icon: DollarSign },
+    ],
   },
   {
-    title: "Tests & QC",
-    description: "Volumes, Westgard, L-J",
-    href: "/dashboard/tests",
-    icon: Beaker,
-    accent: "from-pink-500 to-rose-600",
+    eyebrow: "Clinical Excellence",
+    title: "Quality Management",
+    description:
+      "Run Westgard rules, plot Levey-Jennings charts and manage qualitative QC to keep results accurate and compliant.",
+    href: "/dashboard/qc",
+    icon: ShieldCheck,
+    gradient: "from-emerald-500 via-teal-500 to-cyan-600",
+    iconBg: "bg-emerald-50",
+    ring: "ring-emerald-100",
+    pill: "bg-emerald-50",
+    pillText: "text-emerald-700",
+    ctaColor:
+      "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 shadow-md",
+    blob: "from-emerald-200/40 to-teal-200/30",
+    tabs: [
+      { label: "QC Overview", href: "/dashboard/qc", icon: ShieldCheck },
+      { label: "L-J Charts", href: "/dashboard/qc", icon: Activity },
+      { label: "Westgard", href: "/dashboard/qc", icon: BarChart3 },
+      { label: "Qualitative QC", href: "/dashboard/qc", icon: FlaskConical },
+    ],
   },
   {
-    title: "Numbers & Meta",
-    description: "Targets & test metadata",
-    href: "/dashboard/numbers",
-    icon: Hash,
-    accent: "from-slate-500 to-slate-700",
-  },
-  {
-    title: "Revenue",
-    description: "Targets vs actuals",
-    href: "/dashboard/revenue",
-    icon: DollarSign,
-    accent: "from-green-500 to-emerald-700",
-  },
-  {
-    title: "Refrigerator",
-    description: "Cold chain monitoring",
-    href: "/dashboard/refrigerator",
-    icon: Thermometer,
-    accent: "from-sky-500 to-indigo-600",
-  },
-  {
-    title: "Departments",
-    description: "Ward & lab structure",
-    href: "/dashboard/departments",
-    icon: Building2,
-    accent: "from-fuchsia-500 to-pink-600",
-  },
-  {
-    title: "Analytics & reports",
-    description: "Insights & exports",
-    href: "/dashboard/analytics",
-    icon: BarChart3,
-    accent: "from-indigo-600 to-blue-800",
-  },
-  {
-    title: "Admin",
-    description: "Users, audit, targets",
-    href: "/dashboard/admin",
-    icon: Shield,
-    accent: "from-red-500 to-red-800",
+    eyebrow: "Operations",
+    title: "Asset Management",
+    description:
+      "Track every piece of equipment, schedule maintenance, monitor cold-chain temperatures and review fleet analytics.",
+    href: "/dashboard",
+    icon: Layers,
+    gradient: "from-amber-500 via-orange-500 to-rose-500",
+    iconBg: "bg-amber-50",
+    ring: "ring-amber-100",
+    pill: "bg-amber-50",
+    pillText: "text-amber-700",
+    ctaColor:
+      "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-200 shadow-md",
+    blob: "from-amber-200/40 to-orange-200/30",
+    tabs: [
+      { label: "Assets Overview", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Scan", href: "/dashboard/scan", icon: ScanSearch },
+      { label: "Equipment", href: "/dashboard/equipment", icon: ScanLine },
+      { label: "Maintenance", href: "/dashboard/maintenance", icon: Wrench },
+      { label: "Refrigerator", href: "/dashboard/refrigerator", icon: Thermometer },
+      { label: "Analytics & Reports", href: "/dashboard/analytics", icon: BarChart3 },
+    ],
   },
 ];
 
+/* ─────────────────────────── quick links ─────────────────────────── */
+
+const quickLinks = [
+  { label: "Reception", href: "/dashboard/reception", icon: Table2 },
+  { label: "Tracker", href: "/dashboard/tracker", icon: ListTodo },
+  { label: "Reports", href: "/dashboard/reports", icon: FileText },
+  { label: "Settings", href: "/dashboard/settings", icon: Settings },
+  { label: "Admin", href: "/dashboard/admin", icon: Shield },
+];
+
+/* ─────────────────────────── component ─────────────────────────── */
+
 export default function DashboardHomePage() {
   return (
-    <div className="max-w-[1400px] space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-          Welcome to Kanta
+    <div className="max-w-[1280px] mx-auto space-y-10 pb-10">
+
+      {/* ── Hero Header ── */}
+      <div className="animate-slide-up stagger-1 pt-2">
+        <p className="text-eyebrow mb-3">Kanta · Operational Intelligence</p>
+        <h1
+          className="text-heading"
+          style={{
+            fontSize: "clamp(1.75rem, 3vw, 2.5rem)",
+            fontWeight: 800,
+            letterSpacing: "-0.03em",
+            lineHeight: 1.15,
+            color: "#0f172a",
+          }}
+        >
+          Welcome to&nbsp;
+          <span
+            style={{
+              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Kanta
+          </span>
         </h1>
-        <p className="text-sm text-slate-500 mt-1 max-w-2xl">
-          Choose a module below or use the sidebar. You can collapse or hide the sidebar from
-          the top bar for more space.
+        <p
+          className="mt-3 max-w-xl"
+          style={{
+            fontSize: "1.0625rem",
+            fontWeight: 400,
+            color: "#64748b",
+            lineHeight: 1.65,
+          }}
+        >
+          Choose a workspace below. Each app bundles everything you need for that
+          domain — data, charts and controls — in one focused view.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {panels.map(({ title, description, href, icon: Icon, accent }) => (
-          <Link
-            key={href}
-            href={href}
-            className="group relative flex flex-col rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all"
-          >
+      {/* ── 3 App Cards ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-up stagger-2">
+        {apps.map((app) => {
+          const AppIcon = app.icon;
+          return (
             <div
-              className={`mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-lg`}
+              key={app.title}
+              className="relative flex flex-col rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group"
+              style={{ minHeight: 380 }}
             >
-              <Icon size={20} />
+              {/* Decorative gradient blob */}
+              <div
+                className={`absolute -top-16 -right-16 w-52 h-52 rounded-full bg-gradient-to-br ${app.blob} blur-3xl opacity-70 pointer-events-none group-hover:opacity-90 transition-opacity`}
+              />
+
+              {/* Top gradient band */}
+              <div className={`h-1.5 w-full bg-gradient-to-r ${app.gradient} flex-shrink-0`} />
+
+              <div className="relative flex flex-col flex-1 p-7">
+                {/* Eyebrow + Icon row */}
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-eyebrow">{app.eyebrow}</span>
+                  <div
+                    className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${app.gradient} flex items-center justify-center flex-shrink-0 shadow-sm`}
+                  >
+                    <AppIcon size={20} className="text-white" />
+                  </div>
+                </div>
+
+                {/* Title */}
+                <h2
+                  style={{
+                    fontSize: "1.375rem",
+                    fontWeight: 700,
+                    letterSpacing: "-0.025em",
+                    lineHeight: 1.25,
+                    color: "#0f172a",
+                  }}
+                >
+                  {app.title}
+                </h2>
+
+                {/* Description */}
+                <p
+                  className="mt-2 flex-1"
+                  style={{
+                    fontSize: "0.875rem",
+                    fontWeight: 400,
+                    color: "#64748b",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {app.description}
+                </p>
+
+                {/* Sub-tabs */}
+                <div className="flex flex-wrap gap-2 mt-5">
+                  {app.tabs.map((tab) => {
+                    const TabIcon = tab.icon;
+                    return (
+                      <Link
+                        key={tab.href + tab.label}
+                        href={tab.href}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${app.pill} ${app.pillText} border border-transparent hover:border-current transition-all`}
+                        style={{ fontSize: "0.75rem", fontWeight: 600 }}
+                      >
+                        <TabIcon size={12} />
+                        {tab.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* CTA */}
+                <div className="mt-6">
+                  <Link
+                    href={app.href}
+                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${app.ctaColor}`}
+                    style={{ letterSpacing: "-0.01em" }}
+                  >
+                    Open {app.title}
+                    <ArrowRight size={15} />
+                  </Link>
+                </div>
+              </div>
             </div>
-            <h2 className="text-base font-semibold text-slate-900 group-hover:text-indigo-700">
-              {title}
-            </h2>
-            <p className="mt-1 text-sm text-slate-500 flex-1">{description}</p>
-            <span className="mt-3 text-xs font-semibold text-indigo-600 group-hover:underline">
-              Open →
-            </span>
-          </Link>
-        ))}
+          );
+        })}
       </div>
 
-      <div className="flex flex-wrap gap-3 pt-2">
-        <Link
-          href="/dashboard/reception"
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+      {/* ── Quick Links ── */}
+      <div className="animate-slide-up stagger-3">
+        <p className="text-eyebrow mb-4">Quick access</p>
+        <div className="flex flex-wrap gap-3">
+          {quickLinks.map(({ label, href, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 hover:border-slate-300 hover:shadow-sm transition-all"
+              style={{ fontSize: "0.8125rem", fontWeight: 500 }}
+            >
+              <Icon size={15} className="text-slate-400" />
+              {label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Bottom tagline ── */}
+      <div className="animate-slide-up stagger-4 border-t border-slate-100 pt-6">
+        <p
+          style={{
+            fontSize: "0.8125rem",
+            fontWeight: 400,
+            color: "#94a3b8",
+          }}
         >
-          <Table2 size={16} /> Reception
-        </Link>
-        <Link
-          href="/dashboard/tracker"
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          <ListTodo size={16} /> Tracker
-        </Link>
-        <Link
-          href="/dashboard/progress"
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          <Activity size={16} /> Progress
-        </Link>
-        <Link
-          href="/dashboard/reports"
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          <FileText size={16} /> Reports
-        </Link>
-        <Link
-          href="/dashboard/settings"
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          <Settings size={16} /> Settings
-        </Link>
+          Kanta · QR-first asset intelligence for East African laboratories ·{" "}
+          <span
+            style={{
+              fontWeight: 600,
+              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Offline-capable
+          </span>
+        </p>
       </div>
     </div>
   );

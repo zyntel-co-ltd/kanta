@@ -1,9 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { OfflineSyncProvider } from "@/components/OfflineSyncProvider";
 import { PostHogProvider } from "@/components/PostHogProvider";
 import { AuthProvider } from "@/lib/AuthContext";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
 
 const APP_NAME = "Kanta";
 const APP_DESCRIPTION =
@@ -41,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body>
         <PostHogProvider>
           <AuthProvider>
