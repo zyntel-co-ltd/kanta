@@ -1,29 +1,29 @@
 # Kanta — Project Status
 
-**Last updated:** 21 March 2026  
+**Last updated:** 22 March 2026  
 **Updated by:** Cursor
 
 ---
 
 ## What This Project Is
 
-Kanta is the flagship SaaS product — Hospital Operational Intelligence Platform. Equipment tracking (QR, sensors), TAT intelligence, departmental workflow visibility for hospitals. Lab-first launch strategy. MVP in development.
+Kanta is the flagship SaaS product — Hospital Operational Intelligence Platform. Equipment tracking (QR, sensors), TAT intelligence, departmental workflow visibility for hospitals. Lab-first launch strategy. MVP in active development.
 
 ---
 
 ## Current State
 
 **Status:** In development  
-**Phase:** MVP — Phases 1–7 implemented, deployed to Vercel
+**Phase:** MVP — Phases 1–7 implemented, deployed to Vercel. UI/UX redesign (Phase 8) complete.
 
 ### What Is Built and Working
 
 - [x] Next.js 16 app with Supabase
 - [x] **Auth** — Email/password login (`/login`), password reset flow, middleware protection for `/dashboard/*`, cookie-based session (`@supabase/ssr`)
-- [x] **Post-login home** — `/dashboard/home` module grid (landing); `/dashboard` remains full assets overview
-- [x] **Sidebar** — Grouped nav (Home & overview, Operations, Clinical & quality, Insights, System); collapsible; **optional hide** (restore via top bar); **Kanta** brand links to home; **Sign out** in sidebar + **Log out** in top bar
-- [x] **Admin users** — Admins add users via **Admin → Users** (creates Supabase Auth user + `facility_users` row). Real **email required** for sign-in. List merges Auth emails via `auth.admin.listUsers`. Banner explains Dashboard-only Auth users must get a facility link
-- [x] Dashboard layout (sidebar, top bar, ticker)
+- [x] **Post-login home** — `/dashboard/home` rebuilt as 3-app workspace hub (see Phase 8 below)
+- [x] **App-contextual tab navigation** — Replaces sidebar; horizontal `AppTabBar` renders the relevant tabs based on current route (Lab Metrics / Quality Management / Asset Management)
+- [x] **Admin users** — Admins add users via **Admin → Users** (creates Supabase Auth user + `facility_users` row). Real **email required** for sign-in
+- [x] Dashboard layout (top bar, app tab bar — sidebar removed in Phase 8)
 - [x] Equipment API routes (CRUD), departments, scans
 - [x] Dashboard KPI cards, charts (equipment status, daily scans, category donut, asset value)
 - [x] QR code scanning (html5-qrcode)
@@ -38,17 +38,63 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] Phase 7: ModuleTile, operational_alerts, milestones
 - [x] Tests module (volume vs target, charts)
 - [x] Meta module (test metadata CRUD)
+- [x] **Phase 8: UI/UX Redesign** *(completed 22 March 2026)* — see section below
 
 ### What Is In Progress
 
 - [ ] JWT `facility_id` claim + RLS tied to `auth.uid()` (currently DEFAULT_FACILITY_ID in several API paths)
 - [ ] Offline-first PWA sync
-- [ ] Vercel env vars: ensure `NEXT_PUBLIC_SUPABASE_URL`, `UPSTASH_REDIS_REST_URL` set without quotes
+- [ ] Vercel env vars for `development` preview environment — `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` must be added to the **Preview** environment in Vercel dashboard (production env vars are already set and working)
 
 ### What Is Planned (Next Up)
 
 - [ ] First paying hospital on equipment module
 - [ ] Lab-hub QC integration (live)
+
+---
+
+## Phase 8 — UI/UX Redesign (22 March 2026)
+
+### Design Direction
+Inspired by **Typeform** typography and the **Medicare Dashboard** (Dribbble) aesthetic:
+- **Font:** Inter (300–800 weights) via `next/font/google` — tight tracking, large bold headings
+- **Background:** Smooth lavender → white → periwinkle gradient (`#f5f3ff → #fff → #eff6ff`)
+- **Cards:** Clean white with subtle shadows, coloured gradient accents
+
+### Homepage — 3-App Workspace Model
+`/dashboard/home` rebuilt from a flat grid of 12 tiles into **3 hero app cards**:
+
+| App | Accent | Tabs |
+|-----|--------|------|
+| **Lab Metrics** | Indigo → Violet | TAT · Tests · Numbers · Meta · Revenue |
+| **Quality Management** | Emerald → Teal | QC Overview · L-J Charts · Westgard · Qualitative QC |
+| **Asset Management** | Amber → Orange | Assets Overview · Scan · Equipment · Maintenance · Refrigerator · Analytics · Reports |
+
+### Navigation — Sidebar Removed
+The full sidebar is replaced by a context-aware **AppTabBar** (`components/dashboard/AppTabBar.tsx`):
+- Renders as a slim horizontal pill-tab bar below the TopBar
+- Automatically shows the correct app's tabs based on the current pathname
+- Includes a ← Home link and app badge on every app page
+- Hidden on `/dashboard/home` and system pages (Admin, Settings, etc.)
+
+### Scoped Components
+- **Live Feed (TickerBar)** — moved from global layout to Assets Overview page only (`/dashboard`)
+- **Add Equipment FAB** — moved from global layout to Assets Overview page only
+- **Quick Access links** — removed from homepage (navigation now lives in the tab bars)
+- **TopBar** — sidebar toggle controls removed (no sidebar)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `app/layout.tsx` | Added Inter font via `next/font/google` |
+| `app/globals.css` | Typeform typography utilities, smooth background, animations |
+| `app/dashboard/layout.tsx` | Removed Sidebar/TickerBar/FAB; added AppTabBar |
+| `app/dashboard/home/page.tsx` | Full redesign — 3 app cards, removed quick links |
+| `app/dashboard/page.tsx` | Added scoped TickerBar + FAB |
+| `components/dashboard/AppTabBar.tsx` | **New** — context-aware horizontal tab navigation |
+| `components/dashboard/Sidebar.tsx` | Nav groups restructured to 3-app model (retained for reference) |
+| `components/dashboard/TopBar.tsx` | Removed sidebar toggle controls |
 
 ---
 
@@ -60,17 +106,18 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 | Backend | Next.js API Routes | Vercel |
 | Database | Supabase PostgreSQL | Kanta project |
 | Cache | Upstash Redis | Upstash |
+| Font | Inter via next/font/google | — |
 | Monitoring | Sentry, PostHog | — |
 
 ---
 
 ## Environment Status
 
-| Environment | URL | Status |
-|-------------|-----|--------|
-| Production | app.zyntel.net | Deployed (Vercel) |
-| Staging | — | Same as main |
-| Local dev | http://localhost:3000 | Standard |
+| Environment | URL | Branch | Status |
+|-------------|-----|--------|--------|
+| Production | app.zyntel.net | `main` | Deployed — Phase 8 live |
+| Preview | app-preview.zyntel.net | `development` | Deployed — needs Supabase env vars added for Preview environment |
+| Local dev | http://localhost:3000 | any | Standard |
 
 ---
 
@@ -78,7 +125,8 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 
 | Issue | Status | Notes |
 |-------|--------|-------|
-| Invalid supabaseUrl | Fixed | Env vars may have quotes — code now sanitizes. Set values in Vercel without quotes. |
+| Invalid supabaseUrl on development preview | Open | Env vars not set for Preview environment in Vercel. Go to Vercel → Settings → Environment Variables → tick **Preview** for each Supabase/Redis var, then redeploy. Production (`main`) is unaffected. |
+| Invalid supabaseUrl (general) | Fixed | Env vars may have quotes — code sanitizes. Set values in Vercel without surrounding quotes. |
 | Redis URL invalid | Fixed | Same quote-stripping applied to Redis env vars. |
 
 ---
@@ -91,17 +139,20 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 | Repo structure | kanta — standalone Next.js | — |
 | Env var handling | Sanitize quotes from Vercel env vars in lib/supabase.ts and lib/redis.ts | March 2026 |
 | User provisioning | No public self-signup; **admins** add users in Admin panel (Auth + facility_users) | March 2026 |
-| Default after login | `/dashboard/home` (module hub); deep links unchanged | March 2026 |
+| Default after login | `/dashboard/home` (3-app workspace hub); deep links unchanged | March 2026 |
+| Navigation model | Sidebar replaced by contextual horizontal AppTabBar per app domain | March 2026 |
+| Font | Inter (next/font/google) — Typeform-style tight tracking, variable weights | March 2026 |
+| Homepage structure | 3 hero app cards (Lab Metrics / Quality Mgmt / Asset Mgmt) replace flat module grid | March 2026 |
 
 ---
 
 ## Branch State
 
-| Branch | Purpose | Last active |
-|--------|---------|-------------|
-| `main` | Production | March 2026 |
-| `staging` | Staging (mirrors main) | March 2026 |
-| `development` | Integration | March 2026 |
+| Branch | Purpose | Last commit | Status |
+|--------|---------|-------------|--------|
+| `main` | Production | `d879a3d` — Phase 8 redesign | Live on Vercel |
+| `development` | Integration / Preview | `d879a3d` — in sync with main | Live on Vercel (needs Preview env vars) |
+| `staging` | Staging | Mirrors main | March 2026 |
 
 ---
 
@@ -114,6 +165,7 @@ cd kanta
 npm install
 cp .env.example .env.local
 # Fill in NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+# Fill in UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 
 npm run dev
 ```
@@ -124,7 +176,7 @@ Open **http://localhost:3000** → redirects to `/dashboard/home` when logged in
 
 ## Vercel Environment Variables
 
-Set these in Vercel **without surrounding quotes**:
+Set these in Vercel **without surrounding quotes** — for **both Production and Preview** environments:
 
 - `NEXT_PUBLIC_SUPABASE_URL` — e.g. `https://xxx.supabase.co`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -137,16 +189,22 @@ Set these in Vercel **without surrounding quotes**:
 ## Cursor Context (Read Before Writing Any Code)
 
 - **Base branch:** `main` (or `development` for features)
+- **Navigation model:** No sidebar. AppTabBar (`components/dashboard/AppTabBar.tsx`) handles all in-app navigation. Homepage (`/dashboard/home`) is the app selector.
+- **3 app domains:**
+  - **Lab Metrics** → `/dashboard/tat`, `/dashboard/tests`, `/dashboard/numbers`, `/dashboard/meta`, `/dashboard/revenue`
+  - **Quality Management** → `/dashboard/qc`
+  - **Asset Management** → `/dashboard`, `/dashboard/scan`, `/dashboard/equipment`, `/dashboard/maintenance`, `/dashboard/refrigerator`, `/dashboard/analytics`, `/dashboard/reports`
 - **Key files:**
-  - `app/dashboard/home/page.tsx` — Post-login module hub
-  - `app/dashboard/page.tsx` — Assets overview (KPIs / charts)
-  - `components/dashboard/Sidebar.tsx` — Grouped nav, collapse/hide
-  - `lib/SidebarLayoutContext.tsx` — Sidebar collapse + hide state (localStorage)
+  - `app/dashboard/home/page.tsx` — 3-app workspace hub (homepage)
+  - `app/dashboard/page.tsx` — Assets Overview (KPIs / charts / TickerBar / FAB)
+  - `components/dashboard/AppTabBar.tsx` — Context-aware horizontal tab navigation
+  - `components/dashboard/TopBar.tsx` — Top bar (search, sync status, user)
+  - `lib/SidebarLayoutContext.tsx` — Retained for TopBar compatibility
   - `lib/AuthContext.tsx` — Client auth state
   - `lib/supabase.ts` — Admin client; `lib/supabase/client.ts` — browser session
   - `lib/redis.ts` — Redis client (sanitizes env quotes)
   - `supabase/migrations/` — Database migrations
-- **Do not touch:** Supabase schema without migration
+- **Do not touch:** Supabase schema without a migration file
 - **Code style:** TypeScript strict — see `.cursor/rules/`
 
 ---
