@@ -39,7 +39,7 @@ import {
 
 type NavItem = {
   label: string;
-  icon: ComponentType<{ size?: number; className?: string }>;
+  icon: ComponentType<{ size?: number; className?: string; strokeWidth?: number; style?: React.CSSProperties }>;
   href: string;
 };
 
