@@ -66,9 +66,11 @@ const QUALITY_MGMT: AppConfig = {
   AppIcon: ShieldCheck,
   tabs: [
     { label: "QC Overview",    href: "/dashboard/qc", icon: ShieldCheck,  matchPrefixes: ["/dashboard/qc"] },
-    { label: "L-J Charts",     href: "/dashboard/qc", icon: Activity,     matchPrefixes: [] },
-    { label: "Westgard Rules", href: "/dashboard/qc", icon: BarChart3,    matchPrefixes: [] },
+    { label: "L-J Chart",      href: "/dashboard/qc", icon: Activity,     matchPrefixes: [] },
+    { label: "Westgard",       href: "/dashboard/qc", icon: BarChart3,    matchPrefixes: [] },
     { label: "Qualitative QC", href: "/dashboard/qc", icon: FlaskConical, matchPrefixes: [] },
+    { label: "Calculator",     href: "/dashboard/qc", icon: BarChart3,    matchPrefixes: [] },
+    { label: "QC Stats",       href: "/dashboard/qc", icon: Activity,     matchPrefixes: [] },
   ],
 };
 
