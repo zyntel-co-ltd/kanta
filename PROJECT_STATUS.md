@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026 (Phase 8e)  
+**Last updated:** 22 March 2026 (Phase 8f)  
 **Updated by:** Cursor
 
 ---
@@ -14,7 +14,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 ## Current State
 
 **Status:** In development  
-**Phase:** MVP — Phases 1–8e implemented, deployed to Vercel. Medicare dashboard theme, LRIDS hospital display board, and sidebar toggle polish complete (Phase 8e).
+**Phase:** MVP — Phases 1–8f implemented, deployed to Vercel. Homepage Medicare teal theme, LRIDS layout/font fixes, sidebar toggle polish complete (Phase 8f).
 
 ### What Is Built and Working
 
@@ -43,6 +43,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 8c: Lab-hub QC features + Sample Management** *(22 March 2026)* — QC Calculator, QC Stats, Sample Management tab with Lab-hub integration
 - [x] **Phase 8d: Navigation & Design overhaul** *(22 March 2026)* — Sidebar restored (white/slate, collapsible), login re-coloured (forest green), QC tabs underline-style, homepage cards as full links, search moved to Assets page
 - [x] **Phase 8e: Medicare theme, LRIDS hospital board, sidebar toggle** *(22 March 2026)* — Teal/cyan hero header on Assets Overview, KPI card cyan accent, LRIDS fully redesigned as a hospital display board, sidebar collapse button redesigned as a pill-tab
+- [x] **Phase 8f: Homepage teal redesign + LRIDS fix** *(22 March 2026)* — Homepage hero banner + all three app cards converted to unified teal/cyan palette; LRIDS font sizes normalised and layout fixed to work within dashboard wrapper
 
 ### What Is In Progress
 
@@ -55,6 +56,28 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [ ] First paying hospital on equipment module
 - [ ] Lab-hub Sample Management — connect to live Lab-hub instance on LAN (configure URL in Sample Mgmt tab)
 - [ ] Supabase tables for native sample/rack data (long term — remove Lab-hub dependency)
+
+---
+
+## Phase 8f — Homepage Teal Redesign + LRIDS Fix (22 March 2026)
+
+### Changes Made
+| Area | Before | After |
+|------|--------|-------|
+| **Homepage hero** | Plain text heading (`Welcome to Kanta`) | Teal/cyan gradient banner with Kanta logo, "System Online" chip, module count |
+| **App cards accent** | Indigo (Lab Metrics) · Emerald (QC) · Orange (Assets) | Unified teal/cyan palette — all cards use `border-cyan-400`, `border-sky-400`, `border-teal-400` with matching icon gradients |
+| **App card border** | Thin `border border-slate-200` | `border-2` with colour-matched accent border — much more prominent and clickable |
+| **Card CTA hover** | `text-slate-700` on hover | `text-cyan-600` on hover — matches theme |
+| **"Offline-capable" tag** | Green (#059669) | Teal/cyan (#0891b2) — consistent palette |
+| **LRIDS layout** | `min-h-screen` with own full-page background | Contained within dashboard layout — standard page header + stat cards + dark display board card |
+| **LRIDS fonts** | `text-4xl` lab numbers, `text-2xl` stats, `text-3xl` clock | `text-base` lab numbers, `text-2xl` stat figures, `text-lg` clock — proportional and clean |
+| **LRIDS stat row** | Dark-background `StatPill` components inside board header | White `border` stat cards above the board — Total / Ready / In Progress with icons |
+
+### Files Changed (Phase 8f)
+| File | Change |
+|------|--------|
+| `app/dashboard/home/page.tsx` | Full redesign — teal/cyan hero banner, all three app cards unified to teal palette (`cyan` / `sky` / `teal` variants), `border-2` accent borders, hover CTA turns cyan |
+| `app/dashboard/lrids/page.tsx` | Layout fixed — removed `min-h-screen` full-page approach; page now has standard dashboard header + 3 stat cards + dark display board card; all fonts normalised |
 
 ---
 
@@ -300,8 +323,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | Phase 8e — Medicare theme, LRIDS board, sidebar toggle | Live on Vercel |
-| `development` | Integration / Preview | Phase 8e — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | Phase 8f — Homepage teal redesign + LRIDS fix | Live on Vercel |
+| `development` | Integration / Preview | Phase 8f — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---

@@ -16,6 +16,7 @@ import {
   Activity,
   FlaskConical,
   Layers,
+  Zap,
 } from "lucide-react";
 
 /* ─────────────────────────── types ─────────────────────────── */
@@ -32,14 +33,12 @@ type AppCard = {
   description: string;
   href: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
-  gradient: string;
-  iconBg: string;
-  ring: string;
-  pill: string;
+  accent: string;       // Tailwind border/text accent class
+  accentBg: string;     // icon bg
+  pillBg: string;
   pillText: string;
-  ctaColor: string;
+  iconGradient: string; // gradient for icon circle
   tabs: SubTab[];
-  blob: string;
 };
 
 /* ─────────────────────────── data ─────────────────────────── */
@@ -52,13 +51,11 @@ const apps: AppCard[] = [
       "Monitor turnaround times, test volumes, patient numbers, test catalogue and revenue — all in one place.",
     href: "/dashboard/tat",
     icon: FlaskConical,
-    gradient: "from-indigo-500 to-indigo-700",
-    iconBg: "bg-indigo-50",
-    ring: "ring-indigo-100",
-    pill: "bg-indigo-50",
-    pillText: "text-indigo-700",
-    ctaColor: "bg-indigo-600 hover:bg-indigo-700 text-white",
-    blob: "from-indigo-100/60 to-blue-100/40",
+    accent: "border-cyan-400",
+    accentBg: "bg-cyan-50",
+    pillBg: "bg-cyan-50",
+    pillText: "text-cyan-700",
+    iconGradient: "from-cyan-500 to-teal-600",
     tabs: [
       { label: "TAT", href: "/dashboard/tat", icon: Clock },
       { label: "Tests", href: "/dashboard/tests", icon: Beaker },
@@ -74,13 +71,11 @@ const apps: AppCard[] = [
       "Run Westgard rules, plot Levey-Jennings charts and manage qualitative QC to keep results accurate and compliant.",
     href: "/dashboard/qc",
     icon: ShieldCheck,
-    gradient: "from-emerald-500 to-emerald-700",
-    iconBg: "bg-emerald-50",
-    ring: "ring-emerald-100",
-    pill: "bg-emerald-50",
-    pillText: "text-emerald-700",
-    ctaColor: "bg-emerald-600 hover:bg-emerald-700 text-white",
-    blob: "from-emerald-100/60 to-teal-100/40",
+    accent: "border-sky-400",
+    accentBg: "bg-sky-50",
+    pillBg: "bg-sky-50",
+    pillText: "text-sky-700",
+    iconGradient: "from-sky-500 to-cyan-600",
     tabs: [
       { label: "QC Overview", href: "/dashboard/qc", icon: ShieldCheck },
       { label: "L-J Charts", href: "/dashboard/qc", icon: Activity },
@@ -95,13 +90,11 @@ const apps: AppCard[] = [
       "Track every piece of equipment, schedule maintenance, monitor cold-chain temperatures and review fleet analytics.",
     href: "/dashboard",
     icon: Layers,
-    gradient: "from-orange-500 to-orange-700",
-    iconBg: "bg-orange-50",
-    ring: "ring-orange-100",
-    pill: "bg-orange-50",
-    pillText: "text-orange-700",
-    ctaColor: "bg-orange-600 hover:bg-orange-700 text-white",
-    blob: "from-orange-100/60 to-amber-100/40",
+    accent: "border-teal-400",
+    accentBg: "bg-teal-50",
+    pillBg: "bg-teal-50",
+    pillText: "text-teal-700",
+    iconGradient: "from-teal-500 to-cyan-700",
     tabs: [
       { label: "Assets Overview", href: "/dashboard", icon: LayoutDashboard },
       { label: "Scan", href: "/dashboard/scan", icon: ScanSearch },
@@ -113,97 +106,102 @@ const apps: AppCard[] = [
   },
 ];
 
-
 /* ─────────────────────────── component ─────────────────────────── */
 
 export default function DashboardHomePage() {
   return (
-    <div className="max-w-[1280px] mx-auto space-y-10 pb-10">
+    <div className="max-w-[1280px] mx-auto space-y-6 pb-10">
 
-      {/* ── Hero Header ── */}
-      <div className="animate-slide-up stagger-1 pt-2">
-        <p className="text-eyebrow mb-3">Kanta · Operational Intelligence</p>
-        <h1
-          className="text-heading"
-          style={{
-            fontSize: "clamp(1.75rem, 3vw, 2.5rem)",
-            fontWeight: 800,
-            letterSpacing: "-0.03em",
-            lineHeight: 1.15,
-            color: "#0f172a",
-          }}
-        >
-          Welcome to&nbsp;
-          <span style={{ color: "#0f172a" }}>Kanta</span>
-        </h1>
-        <p
-          className="mt-3 max-w-xl"
-          style={{
-            fontSize: "1.0625rem",
-            fontWeight: 400,
-            color: "#64748b",
-            lineHeight: 1.65,
-          }}
-        >
-          Choose a workspace below. Each app bundles everything you need for that
-          domain — data, charts and controls — in one focused view.
-        </p>
+      {/* ── Medicare-style teal hero banner ── */}
+      <div
+        className="rounded-2xl overflow-hidden animate-slide-up stagger-1"
+        style={{ background: "linear-gradient(135deg, #0e7490 0%, #0891b2 55%, #06b6d4 100%)" }}
+      >
+        <div className="px-7 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                <Zap size={17} className="text-white" />
+              </div>
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-cyan-200">
+                Kanta · Operational Intelligence
+              </span>
+            </div>
+            <h1
+              className="text-white"
+              style={{ fontSize: "clamp(1.5rem, 2.5vw, 2rem)", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.2 }}
+            >
+              Welcome back
+            </h1>
+            <p className="text-cyan-100 mt-1.5" style={{ fontSize: "0.9375rem", lineHeight: 1.6 }}>
+              Choose a workspace below — data, charts and controls in one focused view.
+            </p>
+          </div>
+          {/* Quick metric strip */}
+          <div className="flex sm:flex-col gap-3 sm:gap-1.5 flex-shrink-0">
+            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-4 py-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-sm font-semibold text-white">System Online</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2">
+              <span className="text-xs text-cyan-200">3 modules active</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── 3 App Cards ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-up stagger-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-slide-up stagger-2">
         {apps.map((app) => {
           const AppIcon = app.icon;
           return (
             <Link
               key={app.title}
               href={app.href}
-              className="relative flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-              style={{ minHeight: 340 }}
+              className={`relative flex flex-col rounded-2xl bg-white border-2 ${app.accent} shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400`}
+              style={{ minHeight: 320 }}
             >
-              {/* Top accent band */}
-              <div className={`h-1 w-full bg-gradient-to-r ${app.gradient} flex-shrink-0`} />
-
               <div className="relative flex flex-col flex-1 p-6">
+
                 {/* Icon + eyebrow */}
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">{app.eyebrow}</span>
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${app.gradient} flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                    <AppIcon size={18} className="text-white" />
+                <div className="flex items-start justify-between mb-5">
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${app.iconGradient} flex items-center justify-center flex-shrink-0 shadow-md`}>
+                    <AppIcon size={22} className="text-white" />
                   </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 pt-1">{app.eyebrow}</span>
                 </div>
 
                 {/* Title */}
-                <h2 className="text-slate-900 mb-2" style={{ fontSize: "1.25rem", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.25 }}>
+                <h2 className="text-slate-900 mb-2" style={{ fontSize: "1.2rem", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.25 }}>
                   {app.title}
                 </h2>
 
                 {/* Description */}
-                <p className="flex-1 text-slate-500" style={{ fontSize: "0.875rem", lineHeight: 1.6 }}>
+                <p className="flex-1 text-slate-500" style={{ fontSize: "0.875rem", lineHeight: 1.65 }}>
                   {app.description}
                 </p>
 
-                {/* Quick-access sub-links */}
+                {/* Sub-tab pills */}
                 <div className="flex flex-wrap gap-1.5 mt-5">
                   {app.tabs.map((tab) => {
                     const TabIcon = tab.icon;
                     return (
                       <span
                         key={tab.href + tab.label}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${app.pill} ${app.pillText}`}
-                        style={{ fontSize: "0.7rem", fontWeight: 600 }}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg ${app.pillBg} ${app.pillText}`}
+                        style={{ fontSize: "0.6875rem", fontWeight: 600 }}
                       >
-                        <TabIcon size={10} />
+                        <TabIcon size={9} />
                         {tab.label}
                       </span>
                     );
                   })}
                 </div>
 
-                {/* Arrow hint */}
-                <div className="flex items-center gap-1.5 mt-5 text-slate-400 group-hover:text-slate-700 transition-colors">
-                  <span className="text-sm font-medium">Open {app.title}</span>
-                  <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                {/* CTA row */}
+                <div className="flex items-center gap-1.5 mt-5 text-slate-400 group-hover:text-cyan-600 transition-colors">
+                  <span className="text-sm font-semibold">Open {app.title}</span>
+                  <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
             </Link>
@@ -212,16 +210,10 @@ export default function DashboardHomePage() {
       </div>
 
       {/* ── Bottom tagline ── */}
-      <div className="animate-slide-up stagger-4 border-t border-slate-100 pt-6">
-        <p
-          style={{
-            fontSize: "0.8125rem",
-            fontWeight: 400,
-            color: "#94a3b8",
-          }}
-        >
+      <div className="animate-slide-up stagger-4 border-t border-slate-100 pt-5">
+        <p style={{ fontSize: "0.8125rem", fontWeight: 400, color: "#94a3b8" }}>
           Kanta · QR-first asset intelligence for East African laboratories ·{" "}
-          <span style={{ fontWeight: 600, color: "#059669" }}>Offline-capable</span>
+          <span style={{ fontWeight: 600, color: "#0891b2" }}>Offline-capable</span>
         </p>
       </div>
     </div>
