@@ -15,7 +15,7 @@ export default function DashboardLayout({
     <SidebarLayoutProvider>
     <div
       className="flex flex-col h-screen overflow-hidden"
-      style={{ background: "linear-gradient(135deg, #f5f3ff 0%, #ffffff 50%, #eff6ff 100%)" }}
+      style={{ background: "linear-gradient(160deg, #f8fafc 0%, #ffffff 55%, #f1f5f9 100%)" }}
     >
       {/* Sticky top bar */}
       <TopBar />

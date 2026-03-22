@@ -45,9 +45,9 @@ type AppConfig = {
 
 const LAB_METRICS: AppConfig = {
   name: "Lab Metrics",
-  gradient: "from-indigo-500 to-violet-600",
-  activeClass: "bg-indigo-600 text-white shadow-sm shadow-indigo-300",
-  iconBg: "bg-indigo-100 text-indigo-600",
+  gradient: "from-indigo-500 to-indigo-700",
+  activeClass: "bg-indigo-600 text-white",
+  iconBg: "bg-indigo-50 text-indigo-600",
   AppIcon: FlaskConical,
   tabs: [
     { label: "TAT",     href: "/dashboard/tat",     icon: Clock,      matchPrefixes: ["/dashboard/tat"] },
@@ -60,9 +60,9 @@ const LAB_METRICS: AppConfig = {
 
 const QUALITY_MGMT: AppConfig = {
   name: "Quality Management",
-  gradient: "from-emerald-500 to-teal-600",
-  activeClass: "bg-emerald-600 text-white shadow-sm shadow-emerald-300",
-  iconBg: "bg-emerald-100 text-emerald-600",
+  gradient: "from-emerald-500 to-emerald-700",
+  activeClass: "bg-emerald-600 text-white",
+  iconBg: "bg-emerald-50 text-emerald-600",
   AppIcon: ShieldCheck,
   tabs: [
     { label: "QC Overview",    href: "/dashboard/qc", icon: ShieldCheck,  matchPrefixes: ["/dashboard/qc"] },
@@ -74,9 +74,9 @@ const QUALITY_MGMT: AppConfig = {
 
 const ASSET_MGMT: AppConfig = {
   name: "Asset Management",
-  gradient: "from-amber-500 to-orange-600",
-  activeClass: "bg-amber-500 text-white shadow-sm shadow-amber-300",
-  iconBg: "bg-amber-100 text-amber-600",
+  gradient: "from-orange-500 to-orange-700",
+  activeClass: "bg-orange-600 text-white",
+  iconBg: "bg-orange-50 text-orange-600",
   AppIcon: Layers,
   tabs: [
     { label: "Overview",   href: "/dashboard",              icon: LayoutDashboard, matchPrefixes: ["/dashboard$"] },
@@ -145,7 +145,7 @@ export default function AppTabBar() {
   const { AppIcon } = app;
 
   return (
-    <div className="flex-shrink-0 border-b border-slate-200/70 bg-white/70 backdrop-blur-sm px-6 py-0">
+    <div className="flex-shrink-0 border-b border-slate-100 bg-white px-6 py-0">
       <div className="flex items-center gap-4">
 
         {/* Back to home */}

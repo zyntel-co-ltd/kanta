@@ -52,14 +52,13 @@ const apps: AppCard[] = [
       "Monitor turnaround times, test volumes, patient numbers, test catalogue and revenue — all in one place.",
     href: "/dashboard/tat",
     icon: FlaskConical,
-    gradient: "from-indigo-500 via-violet-500 to-purple-600",
+    gradient: "from-indigo-500 to-indigo-700",
     iconBg: "bg-indigo-50",
     ring: "ring-indigo-100",
     pill: "bg-indigo-50",
     pillText: "text-indigo-700",
-    ctaColor:
-      "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 shadow-md",
-    blob: "from-indigo-200/40 to-violet-200/30",
+    ctaColor: "bg-indigo-600 hover:bg-indigo-700 text-white",
+    blob: "from-indigo-100/60 to-blue-100/40",
     tabs: [
       { label: "TAT", href: "/dashboard/tat", icon: Clock },
       { label: "Tests", href: "/dashboard/tests", icon: Beaker },
@@ -75,14 +74,13 @@ const apps: AppCard[] = [
       "Run Westgard rules, plot Levey-Jennings charts and manage qualitative QC to keep results accurate and compliant.",
     href: "/dashboard/qc",
     icon: ShieldCheck,
-    gradient: "from-emerald-500 via-teal-500 to-cyan-600",
+    gradient: "from-emerald-500 to-emerald-700",
     iconBg: "bg-emerald-50",
     ring: "ring-emerald-100",
     pill: "bg-emerald-50",
     pillText: "text-emerald-700",
-    ctaColor:
-      "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 shadow-md",
-    blob: "from-emerald-200/40 to-teal-200/30",
+    ctaColor: "bg-emerald-600 hover:bg-emerald-700 text-white",
+    blob: "from-emerald-100/60 to-teal-100/40",
     tabs: [
       { label: "QC Overview", href: "/dashboard/qc", icon: ShieldCheck },
       { label: "L-J Charts", href: "/dashboard/qc", icon: Activity },
@@ -97,14 +95,13 @@ const apps: AppCard[] = [
       "Track every piece of equipment, schedule maintenance, monitor cold-chain temperatures and review fleet analytics.",
     href: "/dashboard",
     icon: Layers,
-    gradient: "from-amber-500 via-orange-500 to-rose-500",
-    iconBg: "bg-amber-50",
-    ring: "ring-amber-100",
-    pill: "bg-amber-50",
-    pillText: "text-amber-700",
-    ctaColor:
-      "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-200 shadow-md",
-    blob: "from-amber-200/40 to-orange-200/30",
+    gradient: "from-orange-500 to-orange-700",
+    iconBg: "bg-orange-50",
+    ring: "ring-orange-100",
+    pill: "bg-orange-50",
+    pillText: "text-orange-700",
+    ctaColor: "bg-orange-600 hover:bg-orange-700 text-white",
+    blob: "from-orange-100/60 to-amber-100/40",
     tabs: [
       { label: "Assets Overview", href: "/dashboard", icon: LayoutDashboard },
       { label: "Scan", href: "/dashboard/scan", icon: ScanSearch },
@@ -139,7 +136,7 @@ export default function DashboardHomePage() {
           Welcome to&nbsp;
           <span
             style={{
-              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%)",
+              background: "linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -265,10 +262,7 @@ export default function DashboardHomePage() {
           <span
             style={{
               fontWeight: 600,
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
+              color: "#4f46e5",
             }}
           >
             Offline-capable
