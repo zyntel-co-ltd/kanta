@@ -64,12 +64,12 @@ const navGroups: NavGroup[] = [
   {
     title: "Quality Management",
     items: [
-      { label: "QC Overview",      icon: ShieldCheck,  href: "/dashboard/qc"              },
-      { label: "L-J Chart",        icon: BarChart3,    href: "/dashboard/qc?tab=lj"       },
-      { label: "Westgard",         icon: Activity,     href: "/dashboard/qc?tab=westgard" },
-      { label: "Qualitative QC",   icon: TestTube,     href: "/dashboard/qc?tab=qualitative" },
-      { label: "Quantitative QC",  icon: FlaskRound,   href: "/dashboard/qc?tab=quantitative" },
-      { label: "QC Stats",         icon: TrendingUp,   href: "/dashboard/qc?tab=stats"    },
+      { label: "QC Overview",     icon: ShieldCheck, href: "/dashboard/qc"                  },
+      { label: "L-J Chart",       icon: BarChart3,   href: "/dashboard/qc?tab=lj"           },
+      { label: "Westgard",        icon: Activity,    href: "/dashboard/qc?tab=westgard"     },
+      { label: "Qualitative QC",  icon: TestTube,    href: "/dashboard/qc?tab=qualitative"  },
+      { label: "Quantitative QC", icon: FlaskRound,  href: "/dashboard/qc?tab=quantitative" },
+      { label: "QC Stats",        icon: TrendingUp,  href: "/dashboard/qc?tab=stats"        },
     ],
   },
   {
@@ -82,27 +82,27 @@ const navGroups: NavGroup[] = [
   {
     title: "Asset Management",
     items: [
-      { label: "Overview",     icon: LayoutDashboard, href: "/dashboard"               },
-      { label: "Scan",         icon: ScanSearch,      href: "/dashboard/scan"          },
-      { label: "Equipment",    icon: ScanLine,        href: "/dashboard/equipment"     },
-      { label: "Maintenance",  icon: Wrench,          href: "/dashboard/maintenance"   },
-      { label: "Refrigerator", icon: Thermometer,     href: "/dashboard/refrigerator"  },
-      { label: "Analytics",    icon: BarChart3,       href: "/dashboard/analytics"     },
-      { label: "Reports",      icon: FileText,        href: "/dashboard/reports"       },
+      { label: "Overview",     icon: LayoutDashboard, href: "/dashboard"              },
+      { label: "Scan",         icon: ScanSearch,      href: "/dashboard/scan"         },
+      { label: "Equipment",    icon: ScanLine,        href: "/dashboard/equipment"    },
+      { label: "Maintenance",  icon: Wrench,          href: "/dashboard/maintenance"  },
+      { label: "Refrigerator", icon: Thermometer,     href: "/dashboard/refrigerator" },
+      { label: "Analytics",    icon: BarChart3,       href: "/dashboard/analytics"    },
+      { label: "Reports",      icon: FileText,        href: "/dashboard/reports"      },
     ],
   },
   {
     title: "Intelligence",
     items: [
-      { label: "AI Insights",  icon: Brain,    href: "/dashboard/intelligence" },
+      { label: "AI Insights", icon: Brain, href: "/dashboard/intelligence" },
     ],
   },
   {
     title: "System",
     items: [
-      { label: "Departments", icon: Building2,     href: "/dashboard/departments" },
-      { label: "Admin",       icon: Shield,        href: "/dashboard/admin"       },
-      { label: "Settings",    icon: Settings,      href: "/dashboard/settings"    },
+      { label: "Departments", icon: Building2, href: "/dashboard/departments" },
+      { label: "Admin",       icon: Shield,    href: "/dashboard/admin"       },
+      { label: "Settings",    icon: Settings,  href: "/dashboard/settings"    },
     ],
   },
 ];
@@ -141,131 +141,131 @@ function getInitials(user: {
   return part.slice(0, 2).toUpperCase();
 }
 
+/* ─── Design tokens ─── */
+const BG       = "#065f46";   // solid emerald — used for sidebar + notch fill
+const ACTIVE   = "#047857";   // icon/text colour on white pill
+const INACTIVE = "rgba(255,255,255,0.72)";
+const PILL_L   = 10;          // px from left where white pill starts (both states)
+const NOTCH    = 16;          // px — size of corner-notch squares
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const { collapsed, setCollapsed } = useSidebarLayout();
 
-  /* Login page green palette */
-  const primaryGreen = "#047857";
-  const sidebarGradient = "linear-gradient(145deg, #042f2e 0%, #065f46 55%, #047857 100%)";
-  const activeBg = "#ecfdf5";
-  const inactiveColor = "#8A94A6";
-  const inactiveLight = "rgba(255,255,255,0.85)";
-
   return (
     <aside
       className={clsx(
-        "relative flex flex-col h-screen flex-shrink-0 overflow-visible",
+        "relative flex flex-col h-screen flex-shrink-0",
         "transition-all duration-300 ease-in-out",
-        collapsed ? "w-[64px]" : "w-[260px]",
-        !collapsed && "border-r border-slate-200/80"
+        collapsed ? "w-[68px]" : "w-[248px]"
       )}
-      style={
-        collapsed
-          ? { background: sidebarGradient }
-          : { backgroundColor: "#FFFFFF" }
-      }
+      style={{ backgroundColor: BG }}
     >
+
       {/* ── Logo ── */}
       <div
         className={clsx(
-          "flex-shrink-0 flex items-center gap-3 border-b py-4 overflow-hidden",
-          collapsed ? "justify-center px-0 border-white/10" : "px-5 border-slate-100"
+          "flex-shrink-0 flex items-center border-b border-white/10 py-[14px]",
+          collapsed ? "justify-center px-0" : "px-4 gap-3"
         )}
       >
         <Link
           href="/dashboard/home"
-          className={clsx("flex items-center min-w-0 focus:outline-none", collapsed ? "justify-center" : "gap-3")}
+          className={clsx("flex items-center focus:outline-none", collapsed ? "justify-center" : "gap-3")}
         >
-          <div
-            className={clsx(
-              "flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center",
-              collapsed ? "bg-white/15 border border-white/20" : ""
-            )}
-            style={!collapsed ? { backgroundColor: activeBg } : {}}
-          >
-            <FlaskConical
-              size={18}
-              strokeWidth={1.5}
-              style={{ color: collapsed ? "white" : primaryGreen }}
-            />
+          {/* White icon box — same look in both states */}
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
+            <FlaskConical size={20} strokeWidth={1.5} style={{ color: ACTIVE }} />
           </div>
           {!collapsed && (
             <div>
-              <p className="font-semibold text-slate-900 text-base leading-none tracking-tight">Kanta</p>
-              <p className="text-[10px] mt-1 font-normal" style={{ color: inactiveColor }}>
-                Operational Intelligence
-              </p>
+              <p className="font-bold text-white text-[15px] leading-none tracking-tight">Kanta</p>
+              <p className="text-[10px] mt-1 font-normal text-white/50">Operational Intelligence</p>
             </div>
           )}
         </Link>
       </div>
 
       {/* ── Nav ── */}
-      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-4 space-y-5 flex flex-col">
-        <div className={collapsed ? "flex-1 flex flex-col items-center gap-1 px-2" : "space-y-5 px-3"}>
+      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-3 flex flex-col">
+        <div className="flex-1">
           {navGroups.map((group) => (
-            <div key={group.title} className={collapsed ? "" : "space-y-1"}>
+            <div key={group.title} className="mb-1">
+              {/* Group label (expanded only) */}
               {!collapsed && (
-                <p
-                  className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest"
-                  style={{ color: inactiveColor }}
-                >
+                <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-white/35">
                   {group.title}
                 </p>
               )}
-              <div className={clsx(collapsed ? "flex flex-col gap-1 w-full" : "space-y-1")}>
+
+              {/* Items — gap-0 so notches touch adjacent rows seamlessly */}
+              <div className="flex flex-col gap-0">
                 {group.items.map(({ label, icon: Icon, href }) => {
                   const active = isNavActive(pathname, href);
                   return (
-                    <Link
-                      key={href + label}
-                      href={href}
-                      title={collapsed ? label : undefined}
-                      className={clsx(
-                        "relative flex items-center transition-all duration-150",
-                        collapsed
-                          ? "justify-center py-2.5 rounded-l-none hover:bg-white/10"
-                          : "gap-3 pl-5 pr-3 py-2.5 rounded-[10px] font-medium",
-                        !collapsed && !active && "hover:bg-emerald-50/60"
-                      )}
-                      style={
-                        collapsed
-                          ? {}
-                          : {
-                              backgroundColor: active ? activeBg : "transparent",
-                              color: active ? primaryGreen : inactiveColor,
-                            }
-                      }
-                    >
-                      {/* Collapsed: cutout pill for active (white pill with inverted corner notches) */}
-                      {collapsed && active && (
+                    <div key={href + label} className="relative">
+
+                      {/* ── Active white pill ── */}
+                      {active && (
                         <span
-                          className="absolute right-0 top-0 bottom-0 w-[52px] bg-white rounded-l-[14px] before:content-[''] before:absolute before:left-0 before:top-0 before:w-7 before:h-7 before:rounded-full before:bg-[#065f46] before:-translate-x-1/2 before:-translate-y-1/2 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-7 after:h-7 after:rounded-full after:bg-[#065f46] after:-translate-x-1/2 after:translate-y-1/2"
-                          style={{ boxShadow: "2px 0 8px rgba(0,0,0,0.06)" }}
+                          className="absolute inset-y-0 right-0 bg-white"
+                          style={{ left: PILL_L, borderRadius: "12px 0 0 12px", zIndex: 1 }}
                         />
                       )}
-                      {collapsed ? (
+
+                      {/* ── Notch — top-left of pill (inside row bounds) ── */}
+                      {active && (
+                        <span
+                          className="absolute pointer-events-none"
+                          style={{
+                            top: 0,
+                            left: PILL_L,
+                            width: NOTCH,
+                            height: NOTCH,
+                            backgroundColor: BG,
+                            borderBottomRightRadius: "100%",
+                            zIndex: 2,
+                          }}
+                        />
+                      )}
+
+                      {/* ── Notch — bottom-left of pill (inside row bounds) ── */}
+                      {active && (
+                        <span
+                          className="absolute pointer-events-none"
+                          style={{
+                            bottom: 0,
+                            left: PILL_L,
+                            width: NOTCH,
+                            height: NOTCH,
+                            backgroundColor: BG,
+                            borderTopRightRadius: "100%",
+                            zIndex: 2,
+                          }}
+                        />
+                      )}
+
+                      <Link
+                        href={href}
+                        title={collapsed ? label : undefined}
+                        className={clsx(
+                          "relative flex items-center py-[11px] transition-colors duration-150 focus:outline-none",
+                          collapsed ? "justify-center px-0" : "gap-3 px-5",
+                          !active && "hover:bg-white/10"
+                        )}
+                        style={{ color: active ? ACTIVE : INACTIVE, zIndex: 3 }}
+                      >
                         <Icon
-                          size={22}
+                          size={collapsed ? 22 : 20}
                           strokeWidth={1.5}
-                          className="relative z-10 flex-shrink-0"
-                          style={{ color: active ? primaryGreen : inactiveLight }}
+                          className="flex-shrink-0"
                         />
-                      ) : (
-                        <>
-                          {active && (
-                            <span
-                              className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full"
-                              style={{ backgroundColor: primaryGreen }}
-                            />
-                          )}
-                          <Icon size={20} strokeWidth={1.5} className="flex-shrink-0" />
-                          <span className="truncate">{label}</span>
-                        </>
-                      )}
-                    </Link>
+                        {!collapsed && (
+                          <span className="truncate text-[13.5px] font-medium">{label}</span>
+                        )}
+                      </Link>
+                    </div>
                   );
                 })}
               </div>
@@ -273,44 +273,40 @@ export default function Sidebar() {
           ))}
         </div>
 
-        {/* ── Footer (Logout) ── */}
-        <div className={clsx("flex-shrink-0 pt-3 mt-auto", collapsed ? "flex flex-col items-center gap-1 px-2 border-t border-white/10" : "px-3 pb-4 border-t border-slate-100 space-y-1")}>
-          {user && !collapsed && (
-            <div className="px-4 py-2 rounded-[10px] mb-1">
-              <p className="text-sm font-medium text-slate-800 truncate">{getFirstName(user)}</p>
-            </div>
-          )}
+        {/* ── Footer: user + logout ── */}
+        <div className="flex-shrink-0 border-t border-white/10 pt-2 mt-3">
+          {/* User avatar / name */}
           {user && collapsed && (
-            <div className="flex justify-center py-1 mb-1">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold bg-white/15 border border-white/20 text-white">
+            <div className="flex justify-center py-2">
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white border border-white/25"
+                style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+              >
                 {getInitials(user)}
               </div>
             </div>
           )}
+          {user && !collapsed && (
+            <div className="px-5 py-1.5">
+              <p className="text-[13px] font-medium text-white/60 truncate">{getFirstName(user)}</p>
+            </div>
+          )}
+
+          {/* Logout */}
           <button
             type="button"
             onClick={() => signOut()}
             title="Log out"
             aria-label="Log out"
             className={clsx(
-              "group relative flex items-center gap-3 rounded-[10px] text-sm font-medium transition-all duration-200 w-full",
-              "border border-transparent",
-              collapsed
-                ? "justify-center py-3 px-0 mt-1 hover:bg-red-500/20"
-                : "pl-5 pr-3 py-2.5 mt-2 hover:bg-red-50 hover:border-red-100"
+              "flex items-center w-full py-[11px] transition-colors duration-150 hover:bg-red-500/20 focus:outline-none",
+              collapsed ? "justify-center px-0" : "gap-3 px-5"
             )}
-            style={
-              collapsed
-                ? { color: "rgba(255,255,255,0.9)" }
-                : { color: inactiveColor }
-            }
+            style={{ color: "rgba(255,255,255,0.65)" }}
           >
-            {!collapsed && (
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-red-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" aria-hidden />
-            )}
             <LogOut size={collapsed ? 20 : 18} strokeWidth={1.5} className="flex-shrink-0" />
             {!collapsed && (
-              <span className="font-medium group-hover:text-red-600 transition-colors">Log out</span>
+              <span className="text-[13.5px] font-medium">Log out</span>
             )}
           </button>
         </div>
@@ -320,16 +316,15 @@ export default function Sidebar() {
       <button
         type="button"
         onClick={() => setCollapsed(!collapsed)}
-        className={clsx(
-          "absolute -right-4 top-20 w-4 h-12 rounded-r-lg flex items-center justify-center shadow-md transition-all duration-200 z-20",
-          collapsed ? "bg-white/20 border border-white/30 border-l-0" : "bg-white border border-slate-200 border-l-0"
-        )}
-        style={{ color: collapsed ? "white" : primaryGreen }}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        className="absolute -right-3.5 top-[72px] w-7 h-7 rounded-full bg-white shadow-lg border-2 flex items-center justify-center z-50 transition-all duration-200 hover:scale-110 focus:outline-none"
+        style={{ borderColor: BG, color: BG }}
       >
-        <span className="transition-transform duration-200">
-          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-        </span>
+        {collapsed
+          ? <ChevronRight size={13} strokeWidth={2.5} />
+          : <ChevronLeft  size={13} strokeWidth={2.5} />
+        }
       </button>
     </aside>
   );
