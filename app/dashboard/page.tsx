@@ -9,6 +9,8 @@ import ScanFeed from "@/components/dashboard/ScanFeed";
 import DepartmentsPanel from "@/components/dashboard/DepartmentsPanel";
 import ClientOnly from "@/components/dashboard/ClientOnly";
 import RightPanelDrawer from "@/components/dashboard/RightPanelDrawer";
+import TickerBar from "@/components/dashboard/TickerBar";
+import FloatingActionButton from "@/components/dashboard/FloatingActionButton";
 
 function SectionDivider({ label }: { label: string }) {
   return (
@@ -23,7 +25,16 @@ function SectionDivider({ label }: { label: string }) {
 
 export default function DashboardPage() {
   return (
-    <div className="flex gap-5 items-start max-w-[1600px]">
+    <div className="space-y-0 max-w-[1600px]">
+
+      {/* Live scan feed — Assets tab only */}
+      <ClientOnly>
+        <div className="-mx-6 -mt-6 mb-5">
+          <TickerBar />
+        </div>
+      </ClientOnly>
+
+      <div className="flex gap-5 items-start">
 
       {/* ── LEFT / MAIN CONTENT ── */}
       <div className="flex-1 min-w-0 space-y-5">
@@ -88,6 +99,13 @@ export default function DashboardPage() {
       {/* ── RIGHT PANEL — drawer, tablet/mobile ── */}
       <ClientOnly>
         <RightPanelDrawer />
+      </ClientOnly>
+
+    </div>
+
+      {/* Add Equipment FAB — Assets tab only */}
+      <ClientOnly>
+        <FloatingActionButton />
       </ClientOnly>
 
     </div>

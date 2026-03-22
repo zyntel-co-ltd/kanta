@@ -12,15 +12,10 @@ import {
   Wrench,
   Thermometer,
   BarChart3,
-  FileText,
   ArrowRight,
   Activity,
   FlaskConical,
   Layers,
-  Table2,
-  ListTodo,
-  Settings,
-  Shield,
 } from "lucide-react";
 
 /* ─────────────────────────── types ─────────────────────────── */
@@ -121,15 +116,6 @@ const apps: AppCard[] = [
   },
 ];
 
-/* ─────────────────────────── quick links ─────────────────────────── */
-
-const quickLinks = [
-  { label: "Reception", href: "/dashboard/reception", icon: Table2 },
-  { label: "Tracker", href: "/dashboard/tracker", icon: ListTodo },
-  { label: "Reports", href: "/dashboard/reports", icon: FileText },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings },
-  { label: "Admin", href: "/dashboard/admin", icon: Shield },
-];
 
 /* ─────────────────────────── component ─────────────────────────── */
 
@@ -264,24 +250,6 @@ export default function DashboardHomePage() {
             </div>
           );
         })}
-      </div>
-
-      {/* ── Quick Links ── */}
-      <div className="animate-slide-up stagger-3">
-        <p className="text-eyebrow mb-4">Quick access</p>
-        <div className="flex flex-wrap gap-3">
-          {quickLinks.map(({ label, href, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-slate-700 hover:border-slate-300 hover:shadow-sm transition-all"
-              style={{ fontSize: "0.8125rem", fontWeight: 500 }}
-            >
-              <Icon size={15} className="text-slate-400" />
-              {label}
-            </Link>
-          ))}
-        </div>
       </div>
 
       {/* ── Bottom tagline ── */}
