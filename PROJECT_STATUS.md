@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026  
+**Last updated:** 22 March 2026 (evening)  
 **Updated by:** Cursor
 
 ---
@@ -39,6 +39,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] Tests module (volume vs target, charts)
 - [x] Meta module (test metadata CRUD)
 - [x] **Phase 8: UI/UX Redesign** *(completed 22 March 2026)* — see section below
+- [x] **Phase 8b: Theme refinement & Login redesign** *(22 March 2026)* — neutral palette, split-layout login
 
 ### What Is In Progress
 
@@ -88,13 +89,48 @@ The full sidebar is replaced by a context-aware **AppTabBar** (`components/dashb
 | File | Change |
 |------|--------|
 | `app/layout.tsx` | Added Inter font via `next/font/google` |
-| `app/globals.css` | Typeform typography utilities, smooth background, animations |
-| `app/dashboard/layout.tsx` | Removed Sidebar/TickerBar/FAB; added AppTabBar |
-| `app/dashboard/home/page.tsx` | Full redesign — 3 app cards, removed quick links |
+| `app/globals.css` | Typeform typography utilities, neutral warm-white background, animations |
+| `app/dashboard/layout.tsx` | Removed Sidebar/TickerBar/FAB; added AppTabBar; neutral background |
+| `app/dashboard/home/page.tsx` | Full redesign — 3 app cards, softened palette, removed quick links |
 | `app/dashboard/page.tsx` | Added scoped TickerBar + FAB |
 | `components/dashboard/AppTabBar.tsx` | **New** — context-aware horizontal tab navigation |
 | `components/dashboard/Sidebar.tsx` | Nav groups restructured to 3-app model (retained for reference) |
 | `components/dashboard/TopBar.tsx` | Removed sidebar toggle controls |
+| `app/login/page.tsx` | Light loading fallback |
+| `app/login/LoginForm.tsx` | **Full redesign** — split layout (dark brand panel + light form panel) |
+
+---
+
+## Phase 8b — Theme Refinement & Login Redesign (22 March 2026)
+
+### Theme Changes
+- **Background:** Switched from purple-tinted (`#f5f3ff`) to clean neutral slate-white (`#f8fafc → #fff → #f1f5f9`) — easier on the eyes, more clinical/professional
+- **Card gradients:** Removed via/multi-stop gradients in favour of single-direction two-stop gradients (e.g. `from-indigo-500 to-indigo-700`) — less saturated, more refined
+- **Tab bar:** Solid `bg-white` border-b instead of blurred glass — simpler and cleaner
+- **Accent colours:** Dialled back saturation across Lab Metrics (indigo), Quality Mgmt (emerald), Asset Mgmt (orange)
+
+### Login Page — Full Redesign
+Replaced the dark glassmorphism card with a **split-screen layout**:
+
+| Side | Content |
+|------|---------|
+| **Left (hidden mobile)** | Dark deep-indigo panel with Kanta brand, hero heading, 3 feature bullets (Lab Intelligence, Quality Management, Asset Management), subtle radial glow decorations |
+| **Right** | Clean `#f8fafc` background, Inter-typed form card — email, password with inline "Forgot password?" link, indigo CTA with spinner state, error inline display |
+
+- Inputs: white background, `border-slate-200`, indigo focus ring — clear and accessible
+- Submit button: solid `bg-indigo-600` with `ArrowRight` icon, loading spinner replaces text
+- Mobile: left panel hidden, brand shown inline above form instead
+
+### Files Changed (Phase 8b)
+
+| File | Change |
+|------|--------|
+| `app/globals.css` | Neutral CSS variables, softer gradient utilities |
+| `app/dashboard/layout.tsx` | Updated background gradient to neutral slate |
+| `app/dashboard/home/page.tsx` | Softened card gradients and blob colours |
+| `components/dashboard/AppTabBar.tsx` | Solid white bar, cleaner active states |
+| `app/login/page.tsx` | Light loading fallback |
+| `app/login/LoginForm.tsx` | Full split-layout redesign |
 
 ---
 
@@ -150,8 +186,8 @@ The full sidebar is replaced by a context-aware **AppTabBar** (`components/dashb
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | `d879a3d` — Phase 8 redesign | Live on Vercel |
-| `development` | Integration / Preview | `d879a3d` — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | `78feb67` — Phase 8b theme + login redesign | Live on Vercel |
+| `development` | Integration / Preview | `78feb67` — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---
