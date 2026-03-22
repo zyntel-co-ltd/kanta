@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DollarSign, TrendingUp, BarChart3, PieChart, XCircle } from "lucide-react";
+import { DollarSign, TrendingUp, BarChart3, PieChart, XCircle, Clock, Activity, Target } from "lucide-react";
 
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import ModuleTabBar from "@/components/dashboard/ModuleTabBar";
-import { Clock, Activity, Target, TrendingUp } from "lucide-react";
 
 const MODULE_TABS = [
   { label: "Overview",    href: "/dashboard/tat",         icon: Clock      },

@@ -7,6 +7,9 @@ import {
   TrendingUp,
   BarChart3,
   Target,
+  Clock,
+  Activity,
+  Calendar,
 } from "lucide-react";
 import {
   AreaChart,
@@ -22,7 +25,6 @@ import {
 
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import ModuleTabBar from "@/components/dashboard/ModuleTabBar";
-import { Clock, Activity, Calendar } from "lucide-react";
 
 const MODULE_TABS = [
   { label: "Overview",    href: "/dashboard/tat",         icon: Clock     },
