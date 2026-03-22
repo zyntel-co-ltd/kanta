@@ -143,7 +143,7 @@ export default function LRIDSDisplayPage() {
             </div>
 
             {/* Rows */}
-            <div className="divide-y" style={{ divideColor: "rgba(255,255,255,0.05)" }}>
+            <div className="divide-y divide-white/5">
               {data.map((row, i) => {
                 const isReady = row.status === "resulted";
                 return (
