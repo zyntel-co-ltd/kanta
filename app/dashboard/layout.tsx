@@ -1,5 +1,5 @@
 import TopBar from "@/components/dashboard/TopBar";
-import AppTabBar from "@/components/dashboard/AppTabBar";
+import Sidebar from "@/components/dashboard/Sidebar";
 import DashboardProviders from "@/components/dashboard/DashboardProviders";
 import AuthGuard from "@/components/AuthGuard";
 import { SidebarLayoutProvider } from "@/lib/SidebarLayoutContext";
@@ -13,21 +13,18 @@ export default function DashboardLayout({
     <AuthGuard>
     <DashboardProviders>
     <SidebarLayoutProvider>
-    <div
-      className="flex flex-col h-screen overflow-hidden"
-      style={{ background: "linear-gradient(160deg, #f8fafc 0%, #ffffff 55%, #f1f5f9 100%)" }}
-    >
-      {/* Sticky top bar */}
-      <TopBar />
+      <div className="flex h-screen overflow-hidden bg-slate-50">
+        {/* Collapsible sidebar */}
+        <Sidebar />
 
-      {/* Context-aware app tab bar (hidden on home) */}
-      <AppTabBar />
-
-      {/* Main scrollable content */}
-      <main className="flex-1 overflow-y-auto p-6">
-        {children}
-      </main>
-    </div>
+        {/* Main area */}
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+          <TopBar />
+          <main className="flex-1 overflow-y-auto p-6">
+            {children}
+          </main>
+        </div>
+      </div>
     </SidebarLayoutProvider>
     </DashboardProviders>
     </AuthGuard>

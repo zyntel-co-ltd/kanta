@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026 (night)  
+**Last updated:** 22 March 2026 (late night)  
 **Updated by:** Cursor
 
 ---
@@ -14,7 +14,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 ## Current State
 
 **Status:** In development  
-**Phase:** MVP — Phases 1–8c implemented, deployed to Vercel. QC module fully expanded with Lab-hub integration.
+**Phase:** MVP — Phases 1–8d implemented, deployed to Vercel. Major UI/UX overhaul complete (Phase 8d).
 
 ### What Is Built and Working
 
@@ -41,6 +41,7 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 8: UI/UX Redesign** *(completed 22 March 2026)* — see section below
 - [x] **Phase 8b: Theme refinement & Login redesign** *(22 March 2026)* — neutral palette, split-layout login
 - [x] **Phase 8c: Lab-hub QC features + Sample Management** *(22 March 2026)* — QC Calculator, QC Stats, Sample Management tab with Lab-hub integration
+- [x] **Phase 8d: Navigation & Design overhaul** *(22 March 2026)* — Sidebar restored (white/slate, collapsible), login re-coloured (forest green), QC tabs underline-style, homepage cards as full links, search moved to Assets page
 
 ### What Is In Progress
 
@@ -53,6 +54,41 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [ ] First paying hospital on equipment module
 - [ ] Lab-hub Sample Management — connect to live Lab-hub instance on LAN (configure URL in Sample Mgmt tab)
 - [ ] Supabase tables for native sample/rack data (long term — remove Lab-hub dependency)
+
+---
+
+## Phase 8d — Navigation & Design Overhaul (22 March 2026)
+
+### Changes Made
+| Area | Before | After |
+|------|--------|-------|
+| **Sidebar** | Removed (Phase 8) | Restored — white/slate palette, collapsible, no indigo |
+| **AppTabBar** | Global tab bar below TopBar | Removed — sidebar handles all navigation |
+| **QC tabs** | Pill-tabs (2 levels: AppTabBar + internal) | Single underline tab bar, Lab-hub style |
+| **Login panel** | Dark indigo gradient | Deep forest green gradient (`#042f2e → #065f46`) |
+| **Homepage cards** | Div with CTA button | Full `<Link>` — whole card is clickable |
+| **Search bar** | TopBar (global) | Assets Overview page only |
+| **Kanta accent** | Indigo/violet throughout | Removed — slate-900 primary, emerald QC accent |
+
+### Sidebar Design
+- **Background:** `bg-white` with `border-r border-slate-200`
+- **Active item:** `bg-slate-900 text-white` (no indigo)
+- **Hover:** `bg-slate-100 text-slate-900`
+- **Group labels:** `text-slate-400` uppercase tracking
+- **Collapse toggle:** `−3px` floating button on the right edge, persists to `localStorage`
+- **Width:** `220px` expanded · `60px` collapsed (icon-only mode)
+
+### Files Changed (Phase 8d)
+| File | Change |
+|------|--------|
+| `components/dashboard/Sidebar.tsx` | Full rewrite — white/slate, no indigo, cleaner icon-only collapsed mode |
+| `app/dashboard/layout.tsx` | Restored `<Sidebar />`, removed `<AppTabBar />`, flex-row layout |
+| `app/dashboard/qc/page.tsx` | Tab bar replaced with underline style (border-b-2, Lab-hub aesthetic) |
+| `app/login/LoginForm.tsx` | Left panel changed from dark indigo to deep forest green |
+| `app/dashboard/home/page.tsx` | Cards wrapped in `<Link>`, removed CTA button, cleaned indigo references |
+| `components/dashboard/TopBar.tsx` | Removed search bar input + Command icon import |
+| `app/dashboard/page.tsx` | Added `<AssetsSearchBar />` to page header |
+| `components/dashboard/AssetsSearchBar.tsx` | **New** — standalone search input for Assets section |
 
 ---
 
@@ -226,8 +262,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | `7e81858` — Phase 8c: Sample Management tab | Live on Vercel |
-| `development` | Integration / Preview | `7e81858` — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | Phase 8d — Navigation & Design overhaul | Live on Vercel |
+| `development` | Integration / Preview | Phase 8d — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---
@@ -265,7 +301,7 @@ Set these in Vercel **without surrounding quotes** — for **both Production and
 ## Cursor Context (Read Before Writing Any Code)
 
 - **Base branch:** `main` (or `development` for features)
-- **Navigation model:** No sidebar. AppTabBar (`components/dashboard/AppTabBar.tsx`) handles all in-app navigation. Homepage (`/dashboard/home`) is the app selector.
+- **Navigation model:** Collapsible white sidebar (`components/dashboard/Sidebar.tsx`) handles all navigation. AppTabBar removed. Homepage (`/dashboard/home`) is the app selector — clicking a card navigates to the first page of that app.
 - **3 app domains:**
   - **Lab Metrics** → `/dashboard/tat`, `/dashboard/tests`, `/dashboard/numbers`, `/dashboard/meta`, `/dashboard/revenue`
   - **Quality Management** → `/dashboard/qc`

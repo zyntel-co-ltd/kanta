@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AssetsSearchBar from "@/components/dashboard/AssetsSearchBar";
 import KpiCards from "@/components/dashboard/KpiCards";
 import AssetValueChart from "@/components/dashboard/AssetValueChart";
 import CategoryDonut from "@/components/dashboard/CategoryDonut";
@@ -42,20 +43,23 @@ export default function DashboardPage() {
         {/* Page header */}
         <div className="flex items-end justify-between animate-slide-up">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Assets Overview.
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight" style={{ letterSpacing: "-0.025em" }}>
+              Assets Overview
             </h1>
             <p className="text-sm text-slate-500 mt-0.5">
               Real-time equipment intelligence across your facility.
             </p>
           </div>
-          <Link
-            href="/dashboard/reports"
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-indigo-600 to-violet-600 text-white text-sm font-medium rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            <span className="text-base leading-none">+</span>
-            New Report
-          </Link>
+          <div className="flex items-center gap-3">
+            <AssetsSearchBar />
+            <Link
+              href="/dashboard/reports"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-700 text-white text-sm font-semibold rounded-xl transition-all"
+            >
+              <span className="text-base leading-none">+</span>
+              New Report
+            </Link>
+          </div>
         </div>
 
         {/* KPI Cards */}

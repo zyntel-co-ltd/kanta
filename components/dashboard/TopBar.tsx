@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, Search, ChevronDown, Command, LogOut } from "lucide-react";
+import { Bell, ChevronDown, LogOut } from "lucide-react";
 import { useSyncStatus } from "@/lib/SyncStatusContext";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -46,28 +46,6 @@ export default function TopBar() {
     <header className="sticky top-0 z-20 flex items-center justify-between px-6 py-3 bg-white/80 backdrop-blur-sm border-b border-slate-100">
       {/* Left */}
       <div className="flex items-center gap-3">
-        <Link
-          href="/dashboard/home"
-          className="hidden sm:flex items-center text-sm font-bold text-slate-800 tracking-tight hover:text-indigo-600 transition-colors pr-1"
-        >
-          Kanta
-        </Link>
-
-        {/* Command palette-style search */}
-        <div className="relative group">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search equipment, departments..."
-            className="pl-9 pr-16 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl w-72 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all placeholder:text-slate-400"
-          />
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 pointer-events-none">
-            <kbd className="flex items-center gap-0.5 px-1.5 py-0.5 text-xs text-slate-400 bg-slate-100 border border-slate-200 rounded-md font-mono">
-              <Command size={9} />K
-            </kbd>
-          </div>
-        </div>
-
         {/* Sync status indicator */}
         <button
           onClick={() => status === "failed" && retry()}
@@ -110,7 +88,7 @@ export default function TopBar() {
           <>
             <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
               <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center text-white font-semibold text-xs shadow-md shadow-indigo-200">
+                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white font-semibold text-xs">
                   {getInitials(user.email || "")}
                 </div>
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-white" />

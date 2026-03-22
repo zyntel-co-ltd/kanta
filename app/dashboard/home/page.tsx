@@ -134,16 +134,7 @@ export default function DashboardHomePage() {
           }}
         >
           Welcome to&nbsp;
-          <span
-            style={{
-              background: "linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            Kanta
-          </span>
+          <span style={{ color: "#0f172a" }}>Kanta</span>
         </h1>
         <p
           className="mt-3 max-w-xl"
@@ -164,87 +155,59 @@ export default function DashboardHomePage() {
         {apps.map((app) => {
           const AppIcon = app.icon;
           return (
-            <div
+            <Link
               key={app.title}
-              className="relative flex flex-col rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group"
-              style={{ minHeight: 380 }}
+              href={app.href}
+              className="relative flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+              style={{ minHeight: 340 }}
             >
-              {/* Decorative gradient blob */}
-              <div
-                className={`absolute -top-16 -right-16 w-52 h-52 rounded-full bg-gradient-to-br ${app.blob} blur-3xl opacity-70 pointer-events-none group-hover:opacity-90 transition-opacity`}
-              />
+              {/* Top accent band */}
+              <div className={`h-1 w-full bg-gradient-to-r ${app.gradient} flex-shrink-0`} />
 
-              {/* Top gradient band */}
-              <div className={`h-1.5 w-full bg-gradient-to-r ${app.gradient} flex-shrink-0`} />
-
-              <div className="relative flex flex-col flex-1 p-7">
-                {/* Eyebrow + Icon row */}
-                <div className="flex items-center justify-between mb-5">
-                  <span className="text-eyebrow">{app.eyebrow}</span>
-                  <div
-                    className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${app.gradient} flex items-center justify-center flex-shrink-0 shadow-sm`}
-                  >
-                    <AppIcon size={20} className="text-white" />
+              <div className="relative flex flex-col flex-1 p-6">
+                {/* Icon + eyebrow */}
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">{app.eyebrow}</span>
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${app.gradient} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                    <AppIcon size={18} className="text-white" />
                   </div>
                 </div>
 
                 {/* Title */}
-                <h2
-                  style={{
-                    fontSize: "1.375rem",
-                    fontWeight: 700,
-                    letterSpacing: "-0.025em",
-                    lineHeight: 1.25,
-                    color: "#0f172a",
-                  }}
-                >
+                <h2 className="text-slate-900 mb-2" style={{ fontSize: "1.25rem", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.25 }}>
                   {app.title}
                 </h2>
 
                 {/* Description */}
-                <p
-                  className="mt-2 flex-1"
-                  style={{
-                    fontSize: "0.875rem",
-                    fontWeight: 400,
-                    color: "#64748b",
-                    lineHeight: 1.6,
-                  }}
-                >
+                <p className="flex-1 text-slate-500" style={{ fontSize: "0.875rem", lineHeight: 1.6 }}>
                   {app.description}
                 </p>
 
-                {/* Sub-tabs */}
-                <div className="flex flex-wrap gap-2 mt-5">
+                {/* Quick-access sub-links */}
+                <div className="flex flex-wrap gap-1.5 mt-5">
                   {app.tabs.map((tab) => {
                     const TabIcon = tab.icon;
                     return (
-                      <Link
+                      <span
                         key={tab.href + tab.label}
-                        href={tab.href}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${app.pill} ${app.pillText} border border-transparent hover:border-current transition-all`}
-                        style={{ fontSize: "0.75rem", fontWeight: 600 }}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${app.pill} ${app.pillText}`}
+                        style={{ fontSize: "0.7rem", fontWeight: 600 }}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <TabIcon size={12} />
+                        <TabIcon size={10} />
                         {tab.label}
-                      </Link>
+                      </span>
                     );
                   })}
                 </div>
 
-                {/* CTA */}
-                <div className="mt-6">
-                  <Link
-                    href={app.href}
-                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${app.ctaColor}`}
-                    style={{ letterSpacing: "-0.01em" }}
-                  >
-                    Open {app.title}
-                    <ArrowRight size={15} />
-                  </Link>
+                {/* Arrow hint */}
+                <div className="flex items-center gap-1.5 mt-5 text-slate-400 group-hover:text-slate-700 transition-colors">
+                  <span className="text-sm font-medium">Open {app.title}</span>
+                  <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -259,14 +222,7 @@ export default function DashboardHomePage() {
           }}
         >
           Kanta · QR-first asset intelligence for East African laboratories ·{" "}
-          <span
-            style={{
-              fontWeight: 600,
-              color: "#4f46e5",
-            }}
-          >
-            Offline-capable
-          </span>
+          <span style={{ fontWeight: 600, color: "#059669" }}>Offline-capable</span>
         </p>
       </div>
     </div>

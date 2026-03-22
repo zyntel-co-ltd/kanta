@@ -4,21 +4,20 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Zap,
   ArrowRight,
   CheckCircle2,
   Activity,
   ShieldCheck,
   Layers,
+  FlaskConical,
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
-/* ── Feature bullets shown on the left panel ── */
 const features = [
   {
     icon: Activity,
     title: "Lab Intelligence",
-    desc: "TAT, test volumes, revenue & quality control — all in one view.",
+    desc: "TAT, test volumes, revenue and quality control — all in one view.",
   },
   {
     icon: ShieldCheck,
@@ -68,19 +67,19 @@ export default function LoginForm() {
       className="min-h-screen flex"
       style={{ fontFamily: "var(--font-inter)", background: "#f8fafc" }}
     >
-      {/* ── LEFT PANEL — branding & features ── */}
+      {/* ── LEFT PANEL ── */}
       <div
         className="hidden lg:flex lg:w-[52%] xl:w-[55%] flex-col justify-between p-12 xl:p-16 relative overflow-hidden"
-        style={{ background: "linear-gradient(145deg, #1e1b4b 0%, #312e81 50%, #1e3a5f 100%)" }}
+        style={{ background: "linear-gradient(145deg, #042f2e 0%, #065f46 55%, #047857 100%)" }}
       >
-        {/* Subtle background circles */}
+        {/* Decorative glows */}
         <div
-          className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full opacity-10 pointer-events-none"
-          style={{ background: "radial-gradient(circle, #818cf8, transparent 70%)", transform: "translate(30%, -30%)" }}
+          className="absolute top-0 right-0 w-[480px] h-[480px] rounded-full opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #34d399, transparent 70%)", transform: "translate(30%, -30%)" }}
         />
         <div
-          className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full opacity-10 pointer-events-none"
-          style={{ background: "radial-gradient(circle, #38bdf8, transparent 70%)", transform: "translate(-30%, 30%)" }}
+          className="absolute bottom-0 left-0 w-[380px] h-[380px] rounded-full opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #6ee7b7, transparent 70%)", transform: "translate(-30%, 30%)" }}
         />
 
         {/* Brand */}
@@ -89,11 +88,11 @@ export default function LoginForm() {
             className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)" }}
           >
-            <Zap size={18} className="text-white" />
+            <FlaskConical size={18} className="text-white" />
           </div>
           <div>
             <p className="text-white font-bold text-lg leading-none tracking-tight">Kanta</p>
-            <p className="text-indigo-300 text-xs mt-0.5">Operational Intelligence</p>
+            <p className="text-emerald-300 text-xs mt-0.5">Operational Intelligence</p>
           </div>
         </div>
 
@@ -105,14 +104,13 @@ export default function LoginForm() {
               style={{ fontSize: "clamp(1.75rem, 3vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.03em" }}
             >
               Built for the<br />
-              <span style={{ color: "#93c5fd" }}>modern laboratory</span>
+              <span style={{ color: "#6ee7b7" }}>modern laboratory</span>
             </h2>
-            <p className="text-indigo-200 leading-relaxed" style={{ fontSize: "1rem", maxWidth: 380 }}>
+            <p className="text-emerald-100 leading-relaxed" style={{ fontSize: "1rem", maxWidth: 380 }}>
               A single platform for equipment tracking, quality control and lab analytics — designed for East African hospitals.
             </p>
           </div>
 
-          {/* Feature list */}
           <div className="space-y-5">
             {features.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="flex items-start gap-4">
@@ -120,32 +118,29 @@ export default function LoginForm() {
                   className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
                   style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}
                 >
-                  <Icon size={15} className="text-indigo-200" />
+                  <Icon size={15} className="text-emerald-200" />
                 </div>
                 <div>
                   <p className="text-white font-semibold text-sm leading-none mb-1">{title}</p>
-                  <p className="text-indigo-300 text-xs leading-relaxed">{desc}</p>
+                  <p className="text-emerald-200 text-xs leading-relaxed">{desc}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Footer quote */}
         <div className="relative z-10">
-          <p className="text-indigo-400 text-xs">
-            Trusted by laboratory teams across East Africa
-          </p>
+          <p className="text-emerald-400 text-xs">Trusted by laboratory teams across East Africa</p>
         </div>
       </div>
 
-      {/* ── RIGHT PANEL — login form ── */}
+      {/* ── RIGHT PANEL ── */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 sm:px-10 py-12">
 
-        {/* Mobile brand (hidden on lg+) */}
+        {/* Mobile brand */}
         <div className="lg:hidden flex items-center gap-2.5 mb-10">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center">
-            <Zap size={16} className="text-white" />
+          <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center">
+            <FlaskConical size={16} className="text-white" />
           </div>
           <div>
             <p className="font-bold text-slate-900 text-base leading-none">Kanta</p>
@@ -154,8 +149,6 @@ export default function LoginForm() {
         </div>
 
         <div className="w-full max-w-sm">
-
-          {/* Heading */}
           <div className="mb-8">
             <h1
               className="text-slate-900 mb-2"
@@ -168,16 +161,9 @@ export default function LoginForm() {
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-
-            {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-slate-700 mb-1.5"
-                style={{ fontSize: "0.875rem", fontWeight: 500 }}
-              >
+              <label htmlFor="email" className="block text-slate-700 mb-1.5" style={{ fontSize: "0.875rem", fontWeight: 500 }}>
                 Email address
               </label>
               <input
@@ -188,24 +174,19 @@ export default function LoginForm() {
                 required
                 autoComplete="email"
                 placeholder="you@hospital.org"
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all"
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all"
                 style={{ fontSize: "0.9375rem" }}
               />
             </div>
 
-            {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label
-                  htmlFor="password"
-                  className="text-slate-700"
-                  style={{ fontSize: "0.875rem", fontWeight: 500 }}
-                >
+                <label htmlFor="password" className="text-slate-700" style={{ fontSize: "0.875rem", fontWeight: 500 }}>
                   Password
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-indigo-600 hover:text-indigo-700 transition-colors"
+                  className="text-emerald-600 hover:text-emerald-700 transition-colors"
                   style={{ fontSize: "0.8125rem", fontWeight: 500 }}
                 >
                   Forgot password?
@@ -219,12 +200,11 @@ export default function LoginForm() {
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all"
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all"
                 style={{ fontSize: "0.9375rem" }}
               />
             </div>
 
-            {/* Error */}
             {error && (
               <div className="flex items-start gap-2.5 px-4 py-3 bg-red-50 border border-red-100 rounded-xl">
                 <CheckCircle2 size={15} className="text-red-500 flex-shrink-0 mt-0.5 rotate-45" />
@@ -232,11 +212,10 @@ export default function LoginForm() {
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               style={{ fontSize: "0.9375rem" }}
             >
               {loading ? (
@@ -253,11 +232,7 @@ export default function LoginForm() {
             </button>
           </form>
 
-          {/* Footer */}
-          <p
-            className="mt-8 text-center text-slate-400"
-            style={{ fontSize: "0.8125rem" }}
-          >
+          <p className="mt-8 text-center text-slate-400" style={{ fontSize: "0.8125rem" }}>
             Hospital asset intelligence · East Africa
           </p>
         </div>

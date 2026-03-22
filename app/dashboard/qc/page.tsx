@@ -224,16 +224,16 @@ export default function QCPage() {
         <StatCard label="Violations" value={violations.length} sub="Westgard flags" />
       </div>
 
-      {/* ── Tab bar ── */}
-      <div className="flex items-center gap-1 bg-slate-100/70 p-1 rounded-2xl w-fit animate-slide-up stagger-2">
+      {/* ── Tab bar — underline style ── */}
+      <div className="flex items-center border-b border-slate-200 overflow-x-auto animate-slide-up stagger-2">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all text-sm font-medium whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-all ${
               activeTab === id
-                ? "bg-white text-emerald-700 shadow-sm font-semibold"
-                : "text-slate-500 hover:text-slate-700"
+                ? "border-emerald-500 text-emerald-700"
+                : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
             }`}
           >
             <Icon size={13} />
