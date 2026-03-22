@@ -17,6 +17,19 @@ import {
   ClipboardList,
   Copy,
   Check,
+  FlaskConical,
+  Grid3X3,
+  Package,
+  Search,
+  Trash2,
+  Archive,
+  Plus,
+  Download,
+  Filter,
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  Settings2,
 } from "lucide-react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
@@ -56,7 +69,7 @@ type QCRun = {
   pass: boolean;
 };
 
-type Tab = "overview" | "lj" | "westgard" | "qualitative" | "calculator" | "stats";
+type Tab = "overview" | "lj" | "westgard" | "qualitative" | "calculator" | "stats" | "samples";
 
 const TABS: { id: Tab; label: string; icon: typeof ShieldCheck }[] = [
   { id: "overview",    label: "Overview",       icon: ShieldCheck    },
@@ -65,6 +78,7 @@ const TABS: { id: Tab; label: string; icon: typeof ShieldCheck }[] = [
   { id: "qualitative", label: "Qualitative QC",  icon: TestTube       },
   { id: "calculator",  label: "QC Calculator",   icon: Calculator     },
   { id: "stats",       label: "QC Stats",        icon: TrendingUp     },
+  { id: "samples",     label: "Sample Mgmt",     icon: FlaskConical   },
 ];
 
 /* ─── Stat card ─── */
@@ -236,6 +250,7 @@ export default function QCPage() {
         {activeTab === "qualitative" && <QualitativeTab configs={qualConfigs} entries={qualEntries} facilityId={DEFAULT_FACILITY_ID} onRefresh={fetchData} />}
         {activeTab === "calculator"  && <CalculatorTab />}
         {activeTab === "stats"       && <StatsTab materials={materials} />}
+        {activeTab === "samples"     && <SamplesTab />}
       </div>
     </div>
   );
@@ -729,6 +744,530 @@ function StatsTab({ materials }: { materials: Material[] }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  SAMPLE MANAGEMENT TAB  (Lab-hub integration)              */
+/* ═══════════════════════════════════════════════════════════ */
+
+const LAB_HUB_URL_KEY = "kanta-lab-hub-url";
+
+type Rack = {
+  id: number;
+  rack_name: string;
+  rack_date: string;
+  rack_type: "normal" | "igra";
+  description?: string;
+  status: "empty" | "partial" | "full";
+  total_samples: number;
+};
+
+type SampleResult = {
+  id: number;
+  barcode: string;
+  patient_id?: string;
+  sample_type?: string;
+  position: number;
+  collection_date?: string;
+  notes?: string;
+  rack_id: number;
+  discarded_at?: string;
+};
+
+type LabHubStats = {
+  total_racks: number;
+  total_samples: number;
+  pending_discarding: number;
+  rack_status: { empty: number; partial: number; full: number };
+};
+
+type SampleSubTab = "dashboard" | "racks" | "search";
+
+const SAMPLE_SUB_TABS: { id: SampleSubTab; label: string; icon: typeof Grid3X3 }[] = [
+  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+  { id: "racks",     label: "Racks",     icon: Grid3X3   },
+  { id: "search",    label: "Search",    icon: Search    },
+];
+
+function rackStatusColor(status: string) {
+  if (status === "full")    return "bg-emerald-100 text-emerald-700";
+  if (status === "partial") return "bg-amber-100 text-amber-700";
+  return "bg-slate-100 text-slate-500";
+}
+
+function positionLabel(position: number) {
+  const row = Math.floor(position / 10);
+  const col = (position % 10) + 1;
+  return `${String.fromCharCode(65 + row)}${col}`;
+}
+
+function SamplesTab() {
+  const [labHubUrl, setLabHubUrl] = useState<string>(() => {
+    try { return localStorage.getItem(LAB_HUB_URL_KEY) ?? "http://localhost:8000"; } catch { return "http://localhost:8000"; }
+  });
+  const [urlInput, setUrlInput] = useState(labHubUrl);
+  const [connected, setConnected] = useState<boolean | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [subTab, setSubTab] = useState<SampleSubTab>("dashboard");
+
+  const [stats, setStats] = useState<LabHubStats | null>(null);
+  const [recentRacks, setRecentRacks] = useState<Rack[]>([]);
+  const [racks, setRacks] = useState<Rack[]>([]);
+  const [racksLoading, setRacksLoading] = useState(false);
+  const [filters, setFilters] = useState({ startDate: "", endDate: "", status: "" });
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newRack, setNewRack] = useState({ rack_name: "", rack_date: new Date().toISOString().slice(0, 10), rack_type: "normal", description: "" });
+  const [creating, setCreating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchField, setSearchField] = useState("all");
+  const [searchResults, setSearchResults] = useState<SampleResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
+
+  const apiFetch = (path: string, options?: RequestInit) =>
+    fetch(`${labHubUrl}${path}`, { ...options, headers: { "Content-Type": "application/json", ...(options?.headers ?? {}) } });
+
+  const checkConnection = async (url = labHubUrl) => {
+    setChecking(true);
+    try {
+      const res = await fetch(`${url}/api/health`, { signal: AbortSignal.timeout(4000) });
+      const ok = res.ok;
+      setConnected(ok);
+      if (ok) { loadDashboard(url); loadRacks(url); }
+      return ok;
+    } catch {
+      setConnected(false);
+      return false;
+    } finally { setChecking(false); }
+  };
+
+  const saveUrl = async () => {
+    const trimmed = urlInput.replace(/\/$/, "");
+    setLabHubUrl(trimmed);
+    try { localStorage.setItem(LAB_HUB_URL_KEY, trimmed); } catch {}
+    setShowSettings(false);
+    await checkConnection(trimmed);
+  };
+
+  const loadDashboard = async (url = labHubUrl) => {
+    try {
+      const [statsRes, racksRes] = await Promise.all([
+        fetch(`${url}/api/stats`),
+        fetch(`${url}/api/racks/?limit=5`),
+      ]);
+      if (statsRes.ok) setStats(await statsRes.json());
+      if (racksRes.ok) setRecentRacks(await racksRes.json());
+    } catch {}
+  };
+
+  const loadRacks = async (url = labHubUrl) => {
+    setRacksLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filters.startDate) params.set("start_date", filters.startDate);
+      if (filters.endDate)   params.set("end_date",   filters.endDate);
+      if (filters.status)    params.set("status",     filters.status);
+      const res = await fetch(`${url}/api/racks/?${params}`);
+      if (res.ok) setRacks(await res.json());
+    } catch {}
+    finally { setRacksLoading(false); }
+  };
+
+  const handleCreateRack = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreating(true);
+    try {
+      const res = await apiFetch("/api/racks/", {
+        method: "POST",
+        body: JSON.stringify({ ...newRack, rack_date: new Date(newRack.rack_date).toISOString() }),
+      });
+      if (!res.ok) throw new Error("failed");
+      setShowCreateModal(false);
+      setNewRack({ rack_name: "", rack_date: new Date().toISOString().slice(0, 10), rack_type: "normal", description: "" });
+      loadRacks(); loadDashboard();
+    } catch { alert("Failed to create rack."); }
+    finally { setCreating(false); }
+  };
+
+  const handleDeleteRack = async (id: number, name: string) => {
+    if (!confirm(`Delete rack "${name}" and all its samples?`)) return;
+    try { await apiFetch(`/api/racks/${id}`, { method: "DELETE" }); loadRacks(); loadDashboard(); }
+    catch { alert("Failed to delete rack."); }
+  };
+
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams({ format: "csv" });
+      if (filters.startDate) params.set("start_date", filters.startDate);
+      if (filters.endDate)   params.set("end_date",   filters.endDate);
+      if (filters.status)    params.set("status",     filters.status);
+      const res = await fetch(`${labHubUrl}/api/export/?${params}`);
+      if (!res.ok) throw new Error("failed");
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `lab_samples_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+    } catch { alert("Export failed — check Lab-hub connection."); }
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setSearching(true); setSearched(true);
+    try {
+      const res = await apiFetch("/api/samples/search", {
+        method: "POST",
+        body: JSON.stringify({ query: searchQuery.trim(), search_type: searchField }),
+      });
+      setSearchResults(res.ok ? await res.json() : []);
+    } catch { setSearchResults([]); }
+    finally { setSearching(false); }
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { checkConnection(); }, []);
+
+  return (
+    <div className="space-y-5">
+
+      {/* Settings modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={() => setShowSettings(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-bold text-slate-900 mb-1" style={{ fontSize: "1.0625rem", letterSpacing: "-0.02em" }}>Lab-hub Connection</h3>
+            <p className="text-sm text-slate-500 mb-4">
+              Enter the base URL of your Lab-hub server (e.g.{" "}
+              <code className="bg-slate-100 px-1 rounded text-xs">http://192.168.1.10:8000</code>)
+            </p>
+            <input type="url" value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className={inputCls + " mb-4"} placeholder="http://localhost:8000" />
+            <div className="flex gap-3">
+              <button onClick={saveUrl} className={btnPrimary + " flex-1 justify-center"}>Save &amp; Connect</button>
+              <button onClick={() => setShowSettings(false)} className={btnSecondary}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Connection banner */}
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
+        connected === false ? "bg-red-50 border border-red-100 text-red-700"
+        : connected === true ? "bg-emerald-50 border border-emerald-100 text-emerald-700"
+        : "bg-amber-50 border border-amber-100 text-amber-700"
+      }`}>
+        {checking
+          ? <RefreshCw size={15} className="animate-spin" />
+          : connected === false ? <WifiOff size={15} />
+          : <Wifi size={15} />}
+        <span className="flex-1">
+          {checking ? "Checking Lab-hub connection…"
+            : connected === false ? `Cannot reach Lab-hub at ${labHubUrl}`
+            : connected === true ? `Connected · ${labHubUrl}`
+            : "Connecting…"}
+        </span>
+        <button onClick={() => setShowSettings(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all">
+          <Settings2 size={12} /> Configure
+        </button>
+        <button onClick={() => checkConnection()} disabled={checking}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all disabled:opacity-50">
+          <RefreshCw size={12} className={checking ? "animate-spin" : ""} /> Retry
+        </button>
+      </div>
+
+      {/* Sub-tabs */}
+      <div className="flex items-center gap-1 bg-slate-100/70 p-1 rounded-2xl w-fit">
+        {SAMPLE_SUB_TABS.map(({ id, label, icon: Icon }) => (
+          <button key={id} onClick={() => setSubTab(id)}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all text-sm font-medium whitespace-nowrap ${
+              subTab === id ? "bg-white text-emerald-700 shadow-sm font-semibold" : "text-slate-500 hover:text-slate-700"
+            }`}>
+            <Icon size={13} />{label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Dashboard ── */}
+      {subTab === "dashboard" && (
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {([
+              { label: "Total Racks",     value: stats?.total_racks          ?? "—", icon: Grid3X3,  color: "bg-indigo-50 text-indigo-600"   },
+              { label: "Total Samples",   value: stats?.total_samples        ?? "—", icon: Package,  color: "bg-emerald-50 text-emerald-600" },
+              { label: "Partial Racks",   value: stats?.rack_status?.partial ?? "—", icon: BarChart3, color: "bg-amber-50 text-amber-600"   },
+              { label: "Pending Discard", value: stats?.pending_discarding   ?? "—", icon: Trash2,   color: "bg-red-50 text-red-600"         },
+            ] as { label: string; value: number | string; icon: typeof Grid3X3; color: string }[]).map(({ label, value, icon: Icon, color }) => (
+              <div key={label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}><Icon size={18} /></div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">{label}</p>
+                  <p className="text-2xl font-bold text-slate-900" style={{ letterSpacing: "-0.03em" }}>{value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <SectionHead icon={Grid3X3} title="Recent Racks" />
+              <button onClick={() => setSubTab("racks")} className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold">View all →</button>
+            </div>
+            {recentRacks.length === 0 ? (
+              <div className="text-center py-10">
+                <Grid3X3 size={28} className="text-slate-300 mx-auto mb-3" />
+                <p className="text-sm text-slate-400 mb-3">No racks yet.</p>
+                <button onClick={() => { setSubTab("racks"); setShowCreateModal(true); }} className={btnPrimary + " mx-auto"}>
+                  <Plus size={14} /> Create First Rack
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {recentRacks.map((rack) => {
+                  const cap = rack.rack_type === "igra" ? 40 : 100;
+                  return (
+                    <div key={rack.id} className="flex items-center justify-between px-3 py-3 rounded-xl hover:bg-slate-50 transition-all">
+                      <div>
+                        <p className="font-medium text-slate-800 text-sm">{rack.rack_name}</p>
+                        <p className="text-xs text-slate-400">{new Date(rack.rack_date).toLocaleDateString()} · {rack.rack_type === "igra" ? "IGRA" : "Normal"}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-xs text-slate-500">{rack.total_samples}/{cap} samples</p>
+                          <div className="w-24 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                            <div className="h-full bg-emerald-400 rounded-full" style={{ width: `${(rack.total_samples / cap) * 100}%` }} />
+                          </div>
+                        </div>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${rackStatusColor(rack.status)}`}>{rack.status}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Racks ── */}
+      {subTab === "racks" && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between">
+            <SectionHead icon={Grid3X3} title="Sample Racks" />
+            <div className="flex gap-2">
+              <button onClick={handleExport} className={btnSecondary}><Download size={14} /> Export CSV</button>
+              <button onClick={() => setShowCreateModal(true)} className={btnPrimary}><Plus size={14} /> New Rack</button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter size={14} className="text-slate-400" />
+              <span className="text-sm font-semibold text-slate-600">Filters</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Start Date</label>
+                <input type="date" value={filters.startDate} onChange={(e) => setFilters((f) => ({ ...f, startDate: e.target.value }))} className={inputCls} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">End Date</label>
+                <input type="date" value={filters.endDate} onChange={(e) => setFilters((f) => ({ ...f, endDate: e.target.value }))} className={inputCls} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Status</label>
+                <select value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))} className={selectCls}>
+                  <option value="">All</option>
+                  <option value="empty">Empty</option>
+                  <option value="partial">Partial</option>
+                  <option value="full">Full</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button onClick={() => loadRacks()} disabled={racksLoading} className={btnPrimary + " w-full justify-center"}>
+                  {racksLoading ? <RefreshCw size={13} className="animate-spin" /> : <Filter size={13} />} Apply
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {racksLoading ? (
+            <div className="flex items-center justify-center py-12 gap-2 text-slate-400 text-sm">
+              <RefreshCw size={16} className="animate-spin" /> Loading racks…
+            </div>
+          ) : racks.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
+              <Grid3X3 size={28} className="text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500 text-sm mb-4">No racks found.</p>
+              <button onClick={() => setShowCreateModal(true)} className={btnPrimary + " mx-auto"}>
+                <Plus size={14} /> Create First Rack
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {racks.map((rack) => {
+                const cap = rack.rack_type === "igra" ? 40 : 100;
+                const pct = Math.round((rack.total_samples / cap) * 100);
+                return (
+                  <div key={rack.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-4 hover:shadow-md transition-all">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold text-slate-900 text-sm" style={{ letterSpacing: "-0.01em" }}>{rack.rack_name}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{new Date(rack.rack_date).toLocaleDateString()}</p>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${rackStatusColor(rack.status)}`}>{rack.status}</span>
+                    </div>
+                    {rack.description && <p className="text-xs text-slate-500">{rack.description}</p>}
+                    <div>
+                      <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+                        <span>{rack.rack_type === "igra" ? "IGRA Rack" : "Normal Rack"}</span>
+                        <span>{rack.total_samples}/{cap} ({pct}%)</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${rack.status === "full" ? "bg-emerald-500" : rack.status === "partial" ? "bg-amber-400" : "bg-slate-300"}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <a href={`${labHubUrl}/rack/${rack.id}`} target="_blank" rel="noopener noreferrer"
+                        className={btnPrimary + " flex-1 justify-center text-xs"}>
+                        View in Lab-hub ↗
+                      </a>
+                      <button onClick={() => handleDeleteRack(rack.id, rack.rack_name)}
+                        className="px-3 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {showCreateModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={() => setShowCreateModal(false)}>
+              <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
+                <h3 className="font-bold text-slate-900" style={{ fontSize: "1.125rem", letterSpacing: "-0.02em" }}>Create New Rack</h3>
+                <form onSubmit={handleCreateRack} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Rack Name *</label>
+                    <input type="text" value={newRack.rack_name} onChange={(e) => setNewRack((r) => ({ ...r, rack_name: e.target.value }))}
+                      required placeholder="e.g. Morning Batch 001" className={inputCls} autoFocus />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Date *</label>
+                    <input type="date" value={newRack.rack_date} onChange={(e) => setNewRack((r) => ({ ...r, rack_date: e.target.value }))}
+                      required className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Rack Type *</label>
+                    <select value={newRack.rack_type} onChange={(e) => setNewRack((r) => ({ ...r, rack_type: e.target.value }))} className={selectCls}>
+                      <option value="normal">Normal Rack (100 positions — 10×10)</option>
+                      <option value="igra">IGRA Rack (40 positions — 10×4)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Description</label>
+                    <textarea value={newRack.description} onChange={(e) => setNewRack((r) => ({ ...r, description: e.target.value }))}
+                      rows={2} placeholder="Optional…" className={inputCls + " resize-none"} />
+                  </div>
+                  <div className="flex gap-3 pt-1">
+                    <button type="submit" disabled={creating} className={btnPrimary + " flex-1 justify-center"}>
+                      {creating ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} />} Create Rack
+                    </button>
+                    <button type="button" onClick={() => setShowCreateModal(false)} className={btnSecondary}>Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Search ── */}
+      {subTab === "search" && (
+        <div className="space-y-5">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+            <SectionHead icon={Search} title="Search Samples" />
+            <form onSubmit={handleSearch} className="space-y-4">
+              <div className="flex gap-3">
+                <div className="flex-1 relative">
+                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by barcode, patient ID, sample type…"
+                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all"
+                    autoFocus
+                  />
+                </div>
+                <button type="submit" disabled={searching || !searchQuery.trim()} className={btnPrimary}>
+                  {searching ? <RefreshCw size={14} className="animate-spin" /> : <Search size={14} />}
+                  {searching ? "Searching…" : "Search"}
+                </button>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Search in:</span>
+                {(["all", "barcode", "patient_id"] as const).map((val) => (
+                  <label key={val} className="flex items-center gap-1.5 cursor-pointer text-sm text-slate-600">
+                    <input type="radio" value={val} checked={searchField === val} onChange={(e) => setSearchField(e.target.value)} className="accent-emerald-600" />
+                    {val === "all" ? "All Fields" : val === "barcode" ? "Barcode" : "Patient ID"}
+                  </label>
+                ))}
+              </div>
+            </form>
+          </div>
+
+          {searched && (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <div className="flex items-center justify-between mb-4">
+                <SectionHead icon={Package} title="Search Results" />
+                <span className="text-xs font-semibold text-slate-400">
+                  {searchResults.length} {searchResults.length === 1 ? "sample" : "samples"} found
+                </span>
+              </div>
+              {searchResults.length === 0 ? (
+                <div className="text-center py-10">
+                  <Package size={28} className="text-slate-300 mx-auto mb-2" />
+                  <p className="text-slate-400 text-sm">No samples match your search.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {searchResults.map((s) => (
+                    <div key={s.id} className="flex items-start justify-between gap-4 px-4 py-3.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-all">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Package size={14} className="text-slate-400" />
+                          <span className="font-semibold text-slate-800 text-sm">{s.barcode}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${s.discarded_at ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
+                            {s.discarded_at ? "Discarded" : "Active"}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                          {s.patient_id  && <span>Patient: <strong className="text-slate-700">{s.patient_id}</strong></span>}
+                          {s.sample_type && <span>Type: <strong className="text-slate-700">{s.sample_type}</strong></span>}
+                          <span>Position: <strong className="text-slate-700">{positionLabel(s.position)}</strong></span>
+                          {s.collection_date && (
+                            <span>Collected: <strong className="text-slate-700">{new Date(s.collection_date).toLocaleDateString()}</strong></span>
+                          )}
+                        </div>
+                        {s.notes && <p className="text-xs text-slate-400 italic">&ldquo;{s.notes}&rdquo;</p>}
+                      </div>
+                      <a href={`${labHubUrl}/rack/${s.rack_id}`} target="_blank" rel="noopener noreferrer"
+                        className={btnSecondary + " text-xs whitespace-nowrap flex-shrink-0"}>
+                        View Rack ↗
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

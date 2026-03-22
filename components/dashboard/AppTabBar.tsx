@@ -71,6 +71,7 @@ const QUALITY_MGMT: AppConfig = {
     { label: "Qualitative QC", href: "/dashboard/qc", icon: FlaskConical, matchPrefixes: [] },
     { label: "Calculator",     href: "/dashboard/qc", icon: BarChart3,    matchPrefixes: [] },
     { label: "QC Stats",       href: "/dashboard/qc", icon: Activity,     matchPrefixes: [] },
+    { label: "Sample Mgmt",    href: "/dashboard/qc", icon: Layers,       matchPrefixes: [] },
   ],
 };
 
