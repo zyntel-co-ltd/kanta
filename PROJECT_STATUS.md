@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 22 March 2026 (Phase 13 — Sidebar Fix, App Cards Simplified)  
+**Last updated:** 23 March 2026 (Phase 14 — Medtbank-style Sidebar, Green & White)  
 **Updated by:** Cursor
 
 ---
@@ -49,6 +49,15 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 11: Chart.js migration, module tabs, Quantitative QC, live alerts** *(22 March 2026)* — see section below
 - [x] **Phase 12: Emerald theme, sidebar cutout, app cards, logout** *(22 March 2026)* — see section below
 - [x] **Phase 13: Sidebar toggle fix, app cards simplified, TypeScript fix** *(22 March 2026)* — see section below
+- [x] **Phase 14: Medtbank-style sidebar, green & white palette** *(23 March 2026)* — see section below
+
+### Phase 14 — Medtbank-Style Sidebar, Green & White (23 March 2026)
+
+- [x] **Medtbank-inspired layout** — Pill-shaped active state with thin vertical gradient bar on the left edge; rounded sidebar corners (`0 28px 28px 0`); white circular collapse toggle with green chevron.
+- [x] **Green & white color palette** — Sidebar background `#065f46`; emerald gradient for active bar (`#042f2e → #065f46 → #047857`); white logo box with green flask; white/light text; soft white overlay for active pill.
+- [x] **Collapsed pop-out tooltips** — Hover/active items show gradient pill tooltip with label and triangular pointer on the right.
+- [x] **Footer structure** — User profile (avatar, name) and logout; theme toggle removed.
+- [x] **Home page icon type fix** — Extended `IconProps` to include `strokeWidth` for Vercel build.
 
 ### Phase 13 — Sidebar Toggle Fix & App Cards Simplified (22 March 2026)
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
+import { useState } from "react";
 import type { ComponentType } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
@@ -46,63 +47,55 @@ type NavItem = {
 type NavGroup = { title: string; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
-  {
-    title: "Home",
-    items: [{ label: "Home", icon: Home, href: "/dashboard/home" }],
-  },
+  { title: "Home", items: [{ label: "Home", icon: Home, href: "/dashboard/home" }] },
   {
     title: "Lab Metrics",
     items: [
-      { label: "TAT",         icon: Clock,        href: "/dashboard/tat"         },
-      { label: "Tests",       icon: Beaker,       href: "/dashboard/tests"       },
-      { label: "Numbers",     icon: Hash,         href: "/dashboard/numbers"     },
-      { label: "Meta",        icon: Database,     href: "/dashboard/meta"        },
-      { label: "Revenue",     icon: DollarSign,   href: "/dashboard/revenue"     },
-      { label: "Performance", icon: TrendingUp,   href: "/dashboard/performance" },
+      { label: "TAT", icon: Clock, href: "/dashboard/tat" },
+      { label: "Tests", icon: Beaker, href: "/dashboard/tests" },
+      { label: "Numbers", icon: Hash, href: "/dashboard/numbers" },
+      { label: "Meta", icon: Database, href: "/dashboard/meta" },
+      { label: "Revenue", icon: DollarSign, href: "/dashboard/revenue" },
+      { label: "Performance", icon: TrendingUp, href: "/dashboard/performance" },
     ],
   },
   {
     title: "Quality Management",
     items: [
-      { label: "QC Overview",     icon: ShieldCheck, href: "/dashboard/qc"                  },
-      { label: "L-J Chart",       icon: BarChart3,   href: "/dashboard/qc?tab=lj"           },
-      { label: "Westgard",        icon: Activity,    href: "/dashboard/qc?tab=westgard"     },
-      { label: "Qualitative QC",  icon: TestTube,    href: "/dashboard/qc?tab=qualitative"  },
-      { label: "Quantitative QC", icon: FlaskRound,  href: "/dashboard/qc?tab=quantitative" },
-      { label: "QC Stats",        icon: TrendingUp,  href: "/dashboard/qc?tab=stats"        },
+      { label: "QC Overview", icon: ShieldCheck, href: "/dashboard/qc" },
+      { label: "L-J Chart", icon: BarChart3, href: "/dashboard/qc?tab=lj" },
+      { label: "Westgard", icon: Activity, href: "/dashboard/qc?tab=westgard" },
+      { label: "Qualitative QC", icon: TestTube, href: "/dashboard/qc?tab=qualitative" },
+      { label: "Quantitative QC", icon: FlaskRound, href: "/dashboard/qc?tab=quantitative" },
+      { label: "QC Stats", icon: TrendingUp, href: "/dashboard/qc?tab=stats" },
     ],
   },
   {
     title: "Samples",
     items: [
       { label: "Samples", icon: Package, href: "/dashboard/samples" },
-      { label: "LRIDS",   icon: Monitor, href: "/dashboard/lrids"   },
+      { label: "LRIDS", icon: Monitor, href: "/dashboard/lrids" },
     ],
   },
   {
     title: "Asset Management",
     items: [
-      { label: "Overview",     icon: LayoutDashboard, href: "/dashboard"              },
-      { label: "Scan",         icon: ScanSearch,      href: "/dashboard/scan"         },
-      { label: "Equipment",    icon: ScanLine,        href: "/dashboard/equipment"    },
-      { label: "Maintenance",  icon: Wrench,          href: "/dashboard/maintenance"  },
-      { label: "Refrigerator", icon: Thermometer,     href: "/dashboard/refrigerator" },
-      { label: "Analytics",    icon: BarChart3,       href: "/dashboard/analytics"    },
-      { label: "Reports",      icon: FileText,        href: "/dashboard/reports"      },
+      { label: "Overview", icon: LayoutDashboard, href: "/dashboard" },
+      { label: "Scan", icon: ScanSearch, href: "/dashboard/scan" },
+      { label: "Equipment", icon: ScanLine, href: "/dashboard/equipment" },
+      { label: "Maintenance", icon: Wrench, href: "/dashboard/maintenance" },
+      { label: "Refrigerator", icon: Thermometer, href: "/dashboard/refrigerator" },
+      { label: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
+      { label: "Reports", icon: FileText, href: "/dashboard/reports" },
     ],
   },
-  {
-    title: "Intelligence",
-    items: [
-      { label: "AI Insights", icon: Brain, href: "/dashboard/intelligence" },
-    ],
-  },
+  { title: "Intelligence", items: [{ label: "AI Insights", icon: Brain, href: "/dashboard/intelligence" }] },
   {
     title: "System",
     items: [
       { label: "Departments", icon: Building2, href: "/dashboard/departments" },
-      { label: "Admin",       icon: Shield,    href: "/dashboard/admin"       },
-      { label: "Settings",    icon: Settings,  href: "/dashboard/settings"    },
+      { label: "Admin", icon: Shield, href: "/dashboard/admin" },
+      { label: "Settings", icon: Settings, href: "/dashboard/settings" },
     ],
   },
 ];
@@ -116,19 +109,13 @@ function isNavActive(pathname: string, href: string) {
   return norm.startsWith(h + "/");
 }
 
-function getFirstName(user: {
-  email?: string;
-  user_metadata?: { full_name?: string; name?: string };
-}) {
+function getFirstName(user: { email?: string; user_metadata?: { full_name?: string; name?: string } }) {
   const name = user?.user_metadata?.full_name || user?.user_metadata?.name;
   if (name) return name.split(" ")[0];
   return user?.email?.split("@")[0]?.split(/[._-]/)[0] || "User";
 }
 
-function getInitials(user: {
-  email?: string;
-  user_metadata?: { full_name?: string; name?: string };
-}) {
+function getInitials(user: { email?: string; user_metadata?: { full_name?: string; name?: string } }) {
   const name = user?.user_metadata?.full_name || user?.user_metadata?.name;
   if (name) {
     const words = name.trim().split(" ");
@@ -141,111 +128,88 @@ function getInitials(user: {
   return part.slice(0, 2).toUpperCase();
 }
 
-/* ─── Design tokens ─── */
-const BG       = "#065f46";   // solid emerald — used for sidebar + notch fill
-const ACTIVE   = "#047857";   // icon/text colour on white pill
-const INACTIVE = "rgba(255,255,255,0.72)";
+/* ─── Green & white design tokens ─── */
+const GRADIENT = "linear-gradient(135deg, #042f2e 0%, #065f46 50%, #047857 100%)";
+const BG = "#065f46";
+const TEXT = "rgba(255,255,255,0.9)";
+const MUTED = "rgba(255,255,255,0.6)";
+const ACTIVE_PILL_BG = "rgba(255,255,255,0.12)";
+const ACTIVE_TEXT = "#ecfdf5";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const { collapsed, setCollapsed } = useSidebarLayout();
-
-  // More indent in collapsed so the green strip is clearly visible on the left
-  const PILL_L = collapsed ? 12 : 10;
-  // Larger notch = more dramatic concave curve at the pill corners
-  const NOTCH = 18;
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   return (
     <aside
       className={clsx(
-        "relative flex flex-col h-screen flex-shrink-0",
-        "transition-all duration-300 ease-in-out",
-        collapsed ? "w-[68px]" : "w-[248px]"
+        "relative flex flex-col h-screen flex-shrink-0 transition-all duration-300 ease-in-out overflow-visible",
+        collapsed ? "w-[72px]" : "w-[260px]"
       )}
-      style={{ backgroundColor: BG, borderRadius: "0 24px 24px 0" }}
+      style={{ backgroundColor: BG, borderRadius: "0 28px 28px 0" }}
     >
-
-      {/* ── Logo ── */}
+      {/* ── Header ── */}
       <div
         className={clsx(
-          "flex-shrink-0 flex items-center border-b border-white/10 py-[14px]",
-          collapsed ? "justify-center px-0" : "px-4 gap-3"
+          "flex-shrink-0 flex items-center py-4 border-b",
+          collapsed ? "justify-center px-0" : "px-5 gap-3",
+          "border-white/10"
         )}
       >
-        <Link
-          href="/dashboard/home"
-          className={clsx("flex items-center focus:outline-none", collapsed ? "justify-center" : "gap-3")}
-        >
-          {/* White icon box — same look in both states */}
-          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
-            <FlaskConical size={20} strokeWidth={1.5} style={{ color: ACTIVE }} />
+        <Link href="/dashboard/home" className={clsx("flex items-center focus:outline-none", collapsed ? "justify-center" : "gap-3")}>
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-white shadow-sm">
+            <FlaskConical size={20} strokeWidth={1.5} style={{ color: "#047857" }} />
           </div>
           {!collapsed && (
             <div>
-              <p className="font-bold text-white text-[15px] leading-none tracking-tight">Kanta</p>
-              <p className="text-[10px] mt-1 font-normal text-white/50">Operational Intelligence</p>
+              <p className="font-bold text-base leading-none tracking-tight text-white">
+                Kanta
+              </p>
+              <p className="text-[10px] mt-1 font-normal" style={{ color: MUTED }}>
+                Operational Intelligence
+              </p>
             </div>
           )}
         </Link>
       </div>
 
       {/* ── Nav ── */}
-      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-3 flex flex-col">
-        <div className="flex-1">
+      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-visible py-4 flex flex-col">
+        <div className="flex-1 px-3">
           {navGroups.map((group) => (
-            <div key={group.title} className="mb-1">
-              {/* Group label (expanded only) */}
+            <div key={group.title} className="mb-2">
               {!collapsed && (
-                <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-white/35">
+                <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: MUTED }}>
                   {group.title}
                 </p>
               )}
-
-              {/* Items — gap-0 so notches touch adjacent rows seamlessly */}
-              <div className="flex flex-col gap-0">
+              <div className="flex flex-col gap-0.5">
                 {group.items.map(({ label, icon: Icon, href }) => {
                   const active = isNavActive(pathname, href);
+                  const showTooltip = collapsed && (active || hoveredItem === href + label);
+
                   return (
-                    <div key={href + label} className="relative">
-
-                      {/* ── Active white pill — straight edges; notches create all corner curves ── */}
+                    <div
+                      key={href + label}
+                      className="relative"
+                      onMouseEnter={() => setHoveredItem(href + label)}
+                      onMouseLeave={() => setHoveredItem(null)}
+                    >
+                      {/* ── Active: thin vertical gradient bar (left edge) ── */}
                       {active && (
                         <span
-                          className="absolute inset-y-0 right-0 bg-white"
-                          style={{ left: PILL_L, borderRadius: 0, zIndex: 1 }}
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10"
+                          style={{ background: GRADIENT }}
                         />
                       )}
 
-                      {/* ── Notch — top-left of pill (inside row bounds) ── */}
-                      {active && (
+                      {/* ── Active: pill-shaped background (expanded) ── */}
+                      {active && !collapsed && (
                         <span
-                          className="absolute pointer-events-none"
-                          style={{
-                            top: 0,
-                            left: PILL_L,
-                            width: NOTCH,
-                            height: NOTCH,
-                            backgroundColor: BG,
-                            borderBottomRightRadius: "100%",
-                            zIndex: 2,
-                          }}
-                        />
-                      )}
-
-                      {/* ── Notch — bottom-left of pill (inside row bounds) ── */}
-                      {active && (
-                        <span
-                          className="absolute pointer-events-none"
-                          style={{
-                            bottom: 0,
-                            left: PILL_L,
-                            width: NOTCH,
-                            height: NOTCH,
-                            backgroundColor: BG,
-                            borderTopRightRadius: "100%",
-                            zIndex: 2,
-                          }}
+                          className="absolute inset-y-0 left-1 right-1 rounded-xl"
+                          style={{ backgroundColor: ACTIVE_PILL_BG, zIndex: 0 }}
                         />
                       )}
 
@@ -253,21 +217,32 @@ export default function Sidebar() {
                         href={href}
                         title={collapsed ? label : undefined}
                         className={clsx(
-                          "relative flex items-center py-[11px] transition-colors duration-150 focus:outline-none",
-                          collapsed ? "justify-center px-0" : "gap-3 px-5",
+                          "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1]",
+                          collapsed ? "justify-center px-0" : "gap-3 px-4",
                           !active && "hover:bg-white/10"
                         )}
-                        style={{ color: active ? ACTIVE : INACTIVE, zIndex: 3 }}
+                        style={{ color: active ? ACTIVE_TEXT : TEXT }}
                       >
-                        <Icon
-                          size={collapsed ? 22 : 20}
-                          strokeWidth={1.5}
-                          className="flex-shrink-0"
-                        />
-                        {!collapsed && (
-                          <span className="truncate text-[13.5px] font-medium">{label}</span>
-                        )}
+                        <Icon size={collapsed ? 22 : 20} strokeWidth={1.5} className="flex-shrink-0" />
+                        {!collapsed && <span className="truncate text-sm font-medium">{label}</span>}
                       </Link>
+
+                      {/* ── Collapsed: pop-out tooltip with gradient + pointer ── */}
+                      {showTooltip && (
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[100] flex items-center">
+                          {/* Left pointer triangle */}
+                          <div
+                            className="absolute -left-2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px]"
+                            style={{ borderRightColor: "#065f46" }}
+                          />
+                          <div
+                            className="px-3 py-2 rounded-lg text-white text-sm font-medium whitespace-nowrap shadow-xl"
+                            style={{ background: GRADIENT }}
+                          >
+                            {label}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -276,42 +251,47 @@ export default function Sidebar() {
           ))}
         </div>
 
-        {/* ── Footer: user + logout ── */}
-        <div className="flex-shrink-0 border-t border-white/10 pt-2 mt-3">
-          {/* User avatar / name */}
-          {user && collapsed && (
-            <div className="flex justify-center py-2">
+        {/* ── Footer ── */}
+        <div className="flex-shrink-0 border-t border-white/10 pt-3 pb-4 px-3">
+          {/* User profile */}
+          {user && (
+            <div className={clsx("flex items-center gap-3", collapsed ? "justify-center mb-3" : "mb-3")}>
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white border border-white/25"
-                style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold bg-white/20 text-white border border-white/25"
               >
                 {getInitials(user)}
               </div>
-            </div>
-          )}
-          {user && !collapsed && (
-            <div className="px-5 py-1.5">
-              <p className="text-[13px] font-medium text-white/60 truncate">{getFirstName(user)}</p>
+              {!collapsed && (
+                <div className="flex-1 min-w-0 flex items-center justify-between">
+                  <p className="text-sm font-medium truncate text-white/90">
+                    {getFirstName(user)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => signOut()}
+                    aria-label="Log out"
+                    className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    <LogOut size={16} strokeWidth={1.5} />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Logout */}
-          <button
-            type="button"
-            onClick={() => signOut()}
-            title="Log out"
-            aria-label="Log out"
-            className={clsx(
-              "flex items-center w-full py-[11px] transition-colors duration-150 hover:bg-red-500/20 focus:outline-none",
-              collapsed ? "justify-center px-0" : "gap-3 px-5"
-            )}
-            style={{ color: "rgba(255,255,255,0.65)" }}
-          >
-            <LogOut size={collapsed ? 20 : 18} strokeWidth={1.5} className="flex-shrink-0" />
-            {!collapsed && (
-              <span className="text-[13.5px] font-medium">Log out</span>
-            )}
-          </button>
+          {/* Logout (collapsed) */}
+          {user && collapsed && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => signOut()}
+                aria-label="Log out"
+                className="p-2.5 rounded-xl hover:bg-red-500/20 text-red-300 transition-colors"
+              >
+                <LogOut size={20} strokeWidth={1.5} />
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -321,13 +301,14 @@ export default function Sidebar() {
         onClick={() => setCollapsed(!collapsed)}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="absolute -right-3.5 top-[72px] w-7 h-7 rounded-full bg-white shadow-lg border-2 flex items-center justify-center z-50 transition-all duration-200 hover:scale-110 focus:outline-none"
+        className="absolute -right-3 top-20 w-8 h-8 rounded-full bg-white shadow-lg border-2 flex items-center justify-center z-50 transition-all duration-200 hover:scale-105 focus:outline-none"
         style={{ borderColor: BG, color: BG }}
       >
-        {collapsed
-          ? <ChevronRight size={13} strokeWidth={2.5} />
-          : <ChevronLeft  size={13} strokeWidth={2.5} />
-        }
+        {collapsed ? (
+          <ChevronRight size={14} strokeWidth={2} />
+        ) : (
+          <ChevronLeft size={14} strokeWidth={2} />
+        )}
       </button>
     </aside>
   );
