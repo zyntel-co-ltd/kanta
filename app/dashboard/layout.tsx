@@ -3,6 +3,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import DashboardProviders from "@/components/dashboard/DashboardProviders";
 import AuthGuard from "@/components/AuthGuard";
 import { SidebarLayoutProvider } from "@/lib/SidebarLayoutContext";
+import RecentVisitsTracker from "@/components/dashboard/RecentVisitsTracker";
 
 export default function DashboardLayout({
   children,
@@ -13,6 +14,7 @@ export default function DashboardLayout({
     <AuthGuard>
     <DashboardProviders>
     <SidebarLayoutProvider>
+      <RecentVisitsTracker />
       <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#F8F9FB" }}>
         {/* Collapsible sidebar */}
         <Sidebar />

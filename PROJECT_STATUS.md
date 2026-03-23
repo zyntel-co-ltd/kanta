@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 23 March 2026 (Phase 17 — Lab Metrics tabs + sidebar collapsible groups)  
+**Last updated:** 23 March 2026 (Phase 18 — Homepage UX improvements)  
 **Updated by:** Cursor
 
 ---
@@ -53,6 +53,52 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 15: Quality Management rebuilt from Lab-hub** *(23 March 2026)* — see section below
 - [x] **Phase 16: Lab Metrics rebuilt from zyntel-dashboard** *(23 March 2026)* — see section below
 - [x] **Phase 17: Lab Metrics top tabs + collapsible sidebar groups** *(23 March 2026)* — see section below
+- [x] **Phase 18: Homepage UX improvements** *(23 March 2026)* — see section below
+
+### Phase 18 — Homepage UX Improvements (23 March 2026)
+
+#### Summary
+Six UX refinements to the dashboard home page (`/dashboard/home`): reduce sidebar redundancy, visual differentiation, clearer labels, simpler cards, primary action, and descriptive CTAs.
+
+#### Changes
+
+**1. Recently visited + Quick actions**
+- **Recently visited** — Displays last 2–3 dashboard pages with relative timestamps ("2h ago", "Just now"). Uses `localStorage` via `lib/recentVisits.ts`. `RecentVisitsTracker` in dashboard layout records visits; `RecentlyVisited` component renders on home.
+- **Quick actions** — Three prominent buttons: Scan equipment, View TAT, QC Data Entry. Gives users fast access without duplicating sidebar.
+
+**2. Distinct card colors**
+- **Lab Metrics** — Emerald gradient (unchanged)
+- **Quality Management** — Indigo/purple gradient
+- **Asset Management** — Teal gradient  
+Each card has its own header gradient and CTA accent so workspaces are visually distinguishable.
+
+**3. Concrete workspace label**
+- Replaced vague "3 modules active" with "Lab Metrics · QC · Assets" in the hero strip.
+
+**4. Pills on hover**
+- Module pills (TAT, Tests, etc.) hidden by default on desktop; shown on card hover. Always visible on mobile (touch devices). Reduces visual clutter while keeping info available.
+
+**5. Primary action**
+- Added "Scan equipment" button in the hero banner (below subtitle). Links to `/dashboard/scan`. White button with emerald text and scan icon.
+
+**6. Descriptive CTAs**
+- Replaced generic "Open" with action-oriented labels per card:
+  - Lab Metrics → "View metrics"
+  - Quality Management → "Manage QC"
+  - Asset Management → "View assets"
+
+#### Files changed
+
+| File | Change |
+|------|--------|
+| `lib/recentVisits.ts` | **New** — Track/render recent visits, format time ago |
+| `components/dashboard/RecentVisitsTracker.tsx` | **New** — Records pathname to localStorage on dashboard navigation |
+| `components/dashboard/RecentlyVisited.tsx` | **New** — Displays recently visited pages with timestamps |
+| `components/dashboard/QuickActions.tsx` | **New** — Scan equipment, View TAT, QC Data Entry buttons |
+| `app/dashboard/layout.tsx` | Added `<RecentVisitsTracker />` |
+| `app/dashboard/home/page.tsx` | Hero primary CTA, Recently visited + Quick actions, distinct card gradients, ctaLabel per card, pills on hover, "Lab Metrics · QC · Assets" |
+
+---
 
 ### Phase 17 — Lab Metrics Top Tabs + Collapsible Sidebar Groups (23 March 2026)
 
