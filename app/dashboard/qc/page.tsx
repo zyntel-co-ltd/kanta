@@ -65,7 +65,7 @@ const closedConfirm: ConfirmState = { open: false, title: "", message: "", confi
 
 /* ─────────────────── Westgard rule application ─────────────────── */
 function applyWestgard(data: QcItem[], mean: number, sd: number): QcItem[] {
-  const ann = data.map((d) => ({ ...d, _status: "normal" as string }));
+  const ann: QcItem[] = data.map((d) => ({ ...d, _status: "normal" as string }));
   for (let i = 0; i < ann.length; i++) {
     const v = Number(ann[i].value);
     const diff = Math.abs(v - mean);
