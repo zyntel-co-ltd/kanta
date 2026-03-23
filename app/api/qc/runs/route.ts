@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
       else if (Math.abs(z) >= 2) status = "warning";
 
       return {
+        id: r.id,
         runNumber: i + 1,
         date: r.run_at,
         value: Number(r.value),

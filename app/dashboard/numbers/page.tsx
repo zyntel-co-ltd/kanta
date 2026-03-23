@@ -1,363 +1,365 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
-  Users,
-  Beaker,
-  TrendingUp,
-  BarChart3,
-  Target,
-  Clock,
-  Activity,
-  Calendar,
-} from "lucide-react";
-import {
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
 } from "recharts";
-
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
-import ModuleTabBar from "@/components/dashboard/ModuleTabBar";
 
-const MODULE_TABS = [
-  { label: "Overview",    href: "/dashboard/tat",         icon: Clock     },
-  { label: "Tests",       href: "/dashboard/tests",       icon: Activity  },
-  { label: "Numbers",     href: "/dashboard/numbers",     icon: Users     },
-  { label: "Revenue",     href: "/dashboard/revenue",     icon: Calendar  },
-  { label: "Performance", href: "/dashboard/performance", icon: TrendingUp },
+// ── Constants ──────────────────────────────────────────────────────────────
+const PERIODS = [
+  { value: "today",       label: "Today"        },
+  { value: "yesterday",   label: "Yesterday"    },
+  { value: "thisWeek",    label: "This Week"    },
+  { value: "lastWeek",    label: "Last Week"    },
+  { value: "thisMonth",   label: "This Month"   },
+  { value: "lastMonth",   label: "Last Month"   },
+  { value: "thisQuarter", label: "This Quarter" },
+  { value: "thisYear",    label: "This Year"    },
 ];
 
+const SHIFTS = [
+  { value: "all",         label: "All Shifts"  },
+  { value: "day shift",   label: "Day Shift"   },
+  { value: "night shift", label: "Night Shift" },
+];
+
+const LABORATORIES = [
+  { value: "all",             label: "All Laboratories" },
+  { value: "Main Laboratory", label: "Main Laboratory"  },
+  { value: "Annex",           label: "Annex"            },
+];
+
+// ── Types ──────────────────────────────────────────────────────────────────
 type NumbersData = {
   totalRequests: number;
   targetRequests: number;
   requestsPercentage: number;
   totalTests: number;
   targetTests: number;
-  testsPercentage: number;
   avgDailyRequests: number;
   avgDailyTests: number;
   busiestHour: string | null;
   busiestDay: string | null;
   dailyRequestVolume: { date: string; count: number }[];
-  dailyTestVolume: { date: string; count: number }[];
   hourlyRequestVolume: { hour: number; count: number }[];
-  granularity: string;
+  granularity?: "daily" | "monthly";
 };
 
-const PERIODS = [
-  { value: "today", label: "Today" },
-  { value: "thisWeek", label: "This Week" },
-  { value: "thisMonth", label: "This Month" },
-  { value: "lastMonth", label: "Last Month" },
-];
+// ── Sub-components ─────────────────────────────────────────────────────────
+function TargetProgress({
+  current,
+  target,
+  title,
+  tooltip,
+}: {
+  current: number;
+  target: number;
+  title: string;
+  tooltip?: string;
+}) {
+  const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
+  return (
+    <div className="mb-5" title={tooltip}>
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-sm font-semibold text-slate-700">{title}</span>
+        <span className="text-sm font-bold text-emerald-600">{pct.toFixed(1)}%</span>
+      </div>
+      <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+        <div
+          className="h-4 rounded-full bg-emerald-500 transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="flex justify-between text-xs text-slate-500 mt-1">
+        <span>{current.toLocaleString()}</span>
+        <span>of {target.toLocaleString()} target</span>
+      </div>
+    </div>
+  );
+}
 
+function KPICard({
+  title,
+  value,
+  tooltip,
+  full,
+}: {
+  title: string;
+  value: string | number;
+  tooltip?: string;
+  full?: boolean;
+}) {
+  return (
+    <div
+      className={`bg-white border border-slate-200 rounded-xl p-4 ${full ? "col-span-2" : ""}`}
+      title={tooltip}
+    >
+      <p className="text-xs text-slate-500 mb-1">{title}</p>
+      <p className="text-xl font-bold text-slate-800">{value ?? "—"}</p>
+    </div>
+  );
+}
+
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: { name: string; value: number; color: string }[];
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
+      <p className="font-semibold text-slate-700 mb-1">{label}</p>
+      {payload.map((p) => (
+        <p key={p.name} style={{ color: p.color }}>
+          {p.name}: <strong>{p.value.toLocaleString()}</strong>
+        </p>
+      ))}
+    </div>
+  );
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────
 export default function NumbersPage() {
+  const [filters, setFilters] = useState({
+    period: "thisMonth",
+    shift: "all",
+    hospitalUnit: "all",
+    startDate: "",
+    endDate: "",
+  });
   const [data, setData] = useState<NumbersData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState("thisMonth");
-  const [view, setView] = useState<"requests" | "tests" | "both">("both");
+  const [isLoading, setIsLoading] = useState(true);
+
+  const updateFilter = (key: string, value: string) =>
+    setFilters((prev) => ({ ...prev, [key]: value }));
+
+  const resetFilters = () =>
+    setFilters({ period: "thisMonth", shift: "all", hospitalUnit: "all", startDate: "", endDate: "" });
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({ facility_id: DEFAULT_FACILITY_ID, period: filters.period });
+      if (filters.shift && filters.shift !== "all") params.append("shift", filters.shift);
+      if (filters.hospitalUnit && filters.hospitalUnit !== "all")
+        params.append("laboratory", filters.hospitalUnit);
+      if (filters.startDate) params.append("startDate", filters.startDate);
+      if (filters.endDate) params.append("endDate", filters.endDate);
+
+      const res = await fetch(`/api/numbers?${params}`);
+      if (!res.ok) throw new Error("Failed");
+      const json = await res.json();
+      if (!json.error) setData(json);
+      else setData(null);
+    } catch {
+      setData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters]);
 
   useEffect(() => {
-    setLoading(true);
-    fetch(
-      `/api/numbers?facility_id=${DEFAULT_FACILITY_ID}&period=${period}`
-    )
-      .then((res) => res.json())
-      .then((json) => setData(json))
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
-  }, [period]);
+    fetchData();
+  }, [fetchData]);
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-500">
-        Loading...
-      </div>
-    );
-  }
-
-  const d = data ?? {
-    totalRequests: 0,
-    targetRequests: 0,
-    requestsPercentage: 0,
-    totalTests: 0,
-    targetTests: 0,
-    testsPercentage: 0,
-    avgDailyRequests: 0,
-    avgDailyTests: 0,
-    busiestHour: null,
-    busiestDay: null,
-    dailyRequestVolume: [],
-    dailyTestVolume: [],
-    hourlyRequestVolume: [],
-    granularity: "daily",
-  };
+  const hourlyData = (data?.hourlyRequestVolume ?? []).map((h) => ({
+    hour: `${String(h.hour).padStart(2, "0")}:00`,
+    count: h.count,
+  }));
 
   return (
-    <div className="flex flex-col min-h-0">
-      <ModuleTabBar tabs={MODULE_TABS} />
-      <div className="space-y-6 p-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Numbers
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Patient-level (requests) and test-level volume vs targets.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+    <div className="min-h-screen bg-slate-50">
+      {/* Filter Bar */}
+      <div className="bg-white border-b border-slate-200 px-6 py-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <h1 className="text-xl font-bold text-slate-800 mr-2">Numbers</h1>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Period</label>
+            <select
+              value={filters.period}
+              onChange={(e) => updateFilter("period", e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              {PERIODS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Shift</label>
+            <select
+              value={filters.shift}
+              onChange={(e) => updateFilter("shift", e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              {SHIFTS.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Laboratory</label>
+            <select
+              value={filters.hospitalUnit}
+              onChange={(e) => updateFilter("hospitalUnit", e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              {LABORATORIES.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Start Date</label>
+            <input
+              type="date"
+              value={filters.startDate}
+              onChange={(e) => updateFilter("startDate", e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">End Date</label>
+            <input
+              type="date"
+              value={filters.endDate}
+              onChange={(e) => updateFilter("endDate", e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <button
+            onClick={resetFilters}
+            className="text-sm text-emerald-600 hover:text-emerald-700 border border-emerald-200 rounded-lg px-3 py-1.5 hover:bg-emerald-50 transition-colors"
           >
-            {PERIODS.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
+            Reset
+          </button>
+        </div>
+      </div>
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex items-center justify-center h-64">
+          <div className="flex gap-1">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="w-2 h-8 bg-emerald-500 rounded animate-bounce"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              />
             ))}
-          </select>
-          <div className="flex rounded-lg border border-slate-200 overflow-hidden">
-            <button
-              onClick={() => setView("both")}
-              className={`px-3 py-2 text-sm font-medium ${
-                view === "both" ? "bg-indigo-600 text-white" : "bg-white text-slate-600"
-              }`}
-            >
-              Both
-            </button>
-            <button
-              onClick={() => setView("requests")}
-              className={`px-3 py-2 text-sm font-medium ${
-                view === "requests" ? "bg-indigo-600 text-white" : "bg-white text-slate-600"
-              }`}
-            >
-              Requests
-            </button>
-            <button
-              onClick={() => setView("tests")}
-              className={`px-3 py-2 text-sm font-medium ${
-                view === "tests" ? "bg-indigo-600 text-white" : "bg-white text-slate-600"
-              }`}
-            >
-              Tests
-            </button>
           </div>
-        </div>
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {(view === "both" || view === "requests") && (
-          <>
-            <div className="bg-white rounded-xl border border-slate-100 p-4">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-                <Users size={16} />
-                Total Requests
-              </div>
-              <div className="text-2xl font-bold text-slate-900">
-                {d.totalRequests.toLocaleString()}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">
-                of {d.targetRequests.toLocaleString()} target (
-                {d.requestsPercentage.toFixed(0)}%)
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-slate-100 p-4">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-                <TrendingUp size={16} />
-                Avg Daily Requests
-              </div>
-              <div className="text-2xl font-bold text-slate-900">
-                {d.avgDailyRequests.toFixed(1)}
-              </div>
-            </div>
-          </>
-        )}
-        {(view === "both" || view === "tests") && (
-          <>
-            <div className="bg-white rounded-xl border border-slate-100 p-4">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-                <Beaker size={16} />
-                Total Tests
-              </div>
-              <div className="text-2xl font-bold text-slate-900">
-                {d.totalTests.toLocaleString()}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">
-                of {d.targetTests.toLocaleString()} target (
-                {d.testsPercentage.toFixed(0)}%)
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-slate-100 p-4">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-                <TrendingUp size={16} />
-                Avg Daily Tests
-              </div>
-              <div className="text-2xl font-bold text-slate-900">
-                {d.avgDailyTests.toFixed(1)}
-              </div>
-            </div>
-          </>
-        )}
-        {(view === "both" || view === "requests") && (
-          <>
-            <div className="bg-white rounded-xl border border-slate-100 p-4">
-              <div className="text-slate-500 text-sm mb-1">Busiest Hour</div>
-              <div className="text-lg font-bold text-slate-900">
-                {d.busiestHour ?? "—"}
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-slate-100 p-4">
-              <div className="text-slate-500 text-sm mb-1">Busiest Day</div>
-              <div className="text-sm font-bold text-slate-900 truncate" title={d.busiestDay ?? ""}>
-                {d.busiestDay ?? "—"}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Target progress bars */}
-      {(view === "both" || view === "requests") && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-6">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <Target size={18} />
-            Requests vs Target
-          </h3>
-          <div className="h-8 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-emerald-500 rounded-full transition-all"
-              style={{
-                width: `${Math.min(100, d.requestsPercentage)}%`,
-              }}
-            />
-          </div>
-          <p className="text-sm text-slate-500 mt-2">
-            {d.totalRequests.toLocaleString()} / {d.targetRequests.toLocaleString()} requests
-          </p>
         </div>
       )}
 
-      {(view === "both" || view === "tests") && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-6">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <Target size={18} />
-            Tests vs Target
-          </h3>
-          <div className="h-8 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-indigo-500 rounded-full transition-all"
-              style={{
-                width: `${Math.min(100, d.testsPercentage)}%`,
-              }}
-            />
-          </div>
-          <p className="text-sm text-slate-500 mt-2">
-            {d.totalTests.toLocaleString()} / {d.targetTests.toLocaleString()} tests
-          </p>
-        </div>
-      )}
-
-      {/* Daily volume charts */}
-      {(view === "both" || view === "requests") && d.dailyRequestVolume.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-            <BarChart3 size={16} className="text-indigo-600" />
-            <span className="font-semibold text-slate-800">
-              Daily Request Volume (patient-level)
-            </span>
-          </div>
-          <div className="p-6 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={d.dailyRequestVolume}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#4f46e5"
-                  fill="#818cf8"
-                  fillOpacity={0.4}
+      {/* Main Layout */}
+      {!isLoading && (
+        <main className="flex gap-6 p-6">
+          {/* Sidebar */}
+          <aside className="w-72 flex-shrink-0 flex flex-col gap-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              {data ? (
+                <TargetProgress
+                  current={data.totalRequests}
+                  target={data.targetRequests || 1}
+                  title="Total Requests"
+                  tooltip="Target is prorated for the selected date range"
                 />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
+              ) : (
+                <p className="text-sm text-slate-400 text-center py-4">No data</p>
+              )}
+            </div>
 
-      {(view === "both" || view === "tests") && d.dailyTestVolume.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-            <BarChart3 size={16} className="text-indigo-600" />
-            <span className="font-semibold text-slate-800">
-              Daily Test Volume (test-level)
-            </span>
-          </div>
-          <div className="p-6 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={d.dailyTestVolume}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#0d9488"
-                  fill="#2dd4bf"
-                  fillOpacity={0.4}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
+            <div className="grid grid-cols-2 gap-3">
+              <KPICard
+                title="Avg Daily Requests"
+                value={data?.avgDailyRequests?.toFixed(1) ?? "0"}
+                tooltip="For the selected date range"
+                full
+              />
+              <KPICard
+                title="Busiest Hour"
+                value={data?.busiestHour ?? (data ? "—" : "N/A")}
+                tooltip="For the selected date range"
+              />
+              <KPICard
+                title="Busiest Day"
+                value={data?.busiestDay ?? (data ? "—" : "N/A")}
+                tooltip="For the selected date range"
+                full
+              />
+            </div>
+          </aside>
 
-      {/* Hourly volume (requests) */}
-      {(view === "both" || view === "requests") && d.hourlyRequestVolume.some((h) => h.count > 0) && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-            <BarChart3 size={16} className="text-indigo-600" />
-            <span className="font-semibold text-slate-800">
-              Hourly Request Volume
-            </span>
-          </div>
-          <div className="p-6 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={d.hourlyRequestVolume.map((h) => ({
-                  ...h,
-                  label: `${h.hour}:00`,
-                }))}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
+          {/* Charts */}
+          <div className="flex-1 min-w-0 flex flex-col gap-6">
+            {/* Daily Volume */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                <span className="text-emerald-600">📊</span>{" "}
+                {data?.granularity === "monthly" ? "Monthly" : "Daily"} Request Volume
+              </h3>
+              {(data?.dailyRequestVolume ?? []).length > 0 ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={data!.dailyRequestVolume} margin={{ left: 0, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(v: string) => v.slice(5)}
+                    />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Bar dataKey="count" name="Requests" fill="#10b981" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
+                  No data available for the selected period
+                </div>
+              )}
+            </div>
 
-      {!data && (
-        <div className="bg-red-50 rounded-2xl border border-red-100 p-6 text-red-700">
-          Failed to load numbers data
-        </div>
+            {/* Hourly Volume */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                <span className="text-emerald-600">🕐</span> Hourly Request Volume
+              </h3>
+              {hourlyData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={hourlyData} margin={{ left: 0, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="hour" tick={{ fontSize: 9 }} interval={1} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Bar dataKey="count" name="Requests" fill="#059669" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
+                  No hourly data available
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
       )}
-      </div>
     </div>
   );
 }

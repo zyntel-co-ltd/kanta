@@ -1,21 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { BarChart3, TrendingUp, AlertTriangle, Clock, Activity, Target, Calendar, Monitor } from "lucide-react";
-import Link from "next/link";
+import { useEffect, useState, useCallback } from "react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
-import ModuleTabBar from "@/components/dashboard/ModuleTabBar";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+import { Download, RefreshCw } from "lucide-react";
 
-const MODULE_TABS = [
-  { label: "Overview",    href: "/dashboard/tat",         icon: Clock     },
-  { label: "Performance", href: "/dashboard/performance", icon: TrendingUp },
-  { label: "Tests",       href: "/dashboard/tests",       icon: Activity  },
-  { label: "Numbers",     href: "/dashboard/numbers",     icon: Target    },
-  { label: "Revenue",     href: "/dashboard/revenue",     icon: Calendar  },
-  { label: "LRIDS",       href: "/dashboard/lrids",       icon: Monitor   },
+// ── Constants ──────────────────────────────────────────────────────────────
+const PERIODS = [
+  { value: "today",      label: "Today"      },
+  { value: "thisWeek",   label: "This Week"  },
+  { value: "thisMonth",  label: "This Month" },
 ];
 
-type PerfData = {
+const SECTION_COLORS = [
+  "#10b981", "#059669", "#34d399", "#6ee7b7",
+  "#f59e0b", "#3b82f6", "#8b5cf6", "#ef4444",
+];
+
+// ── Types ──────────────────────────────────────────────────────────────────
+type PerformanceData = {
   totalResulted: number;
   totalReceived: number;
   avgTatMinutes: number;
@@ -23,146 +35,417 @@ type PerfData = {
   bySection: { section: string; count: number; avgTat: number }[];
 };
 
-export default function PerformancePage() {
-  const [data, setData] = useState<PerfData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState("today");
+type BreachItem = {
+  id: string;
+  breach_minutes: number;
+  target_minutes: number;
+  detected_at: string;
+  request?: { lab_number?: string; test_name: string; section: string };
+};
 
-  useEffect(() => {
-    setLoading(true);
-    fetch(
-      `/api/performance?facility_id=${DEFAULT_FACILITY_ID}&period=${period}`
-    )
-      .then((res) => res.json())
-      .then((json) => setData(json.data ?? null))
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
+// ── CSV helper ─────────────────────────────────────────────────────────────
+function downloadCSV(rows: (string | number)[][], filename: string) {
+  const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function fmtMinutes(m: number) {
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────
+function StatCard({
+  title,
+  value,
+  sub,
+  highlight,
+}: {
+  title: string;
+  value: string | number;
+  sub?: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`bg-white border rounded-2xl p-5 shadow-sm flex flex-col gap-1 ${
+        highlight ? "border-emerald-300 bg-emerald-50/40" : "border-slate-200"
+      }`}
+    >
+      <p className="text-xs text-slate-500 uppercase tracking-wide">{title}</p>
+      <p className={`text-3xl font-bold ${highlight ? "text-emerald-700" : "text-slate-800"}`}>
+        {value}
+      </p>
+      {sub && <p className="text-xs text-slate-400">{sub}</p>}
+    </div>
+  );
+}
+
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: { name: string; value: number; color: string }[];
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
+      <p className="font-semibold text-slate-700 mb-1">{label}</p>
+      {payload.map((p) => (
+        <p key={p.name} style={{ color: p.color }}>
+          {p.name}: <strong>{p.value.toLocaleString()}</strong>
+        </p>
+      ))}
+    </div>
+  );
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────
+export default function PerformancePage() {
+  const [period, setPeriod] = useState("today");
+  const [data, setData] = useState<PerformanceData | null>(null);
+  const [breaches, setBreaches] = useState<BreachItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [perfRes, breachRes] = await Promise.all([
+        fetch(`/api/performance?facility_id=${DEFAULT_FACILITY_ID}&period=${period}`),
+        fetch(`/api/tat/breaches?facility_id=${DEFAULT_FACILITY_ID}&limit=50`),
+      ]);
+      const [perfJson, breachJson] = await Promise.all([perfRes.json(), breachRes.json()]);
+      if (perfJson.data) setData(perfJson.data);
+      else setData(null);
+      setBreaches(breachJson.data ?? []);
+      setLastUpdated(new Date());
+    } catch {
+      setData(null);
+      setBreaches([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [period]);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col min-h-0">
-        <ModuleTabBar tabs={MODULE_TABS} />
-        <div className="space-y-6 p-6">
-        <h1 className="text-2xl font-bold text-slate-900">Performance</h1>
-        <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center text-slate-500">
-          Loading...
-        </div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    fetchData();
+    const id = setInterval(fetchData, 30_000);
+    return () => clearInterval(id);
+  }, [fetchData]);
+
+  const completionRate =
+    data && data.totalReceived > 0
+      ? ((data.totalResulted / data.totalReceived) * 100).toFixed(1)
+      : "0.0";
+
+  const handleExportCSV = () => {
+    if (!data) return;
+    const headers = ["Section", "Completed Tests", "Avg TAT"];
+    const rows = (data.bySection ?? []).map((r) => [
+      r.section,
+      r.count,
+      fmtMinutes(r.avgTat),
+    ]);
+    downloadCSV([headers, ...rows], `Performance-${period}-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
 
   return (
-    <div className="flex flex-col min-h-0">
-      <ModuleTabBar tabs={MODULE_TABS} />
-      <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Performance
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Throughput, TAT compliance, and section metrics.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/dashboard/tat"
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-          >
-            ← TAT
-          </Link>
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            className="rounded border border-slate-200 px-3 py-2 text-sm"
-          >
-            <option value="today">Today</option>
-            <option value="thisWeek">This Week</option>
-            <option value="thisMonth">This Month</option>
-          </select>
+    <div className="min-h-screen bg-slate-50">
+      {/* ── Filter Bar ────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-slate-200 px-6 py-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <h1 className="text-xl font-bold text-slate-800 mr-2">Performance</h1>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Period</label>
+            <select
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              {PERIODS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto">
+            {lastUpdated && (
+              <span className="text-xs text-slate-400">
+                Updated {lastUpdated.toLocaleTimeString()}
+              </span>
+            )}
+            <button
+              onClick={fetchData}
+              disabled={isLoading}
+              className="flex items-center gap-2 text-sm text-slate-600 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+            >
+              <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} /> Refresh
+            </button>
+            <button
+              onClick={handleExportCSV}
+              disabled={!data}
+              className="flex items-center gap-2 text-sm text-slate-600 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+            >
+              <Download size={14} /> Export CSV
+            </button>
+          </div>
         </div>
       </div>
 
-      {!data ? (
-        <div className="bg-red-50 rounded-2xl border border-red-100 p-6 text-red-700">
-          Failed to load performance data
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex items-center justify-center h-64">
+          <div className="flex gap-1">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="w-2 h-8 bg-emerald-500 rounded animate-bounce"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              />
+            ))}
+          </div>
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl border border-slate-100 p-4">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-                <TrendingUp size={16} />
-                Resulted
-              </div>
-              <div className="text-2xl font-bold text-slate-900">
-                {data.totalResulted}
-              </div>
+      )}
+
+      {!isLoading && (
+        <main className="p-6 flex flex-col gap-6">
+          {/* ── KPI Cards ─────────────────────────────────────────────── */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title="Tests Resulted"
+              value={(data?.totalResulted ?? 0).toLocaleString()}
+              sub="Completed in period"
+              highlight
+            />
+            <StatCard
+              title="Tests Received"
+              value={(data?.totalReceived ?? 0).toLocaleString()}
+              sub="Including in-progress"
+            />
+            <StatCard
+              title="Avg. TAT"
+              value={fmtMinutes(data?.avgTatMinutes ?? 0)}
+              sub="For resulted tests"
+            />
+            <StatCard
+              title="TAT Breaches"
+              value={(data?.breachCount ?? 0).toLocaleString()}
+              sub="SLA violations"
+            />
+          </div>
+
+          {/* Completion rate strip */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-slate-700">Completion Rate</span>
+              <span className="text-sm font-bold text-emerald-600">{completionRate}%</span>
             </div>
-            <div className="bg-white rounded-xl border border-slate-100 p-4">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-                Received
-              </div>
-              <div className="text-2xl font-bold text-slate-900">
-                {data.totalReceived}
-              </div>
+            <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+              <div
+                className="h-4 rounded-full bg-emerald-500 transition-all duration-700"
+                style={{ width: `${completionRate}%` }}
+              />
             </div>
-            <div className="bg-white rounded-xl border border-slate-100 p-4">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-                Avg TAT
-              </div>
-              <div className="text-2xl font-bold text-slate-900">
-                {data.avgTatMinutes} min
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-slate-100 p-4">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-                <AlertTriangle size={16} />
-                Breaches
-              </div>
-              <div className="text-2xl font-bold text-red-600">
-                {data.breachCount}
-              </div>
+            <div className="flex justify-between text-xs text-slate-500 mt-1">
+              <span>{(data?.totalResulted ?? 0).toLocaleString()} resulted</span>
+              <span>of {(data?.totalReceived ?? 0).toLocaleString()} received</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-              <BarChart3 size={16} className="text-indigo-600" />
-              <span className="font-semibold text-slate-800">By Section</span>
+          {/* ── Main two-column layout ─────────────────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Section Chart */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                <span className="text-emerald-600">📊</span> Tests Resulted by Section
+              </h3>
+              {(data?.bySection ?? []).length > 0 ? (
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart
+                    data={data!.bySection}
+                    layout="vertical"
+                    margin={{ left: 90, right: 30, top: 5, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="section" tick={{ fontSize: 11 }} width={85} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Bar dataKey="count" name="Tests" radius={[0, 3, 3, 0]}>
+                      {(data!.bySection ?? []).map((_, idx) => (
+                        <Cell key={idx} fill={SECTION_COLORS[idx % SECTION_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
+                  No section data available
+                </div>
+              )}
             </div>
-            {data.bySection.length === 0 ? (
-              <div className="p-8 text-center text-slate-500">
-                No section data for this period.
+
+            {/* Avg TAT chart */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                <span className="text-emerald-600">⏱</span> Avg. TAT by Section (minutes)
+              </h3>
+              {(data?.bySection ?? []).length > 0 ? (
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart
+                    data={data!.bySection}
+                    layout="vertical"
+                    margin={{ left: 90, right: 30, top: 5, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="section" tick={{ fontSize: 11 }} width={85} />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload?.length) return null;
+                        return (
+                          <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
+                            <p className="font-semibold text-slate-700 mb-1">{label}</p>
+                            <p className="text-emerald-600">
+                              Avg TAT: <strong>{fmtMinutes(payload[0].value as number)}</strong>
+                            </p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Bar dataKey="avgTat" name="Avg TAT (min)" fill="#f59e0b" radius={[0, 3, 3, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
+                  No TAT data available
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── By-section table ──────────────────────────────────────── */}
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100">
+              <h3 className="text-sm font-semibold text-slate-700">Performance by Section</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 text-left">
+                    <th className="px-5 py-3 font-semibold text-slate-600">Section</th>
+                    <th className="px-5 py-3 font-semibold text-slate-600 text-right">Tests Resulted</th>
+                    <th className="px-5 py-3 font-semibold text-slate-600 text-right">Avg. TAT</th>
+                    <th className="px-5 py-3 font-semibold text-slate-600 text-right">TAT Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(data?.bySection ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-5 py-10 text-center text-slate-400">
+                        No performance data for the selected period
+                      </td>
+                    </tr>
+                  ) : (
+                    (data!.bySection ?? [])
+                      .sort((a, b) => b.count - a.count)
+                      .map((row) => {
+                        const ok = row.avgTat <= 60;
+                        return (
+                          <tr key={row.section} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-5 py-3 font-medium text-slate-800">{row.section}</td>
+                            <td className="px-5 py-3 text-right text-slate-700">
+                              {row.count.toLocaleString()}
+                            </td>
+                            <td className="px-5 py-3 text-right text-slate-700">
+                              {fmtMinutes(row.avgTat)}
+                            </td>
+                            <td className="px-5 py-3 text-right">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                  ok
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-red-100 text-red-700"
+                                }`}
+                              >
+                                {ok ? "On Target" : "Over Target"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* ── TAT Breaches ──────────────────────────────────────────── */}
+          {breaches.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100">
+                <h3 className="text-sm font-semibold text-slate-700">
+                  Recent TAT Breaches
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                    {breaches.length}
+                  </span>
+                </h3>
               </div>
-            ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-100">
-                      <th className="text-left px-4 py-3 font-medium text-slate-600">Section</th>
-                      <th className="text-right px-4 py-3 font-medium text-slate-600">Count</th>
-                      <th className="text-right px-4 py-3 font-medium text-slate-600">Avg TAT (min)</th>
+                    <tr className="bg-slate-50 text-left">
+                      <th className="px-5 py-3 font-semibold text-slate-600">Test</th>
+                      <th className="px-5 py-3 font-semibold text-slate-600">Section</th>
+                      <th className="px-5 py-3 font-semibold text-slate-600 text-right">Breach</th>
+                      <th className="px-5 py-3 font-semibold text-slate-600 text-right">Target</th>
+                      <th className="px-5 py-3 font-semibold text-slate-600">Detected</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {data.bySection.map((s) => (
-                      <tr key={s.section} className="border-b border-slate-50">
-                        <td className="px-4 py-3 font-medium">{s.section}</td>
-                        <td className="px-4 py-3 text-right">{s.count}</td>
-                        <td className="px-4 py-3 text-right">{s.avgTat}</td>
+                  <tbody className="divide-y divide-slate-100">
+                    {breaches.slice(0, 25).map((b) => (
+                      <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-5 py-3 font-medium text-slate-800">
+                          {b.request?.test_name ?? "—"}
+                          {b.request?.lab_number && (
+                            <span className="text-slate-400 text-xs ml-1">#{b.request.lab_number}</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-slate-600">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                            {b.request?.section ?? "—"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-right text-red-600 font-medium">
+                          {fmtMinutes(b.breach_minutes)}
+                        </td>
+                        <td className="px-5 py-3 text-right text-slate-500">
+                          {fmtMinutes(b.target_minutes)}
+                        </td>
+                        <td className="px-5 py-3 text-slate-600 text-xs">
+                          {new Date(b.detected_at).toLocaleString()}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-        </>
+            </div>
+          )}
+        </main>
       )}
-      </div>
     </div>
   );
 }

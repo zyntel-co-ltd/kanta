@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 23 March 2026 (Phase 15 — Quality Management rebuilt from Lab-hub)  
+**Last updated:** 23 March 2026 (Phase 16 — Lab Metrics rebuilt from zyntel-dashboard)  
 **Updated by:** Cursor
 
 ---
@@ -51,6 +51,44 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 13: Sidebar toggle fix, app cards simplified, TypeScript fix** *(22 March 2026)* — see section below
 - [x] **Phase 14: Medtbank-style sidebar, green & white palette** *(23 March 2026)* — see section below
 - [x] **Phase 15: Quality Management rebuilt from Lab-hub** *(23 March 2026)* — see section below
+- [x] **Phase 16: Lab Metrics rebuilt from zyntel-dashboard** *(23 March 2026)* — see section below
+
+### Phase 16 — Lab Metrics Rebuilt from zyntel-dashboard (23 March 2026)
+
+All 6 Lab Metrics pages were fully deleted and replaced with exact ports of the zyntel-dashboard UI, wired to Kanta's existing Supabase API routes, styled with Kanta's emerald theme.
+
+#### Pages rebuilt
+
+| Page | Route | Key changes |
+|------|-------|-------------|
+| **TAT** | `/dashboard/tat` | Zyntel layout: filter bar (period, shift, lab, dates), left sidebar with delayed/on-time progress bars + 5 KPI cards, right area with TAT distribution doughnut, daily trend line, hourly stacked bar |
+| **Numbers** | `/dashboard/numbers` | Zyntel layout: target progress bar, avg daily / busiest hour / busiest day KPIs, daily request volume bar, hourly request volume bar |
+| **Tests** | `/dashboard/tests` | Zyntel layout: total tests target progress, avg daily KPI, daily test volume trend, top tests by volume horizontal bar with per-section filter |
+| **Revenue** | `/dashboard/revenue` | Zyntel layout: total revenue card (today / yesterday / same day last week), avg daily + cancellation rate KPIs, section revenue doughnut, daily revenue line, revenue by test horizontal bar |
+| **Meta Table** | `/dashboard/meta` | Zyntel layout: full paginated CRUD table (test name, section badge, price, TAT), add/edit modal with custom section & TAT inputs, CSV export |
+| **Performance** | `/dashboard/performance` | Zyntel layout: 4 KPI cards (resulted, received, avg TAT, breaches), completion rate progress bar, tests by section bar chart, avg TAT by section bar chart, by-section summary table with On/Over Target badges, recent TAT breaches table |
+
+#### Technical notes
+
+- All pages are `"use client"` Next.js App Router components
+- Charts built with `recharts` (already in `package.json`) — PieChart/Pie (doughnut), LineChart, BarChart, horizontal BarChart
+- All data fetched from existing Kanta Supabase API routes (`/api/tat/analytics`, `/api/numbers`, `/api/tests`, `/api/revenue`, `/api/performance`, `/api/meta`)
+- Filter controls: period, shift, lab section, laboratory, test name, date range (page-appropriate subset)
+- TypeScript compiles clean; no lint errors on any page
+- Emerald color palette applied throughout (`emerald-500/600/700`, `slate-*`)
+
+#### Files changed
+
+| File | Change |
+|------|--------|
+| `app/dashboard/tat/page.tsx` | Complete rewrite — zyntel TAT layout with recharts |
+| `app/dashboard/numbers/page.tsx` | Complete rewrite — zyntel Numbers layout with recharts |
+| `app/dashboard/tests/page.tsx` | Complete rewrite — zyntel Tests layout with recharts |
+| `app/dashboard/revenue/page.tsx` | Complete rewrite — zyntel Revenue layout with recharts |
+| `app/dashboard/meta/page.tsx` | Complete rewrite — zyntel Meta table with full CRUD |
+| `app/dashboard/performance/page.tsx` | Complete rewrite — zyntel Performance dashboard with TAT breaches |
+
+---
 
 ### Phase 15 — Quality Management Rebuilt from Lab-hub (23 March 2026)
 
@@ -435,8 +473,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | Phase 15 — QC rebuilt from Lab-hub | Live on Vercel |
-| `development` | Integration/Preview | Phase 15 — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | Phase 16 — Lab Metrics rebuilt from zyntel-dashboard | Live on Vercel |
+| `development` | Integration/Preview | Phase 16 — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---

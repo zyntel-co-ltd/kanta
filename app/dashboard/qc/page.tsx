@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, Fragment } from "react";
 import {
   ShieldCheck, AlertTriangle, BarChart3, TestTube, Calculator,
-  TrendingUp, Settings2, Wifi, WifiOff, RefreshCw, ClipboardList,
+  TrendingUp, Settings2, ClipboardList,
   Download, Copy, Check, Plus, FlaskConical, Activity,
   ChevronDown, ChevronUp, X as XIcon,
 } from "lucide-react";
@@ -11,6 +11,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 /* ─────────────────── Theme constants ─────────────────── */
 const inputCls =
@@ -29,8 +30,8 @@ const btnSecondary =
 const tblHead = "px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider";
 const tblCell = "px-4 py-3 text-sm text-slate-700 whitespace-nowrap";
 
-/* ─────────────────── Lab-hub URL key ─────────────────── */
-const LAB_HUB_URL_KEY = "kanta-lab-hub-url";
+/* ─────────────────── Facility constant ─────────────────── */
+const FACILITY_ID = DEFAULT_FACILITY_ID;
 
 /* ─────────────────── Date / CSV helpers ─────────────────── */
 const todayStr = () => new Date().toISOString().slice(0, 10);
@@ -85,19 +86,186 @@ function applyWestgard(data: QcItem[], mean: number, sd: number): QcItem[] {
   return ann;
 }
 
-/* ─────────────────── Lab-hub API factory ─────────────────── */
-function makeApi(labHubUrl: string) {
-  const getHeaders = () => {
-    const token = (() => { try { return localStorage.getItem("token") ?? ""; } catch { return ""; } })();
-    const h: Record<string, string> = { "Content-Type": "application/json" };
-    if (token) h["Authorization"] = `Bearer ${token}`;
-    return h;
-  };
+/* ─────────────────── Field normalizers ─────────────────── */
+/* Convert Supabase row → UI shape used throughout the components */
+
+function normMaterial(m: QcItem): QcItem {
   return {
-    getItems: () => fetch(`${labHubUrl}/api/GetItems`, { headers: getHeaders() }).then((r) => r.json()),
-    postItem: (data: QcItem) => fetch(`${labHubUrl}/api/PostItems`, { method: "POST", headers: getHeaders(), body: JSON.stringify(data) }).then((r) => r.json()),
-    putItem:  (data: QcItem) => fetch(`${labHubUrl}/api/PutItem`,   { method: "PUT",  headers: getHeaders(), body: JSON.stringify(data) }).then((r) => r.json()),
-    deleteItem: (id: string) => fetch(`${labHubUrl}/api/DeleteItem?id=${encodeURIComponent(id)}`, { method: "DELETE", headers: getHeaders() }).then((r) => r.json()),
+    id: m.id,
+    qcName: m.name,
+    level: m.level,
+    lotNumber: m.lot_number ?? "",
+    expiryDate: m.expires_at ? m.expires_at.slice(0, 10) : "",
+    mean: m.target_mean,
+    sd: m.target_sd,
+    units: m.units ?? "μmol/L",
+    enabled: m.is_active !== false,
+  };
+}
+
+function normRun(r: QcItem, materialId: string): QcItem {
+  return {
+    id: r.id,
+    qcConfigId: materialId,
+    date: (r.date ?? r.run_at ?? "").slice(0, 10),
+    value: r.value,
+    submitted: true,
+    createdAt: r.date ?? r.run_at ?? "",
+    resolved: false,
+    zScore: r.zScore ?? r.z_score ?? null,
+    _status: r.status === "rejection" ? "failure" : r.status === "warning" ? "warning" : "normal",
+  };
+}
+
+function normQualConfig(c: QcItem): QcItem {
+  return {
+    id: c.id,
+    qualitative: true,
+    testName: c.test_name,
+    resultType: c.result_type ?? "Positive / Negative",
+    lotNumber: c.lot_number ?? "",
+    manufacturer: c.manufacturer ?? "",
+    expiryDate: c.expiry_date ? c.expiry_date.slice(0, 10) : "",
+    frequency: c.frequency ?? "Daily",
+    controls: c.controls ?? [],
+  };
+}
+
+function normQualEntry(e: QcItem): QcItem {
+  const cfgData = e.qualitative_qc_configs;
+  return {
+    id: e.id,
+    qualitative: true,
+    qualEntry: true,
+    qcConfigId: e.config_id,
+    testName: cfgData?.test_name ?? "",
+    lotNumber: "",
+    date: (e.run_at ?? "").slice(0, 10),
+    controlResults: e.control_results ?? [],
+    overallPass: e.overall_pass,
+    correctiveAction: e.corrective_action ?? "",
+    submitted: e.submitted,
+    createdAt: e.created_at ?? e.run_at ?? "",
+    enteredBy: e.entered_by ?? "",
+    resolved: false,
+  };
+}
+
+/* ─────────────────── Kanta Supabase API ─────────────────── */
+function makeKantaApi() {
+  const h = () => ({ "Content-Type": "application/json" });
+
+  return {
+    /* ── Quantitative configs (qc_materials) ── */
+    getMaterials: async (): Promise<QcItem[]> => {
+      const res = await fetch(`/api/qc/materials?facility_id=${FACILITY_ID}`);
+      const json = await res.json();
+      return (json.data ?? []).map(normMaterial);
+    },
+    saveMaterial: async (form: QcItem, editingId: string | null) => {
+      const payload = {
+        facility_id: FACILITY_ID,
+        name: form.qcName,
+        analyte: form.qcName,
+        level: Number(form.level),
+        lot_number: form.lotNumber || null,
+        expires_at: form.expiryDate || null,
+        target_mean: parseFloat(form.mean),
+        target_sd: parseFloat(form.sd),
+        units: form.units,
+        is_active: true,
+      };
+      if (editingId) {
+        const r = await fetch(`/api/qc/materials/${editingId}`, { method: "PATCH", headers: h(), body: JSON.stringify(payload) });
+        return r.json();
+      }
+      const r = await fetch(`/api/qc/materials`, { method: "POST", headers: h(), body: JSON.stringify(payload) });
+      return r.json();
+    },
+    toggleMaterial: async (id: string, isActive: boolean) => {
+      const r = await fetch(`/api/qc/materials/${id}`, { method: "PATCH", headers: h(), body: JSON.stringify({ is_active: isActive }) });
+      return r.json();
+    },
+    deleteMaterial: async (id: string) => {
+      const r = await fetch(`/api/qc/materials/${id}`, { method: "DELETE" });
+      return r.json();
+    },
+
+    /* ── Quantitative runs (qc_runs) ── */
+    getRuns: async (materialId: string): Promise<QcItem[]> => {
+      const res = await fetch(`/api/qc/runs?material_id=${materialId}&limit=100`);
+      const json = await res.json();
+      return (json.data?.points ?? []).map((p: QcItem) => normRun(p, materialId));
+    },
+    submitRun: async (materialId: string, value: number, runAt: string) => {
+      const r = await fetch(`/api/qc/runs`, {
+        method: "POST", headers: h(),
+        body: JSON.stringify({ material_id: materialId, facility_id: FACILITY_ID, value, run_at: new Date(runAt + "T12:00:00").toISOString() }),
+      });
+      return r.json();
+    },
+    deleteRun: async (id: string) => {
+      const r = await fetch(`/api/qc/runs/${id}`, { method: "DELETE" });
+      return r.json();
+    },
+
+    /* ── Qualitative configs ── */
+    getQualConfigs: async (): Promise<QcItem[]> => {
+      const res = await fetch(`/api/qc/qualitative/configs?facility_id=${FACILITY_ID}`);
+      const json = await res.json();
+      return (json.data ?? []).map(normQualConfig);
+    },
+    saveQualConfig: async (form: QcItem, editingId: string | null) => {
+      const payload = {
+        facility_id: FACILITY_ID,
+        test_name: form.testName,
+        result_type: form.resultType,
+        lot_number: form.lotNumber || null,
+        manufacturer: form.manufacturer || null,
+        expiry_date: form.expiryDate || null,
+        frequency: form.frequency,
+        controls: form.controls,
+      };
+      if (editingId) {
+        const r = await fetch(`/api/qc/qualitative/configs/${editingId}`, { method: "PATCH", headers: h(), body: JSON.stringify(payload) });
+        return r.json();
+      }
+      const r = await fetch(`/api/qc/qualitative/configs`, { method: "POST", headers: h(), body: JSON.stringify(payload) });
+      return r.json();
+    },
+    deleteQualConfig: async (id: string) => {
+      const r = await fetch(`/api/qc/qualitative/configs/${id}`, { method: "DELETE" });
+      return r.json();
+    },
+
+    /* ── Qualitative entries ── */
+    getQualEntries: async (): Promise<QcItem[]> => {
+      const res = await fetch(`/api/qc/qualitative/entries?facility_id=${FACILITY_ID}&limit=100`);
+      const json = await res.json();
+      return (json.data ?? []).map(normQualEntry);
+    },
+    saveQualEntry: async (form: QcItem, editingId: string | null) => {
+      const payload = {
+        facility_id: FACILITY_ID,
+        config_id: form.qcConfigId,
+        run_at: form.date,
+        control_results: form.controlResults,
+        overall_pass: form.overallPass,
+        corrective_action: form.correctiveAction || null,
+        entered_by: form.enteredBy || null,
+        submitted: form.submitted,
+      };
+      if (editingId) {
+        const r = await fetch(`/api/qc/qualitative/entries/${editingId}`, { method: "PATCH", headers: h(), body: JSON.stringify(payload) });
+        return r.json();
+      }
+      const r = await fetch(`/api/qc/qualitative/entries`, { method: "POST", headers: h(), body: JSON.stringify(payload) });
+      return r.json();
+    },
+    deleteQualEntry: async (id: string) => {
+      const r = await fetch(`/api/qc/qualitative/entries/${id}`, { method: "DELETE" });
+      return r.json();
+    },
   };
 }
 
@@ -157,35 +325,18 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 /* ═══════════════════════════════════════════════════════════ */
 /*  MAIN PAGE                                                  */
 /* ═══════════════════════════════════════════════════════════ */
+const VALID_TABS = new Set<Tab>(["config", "data", "visual", "calc", "stats", "qual-config", "qual-entry", "qual-log"]);
+
+function getInitialTab(): Tab {
+  if (typeof window !== "undefined") {
+    const t = new URLSearchParams(window.location.search).get("tab") as Tab;
+    if (t && VALID_TABS.has(t)) return t;
+  }
+  return "config";
+}
+
 export default function QCPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("config");
-  const [labHubUrl, setLabHubUrl] = useState<string>(() => {
-    try { return localStorage.getItem(LAB_HUB_URL_KEY) ?? "http://localhost:8000"; } catch { return "http://localhost:8000"; }
-  });
-  const [urlInput, setUrlInput]     = useState(labHubUrl);
-  const [connected, setConnected]   = useState<boolean | null>(null);
-  const [checking, setChecking]     = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-
-  const checkConnection = useCallback(async (url = labHubUrl) => {
-    setChecking(true);
-    try {
-      const res = await fetch(`${url}/api/health`, { signal: AbortSignal.timeout(4000) });
-      setConnected(res.ok);
-    } catch { setConnected(false); }
-    finally { setChecking(false); }
-  }, [labHubUrl]);
-
-  const saveUrl = async () => {
-    const trimmed = urlInput.replace(/\/$/, "");
-    setLabHubUrl(trimmed);
-    try { localStorage.setItem(LAB_HUB_URL_KEY, trimmed); } catch {}
-    setShowSettings(false);
-    await checkConnection(trimmed);
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { checkConnection(); }, []);
+  const [activeTab, setActiveTab] = useState<Tab>(getInitialTab);
 
   return (
     <div className="max-w-[1280px] space-y-5">
@@ -201,52 +352,13 @@ export default function QCPage() {
         </p>
       </div>
 
-      {/* Settings modal */}
-      {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={() => setShowSettings(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-bold text-slate-900 mb-1" style={{ fontSize: "1.0625rem", letterSpacing: "-0.02em" }}>Lab-hub Connection</h3>
-            <p className="text-sm text-slate-500 mb-4">
-              Enter the base URL of your Lab-hub server (e.g.{" "}
-              <code className="bg-slate-100 px-1 rounded text-xs">http://192.168.1.10:8000</code>)
-            </p>
-            <input type="url" value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className={inputCls + " mb-4"} placeholder="http://localhost:8000" />
-            <div className="flex gap-3">
-              <button onClick={saveUrl} className={btnPrimary + " flex-1 justify-center"}>Save &amp; Connect</button>
-              <button onClick={() => setShowSettings(false)} className={btnSecondary}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Connection banner */}
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
-        connected === false ? "bg-red-50 border border-red-100 text-red-700"
-        : connected === true ? "bg-emerald-50 border border-emerald-100 text-emerald-700"
-        : "bg-amber-50 border border-amber-100 text-amber-700"
-      }`}>
-        {checking ? <RefreshCw size={15} className="animate-spin" />
-          : connected === false ? <WifiOff size={15} />
-          : <Wifi size={15} />}
-        <span className="flex-1">
-          {checking ? "Checking Lab-hub connection…"
-            : connected === false ? `Cannot reach Lab-hub at ${labHubUrl}`
-            : connected === true ? `Connected · ${labHubUrl}`
-            : "Connecting…"}
-        </span>
-        <button onClick={() => setShowSettings(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all">
-          <Settings2 size={12} /> Configure
-        </button>
-        <button onClick={() => checkConnection()} disabled={checking} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all disabled:opacity-50">
-          <RefreshCw size={12} className={checking ? "animate-spin" : ""} /> Retry
-        </button>
-      </div>
-
       {/* Tab bar */}
       <div className="flex items-center border-b border-slate-200 overflow-x-auto animate-slide-up">
         {TABS.map(({ id, label, icon: Icon }) => (
-          <button key={id} onClick={() => setActiveTab(id)}
-            className={`inline-flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-all ${
+          <button
+            key={id}
+            onClick={() => setActiveTab(id)}
+            className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all ${
               activeTab === id
                 ? "border-emerald-500 text-emerald-700"
                 : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
@@ -259,24 +371,24 @@ export default function QCPage() {
 
       {/* Tab content */}
       <div className="animate-fade-in">
-        {activeTab === "config"      && <QCConfigTab      labHubUrl={labHubUrl} />}
-        {activeTab === "data"        && <QCDataEntryTab   labHubUrl={labHubUrl} />}
-        {activeTab === "visual"      && <QCVisualizationTab labHubUrl={labHubUrl} />}
+        {activeTab === "config"      && <QCConfigTab />}
+        {activeTab === "data"        && <QCDataEntryTab />}
+        {activeTab === "visual"      && <QCVisualizationTab />}
         {activeTab === "calc"        && <QCCalculatorTab />}
-        {activeTab === "stats"       && <QCStatsTab       labHubUrl={labHubUrl} />}
-        {activeTab === "qual-config" && <QualConfigTab    labHubUrl={labHubUrl} />}
-        {activeTab === "qual-entry"  && <QualEntryTab     labHubUrl={labHubUrl} />}
-        {activeTab === "qual-log"    && <QualLogTab       labHubUrl={labHubUrl} />}
+        {activeTab === "stats"       && <QCStatsTab />}
+        {activeTab === "qual-config" && <QualConfigTab />}
+        {activeTab === "qual-entry"  && <QualEntryTab />}
+        {activeTab === "qual-log"    && <QualLogTab />}
       </div>
     </div>
   );
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/*  QC CONFIG TAB  (Lab-hub QCConfig.js)                      */
+/*  QC CONFIG TAB                                             */
 /* ═══════════════════════════════════════════════════════════ */
-function QCConfigTab({ labHubUrl }: { labHubUrl: string }) {
-  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
+function QCConfigTab() {
+  const api = useMemo(() => makeKantaApi(), []);
   const [qcConfigs, setQcConfigs]   = useState<QcItem[]>([]);
   const [editingId, setEditingId]   = useState<string | null>(null);
   const [isLoading, setIsLoading]   = useState(false);
@@ -288,9 +400,8 @@ function QCConfigTab({ labHubUrl }: { labHubUrl: string }) {
   const fetchConfigs = useCallback(async () => {
     setIsLoading(true); setError("");
     try {
-      const data = await api.getItems();
-      const items = Array.isArray(data) ? data : (data?.data ?? []);
-      setQcConfigs(items.filter((item: QcItem) => item.qcName && item.mean != null && item.sd != null));
+      const items = await api.getMaterials();
+      setQcConfigs(items);
     } catch (e) { setError(`Error fetching QC configs: ${(e as Error).message}`); }
     finally { setIsLoading(false); }
   }, [api]);
@@ -308,14 +419,8 @@ function QCConfigTab({ labHubUrl }: { labHubUrl: string }) {
       alert("Please fill all required fields: QC Name, Level, Mean, and SD.");
       setIsLoading(false); return;
     }
-    const payload: QcItem = {
-      id: editingId || String(Date.now()),
-      qcName: form.qcName.trim(), level: Number(form.level),
-      lotNumber: form.lotNumber, expiryDate: form.expiryDate,
-      mean: parseFloat(form.mean), sd: parseFloat(form.sd), units: form.units,
-    };
     try {
-      if (editingId) await api.putItem(payload); else await api.postItem(payload);
+      await api.saveMaterial(form, editingId);
       setSuccess(`QC configuration ${editingId ? "updated" : "saved"} successfully!`);
       fetchConfigs(); resetForm();
     } catch (e) { setError(`Error saving QC config: ${(e as Error).message}`); }
@@ -328,7 +433,7 @@ function QCConfigTab({ labHubUrl }: { labHubUrl: string }) {
   };
 
   const handleToggleEnabled = (config: QcItem) => {
-    const newEnabled = !(config.enabled !== false);
+    const newEnabled = !config.enabled;
     setConfirm({
       open: true,
       title: newEnabled ? "Enable QC Config?" : "Disable QC Config?",
@@ -338,7 +443,7 @@ function QCConfigTab({ labHubUrl }: { labHubUrl: string }) {
       onConfirm: async () => {
         setConfirm((c) => ({ ...c, open: false })); setIsLoading(true);
         try {
-          await api.putItem({ ...config, enabled: newEnabled });
+          await api.toggleMaterial(String(config.id), newEnabled);
           setSuccess(`QC config ${newEnabled ? "enabled" : "disabled"} successfully.`); fetchConfigs();
         } catch (e) { setError(`Error: ${(e as Error).message}`); }
         finally { setIsLoading(false); }
@@ -354,7 +459,7 @@ function QCConfigTab({ labHubUrl }: { labHubUrl: string }) {
       onConfirm: async () => {
         setConfirm((c) => ({ ...c, open: false })); setIsLoading(true);
         try {
-          await api.deleteItem(String(config.id));
+          await api.deleteMaterial(String(config.id));
           setSuccess("QC configuration deleted successfully!"); fetchConfigs();
           if (editingId === String(config.id)) resetForm();
         } catch (e) { setError(`Error deleting QC config: ${(e as Error).message}`); }
@@ -424,9 +529,9 @@ function QCConfigTab({ labHubUrl }: { labHubUrl: string }) {
               <tr>{["QC Name", "Level", "Units", "Lot Number", "Expiry Date", "Mean", "SD", "Status", "Actions"].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {qcConfigs.filter((qc) => qc.qcName?.trim()).length === 0 ? (
+              {qcConfigs.length === 0 ? (
                 <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-400">No QC configurations found.</td></tr>
-              ) : qcConfigs.filter((qc) => qc.qcName?.trim()).map((config) => (
+              ) : qcConfigs.map((config) => (
                 <tr key={config.id} className="hover:bg-slate-50 transition-colors">
                   <td className={tblCell + " font-semibold text-slate-800"}>{config.qcName}</td>
                   <td className={tblCell}>{config.level}</td>
@@ -436,14 +541,14 @@ function QCConfigTab({ labHubUrl }: { labHubUrl: string }) {
                   <td className={tblCell + " font-mono"}>{config.mean}</td>
                   <td className={tblCell + " font-mono"}>{config.sd}</td>
                   <td className={tblCell}>
-                    {config.enabled !== false
+                    {config.enabled
                       ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Enabled</span>
                       : <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Disabled</span>}
                   </td>
                   <td className={tblCell}>
                     <div className="flex items-center gap-3">
                       <button onClick={() => handleEdit(config)} className="text-emerald-600 hover:text-emerald-800 font-semibold text-xs">Edit</button>
-                      <button onClick={() => handleToggleEnabled(config)} className="text-amber-600 hover:text-amber-800 font-semibold text-xs">{config.enabled !== false ? "Disable" : "Enable"}</button>
+                      <button onClick={() => handleToggleEnabled(config)} className="text-amber-600 hover:text-amber-800 font-semibold text-xs">{config.enabled ? "Disable" : "Enable"}</button>
                       <button onClick={() => handleDelete(config)} className="text-red-600 hover:text-red-800 font-semibold text-xs">Delete</button>
                     </div>
                   </td>
@@ -459,103 +564,91 @@ function QCConfigTab({ labHubUrl }: { labHubUrl: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/*  QC DATA ENTRY TAB  (Lab-hub QCDataEntry.js)               */
+/*  QC DATA ENTRY TAB                                         */
 /* ═══════════════════════════════════════════════════════════ */
-function QCDataEntryTab({ labHubUrl }: { labHubUrl: string }) {
-  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
-  const [allQcData, setAllQcData]           = useState<QcItem[]>([]);
+const DRAFT_KEY = "kanta-qc-drafts";
+
+type DraftEntry = { id: string; qcConfigId: string; date: string; value: number };
+
+function loadDrafts(): DraftEntry[] {
+  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "[]"); } catch { return []; }
+}
+function saveDrafts(drafts: DraftEntry[]) {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts)); } catch {}
+}
+
+function QCDataEntryTab() {
+  const api = useMemo(() => makeKantaApi(), []);
   const [qcConfigs, setQcConfigs]           = useState<QcItem[]>([]);
-  const [allQcConfigs, setAllQcConfigs]     = useState<QcItem[]>([]);
-  const [allEntries, setAllEntries]         = useState<QcItem[]>([]);
+  const [drafts, setDrafts]                 = useState<DraftEntry[]>(() => loadDrafts());
   const [selectedConfigId, setSelectedConfigId] = useState("");
   const [qcValue, setQcValue]               = useState("");
   const [selectedDate, setSelectedDate]     = useState("");
-  const [editingId, setEditingId]           = useState<string | null>(null);
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const [isLoading, setIsLoading]           = useState(false);
   const [error, setError]                   = useState("");
   const [success, setSuccess]               = useState("");
   const [confirm, setConfirm]               = useState<ConfirmState>(closedConfirm);
 
-  const fetchAllQcData = useCallback(async () => {
-    try {
-      const data = await api.getItems();
-      setAllQcData(Array.isArray(data) ? data : (data?.data ?? []));
-    } catch (e) { setError(`Error fetching QC data: ${(e as Error).message}`); }
+  useEffect(() => {
+    api.getMaterials().then((items) => setQcConfigs(items.filter((c) => c.enabled))).catch(() => {});
   }, [api]);
 
-  useEffect(() => { fetchAllQcData(); }, [fetchAllQcData]);
+  useEffect(() => { saveDrafts(drafts); }, [drafts]);
 
-  useEffect(() => {
-    if (!allQcData.length) { setQcConfigs([]); setAllQcConfigs([]); setAllEntries([]); return; }
-    const today = todayStr();
-    const allConfigs = allQcData.filter((item) =>
-      item.qcName && typeof item.qcName === "string" && item.qcName.trim() !== "" &&
-      item.level != null && !isNaN(Number(item.level)) && item.mean != null && item.sd != null
-    );
-    const configs = allConfigs.filter((c) => {
-      if (c.enabled === false) return false;
-      if (c.expiryDate && c.expiryDate < today) return false;
-      return true;
-    });
-    const entries = allQcData
-      .filter((item) => item.qcConfigId && item.date && item.value != null && !isNaN(Number(item.value)))
-      .sort((a, b) => a.date > b.date ? 1 : -1);
-    setAllQcConfigs(allConfigs); setQcConfigs(configs); setAllEntries(entries);
-  }, [allQcData]);
+  const resetForm = () => { setQcValue(""); setSelectedDate(""); setEditingDraftId(null); };
 
-  const draftEntries = allEntries.filter((e) => e.qcConfigId === selectedConfigId && !e.submitted);
-  const resetForm = () => { setQcValue(""); setSelectedDate(""); setEditingId(null); };
+  const handleSaveDraft = (e: React.FormEvent) => {
+    e.preventDefault(); setError("");
+    if (!selectedConfigId || !selectedDate || !qcValue) { setError("Please fill all required fields."); return; }
+    const val = parseFloat(qcValue);
+    if (isNaN(val)) { setError("Value must be a number."); return; }
+    if (editingDraftId) {
+      setDrafts((prev) => prev.map((d) => d.id === editingDraftId ? { ...d, qcConfigId: selectedConfigId, date: selectedDate, value: val } : d));
+      setSuccess("Draft updated."); resetForm();
+    } else {
+      const newDraft: DraftEntry = { id: String(Date.now()), qcConfigId: selectedConfigId, date: selectedDate, value: val };
+      setDrafts((prev) => [...prev, newDraft]);
+      setSuccess("Entry saved as draft."); resetForm();
+    }
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); setError(""); setSuccess(""); setIsLoading(true);
-    if (!selectedConfigId || !selectedDate || !qcValue) { setError("Please fill all required fields."); setIsLoading(false); return; }
-    const payload: QcItem = { id: editingId || String(Date.now()), qcConfigId: selectedConfigId, date: selectedDate, value: parseFloat(qcValue), submitted: false };
+  const handleSubmitDraft = async (draft: DraftEntry) => {
+    setIsLoading(true); setError("");
     try {
-      if (editingId) await api.putItem(payload); else await api.postItem(payload);
-      setSuccess(`Entry ${editingId ? "updated" : "saved"} successfully!`);
-      resetForm(); fetchAllQcData();
-    } catch (e) { setError(`Error saving QC entry: ${(e as Error).message}`); }
+      const res = await api.submitRun(draft.qcConfigId, draft.value, draft.date);
+      if (res.error) throw new Error(res.error);
+      setDrafts((prev) => prev.filter((d) => d.id !== draft.id));
+      setSuccess("Entry submitted successfully!");
+    } catch (e) { setError(`Error submitting: ${(e as Error).message}`); }
     finally { setIsLoading(false); }
   };
 
-  const handleLock = async (id: string) => {
-    const entry = allEntries.find((e) => e.id === id);
-    if (!entry) return;
-    setIsLoading(true);
-    try {
-      await api.putItem({ ...entry, submitted: true });
-      setSuccess("Entry submitted (locked) successfully!"); fetchAllQcData();
-    } catch (e) { setError(`Error submitting entry: ${(e as Error).message}`); }
-    finally { setIsLoading(false); }
-  };
-
-  const handleDelete = (entry: QcItem) => {
-    const config = allQcConfigs.find((c) => c.id === entry.qcConfigId);
+  const handleDeleteDraft = (draft: DraftEntry) => {
+    const config = qcConfigs.find((c) => c.id === draft.qcConfigId);
     setConfirm({
       open: true, title: "Delete QC Entry?",
-      message: <>Are you sure you want to delete this entry <strong>({config?.qcName} Level {config?.level}, {entry.date}, value: {entry.value})</strong>? This cannot be undone.</>,
+      message: <>Are you sure you want to delete this entry <strong>({config?.qcName ?? "?"} Level {config?.level ?? "?"}, {draft.date}, value: {draft.value})</strong>?</>,
       confirmLabel: "Delete", variant: "danger",
-      onConfirm: async () => {
-        setConfirm((c) => ({ ...c, open: false })); setIsLoading(true);
-        try {
-          await api.deleteItem(String(entry.id));
-          setSuccess("Entry deleted successfully!"); fetchAllQcData();
-          if (editingId === String(entry.id)) resetForm();
-        } catch (e) { setError(`Error: ${(e as Error).message}`); }
-        finally { setIsLoading(false); }
+      onConfirm: () => {
+        setConfirm((c) => ({ ...c, open: false }));
+        setDrafts((prev) => prev.filter((d) => d.id !== draft.id));
+        if (editingDraftId === draft.id) resetForm();
       },
     });
   };
 
+  const draftEntries = drafts.filter((d) => !selectedConfigId || d.qcConfigId === selectedConfigId);
+
   return (
     <div className="space-y-6">
-      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading…</div>}
+      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Submitting…</div>}
       {error   && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
       {success && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm">{success}</div>}
 
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
         <SectionHead icon={ClipboardList} title="QC Data Entry" />
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSaveDraft} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Select QC Config</label>
@@ -579,7 +672,7 @@ function QCDataEntryTab({ labHubUrl }: { labHubUrl: string }) {
               <input type="number" step="any" value={qcValue} onChange={(e) => setQcValue(e.target.value)} className={inputCls} required />
             </div>
           </div>
-          <button type="submit" disabled={isLoading} className={btnPrimary}>{editingId ? "Update Entry" : "Save Entry"}</button>
+          <button type="submit" disabled={isLoading} className={btnPrimary}>{editingDraftId ? "Update Draft" : "Save Entry"}</button>
         </form>
       </div>
 
@@ -593,19 +686,19 @@ function QCDataEntryTab({ labHubUrl }: { labHubUrl: string }) {
             <tbody className="divide-y divide-slate-50">
               {draftEntries.length === 0 ? (
                 <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">No draft entries to show.</td></tr>
-              ) : draftEntries.map((entry) => {
-                const config = allQcConfigs.find((c) => c.id === entry.qcConfigId);
+              ) : draftEntries.map((draft) => {
+                const config = qcConfigs.find((c) => c.id === draft.qcConfigId);
                 return (
-                  <tr key={entry.id} className="hover:bg-slate-50">
+                  <tr key={draft.id} className="hover:bg-slate-50">
                     <td className={tblCell + " font-semibold text-slate-800"}>{config?.qcName || "N/A"}</td>
                     <td className={tblCell}>{config?.level ?? "N/A"}</td>
-                    <td className={tblCell + " font-semibold"}>{entry.date}</td>
-                    <td className={tblCell}>{entry.value}</td>
+                    <td className={tblCell + " font-semibold"}>{draft.date}</td>
+                    <td className={tblCell}>{draft.value}</td>
                     <td className={tblCell}>
                       <div className="flex gap-3">
-                        <button onClick={() => { setEditingId(String(entry.id)); setSelectedConfigId(entry.qcConfigId); setSelectedDate(entry.date); setQcValue(String(entry.value)); }} className="text-emerald-600 hover:text-emerald-800 font-semibold text-xs">Edit</button>
-                        <button onClick={() => handleDelete(entry)} className="text-red-600 hover:text-red-800 font-semibold text-xs">Delete</button>
-                        <button onClick={() => handleLock(String(entry.id))} className="text-emerald-700 hover:text-emerald-900 font-semibold text-xs">Submit</button>
+                        <button onClick={() => { setEditingDraftId(draft.id); setSelectedConfigId(draft.qcConfigId); setSelectedDate(draft.date); setQcValue(String(draft.value)); }} className="text-emerald-600 hover:text-emerald-800 font-semibold text-xs">Edit</button>
+                        <button onClick={() => handleDeleteDraft(draft)} className="text-red-600 hover:text-red-800 font-semibold text-xs">Delete</button>
+                        <button onClick={() => handleSubmitDraft(draft)} disabled={isLoading} className="text-emerald-700 hover:text-emerald-900 font-semibold text-xs disabled:opacity-50">Submit</button>
                       </div>
                     </td>
                   </tr>
@@ -621,30 +714,34 @@ function QCDataEntryTab({ labHubUrl }: { labHubUrl: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/*  QC VISUALIZATION TAB  (Lab-hub QCVisualization.js)        */
+/*  QC VISUALIZATION TAB                                      */
 /* ═══════════════════════════════════════════════════════════ */
-function QCVisualizationTab({ labHubUrl }: { labHubUrl: string }) {
-  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
-  const [qcConfigs, setQcConfigs]           = useState<QcItem[]>([]);
-  const [allEntries, setAllEntries]         = useState<QcItem[]>([]);
+function QCVisualizationTab() {
+  const api = useMemo(() => makeKantaApi(), []);
+  const [qcConfigs, setQcConfigs]                 = useState<QcItem[]>([]);
+  const [runs1, setRuns1]                         = useState<QcItem[]>([]);
+  const [runs2, setRuns2]                         = useState<QcItem[]>([]);
   const [selectedConfigId, setSelectedConfigId]   = useState("");
   const [selectedConfigId2, setSelectedConfigId2] = useState("");
   const [fromDate, setFromDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`; });
   const [toDate, setToDate]     = useState(() => new Date().toISOString().slice(0, 10));
 
-  const fetchData = useCallback(async () => {
-    try {
-      const data = await api.getItems();
-      const items = Array.isArray(data) ? data : (data?.data ?? []);
-      setQcConfigs(items.filter((item: QcItem) => item.qcName && item.level != null && item.mean != null && item.sd != null));
-      setAllEntries(items.filter((item: QcItem) => item.qcConfigId && item.date && item.value != null).sort((a: QcItem, b: QcItem) => a.date > b.date ? 1 : -1));
-    } catch {}
+  useEffect(() => {
+    api.getMaterials().then(setQcConfigs).catch(() => {});
   }, [api]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    if (!selectedConfigId) { setRuns1([]); return; }
+    api.getRuns(selectedConfigId).then(setRuns1).catch(() => {});
+  }, [api, selectedConfigId]);
 
-  const filterEntries = (configId: string) => {
-    let entries = allEntries.filter((e) => e.qcConfigId === configId && e.submitted === true);
+  useEffect(() => {
+    if (!selectedConfigId2) { setRuns2([]); return; }
+    api.getRuns(selectedConfigId2).then(setRuns2).catch(() => {});
+  }, [api, selectedConfigId2]);
+
+  const filterRuns = (runs: QcItem[]) => {
+    let entries = runs;
     if (fromDate) entries = entries.filter((e) => e.date >= fromDate);
     if (toDate)   entries = entries.filter((e) => e.date <= toDate);
     return entries;
@@ -652,9 +749,9 @@ function QCVisualizationTab({ labHubUrl }: { labHubUrl: string }) {
 
   const selectedConfig  = qcConfigs.find((c) => c.id === selectedConfigId);
   const selectedConfig2 = qcConfigs.find((c) => c.id === selectedConfigId2);
-  const filtered1 = filterEntries(selectedConfigId);
-  const filtered2 = filterEntries(selectedConfigId2);
-  const analyzed1 = selectedConfig  && filtered1.length > 0 ? applyWestgard(filtered1.map((e)  => ({ ...e, name: fmtShort(e.date) })), Number(selectedConfig.mean),  Number(selectedConfig.sd))  : [];
+  const filtered1 = filterRuns(runs1);
+  const filtered2 = filterRuns(runs2);
+  const analyzed1 = selectedConfig  && filtered1.length > 0 ? applyWestgard(filtered1.map((e) => ({ ...e, name: fmtShort(e.date) })), Number(selectedConfig.mean),  Number(selectedConfig.sd))  : [];
   const analyzed2 = selectedConfig2 && filtered2.length > 0 ? applyWestgard(filtered2.map((e) => ({ ...e, name: fmtShort(e.date) })), Number(selectedConfig2.mean), Number(selectedConfig2.sd)) : [];
 
   const renderGraph = (config: QcItem, data: QcItem[], compact = false) => {
@@ -742,7 +839,7 @@ function QCVisualizationTab({ labHubUrl }: { labHubUrl: string }) {
       ) : (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center text-slate-400">
           {(selectedConfigId || selectedConfigId2)
-            ? "No submitted entries found for the selected configuration(s) and date range."
+            ? "No QC runs found for the selected configuration(s) and date range."
             : "Select a QC configuration and date range to view the Levey-Jennings chart."}
         </div>
       )}
@@ -751,7 +848,7 @@ function QCVisualizationTab({ labHubUrl }: { labHubUrl: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/*  QC CALCULATOR TAB  (Lab-hub QCCalculator.js)              */
+/*  QC CALCULATOR TAB  (localStorage only — no API)           */
 /* ═══════════════════════════════════════════════════════════ */
 function QCCalculatorTab() {
   const [inputs, setInputs] = useState<string[]>(() => {
@@ -844,38 +941,37 @@ function QCCalculatorTab() {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/*  QC STATS TAB  (Lab-hub QCStats.js)                        */
+/*  QC STATS TAB                                              */
 /* ═══════════════════════════════════════════════════════════ */
-function QCStatsTab({ labHubUrl }: { labHubUrl: string }) {
-  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
-  const [qcConfigs, setQcConfigs]       = useState<QcItem[]>([]);
-  const [qcData, setQcData]             = useState<QcItem[]>([]);
+function QCStatsTab() {
+  const api = useMemo(() => makeKantaApi(), []);
+  const [qcConfigs, setQcConfigs]           = useState<QcItem[]>([]);
+  const [runs, setRuns]                     = useState<QcItem[]>([]);
   const [selectedConfig, setSelectedConfig] = useState("");
-  const [startDate, setStartDate]       = useState("");
-  const [endDate, setEndDate]           = useState("");
-  const [error, setError]               = useState("");
-  const [confirm, setConfirm]           = useState<ConfirmState>(closedConfirm);
-  const [resolvingId, setResolvingId]   = useState<string | null>(null);
+  const [startDate, setStartDate]           = useState("");
+  const [endDate, setEndDate]               = useState("");
+  const [error, setError]                   = useState("");
+  const [confirm, setConfirm]               = useState<ConfirmState>(closedConfirm);
+  const [loadingRuns, setLoadingRuns]       = useState(false);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const data = await api.getItems();
-      const items = Array.isArray(data) ? data : (data?.data ?? []);
-      setQcConfigs(items.filter((item: QcItem) => item.mean != null && item.sd != null && item.qcName?.trim()));
-      setQcData(items.filter((item: QcItem) => item.qcConfigId != null && item.value != null && item.date != null));
-    } catch (e) { setError(`Error fetching QC data: ${(e as Error).message}`); }
+  useEffect(() => {
+    api.getMaterials().then(setQcConfigs).catch(() => {});
   }, [api]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    if (!selectedConfig) { setRuns([]); return; }
+    setLoadingRuns(true);
+    api.getRuns(selectedConfig).then(setRuns).catch(() => setRuns([])).finally(() => setLoadingRuns(false));
+  }, [api, selectedConfig]);
 
   const selectedConfigObj = qcConfigs.find((c) => c.id === selectedConfig);
   const filteredData = useMemo(() => {
-    if (!selectedConfig || !qcData.length || !selectedConfigObj) return [];
-    let filtered = qcData.filter((item) => item.qcConfigId === selectedConfigObj.id && item.submitted === true);
+    if (!selectedConfig || !runs.length) return [];
+    let filtered = runs;
     if (startDate) filtered = filtered.filter((item) => item.date >= startDate);
     if (endDate)   filtered = filtered.filter((item) => item.date <= endDate);
     return filtered.sort((a, b) => a.date < b.date ? 1 : -1);
-  }, [selectedConfig, startDate, endDate, qcData, selectedConfigObj]);
+  }, [selectedConfig, startDate, endDate, runs]);
 
   const statistics = useMemo(() => {
     const values = filteredData.map((item) => parseFloat(item.value)).filter((v) => !isNaN(v));
@@ -892,22 +988,10 @@ function QCStatsTab({ labHubUrl }: { labHubUrl: string }) {
       confirmLabel: "Delete", variant: "danger",
       onConfirm: async () => {
         setConfirm((c) => ({ ...c, open: false }));
-        try { await api.deleteItem(String(item.id)); fetchData(); }
-        catch (e) { setError(`Error deleting: ${(e as Error).message}`); }
-      },
-    });
-  };
-
-  const handleMarkResolved = (item: QcItem) => {
-    setConfirm({
-      open: true, title: "Mark as Resolved?",
-      message: <>Mark this QC failure <strong>({item.date}, value: {item.value})</strong> as resolved? The alert will be cleared.</>,
-      confirmLabel: "Mark Resolved", variant: "success",
-      onConfirm: async () => {
-        setConfirm((c) => ({ ...c, open: false })); setResolvingId(String(item.id));
-        try { await api.putItem({ ...item, resolved: true }); fetchData(); }
-        catch (e) { setError(`Error: ${(e as Error).message}`); }
-        finally { setResolvingId(null); }
+        try {
+          await api.deleteRun(String(item.id));
+          setRuns((prev) => prev.filter((r) => r.id !== item.id));
+        } catch (e) { setError(`Error deleting: ${(e as Error).message}`); }
       },
     });
   };
@@ -918,11 +1002,10 @@ function QCStatsTab({ labHubUrl }: { labHubUrl: string }) {
     const rows: (string | number | null)[][] = [
       ["QC Statistics Export"], ["Configuration", configLabel],
       ["Date Range", startDate && endDate ? `${startDate} to ${endDate}` : "All"],
-      [], ["Date", "QC Name", "Level", "Value", "Lot Number", "Date Entered"],
+      [], ["Date", "Value", "Z-Score", "Status"],
     ];
     filteredData.forEach((item) => {
-      const config = qcConfigs.find((c) => c.id === item.qcConfigId);
-      rows.push([item.date, config?.qcName ?? "—", config?.level ?? "—", item.value, config?.lotNumber ?? "—", item.createdAt ? new Date(item.createdAt).toLocaleString() : "—"]);
+      rows.push([item.date, item.value, item.zScore ?? "—", item._status ?? "normal"]);
     });
     downloadCSV(rows, `QC_Statistics_${configLabel.replace(/\s+/g, "_")}_${todayStr()}.csv`);
   };
@@ -952,6 +1035,8 @@ function QCStatsTab({ labHubUrl }: { labHubUrl: string }) {
         </div>
       </div>
 
+      {loadingRuns && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading runs…</div>}
+
       {statistics && (
         <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
           <h3 className="text-sm font-bold text-emerald-800 mb-4 uppercase tracking-wider">Statistics Summary</h3>
@@ -974,42 +1059,35 @@ function QCStatsTab({ labHubUrl }: { labHubUrl: string }) {
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
-          <SectionHead icon={ClipboardList} title="QC Values (Submitted Only)" />
+          <SectionHead icon={ClipboardList} title="QC Values" />
           <button onClick={handleExportCSV} disabled={!selectedConfig || !filteredData.length} className={btnSecondary + " disabled:opacity-40"}>
             <Download size={14} /> Export CSV
           </button>
         </div>
         {filteredData.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-8">
-            {selectedConfig ? "No submitted QC values found for the selected configuration and date range." : "Please select a QC configuration to view statistics."}
+            {selectedConfig ? "No QC values found for the selected configuration and date range." : "Please select a QC configuration to view statistics."}
           </p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-slate-100">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>{["Date", "QC Name", "Level", "Value", "Lot Number", "Date Entered", "Resolve", ""].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
+                <tr>{["Date", "Value", "Z-Score", "Status", ""].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filteredData.map((item, idx) => {
-                  const config = qcConfigs.find((c) => c.id === item.qcConfigId);
-                  const isFailure = selectedConfigObj && Math.abs(Number(item.value) - Number(selectedConfigObj.mean)) > 2 * Number(selectedConfigObj.sd);
+                  const isFailure = item._status === "failure";
                   return (
                     <tr key={item.id ?? idx} className="hover:bg-slate-50 transition-colors">
                       <td className={tblCell}>{fmtDate(item.date)}</td>
-                      <td className={tblCell + " font-semibold text-slate-800"}>{config?.qcName ?? "—"}</td>
-                      <td className={tblCell}>{config?.level ?? "—"}</td>
                       <td className={tblCell + " font-mono font-bold text-emerald-700"}>{item.value}</td>
-                      <td className={tblCell}>{config?.lotNumber ?? "—"}</td>
-                      <td className={tblCell + " text-slate-500"}>{item.createdAt ? new Date(item.createdAt).toLocaleString() : "—"}</td>
+                      <td className={tblCell + " font-mono text-slate-500"}>{item.zScore != null ? Number(item.zScore).toFixed(2) : "—"}</td>
                       <td className={tblCell}>
-                        {isFailure && !item.resolved ? (
-                          <button onClick={() => handleMarkResolved(item)} disabled={resolvingId === String(item.id)}
-                            className="px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold disabled:opacity-60">
-                            {resolvingId === String(item.id) ? "Resolving…" : "Mark Resolved"}
-                          </button>
-                        ) : item.resolved ? (
-                          <span className="text-xs text-emerald-600 font-semibold">Resolved</span>
-                        ) : <span className="text-slate-300">—</span>}
+                        {isFailure
+                          ? <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Violation</span>
+                          : item._status === "warning"
+                          ? <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Warning</span>
+                          : <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Normal</span>}
                       </td>
                       <td className={tblCell}>
                         <button onClick={() => handleDelete(item)} className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold">Delete</button>
@@ -1028,7 +1106,7 @@ function QCStatsTab({ labHubUrl }: { labHubUrl: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/*  QUALITATIVE QC CONFIG TAB  (Lab-hub QualitativeQCConfig)  */
+/*  QUALITATIVE QC CONFIG TAB                                 */
 /* ═══════════════════════════════════════════════════════════ */
 const RESULT_TYPES = ["Reactive / Non-Reactive", "Positive / Negative", "Detected / Not Detected", "Pass / Fail"];
 const FREQUENCIES  = ["Daily", "Weekly", "Per Batch"];
@@ -1045,8 +1123,8 @@ const blankQualForm = () => ({
   controls: [{ name: "", level: LEVEL_OPTIONS[0], expectedResult: "", notes: "" }],
 });
 
-function QualConfigTab({ labHubUrl }: { labHubUrl: string }) {
-  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
+function QualConfigTab() {
+  const api = useMemo(() => makeKantaApi(), []);
   const [form, setForm]             = useState(blankQualForm());
   const [configs, setConfigs]       = useState<QcItem[]>([]);
   const [editingId, setEditingId]   = useState<string | null>(null);
@@ -1058,9 +1136,7 @@ function QualConfigTab({ labHubUrl }: { labHubUrl: string }) {
   const fetchConfigs = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await api.getItems();
-      const items = Array.isArray(data) ? data : (data?.data ?? []);
-      setConfigs(items.filter((item: QcItem) => item.qualitative === true && item.testName && !item.qualEntry));
+      setConfigs(await api.getQualConfigs());
     } catch (e) { setError(`Error fetching configs: ${(e as Error).message}`); }
     finally { setIsLoading(false); }
   }, [api]);
@@ -1080,14 +1156,8 @@ function QualConfigTab({ labHubUrl }: { labHubUrl: string }) {
       if (!c.name.trim() || !c.expectedResult) { setError("Each control must have a name and an expected result."); return; }
     }
     setIsLoading(true);
-    const payload: QcItem = {
-      id: editingId || String(Date.now()), qualitative: true,
-      testName: form.testName.trim(), resultType: form.resultType,
-      lotNumber: form.lotNumber, manufacturer: form.manufacturer,
-      expiryDate: form.expiryDate, frequency: form.frequency, controls: form.controls,
-    };
     try {
-      if (editingId) await api.putItem(payload); else await api.postItem(payload);
+      await api.saveQualConfig(form, editingId);
       setSuccess(`Configuration ${editingId ? "updated" : "saved"} successfully!`);
       fetchConfigs(); resetForm();
     } catch (e) { setError(`Error saving config: ${(e as Error).message}`); }
@@ -1102,7 +1172,7 @@ function QualConfigTab({ labHubUrl }: { labHubUrl: string }) {
       onConfirm: async () => {
         setConfirm((c) => ({ ...c, open: false })); setIsLoading(true);
         try {
-          await api.deleteItem(String(config.id)); setSuccess("Configuration deleted."); fetchConfigs();
+          await api.deleteQualConfig(String(config.id)); setSuccess("Configuration deleted."); fetchConfigs();
           if (editingId === String(config.id)) resetForm();
         } catch (e) { setError(`Error: ${(e as Error).message}`); }
         finally { setIsLoading(false); }
@@ -1235,7 +1305,7 @@ function QualConfigTab({ labHubUrl }: { labHubUrl: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/*  QUALITATIVE QC ENTRY TAB  (Lab-hub QualitativeQCEntry)    */
+/*  QUALITATIVE QC ENTRY TAB                                  */
 /* ═══════════════════════════════════════════════════════════ */
 const LEVEL_COLORS: Record<string, string> = {
   "High Positive":    "bg-pink-100 text-pink-800",
@@ -1246,26 +1316,25 @@ const LEVEL_COLORS: Record<string, string> = {
   "External Control": "bg-amber-100 text-amber-700",
 };
 
-function QualEntryTab({ labHubUrl }: { labHubUrl: string }) {
-  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
-  const [qualConfigs, setQualConfigs]         = useState<QcItem[]>([]);
-  const [allEntries, setAllEntries]           = useState<QcItem[]>([]);
+function QualEntryTab() {
+  const api = useMemo(() => makeKantaApi(), []);
+  const [qualConfigs, setQualConfigs]           = useState<QcItem[]>([]);
+  const [draftEntries, setDraftEntries]         = useState<QcItem[]>([]);
   const [selectedConfigId, setSelectedConfigId] = useState("");
-  const [selectedDate, setSelectedDate]       = useState(todayStr());
-  const [controlResults, setControlResults]   = useState<QcItem[]>([]);
+  const [selectedDate, setSelectedDate]         = useState(todayStr());
+  const [controlResults, setControlResults]     = useState<QcItem[]>([]);
   const [correctiveAction, setCorrectiveAction] = useState("");
-  const [editingId, setEditingId]             = useState<string | null>(null);
-  const [isLoading, setIsLoading]             = useState(false);
-  const [error, setError]                     = useState("");
-  const [success, setSuccess]                 = useState("");
-  const [confirm, setConfirm]                 = useState<ConfirmState>(closedConfirm);
+  const [editingId, setEditingId]               = useState<string | null>(null);
+  const [isLoading, setIsLoading]               = useState(false);
+  const [error, setError]                       = useState("");
+  const [success, setSuccess]                   = useState("");
+  const [confirm, setConfirm]                   = useState<ConfirmState>(closedConfirm);
 
   const fetchData = useCallback(async () => {
     try {
-      const data = await api.getItems();
-      const items = Array.isArray(data) ? data : (data?.data ?? []);
-      setQualConfigs(items.filter((item: QcItem) => item.qualitative === true && item.testName && !item.qualEntry));
-      setAllEntries(items.filter((item: QcItem) => item.qualitative === true && item.qualEntry === true).sort((a: QcItem, b: QcItem) => a.date < b.date ? 1 : -1));
+      const [configs, entries] = await Promise.all([api.getQualConfigs(), api.getQualEntries()]);
+      setQualConfigs(configs);
+      setDraftEntries(entries.filter((e) => !e.submitted));
     } catch (e) { setError(`Error loading configurations: ${(e as Error).message}`); }
   }, [api]);
 
@@ -1300,14 +1369,15 @@ function QualEntryTab({ labHubUrl }: { labHubUrl: string }) {
     if (submit && anyFail && !correctiveAction.trim()) { setError("A corrective action description is required when any control fails."); return; }
     setIsLoading(true);
     const payload: QcItem = {
-      id: editingId || String(Date.now()), qualitative: true, qualEntry: true,
-      qcConfigId: selectedConfigId, testName: selectedConfig?.testName || "",
-      lotNumber: selectedConfig?.lotNumber || "", date: selectedDate,
-      controlResults, overallPass: allFilled && !anyFail,
-      correctiveAction: anyFail ? correctiveAction.trim() : "", submitted: submit,
+      qcConfigId: selectedConfigId,
+      date: selectedDate,
+      controlResults,
+      overallPass: allFilled && !anyFail,
+      correctiveAction: anyFail ? correctiveAction.trim() : "",
+      submitted: submit,
     };
     try {
-      if (editingId) await api.putItem(payload); else await api.postItem(payload);
+      await api.saveQualEntry(payload, editingId);
       setSuccess(submit ? `QC Run submitted — Overall: ${overallPass ? "PASS" : "FAIL"}` : (editingId ? "Draft updated." : "Draft saved."));
       resetForm(); fetchData();
     } catch (e) { setError(`Error: ${(e as Error).message}`); }
@@ -1317,8 +1387,10 @@ function QualEntryTab({ labHubUrl }: { labHubUrl: string }) {
   const handleSubmitDraft = async (entry: QcItem) => {
     if (!entry.controlResults?.every((r: QcItem) => r.observedResult)) { setError("Cannot submit: not all control results are filled in. Edit the draft first."); return; }
     setIsLoading(true);
-    try { await api.putItem({ ...entry, submitted: true }); setSuccess("Draft submitted successfully."); fetchData(); }
-    catch (e) { setError(`Error: ${(e as Error).message}`); }
+    try {
+      await api.saveQualEntry({ ...entry, submitted: true }, String(entry.id));
+      setSuccess("Draft submitted successfully."); fetchData();
+    } catch (e) { setError(`Error: ${(e as Error).message}`); }
     finally { setIsLoading(false); }
   };
 
@@ -1330,15 +1402,13 @@ function QualEntryTab({ labHubUrl }: { labHubUrl: string }) {
       onConfirm: async () => {
         setConfirm((c) => ({ ...c, open: false })); setIsLoading(true);
         try {
-          await api.deleteItem(String(entry.id)); setSuccess("Draft deleted."); fetchData();
+          await api.deleteQualEntry(String(entry.id)); setSuccess("Draft deleted."); fetchData();
           if (editingId === String(entry.id)) resetForm();
         } catch (e) { setError(`Error: ${(e as Error).message}`); }
         finally { setIsLoading(false); }
       },
     });
   };
-
-  const draftEntries = allEntries.filter((e) => !e.submitted);
 
   return (
     <div className="space-y-6">
@@ -1485,29 +1555,24 @@ function QualEntryTab({ labHubUrl }: { labHubUrl: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════ */
-/*  QUALITATIVE QC LOG TAB  (Lab-hub QualitativeQCLog.js)     */
+/*  QUALITATIVE QC LOG TAB                                    */
 /* ═══════════════════════════════════════════════════════════ */
-function QualLogTab({ labHubUrl }: { labHubUrl: string }) {
-  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
-  const [allRuns, setAllRuns]       = useState<QcItem[]>([]);
-  const [filterTest, setFilterTest] = useState("");
-  const [filterFrom, setFilterFrom] = useState("");
-  const [filterTo, setFilterTo]     = useState("");
+function QualLogTab() {
+  const api = useMemo(() => makeKantaApi(), []);
+  const [allRuns, setAllRuns]         = useState<QcItem[]>([]);
+  const [filterTest, setFilterTest]   = useState("");
+  const [filterFrom, setFilterFrom]   = useState("");
+  const [filterTo, setFilterTo]       = useState("");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [isLoading, setIsLoading]   = useState(false);
-  const [error, setError]           = useState("");
-  const [confirm, setConfirm]       = useState<ConfirmState>(closedConfirm);
-  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [isLoading, setIsLoading]     = useState(false);
+  const [error, setError]             = useState("");
+  const [confirm, setConfirm]         = useState<ConfirmState>(closedConfirm);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await api.getItems();
-      const items = Array.isArray(data) ? data : (data?.data ?? []);
-      const runs = items
-        .filter((item: QcItem) => item.qualitative === true && item.qualEntry === true && item.submitted === true)
-        .sort((a: QcItem, b: QcItem) => a.date < b.date ? 1 : -1);
-      setAllRuns(runs);
+      const entries = await api.getQualEntries();
+      setAllRuns(entries.filter((e) => e.submitted).sort((a: QcItem, b: QcItem) => a.date < b.date ? 1 : -1));
     } catch (e) { setError(`Error loading data: ${(e as Error).message}`); }
     finally { setIsLoading(false); }
   }, [api]);
@@ -1534,22 +1599,8 @@ function QualLogTab({ labHubUrl }: { labHubUrl: string }) {
       confirmLabel: "Delete", variant: "danger",
       onConfirm: async () => {
         setConfirm((c) => ({ ...c, open: false }));
-        try { await api.deleteItem(String(run.id)); fetchData(); }
+        try { await api.deleteQualEntry(String(run.id)); fetchData(); }
         catch (e) { setError(`Error: ${(e as Error).message}`); }
-      },
-    });
-  };
-
-  const handleMarkResolved = (run: QcItem) => {
-    setConfirm({
-      open: true, title: "Mark as Resolved?",
-      message: <>Mark failed QC run <strong>{run.testName}</strong> ({run.date}) as resolved? The alert will be cleared.</>,
-      confirmLabel: "Mark Resolved", variant: "success",
-      onConfirm: async () => {
-        setConfirm((c) => ({ ...c, open: false })); setResolvingId(String(run.id));
-        try { await api.putItem({ ...run, resolved: true }); fetchData(); }
-        catch (e) { setError(`Error: ${(e as Error).message}`); }
-        finally { setResolvingId(null); }
       },
     });
   };
@@ -1561,12 +1612,12 @@ function QualLogTab({ labHubUrl }: { labHubUrl: string }) {
       ["Filter: Test", filterTest || "All"], ["Filter: Date Range", filterFrom && filterTo ? `${filterFrom} to ${filterTo}` : "All"],
       [], ["Summary"], ["Total Runs", "Passed", "Failed", "Pass Rate"],
       [totalRuns, passedRuns, failedRuns, passRate !== "—" ? `${passRate}%` : "—"],
-      [], ["Date", "Test Name", "Lot Number", "Controls Run", "Passed", "Failed", "Overall Result", "Operator", "Corrective Action"],
+      [], ["Date", "Test Name", "Controls Run", "Passed", "Failed", "Overall Result", "Corrective Action"],
     ];
     filtered.forEach((run) => {
       const controls = run.controlResults || [];
       const passed = controls.filter((c: QcItem) => c.observedResult === c.expectedResult).length;
-      rows.push([run.date, run.testName, run.lotNumber || "—", controls.length, passed, controls.length - passed, run.overallPass ? "PASS" : "FAIL", run.enteredBy || "—", run.correctiveAction || "—"]);
+      rows.push([run.date, run.testName, controls.length, passed, controls.length - passed, run.overallPass ? "PASS" : "FAIL", run.correctiveAction || "—"]);
     });
     downloadCSV(rows, `QualitativeQC_Log_${todayStr()}.csv`);
   };
@@ -1628,7 +1679,7 @@ function QualLogTab({ labHubUrl }: { labHubUrl: string }) {
           <div className="overflow-x-auto rounded-xl border border-slate-100">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>{["Date", "Test", "Lot No.", "Controls", "Pass", "Fail", "Overall", "Date Entered", "Details", "Resolve", ""].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
+                <tr>{["Date", "Test", "Controls", "Pass", "Fail", "Overall", "Date Entered", "Details", ""].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filtered.flatMap((run) => {
@@ -1641,7 +1692,6 @@ function QualLogTab({ labHubUrl }: { labHubUrl: string }) {
                     <tr key={String(run.id)} className={`hover:bg-slate-50 ${!run.overallPass ? "border-l-4 border-l-red-400" : ""}`}>
                       <td className={tblCell}>{fmtDate(run.date)}</td>
                       <td className={tblCell + " font-semibold text-slate-800"}>{run.testName}</td>
-                      <td className={tblCell + " font-mono text-slate-500"}>{run.lotNumber || "—"}</td>
                       <td className={tblCell + " text-center"}>{controls.length}</td>
                       <td className={tblCell + " font-bold text-emerald-600 text-center"}>{passed}</td>
                       <td className={tblCell + " font-bold text-center"}><span className={failed > 0 ? "text-red-600" : "text-slate-400"}>{failed}</span></td>
@@ -1653,16 +1703,6 @@ function QualLogTab({ labHubUrl }: { labHubUrl: string }) {
                         </button>
                       </td>
                       <td className={tblCell}>
-                        {!run.overallPass && !run.resolved ? (
-                          <button onClick={() => handleMarkResolved(run)} disabled={resolvingId === String(run.id)}
-                            className="px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold disabled:opacity-60">
-                            {resolvingId === String(run.id) ? "Resolving…" : "Mark Resolved"}
-                          </button>
-                        ) : run.resolved ? (
-                          <span className="text-xs text-emerald-600 font-semibold">Resolved</span>
-                        ) : <span className="text-slate-300">—</span>}
-                      </td>
-                      <td className={tblCell}>
                         <button onClick={() => handleDelete(run)} className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold">Delete</button>
                       </td>
                     </tr>
@@ -1672,7 +1712,7 @@ function QualLogTab({ labHubUrl }: { labHubUrl: string }) {
 
                   const detailRow = (
                     <tr key={`${run.id}-detail`} className="bg-slate-50">
-                      <td colSpan={11} className="px-6 py-4">
+                      <td colSpan={9} className="px-6 py-4">
                         <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
                           <h4 className="font-bold text-emerald-700 mb-3 text-sm">Control Results Detail</h4>
                           <table className="w-full text-sm">

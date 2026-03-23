@@ -1,62 +1,52 @@
 "use client";
 
 import "@/components/charts/registry";
-import { useEffect, useState, useRef } from "react";
-import Link from "next/link";
+import { useEffect, useState, useCallback } from "react";
 import {
-  Clock,
-  AlertTriangle,
-  BarChart3,
-  CheckCircle2,
-  XCircle,
-  Calendar,
-  TrendingUp,
-  Target,
-  Activity,
-  Monitor,
-} from "lucide-react";
-import { Doughnut, Line } from "react-chartjs-2";
-import type { ChartOptions } from "chart.js";
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
-import AnomalyPanel from "@/components/ai/AnomalyPanel";
-import ModuleTabBar from "@/components/dashboard/ModuleTabBar";
 
-const MODULE_TABS = [
-  { label: "Overview",     href: "/dashboard/tat",         icon: BarChart3   },
-  { label: "Performance",  href: "/dashboard/performance", icon: TrendingUp  },
-  { label: "Tests",        href: "/dashboard/tests",       icon: Activity    },
-  { label: "Numbers",      href: "/dashboard/numbers",     icon: Target      },
-  { label: "Revenue",      href: "/dashboard/revenue",     icon: Calendar    },
-  { label: "LRIDS",        href: "/dashboard/lrids",       icon: Monitor     },
+// ── Constants ──────────────────────────────────────────────────────────────
+const PERIODS = [
+  { value: "today",        label: "Today"        },
+  { value: "yesterday",    label: "Yesterday"    },
+  { value: "thisWeek",     label: "This Week"    },
+  { value: "lastWeek",     label: "Last Week"    },
+  { value: "thisMonth",    label: "This Month"   },
+  { value: "lastMonth",    label: "Last Month"   },
+  { value: "thisQuarter",  label: "This Quarter" },
+  { value: "thisYear",     label: "This Year"    },
 ];
 
-type QueueItem = {
-  id: string;
-  lab_number?: string;
-  test_name: string;
-  section: string;
-  received_at: string | null;
-  elapsed_minutes: number | null;
-  status: string;
-};
+const SHIFTS = [
+  { value: "all",         label: "All Shifts"  },
+  { value: "day shift",   label: "Day Shift"   },
+  { value: "night shift", label: "Night Shift" },
+];
 
-type SectionSummary = {
-  section: string;
-  avg_tat: number;
-  count: number;
-  target: number;
-  on_target: boolean;
-};
+const LABORATORIES = [
+  { value: "all",              label: "All Laboratories"  },
+  { value: "Main Laboratory",  label: "Main Laboratory"   },
+  { value: "Annex",            label: "Annex"             },
+];
 
-type BreachItem = {
-  id: string;
-  breach_minutes: number;
-  target_minutes: number;
-  detected_at: string;
-  request?: { lab_number?: string; test_name: string; section: string };
-};
+const PIE_COLORS = ["#10b981", "#f59e0b", "#ef4444", "#94a3b8"];
 
-type AnalyticsData = {
+// ── Types ──────────────────────────────────────────────────────────────────
+type TATData = {
   pieData: {
     onTime: number;
     delayedLess15: number;
@@ -70,364 +60,420 @@ type AnalyticsData = {
     totalRequests: number;
     delayedRequests: number;
     onTimeRequests: number;
-    avgDailyDelayed: string;
-    avgDailyOnTime: string;
-    avgDailyNotUploaded: string;
+    avgDailyDelayed: string | number;
+    avgDailyOnTime: string | number;
+    avgDailyNotUploaded: string | number;
     mostDelayedHour: string;
     mostDelayedDay: string;
   };
 };
 
-const PERIODS = [
-  { value: "today",     label: "Today"      },
-  { value: "thisWeek",  label: "This Week"  },
-  { value: "thisMonth", label: "This Month" },
-  { value: "lastMonth", label: "Last Month" },
-];
+// ── Sub-components ─────────────────────────────────────────────────────────
+function ProgressBar({
+  label,
+  value,
+  total,
+  color,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  color: string;
+}) {
+  const pct = total > 0 ? Math.min(100, (value / total) * 100) : 0;
+  return (
+    <div className="mb-4">
+      <div className="flex justify-between items-center mb-1 text-sm">
+        <span className="text-slate-700 font-medium">{label}</span>
+        <span className="text-slate-500 text-xs">
+          {value.toLocaleString()} / {total.toLocaleString()}
+        </span>
+      </div>
+      <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+        <div
+          className="h-3 rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
+      </div>
+      <div className="text-right text-xs text-slate-500 mt-0.5">{pct.toFixed(1)}%</div>
+    </div>
+  );
+}
 
-/* ── Doughnut chart options (data labels fully inside container) ── */
-const doughnutOptions: ChartOptions<"doughnut"> = {
-  responsive: true,
-  maintainAspectRatio: false,
-  cutout: "60%",
-  layout: { padding: 28 },
-  plugins: {
-    legend: { position: "bottom", labels: { font: { size: 11 }, padding: 12, boxWidth: 12 } },
-    tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed}` } },
-    datalabels: {
-      display: true,
-      color: "#fff",
-      font: { size: 11, weight: "bold" },
-      formatter: (value: number, ctx) => {
-        const total = (ctx.dataset.data as number[]).reduce((a: number, b: number) => a + b, 0);
-        if (total === 0 || value === 0) return "";
-        return `${((value / total) * 100).toFixed(0)}%`;
-      },
-      anchor: "center",
-      align: "center",
-      clip: false,
-    },
-  },
-};
+function KPICard({
+  title,
+  value,
+  icon,
+  full,
+}: {
+  title: string;
+  value: string | number;
+  icon: string;
+  full?: boolean;
+}) {
+  return (
+    <div
+      className={`bg-white border border-slate-200 rounded-xl p-3 flex flex-col gap-1 ${full ? "col-span-2" : ""}`}
+    >
+      <span className="text-2xl">{icon}</span>
+      <p className="text-xs text-slate-500 leading-tight">{title}</p>
+      <p className="text-lg font-bold text-slate-800 truncate">{value ?? "—"}</p>
+    </div>
+  );
+}
 
-const lineOptions = (title: string): ChartOptions<"line"> => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  interaction: { mode: "index", intersect: false },
-  plugins: {
-    legend: { position: "bottom", labels: { font: { size: 11 }, padding: 12, boxWidth: 12 } },
-    title: { display: false, text: title },
-    datalabels: { display: false },
-  },
-  scales: {
-    x: { grid: { color: "#f1f5f9" }, ticks: { font: { size: 10 } } },
-    y: { grid: { color: "#f1f5f9" }, ticks: { font: { size: 11 } }, beginAtZero: true },
-  },
-});
+// ── Custom tooltip ─────────────────────────────────────────────────────────
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: { name: string; value: number; color: string }[];
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
+      <p className="font-semibold text-slate-700 mb-1">{label}</p>
+      {payload.map((p) => (
+        <p key={p.name} style={{ color: p.color }}>
+          {p.name}: <strong>{p.value.toLocaleString()}</strong>
+        </p>
+      ))}
+    </div>
+  );
+}
 
+// ── Main page ──────────────────────────────────────────────────────────────
 export default function TATPage() {
-  const [queue, setQueue]       = useState<QueueItem[]>([]);
-  const [sections, setSections] = useState<SectionSummary[]>([]);
-  const [breaches, setBreaches] = useState<BreachItem[]>([]);
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [period, setPeriod]     = useState("thisMonth");
-  const [loading, setLoading]   = useState(true);
-  const intervalRef             = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [filters, setFilters] = useState({
+    period: "thisMonth",
+    shift: "all",
+    hospitalUnit: "all",
+    startDate: "",
+    endDate: "",
+  });
+  const [data, setData] = useState<TATData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const updateFilter = (key: string, value: string) =>
+    setFilters((prev) => ({ ...prev, [key]: value }));
+
+  const resetFilters = () =>
+    setFilters({ period: "thisMonth", shift: "all", hospitalUnit: "all", startDate: "", endDate: "" });
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const [qRes, sRes, bRes, aRes] = await Promise.all([
-        fetch(`/api/tat/queue?facility_id=${DEFAULT_FACILITY_ID}`),
-        fetch(`/api/tat/summary?facility_id=${DEFAULT_FACILITY_ID}&days=7`),
-        fetch(`/api/tat/breaches?facility_id=${DEFAULT_FACILITY_ID}&limit=20`),
-        fetch(`/api/tat/analytics?facility_id=${DEFAULT_FACILITY_ID}&period=${period}`),
-      ]);
-      const [qData, sData, bData, aData] = await Promise.all([qRes.json(), sRes.json(), bRes.json(), aRes.json()]);
-      setQueue(qData.data ?? []);
-      setSections(sData.data?.sections ?? []);
-      setBreaches(bData.data ?? []);
-      setAnalytics(aData.error ? null : aData);
+      const params = new URLSearchParams({ facility_id: DEFAULT_FACILITY_ID, period: filters.period });
+      if (filters.shift && filters.shift !== "all") params.append("shift", filters.shift);
+      if (filters.hospitalUnit && filters.hospitalUnit !== "all")
+        params.append("laboratory", filters.hospitalUnit);
+      if (filters.startDate) params.append("startDate", filters.startDate);
+      if (filters.endDate) params.append("endDate", filters.endDate);
+
+      const res = await fetch(`/api/tat/analytics?${params}`);
+      if (!res.ok) throw new Error("Failed");
+      const json = await res.json();
+      if (!json.error) setData(json);
+      else setData(null);
     } catch {
-      setQueue([]); setSections([]); setBreaches([]); setAnalytics(null);
+      setData(null);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     fetchData();
-    intervalRef.current = setInterval(fetchData, 30_000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period]);
+  }, [fetchData]);
 
-  /* ── Doughnut dataset ── */
-  const doughnutData = analytics?.pieData
-    ? {
-        labels: ["On Time", "Delayed <15 min", "Over Delayed", "Not Uploaded"],
-        datasets: [{
-          data: [
-            analytics.pieData.onTime,
-            analytics.pieData.delayedLess15,
-            analytics.pieData.overDelayed,
-            analytics.pieData.notUploaded,
-          ],
-          backgroundColor: ["#22c55e", "#eab308", "#ef4444", "#94a3b8"],
-          borderWidth: 2,
-          borderColor: "#fff",
-        }],
-      }
-    : null;
+  // Derived chart datasets
+  const pieData = data?.pieData
+    ? [
+        { name: "On Time",             value: data.pieData.onTime        },
+        { name: "Delayed <15 min",      value: data.pieData.delayedLess15 },
+        { name: "Over Delayed",         value: data.pieData.overDelayed   },
+        { name: "Not Uploaded",         value: data.pieData.notUploaded   },
+      ]
+    : [];
 
-  /* ── Daily trend dataset ── */
-  const trendLabels = (analytics?.dailyTrend ?? []).map((d) =>
-    d.date.length === 7
-      ? new Date(d.date + "-01").toLocaleDateString("en-US", { month: "short", year: "2-digit" })
-      : new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-  );
-  const dailyDataset = analytics?.dailyTrend?.length
-    ? {
-        labels: trendLabels,
-        datasets: [
-          { label: "On Time",      data: analytics.dailyTrend.map((d) => d.onTime),      borderColor: "#22c55e", backgroundColor: "rgba(34,197,94,0.08)",  tension: 0.3, fill: true,  pointRadius: 2, borderWidth: 2 },
-          { label: "Delayed",      data: analytics.dailyTrend.map((d) => d.delayed),     borderColor: "#ef4444", backgroundColor: "rgba(239,68,68,0.08)",   tension: 0.3, fill: false, pointRadius: 2, borderWidth: 2 },
-          { label: "Not Uploaded", data: analytics.dailyTrend.map((d) => d.notUploaded), borderColor: "#94a3b8", backgroundColor: "rgba(148,163,184,0.08)", tension: 0.3, fill: false, pointRadius: 2, borderWidth: 2 },
-        ],
-      }
-    : null;
-
-  /* ── Hourly trend dataset ── */
-  const hourlyDataset = analytics?.hourlyTrend?.some((h) => h.delayed + h.onTime + h.notUploaded > 0)
-    ? {
-        labels: analytics.hourlyTrend.map((h) => `${h.hour}:00`),
-        datasets: [
-          { label: "On Time",      data: analytics.hourlyTrend.map((h) => h.onTime),      borderColor: "#22c55e", tension: 0.3, fill: false, pointRadius: 3, borderWidth: 2 },
-          { label: "Delayed",      data: analytics.hourlyTrend.map((h) => h.delayed),     borderColor: "#ef4444", tension: 0.3, fill: false, pointRadius: 3, borderWidth: 2 },
-          { label: "Not Uploaded", data: analytics.hourlyTrend.map((h) => h.notUploaded), borderColor: "#94a3b8", tension: 0.3, fill: false, pointRadius: 3, borderWidth: 2 },
-        ],
-      }
-    : null;
+  const hourlyData = (data?.hourlyTrend ?? []).map((h) => ({
+    ...h,
+    hour: `${String(h.hour).padStart(2, "0")}:00`,
+  }));
 
   return (
-    <div className="flex flex-col min-h-0">
-      {/* Module tab bar */}
-      <ModuleTabBar tabs={MODULE_TABS} />
+    <div className="min-h-screen bg-slate-50">
+      {/* ── Filter Bar ────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-slate-200 px-6 py-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <h1 className="text-xl font-bold text-slate-800 mr-2">TAT</h1>
 
-      <div className="space-y-6 p-6">
-        {/* Page header */}
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">TAT — Turnaround Time</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Performance distribution, daily/hourly trends, queue, breach log</p>
-          </div>
-          <div className="flex items-center gap-2">
+          {/* Period */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Period</label>
             <select
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white"
+              value={filters.period}
+              onChange={(e) => updateFilter("period", e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+              {PERIODS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
             </select>
-            <Link
-              href="/dashboard/lrids"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          </div>
+
+          {/* Shift */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Shift</label>
+            <select
+              value={filters.shift}
+              onChange={(e) => updateFilter("shift", e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              LRIDS Display
-            </Link>
+              {SHIFTS.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Laboratory */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Laboratory</label>
+            <select
+              value={filters.hospitalUnit}
+              onChange={(e) => updateFilter("hospitalUnit", e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              {LABORATORIES.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date range */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Start Date</label>
+            <input
+              type="date"
+              value={filters.startDate}
+              onChange={(e) => updateFilter("startDate", e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">End Date</label>
+            <input
+              type="date"
+              value={filters.endDate}
+              onChange={(e) => updateFilter("endDate", e.target.value)}
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <button
+            onClick={resetFilters}
+            className="text-sm text-emerald-600 hover:text-emerald-700 border border-emerald-200 rounded-lg px-3 py-1.5 hover:bg-emerald-50 transition-colors"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+
+      {/* ── Loading ───────────────────────────────────────────────────── */}
+      {isLoading && (
+        <div className="flex items-center justify-center h-64">
+          <div className="flex gap-1">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="w-2 h-8 bg-emerald-500 rounded animate-bounce"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              />
+            ))}
           </div>
         </div>
+      )}
 
-        {loading ? (
-          <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-500">
-            <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-            Loading…
-          </div>
-        ) : (
-          <>
-            {/* KPI cards */}
-            {analytics?.kpis && (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {[
-                  { icon: XCircle,     label: "Delayed",           value: analytics.kpis.delayedRequests, sub: `of ${analytics.kpis.totalRequests} total`, color: "text-red-600" },
-                  { icon: CheckCircle2,label: "On Time",           value: analytics.kpis.onTimeRequests,  sub: "",                                          color: "text-emerald-600" },
-                  { icon: null,        label: "Avg Daily On Time", value: analytics.kpis.avgDailyOnTime,  sub: "",                                          color: "text-slate-900" },
-                  { icon: null,        label: "Avg Daily Delays",  value: analytics.kpis.avgDailyDelayed, sub: "",                                          color: "text-slate-900" },
-                  { icon: Clock,       label: "Peak Delay Hour",   value: analytics.kpis.mostDelayedHour, sub: "",                                          color: "text-slate-900" },
-                  { icon: Calendar,    label: "Peak Delay Day",    value: analytics.kpis.mostDelayedDay,  sub: "",                                          color: "text-slate-900" },
-                ].map((card) => (
-                  <div key={card.label} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
-                    <div className="flex items-center gap-1.5 text-slate-400 text-xs mb-1">
-                      {card.icon && <card.icon size={12} />}
-                      {card.label}
-                    </div>
-                    <p className={`text-xl font-bold ${card.color}`}>{card.value}</p>
-                    {card.sub && <p className="text-xs text-slate-400 mt-0.5">{card.sub}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Charts row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Doughnut — TAT Performance Distribution */}
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                  <BarChart3 size={16} className="text-emerald-600" />
-                  <span className="font-semibold text-slate-800 text-sm">TAT Performance Distribution</span>
-                </div>
-                <div className="p-4" style={{ height: 300 }}>
-                  {doughnutData ? (
-                    <Doughnut data={doughnutData} options={doughnutOptions} />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                      <BarChart3 size={40} className="opacity-40 mb-2" />
-                      <p className="text-sm">No TAT data for selected period</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Line — Daily / Monthly trend */}
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden lg:col-span-2">
-                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                  <TrendingUp size={16} className="text-emerald-600" />
-                  <span className="font-semibold text-slate-800 text-sm">
-                    {analytics?.granularity === "monthly" ? "Monthly" : "Daily"} TAT Performance Trend
-                  </span>
-                </div>
-                <div className="p-4" style={{ height: 300 }}>
-                  {dailyDataset ? (
-                    <Line data={dailyDataset} options={lineOptions("Daily TAT")} />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                      <TrendingUp size={40} className="opacity-40 mb-2" />
-                      <p className="text-sm">No trend data</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+      {/* ── Main Layout ───────────────────────────────────────────────── */}
+      {!isLoading && (
+        <main className="flex gap-6 p-6">
+          {/* Sidebar */}
+          <aside className="w-72 flex-shrink-0 flex flex-col gap-4">
+            {/* Progress bars */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              {data ? (
+                <>
+                  <ProgressBar
+                    label="Total Delayed Requests"
+                    value={data.kpis.delayedRequests}
+                    total={data.kpis.totalRequests}
+                    color="#ef4444"
+                  />
+                  <ProgressBar
+                    label="Total On-Time Requests"
+                    value={data.kpis.onTimeRequests}
+                    total={data.kpis.totalRequests}
+                    color="#10b981"
+                  />
+                </>
+              ) : (
+                <p className="text-sm text-slate-400 text-center py-4">No data</p>
+              )}
             </div>
 
-            {/* Hourly trend */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                <Clock size={16} className="text-emerald-600" />
-                <span className="font-semibold text-slate-800 text-sm">Hourly TAT Performance Trend</span>
-              </div>
-              <div className="p-4" style={{ height: 260 }}>
-                {hourlyDataset ? (
-                  <Line data={hourlyDataset} options={lineOptions("Hourly TAT")} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                    <Clock size={40} className="opacity-40 mb-2" />
-                    <p className="text-sm">No hourly data</p>
-                  </div>
-                )}
-              </div>
+            {/* KPI Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <KPICard
+                title="Avg Daily On-Time"
+                value={data?.kpis.avgDailyOnTime ?? "—"}
+                icon="✅"
+              />
+              <KPICard
+                title="Avg Daily Delayed"
+                value={data?.kpis.avgDailyDelayed ?? "—"}
+                icon="🕐"
+              />
+              <KPICard
+                title="Avg Daily Not Uploaded"
+                value={data?.kpis.avgDailyNotUploaded ?? "—"}
+                icon="📤"
+              />
+              <KPICard
+                title="Most Delayed Hour"
+                value={data?.kpis.mostDelayedHour ?? "—"}
+                icon="⏳"
+              />
+              <KPICard
+                title="Most Delayed Day"
+                value={data?.kpis.mostDelayedDay ?? "—"}
+                icon="📅"
+                full
+              />
             </div>
+          </aside>
 
-            {/* Queue */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                <Clock size={16} className="text-emerald-600" />
-                <span className="font-semibold text-slate-800 text-sm">In-Progress Queue</span>
-                {queue.length > 0 && (
-                  <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{queue.length}</span>
-                )}
-              </div>
-              <div className="overflow-x-auto max-h-64 overflow-y-auto">
-                {queue.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400 text-sm">No tests in progress</div>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-white border-b border-slate-100">
-                      <tr>
-                        {["Lab #", "Test", "Section", "Elapsed (min)"].map((h) => (
-                          <th key={h} className="text-left px-4 py-2 font-semibold text-slate-600 text-xs uppercase tracking-wide">{h}</th>
+          {/* Charts Area */}
+          <div className="flex-1 min-w-0 flex flex-col gap-6">
+            {/* Row 1 – Pie + Line */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* TAT Distribution */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                  <span className="text-emerald-600">◕</span> TAT Performance Distribution
+                </h3>
+                {pieData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={2}
+                        dataKey="value"
+                        label={({ name, percent }: { name?: string; percent?: number }) =>
+                          (percent ?? 0) > 0.03 ? `${((percent ?? 0) * 100).toFixed(0)}%` : ""
+                        }
+                        labelLine={false}
+                      >
+                        {pieData.map((_, idx) => (
+                          <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {queue.map((r) => (
-                        <tr key={r.id} className={`border-b border-slate-50 ${r.elapsed_minutes != null && r.elapsed_minutes > 60 ? "bg-red-50" : ""}`}>
-                          <td className="px-4 py-2 font-mono text-slate-700">{r.lab_number ?? "—"}</td>
-                          <td className="px-4 py-2 text-slate-700">{r.test_name}</td>
-                          <td className="px-4 py-2 text-slate-500">{r.section}</td>
-                          <td className="px-4 py-2">
-                            <span className={r.elapsed_minutes != null && r.elapsed_minutes > 60 ? "text-red-600 font-semibold" : "text-slate-700"}>
-                              {r.elapsed_minutes ?? "—"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </Pie>
+                      <Tooltip formatter={(v: number | string | undefined) => (v != null && typeof v === "number" ? v.toLocaleString() : String(v ?? ""))} />
+                      <Legend iconSize={12} wrapperStyle={{ fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
+                    No data available
+                  </div>
+                )}
+              </div>
+
+              {/* Daily TAT Trend */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                  <span className="text-emerald-600">📈</span>{" "}
+                  {data?.granularity === "monthly" ? "Monthly" : "Daily"} TAT Performance Trend
+                </h3>
+                {(data?.dailyTrend ?? []).length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <LineChart data={data!.dailyTrend} margin={{ left: 0, right: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(v) => v.slice(5)}
+                      />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip content={<ChartTooltip />} />
+                      <Legend iconSize={12} wrapperStyle={{ fontSize: 12 }} />
+                      <Line
+                        type="monotone"
+                        dataKey="onTime"
+                        name="On Time"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="delayed"
+                        name="Delayed"
+                        stroke="#ef4444"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="notUploaded"
+                        name="Not Uploaded"
+                        stroke="#94a3b8"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
+                    No trend data available
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Section summary + Breach log */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                  <BarChart3 size={16} className="text-emerald-600" />
-                  <span className="font-semibold text-slate-800 text-sm">Per-Section Summary (7d)</span>
+            {/* Row 2 – Hourly */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                <span className="text-emerald-600">🕐</span> Hourly TAT Performance Trend
+              </h3>
+              {hourlyData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={hourlyData} margin={{ left: 0, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="hour" tick={{ fontSize: 9 }} interval={1} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Legend iconSize={12} wrapperStyle={{ fontSize: 12 }} />
+                    <Bar dataKey="onTime"      name="On Time"      stackId="a" fill="#10b981" radius={[0,0,0,0]} />
+                    <Bar dataKey="delayed"     name="Delayed"      stackId="a" fill="#ef4444" radius={[0,0,0,0]} />
+                    <Bar dataKey="notUploaded" name="Not Uploaded" stackId="a" fill="#94a3b8" radius={[3,3,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
+                  No hourly data available
                 </div>
-                <div className="p-4">
-                  {sections.length === 0 ? (
-                    <p className="text-sm text-slate-400">No data</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {sections.map((s) => (
-                        <div key={s.section} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
-                          <span className="font-medium text-slate-800 text-sm">{s.section}</span>
-                          <div className="flex items-center gap-3">
-                            <span className="text-slate-500 text-xs">{s.avg_tat} min avg (target: {s.target})</span>
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${s.on_target ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                              {s.on_target ? "On target" : "Over"}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                  <AlertTriangle size={16} className="text-red-500" />
-                  <span className="font-semibold text-slate-800 text-sm">Breach Log</span>
-                  {breaches.length > 0 && (
-                    <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-600">{breaches.length}</span>
-                  )}
-                </div>
-                <div className="p-4 max-h-64 overflow-y-auto">
-                  {breaches.length === 0 ? (
-                    <p className="text-sm text-slate-400">No breaches</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {breaches.map((b) => (
-                        <div key={b.id} className="py-2 border-b border-slate-50 last:border-0 text-sm">
-                          <div className="flex justify-between">
-                            <span className="font-medium text-slate-800">{b.request?.lab_number ?? "—"} · {b.request?.test_name}</span>
-                            <span className="text-red-600 font-semibold">+{b.breach_minutes} min</span>
-                          </div>
-                          <p className="text-xs text-slate-400 mt-0.5">{b.request?.section} · {new Date(b.detected_at).toLocaleString()}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
-
-            {/* AI Anomaly Detection — inline */}
-            <AnomalyPanel facilityId={DEFAULT_FACILITY_ID} days={7} />
-          </>
-        )}
-      </div>
+          </div>
+        </main>
+      )}
     </div>
   );
 }
