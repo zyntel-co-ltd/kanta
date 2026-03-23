@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 23 March 2026 (Phase 16 — Lab Metrics rebuilt from zyntel-dashboard)  
+**Last updated:** 23 March 2026 (Phase 17 — Lab Metrics tabs + sidebar collapsible groups)  
 **Updated by:** Cursor
 
 ---
@@ -52,6 +52,54 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 14: Medtbank-style sidebar, green & white palette** *(23 March 2026)* — see section below
 - [x] **Phase 15: Quality Management rebuilt from Lab-hub** *(23 March 2026)* — see section below
 - [x] **Phase 16: Lab Metrics rebuilt from zyntel-dashboard** *(23 March 2026)* — see section below
+- [x] **Phase 17: Lab Metrics top tabs + collapsible sidebar groups** *(23 March 2026)* — see section below
+
+### Phase 17 — Lab Metrics Top Tabs + Collapsible Sidebar Groups (23 March 2026)
+
+#### Summary
+Three UX improvements to navigation consistency and sidebar cleanliness.
+
+#### Changes
+
+**Lab Metrics tab bar (all 6 pages)**
+- New shared `components/dashboard/LabMetricsTabs.tsx` component — horizontal pill tab bar with TAT, Tests, Numbers, Meta, Revenue, and Performance tabs
+- Active tab highlighted in emerald; inactive tabs show slate with hover state
+- Injected as the first section (above the filter bar) on every Lab Metrics page so users can switch between metrics without touching the sidebar
+
+**Sidebar — Lab Metrics now collapsible**
+- "Lab Metrics" group converted to a collapsible accordion (same pattern as Quality Management and Samples)
+- Parent row shows `BarChart3` icon; clicking navigates to `/dashboard/tat` and expands sub-items
+- `activePaths` config ensures the group highlights and auto-expands when on any of the 6 metrics routes
+- Sub-items (TAT, Tests, Numbers, Meta, Revenue, Performance) hidden until the accordion is open
+
+**Sidebar — Asset Management now collapsible**
+- "Asset Management" group converted to a collapsible accordion
+- Parent row shows `ScanLine` icon; clicking navigates to `/dashboard/equipment`
+- Sub-items (Overview, Scan, Equipment, Maintenance, Refrigerator, Analytics, Reports) hidden until the accordion is open
+- Auto-expands when navigating to any Asset Management page
+
+**Vercel build fix (same session)**
+- Fixed TypeScript error: `app/api/samples/discarded/[id]/route.ts`, `racks/[id]/route.ts`, `racks/[id]/discard/route.ts`, and `sample/[id]/route.ts` had `Params = { params: { id: string } }` which Next.js 16 requires as `Promise<{ id: string }>`
+- All 4 files updated; build now passes
+
+#### Files changed
+
+| File | Change |
+|------|--------|
+| `components/dashboard/LabMetricsTabs.tsx` | **New** — shared tab-bar component for all Lab Metrics pages |
+| `components/dashboard/Sidebar.tsx` | Lab Metrics + Asset Management converted to collapsible accordions; `activePaths` added to collapsible type; `useEffect` updated to auto-expand for all metric and asset paths |
+| `app/dashboard/tat/page.tsx` | `LabMetricsTabs` injected at top |
+| `app/dashboard/tests/page.tsx` | `LabMetricsTabs` injected at top |
+| `app/dashboard/numbers/page.tsx` | `LabMetricsTabs` injected at top |
+| `app/dashboard/meta/page.tsx` | `LabMetricsTabs` injected at top |
+| `app/dashboard/revenue/page.tsx` | `LabMetricsTabs` injected at top |
+| `app/dashboard/performance/page.tsx` | `LabMetricsTabs` injected at top |
+| `app/api/samples/discarded/[id]/route.ts` | `Params` type updated to `Promise<{id}>` for Next.js 16 |
+| `app/api/samples/racks/[id]/route.ts` | `Params` type updated to `Promise<{id}>` for Next.js 16 |
+| `app/api/samples/racks/[id]/discard/route.ts` | `Params` type updated to `Promise<{id}>` for Next.js 16 |
+| `app/api/samples/sample/[id]/route.ts` | `Params` type updated to `Promise<{id}>` for Next.js 16 |
+
+---
 
 ### Phase 16 — Lab Metrics Rebuilt from zyntel-dashboard (23 March 2026)
 
@@ -473,8 +521,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | Phase 16 — Lab Metrics rebuilt from zyntel-dashboard | Live on Vercel |
-| `development` | Integration/Preview | Phase 16 — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | Phase 17 — Lab Metrics tabs + collapsible sidebar groups | Live on Vercel |
+| `development` | Integration/Preview | Phase 17 — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---
@@ -522,12 +570,13 @@ Set these in Vercel **without surrounding quotes** — for **both Production and
 - **Base branch:** `main` (or `development` for features)
 - **Navigation model:** Collapsible white sidebar (`components/dashboard/Sidebar.tsx`) handles all navigation. AppTabBar removed. Homepage (`/dashboard/home`) is the app selector — clicking a card navigates to the first page of that app.
 - **3 app domains:**
-  - **Lab Metrics** → `/dashboard/tat`, `/dashboard/tests`, `/dashboard/numbers`, `/dashboard/meta`, `/dashboard/revenue`
+  - **Lab Metrics** → `/dashboard/tat`, `/dashboard/tests`, `/dashboard/numbers`, `/dashboard/meta`, `/dashboard/revenue`, `/dashboard/performance`
   - **Quality Management** → `/dashboard/qc`
   - **Asset Management** → `/dashboard`, `/dashboard/scan`, `/dashboard/equipment`, `/dashboard/maintenance`, `/dashboard/refrigerator`, `/dashboard/analytics`, `/dashboard/reports`
 - **Key files:**
   - `app/dashboard/home/page.tsx` — 3-app workspace hub (homepage)
   - `app/dashboard/page.tsx` — Assets Overview (KPIs / charts / TickerBar / FAB)
+  - `components/dashboard/LabMetricsTabs.tsx` — Shared tab bar for all 6 Lab Metrics pages
   - `components/dashboard/AppTabBar.tsx` — Context-aware horizontal tab navigation
   - `components/dashboard/TopBar.tsx` — Top bar (search, sync status, user)
   - `lib/SidebarLayoutContext.tsx` — Retained for TopBar compatibility
