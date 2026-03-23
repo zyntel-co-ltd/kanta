@@ -145,13 +145,16 @@ function getInitials(user: {
 const BG       = "#065f46";   // solid emerald — used for sidebar + notch fill
 const ACTIVE   = "#047857";   // icon/text colour on white pill
 const INACTIVE = "rgba(255,255,255,0.72)";
-const PILL_L   = 10;          // px from left where white pill starts (both states)
-const NOTCH    = 16;          // px — size of corner-notch squares
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const { collapsed, setCollapsed } = useSidebarLayout();
+
+  // More indent in collapsed so the green strip is clearly visible on the left
+  const PILL_L = collapsed ? 12 : 10;
+  // Larger notch = more dramatic concave curve at the pill corners
+  const NOTCH = 18;
 
   return (
     <aside
@@ -160,7 +163,7 @@ export default function Sidebar() {
         "transition-all duration-300 ease-in-out",
         collapsed ? "w-[68px]" : "w-[248px]"
       )}
-      style={{ backgroundColor: BG }}
+      style={{ backgroundColor: BG, borderRadius: "0 24px 24px 0" }}
     >
 
       {/* ── Logo ── */}
@@ -206,11 +209,11 @@ export default function Sidebar() {
                   return (
                     <div key={href + label} className="relative">
 
-                      {/* ── Active white pill ── */}
+                      {/* ── Active white pill — straight edges; notches create all corner curves ── */}
                       {active && (
                         <span
                           className="absolute inset-y-0 right-0 bg-white"
-                          style={{ left: PILL_L, borderRadius: "12px 0 0 12px", zIndex: 1 }}
+                          style={{ left: PILL_L, borderRadius: 0, zIndex: 1 }}
                         />
                       )}
 
