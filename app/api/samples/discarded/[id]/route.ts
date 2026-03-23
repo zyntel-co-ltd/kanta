@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 /** DELETE /api/samples/discarded/:id
  *  Permanently removes a discarded sample record.

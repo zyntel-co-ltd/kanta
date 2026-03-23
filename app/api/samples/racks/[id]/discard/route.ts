@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 
-type Params = { params: { id: string } };
+type Params = { params: Promise<{ id: string }> };
 
 /** POST /api/samples/racks/:id/discard
  *  Marks every non-discarded sample in the rack as discarded (sets discarded_at = now)
