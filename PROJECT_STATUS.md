@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 23 March 2026 (Phase 14 — Medtbank-style Sidebar, Green & White)  
+**Last updated:** 23 March 2026 (Phase 15 — Quality Management rebuilt from Lab-hub)  
 **Updated by:** Cursor
 
 ---
@@ -50,6 +50,35 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 12: Emerald theme, sidebar cutout, app cards, logout** *(22 March 2026)* — see section below
 - [x] **Phase 13: Sidebar toggle fix, app cards simplified, TypeScript fix** *(22 March 2026)* — see section below
 - [x] **Phase 14: Medtbank-style sidebar, green & white palette** *(23 March 2026)* — see section below
+- [x] **Phase 15: Quality Management rebuilt from Lab-hub** *(23 March 2026)* — see section below
+
+### Phase 15 — Quality Management Rebuilt from Lab-hub (23 March 2026)
+
+The entire `/dashboard/qc` Quality Management section was replaced with an exact port of the Lab-hub app's QC interface, styled with Kanta's emerald/slate theme.
+
+#### What changed
+
+- [x] **Complete page rewrite** — Previous Kanta QC page (7 tabs backed by Supabase API) fully deleted and replaced with Lab-hub QC content (8 tabs backed by Lab-hub backend)
+- [x] **8-tab interface matching Lab-hub** — Tab bar mirrors Lab-hub's `QC.js` navigation exactly:
+  - **QC Config** — Full config form (QC Name, Level, Lot #, Expiry, Mean, SD, Units) + live table with Enable / Disable / Edit / Delete actions
+  - **Data Entry** — Entry form (config selector, units display, date, value) + Draft Entries table with Edit / Submit / Delete per row
+  - **Visualization** — Dual Levey-Jennings charts via `recharts`; Westgard rule colouring (green/amber/red dots); dual-config overlay; date-range filter; `±1SD/2SD/3SD` reference lines
+  - **QC Calculator** — 25-value Mean & SD calculator with CV%, ±1/2/3 SD ranges; results persisted to `localStorage`
+  - **QC Stats** — Date-range filtered statistics summary (count, mean, SD, min, max) + submitted-values table with Mark Resolved and Delete; CSV export
+  - **Qual. Config** — Full qualitative QC config form with test name, result type, frequency, manufacturer, lot number, expiry, and per-control levels/expected results table
+  - **Qual. Entry** — Control-results entry with interactive Pass/Fail buttons; overall pass/fail banner; corrective-action textarea (required on any failure); Save Draft and Save & Submit workflow
+  - **Qual. Log** — Stats summary cards (Total Runs / Passed / Failed / Pass Rate); filterable run history with expandable detail rows showing per-control concordance/discordance; CSV export
+- [x] **Lab-hub API connection** — All QC data reads/writes go to Lab-hub backend (`/api/GetItems`, `/api/PostItems`, `/api/PutItem`, `/api/DeleteItem`) via configurable URL (stored in `localStorage` under `kanta-lab-hub-url`, same key as Samples tab)
+- [x] **Connection banner** — Live connected/disconnected status with Configure and Retry buttons; Settings modal for Lab-hub URL
+- [x] **Emerald theme applied** — All Lab-hub blue (`bg-blue-*`, `text-blue-*`, `border-blue-*`, `focus:ring-blue-*`) replaced with Kanta's emerald/slate palette throughout
+- [x] **Dependencies adapted** — `dayjs` replaced with native Date methods; `xlsx` Excel export replaced with CSV download; `html2canvas`/`jspdf` PDF export removed (libraries not installed); `ConfirmModal` component inlined; `recharts` (already in `package.json`) used for charts; `FormContext` inlined with `useState`
+- [x] **No TypeScript errors** — Full TypeScript port with `QcItem = Record<string, any>` for the flat Lab-hub data store; all components strongly typed
+
+#### Files changed
+
+| File | Change |
+|------|--------|
+| `app/dashboard/qc/page.tsx` | Complete rewrite — 1 729 lines; 8-tab Lab-hub QC interface with Kanta emerald theme |
 
 ### Phase 14 — Medtbank-Style Sidebar, Green & White (23 March 2026)
 
@@ -406,8 +435,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | Phase 10 — AI Intelligence Layer | Live on Vercel |
-| `development` | Integration/Preview | Phase 10 — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | Phase 15 — QC rebuilt from Lab-hub | Live on Vercel |
+| `development` | Integration/Preview | Phase 15 — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---

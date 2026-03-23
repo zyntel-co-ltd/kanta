@@ -1,852 +1,180 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import LeveyJenningsChart from "@/components/qc/LeveyJenningsChart";
-import type { LJPoint } from "@/components/qc/LeveyJenningsChart";
-import QuantitativeQCTab from "@/components/qc/QuantitativeQCTab";
+import { useEffect, useState, useCallback, useMemo, Fragment } from "react";
 import {
-  ShieldCheck,
-  AlertTriangle,
-  Upload,
-  BarChart3,
-  TestTube,
-  Calculator,
-  TrendingUp,
-  Beaker,
-  CheckCircle2,
-  XCircle,
-  ClipboardList,
-  Copy,
-  Check,
-  FlaskConical,
-  Grid3X3,
-  Package,
-  Search,
-  Trash2,
-  Archive,
-  Plus,
-  Download,
-  Filter,
-  Wifi,
-  WifiOff,
-  RefreshCw,
-  Settings2,
+  ShieldCheck, AlertTriangle, BarChart3, TestTube, Calculator,
+  TrendingUp, Settings2, Wifi, WifiOff, RefreshCw, ClipboardList,
+  Download, Copy, Check, Plus, FlaskConical, Activity,
+  ChevronDown, ChevronUp, X as XIcon,
 } from "lucide-react";
-import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine,
+  ResponsiveContainer,
+} from "recharts";
 
-/* ─── Types ─── */
-type Material = {
-  id: string;
-  name: string;
-  analyte: string;
-  level: string;
-  last_value: number | null;
-  last_run_at: string | null;
-  pass: boolean | null;
-};
-type Violation = {
-  id: string;
-  rule: string;
-  detected_at: string;
-  run?: { value: number; material_id: string };
-};
-type QualConfig = {
-  id: string;
-  test_name: string;
-  result_type: string;
-  controls: Array<{ name: string; expectedResult: string }>;
-};
-type QualEntry = {
-  id: string;
-  run_at: string;
-  overall_pass: boolean;
-  control_results: Array<{ controlName: string; expectedResult: string; observedResult: string }>;
-  qualitative_qc_configs?: { test_name: string };
-};
-type QCRun = {
-  id: string;
-  material_id: string;
-  value: number;
-  run_at: string;
-  pass: boolean;
+/* ─────────────────── Theme constants ─────────────────── */
+const inputCls =
+  "w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 " +
+  "placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 " +
+  "focus:border-emerald-400 transition-all text-sm";
+const selectCls =
+  "w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 " +
+  "focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all text-sm";
+const btnPrimary =
+  "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 " +
+  "text-white text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed";
+const btnSecondary =
+  "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 " +
+  "text-slate-700 text-sm font-semibold transition-all";
+const tblHead = "px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider";
+const tblCell = "px-4 py-3 text-sm text-slate-700 whitespace-nowrap";
+
+/* ─────────────────── Lab-hub URL key ─────────────────── */
+const LAB_HUB_URL_KEY = "kanta-lab-hub-url";
+
+/* ─────────────────── Date / CSV helpers ─────────────────── */
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const fmtDate = (d: string) => { try { return new Date(d).toLocaleDateString(); } catch { return d ?? "—"; } };
+const fmtShort = (d: string) => {
+  try { return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" }); } catch { return d; }
 };
 
-type Tab = "overview" | "lj" | "westgard" | "qualitative" | "quantitative" | "calculator" | "stats" | "samples";
+function downloadCSV(rows: (string | number | null | undefined)[][], filename: string) {
+  const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
 
-const TABS: { id: Tab; label: string; icon: typeof ShieldCheck }[] = [
-  { id: "overview",     label: "Overview",        icon: ShieldCheck    },
-  { id: "lj",           label: "L-J Chart",       icon: BarChart3      },
-  { id: "westgard",     label: "Westgard",         icon: AlertTriangle  },
-  { id: "qualitative",  label: "Qualitative QC",   icon: TestTube       },
-  { id: "quantitative", label: "Quantitative QC",  icon: TrendingUp     },
-  { id: "calculator",   label: "QC Calculator",    icon: Calculator     },
-  { id: "stats",        label: "QC Stats",         icon: BarChart3      },
-  { id: "samples",      label: "Samples",          icon: FlaskConical   },
-];
+/* ─────────────────── Types ─────────────────── */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type QcItem = Record<string, any>;
+type ConfirmState = {
+  open: boolean;
+  title: string;
+  message: React.ReactNode;
+  confirmLabel: string;
+  variant?: "danger" | "warning" | "success";
+  onConfirm: (() => void) | null;
+};
+const closedConfirm: ConfirmState = { open: false, title: "", message: "", confirmLabel: "Confirm", onConfirm: null };
 
-/* ─── Stat card ─── */
-function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+/* ─────────────────── Westgard rule application ─────────────────── */
+function applyWestgard(data: QcItem[], mean: number, sd: number): QcItem[] {
+  const ann = data.map((d) => ({ ...d, _status: "normal" as string }));
+  for (let i = 0; i < ann.length; i++) {
+    const v = Number(ann[i].value);
+    const diff = Math.abs(v - mean);
+    if (diff > 2 * sd && diff <= 3 * sd) ann[i]._status = "warning";
+    if (diff > 3 * sd) ann[i]._status = "failure";
+    if (i > 0) {
+      const pv = Number(ann[i - 1].value);
+      const pd = pv - mean, cd = v - mean;
+      if (Math.abs(pd) > 2 * sd && Math.sign(pd) === Math.sign(cd) && Math.abs(cd) > 2 * sd) {
+        ann[i - 1]._status = "failure"; ann[i]._status = "failure";
+      }
+      if ((v > mean + 2 * sd && pv < mean - 2 * sd) || (v < mean - 2 * sd && pv > mean + 2 * sd)) {
+        ann[i - 1]._status = "failure"; ann[i]._status = "failure";
+      }
+    }
+  }
+  return ann;
+}
+
+/* ─────────────────── Lab-hub API factory ─────────────────── */
+function makeApi(labHubUrl: string) {
+  const getHeaders = () => {
+    const token = (() => { try { return localStorage.getItem("token") ?? ""; } catch { return ""; } })();
+    const h: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) h["Authorization"] = `Bearer ${token}`;
+    return h;
+  };
+  return {
+    getItems: () => fetch(`${labHubUrl}/api/GetItems`, { headers: getHeaders() }).then((r) => r.json()),
+    postItem: (data: QcItem) => fetch(`${labHubUrl}/api/PostItems`, { method: "POST", headers: getHeaders(), body: JSON.stringify(data) }).then((r) => r.json()),
+    putItem:  (data: QcItem) => fetch(`${labHubUrl}/api/PutItem`,   { method: "PUT",  headers: getHeaders(), body: JSON.stringify(data) }).then((r) => r.json()),
+    deleteItem: (id: string) => fetch(`${labHubUrl}/api/DeleteItem?id=${encodeURIComponent(id)}`, { method: "DELETE", headers: getHeaders() }).then((r) => r.json()),
+  };
+}
+
+/* ─────────────────── ConfirmModal ─────────────────── */
+function ConfirmModal({ open, title, message, confirmLabel, variant = "danger", onConfirm, onCancel }: ConfirmState & { onCancel: () => void }) {
+  if (!open) return null;
+  const cls =
+    variant === "danger"  ? "bg-red-600 hover:bg-red-700" :
+    variant === "warning" ? "bg-amber-500 hover:bg-amber-600" :
+    "bg-emerald-600 hover:bg-emerald-700";
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1">{label}</p>
-      <p className="text-2xl font-bold text-slate-900" style={{ letterSpacing: "-0.03em" }}>{value}</p>
-      {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={onCancel}>
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <h3 className="font-bold text-slate-900 mb-2 text-base">{title}</h3>
+        <div className="text-sm text-slate-600 mb-5">{message}</div>
+        <div className="flex gap-3">
+          <button onClick={() => onConfirm?.()} className={`flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition-all ${cls}`}>{confirmLabel}</button>
+          <button onClick={onCancel} className={btnSecondary}>Cancel</button>
+        </div>
+      </div>
     </div>
   );
 }
 
-/* ─── Section heading ─── */
-function SectionHead({ icon: Icon, title }: { icon: typeof ShieldCheck; title: string }) {
+/* ─────────────────── SectionHead ─────────────────── */
+function SectionHead({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-4">
-      <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+      <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
         <Icon size={14} className="text-emerald-600" />
       </div>
-      <h3 className="font-semibold text-slate-800" style={{ fontSize: "0.9375rem", letterSpacing: "-0.01em" }}>
-        {title}
-      </h3>
+      <h3 className="font-semibold text-slate-800" style={{ fontSize: "0.9375rem", letterSpacing: "-0.01em" }}>{title}</h3>
     </div>
   );
 }
 
-/* ─── Input / Select helpers ─── */
-const inputCls = "w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all text-sm";
-const selectCls = "w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all text-sm";
-const btnPrimary = "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-all disabled:opacity-50";
-const btnSecondary = "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-all";
+/* ─────────────────── PassBadge ─────────────────── */
+function PassBadge({ pass }: { pass: boolean }) {
+  return pass
+    ? <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Pass</span>
+    : <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Fail</span>;
+}
+
+/* ─────────────────── Tabs ─────────────────── */
+type Tab = "config" | "data" | "visual" | "calc" | "stats" | "qual-config" | "qual-entry" | "qual-log";
+const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
+  { id: "config",      label: "QC Config",     icon: ShieldCheck   },
+  { id: "data",        label: "Data Entry",    icon: ClipboardList },
+  { id: "visual",      label: "Visualization", icon: BarChart3     },
+  { id: "calc",        label: "QC Calculator", icon: Calculator    },
+  { id: "stats",       label: "QC Stats",      icon: TrendingUp    },
+  { id: "qual-config", label: "Qual. Config",  icon: FlaskConical  },
+  { id: "qual-entry",  label: "Qual. Entry",   icon: TestTube      },
+  { id: "qual-log",    label: "Qual. Log",     icon: Activity      },
+];
 
 /* ═══════════════════════════════════════════════════════════ */
 /*  MAIN PAGE                                                  */
 /* ═══════════════════════════════════════════════════════════ */
 export default function QCPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [violations, setViolations] = useState<Violation[]>([]);
-  const [qualConfigs, setQualConfigs] = useState<QualConfig[]>([]);
-  const [qualEntries, setQualEntries] = useState<QualEntry[]>([]);
-  const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
-  const [chartData, setChartData] = useState<{ points: LJPoint[]; mean: number; sd: number } | null>(null);
-  const [importFile, setImportFile] = useState<File | null>(null);
-  const [importing, setImporting] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    try {
-      const [mRes, vRes, qcRes, qeRes] = await Promise.all([
-        fetch(`/api/qc/materials?facility_id=${DEFAULT_FACILITY_ID}`),
-        fetch(`/api/qc/violations?facility_id=${DEFAULT_FACILITY_ID}&limit=50`),
-        fetch(`/api/qc/qualitative/configs?facility_id=${DEFAULT_FACILITY_ID}`),
-        fetch(`/api/qc/qualitative/entries?facility_id=${DEFAULT_FACILITY_ID}&limit=50`),
-      ]);
-      const [mData, vData, qcData, qeData] = await Promise.all([mRes.json(), vRes.json(), qcRes.json(), qeRes.json()]);
-      setMaterials(mData.data ?? []);
-      setViolations(vData.data ?? []);
-      setQualConfigs(qcData.data ?? []);
-      setQualEntries(qeData.data ?? []);
-    } catch {
-      setMaterials([]); setViolations([]); setQualConfigs([]); setQualEntries([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  useEffect(() => {
-    if (!selectedMaterial) { setChartData(null); return; }
-    fetch(`/api/qc/runs?material_id=${selectedMaterial}&limit=50`)
-      .then((r) => r.json())
-      .then((j) => setChartData(j.data ?? null))
-      .catch(() => setChartData(null));
-  }, [selectedMaterial]);
-
-  const handleImport = async () => {
-    if (!importFile) return;
-    setImporting(true);
-    try {
-      const form = new FormData();
-      form.append("file", importFile);
-      const res = await fetch("/api/qc/import", { method: "POST", headers: { "x-facility-id": DEFAULT_FACILITY_ID }, body: form });
-      const json = await res.json();
-      if (json.error) throw new Error(json.error);
-      fetchData();
-      setImportFile(null);
-    } catch (e) { alert((e as Error).message); }
-    finally { setImporting(false); }
-  };
-
-  const passing = materials.filter((m) => m.pass === true).length;
-  const failing = materials.filter((m) => m.pass === false).length;
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-7 h-7 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-slate-500">Loading QC data…</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-[1280px] space-y-5">
-
-      {/* ── Page header ── */}
-      <div className="flex items-start justify-between animate-slide-up">
-        <div>
-          <p className="text-eyebrow mb-1">Quality Management</p>
-          <h1 className="text-slate-900" style={{ fontSize: "1.625rem", fontWeight: 700, letterSpacing: "-0.025em" }}>
-            Quality Control
-          </h1>
-          <p className="text-slate-500 mt-0.5" style={{ fontSize: "0.875rem" }}>
-            Quantitative L-J, Westgard rules, qualitative QC, calculator and statistics.
-          </p>
-        </div>
-        {/* Import CSV (visible when on overview or lj) */}
-        {(activeTab === "overview" || activeTab === "lj") && (
-          <div className="flex items-center gap-2">
-            <label className={btnSecondary + " cursor-pointer"}>
-              <Upload size={14} /> Import CSV
-              <input type="file" accept=".csv" className="hidden" onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} />
-            </label>
-            {importFile && (
-              <button onClick={handleImport} disabled={importing} className={btnPrimary}>
-                {importing ? "Uploading…" : "Upload"}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── KPI cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-slide-up stagger-1">
-        <StatCard label="Materials" value={materials.length} sub="Active analytes" />
-        <StatCard label="Passing" value={passing} sub="Latest run pass" />
-        <StatCard label="Failing" value={failing} sub="Needs attention" />
-        <StatCard label="Violations" value={violations.length} sub="Westgard flags" />
-      </div>
-
-      {/* ── Tab bar — underline style ── */}
-      <div className="flex items-center border-b border-slate-200 overflow-x-auto animate-slide-up stagger-2">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setActiveTab(id)}
-            className={`inline-flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-all ${
-              activeTab === id
-                ? "border-emerald-500 text-emerald-700"
-                : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
-            }`}
-          >
-            <Icon size={13} />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Tab content ── */}
-      <div className="animate-fade-in">
-        {activeTab === "overview"     && <OverviewTab materials={materials} violations={violations} selectedMaterial={selectedMaterial} setSelectedMaterial={setSelectedMaterial} />}
-        {activeTab === "lj"           && <LJTab materials={materials} chartData={chartData} selectedMaterial={selectedMaterial} setSelectedMaterial={setSelectedMaterial} />}
-        {activeTab === "westgard"     && <WestgardTab violations={violations} />}
-        {activeTab === "qualitative"  && <QualitativeTab configs={qualConfigs} entries={qualEntries} facilityId={DEFAULT_FACILITY_ID} onRefresh={fetchData} />}
-        {activeTab === "quantitative" && <QuantitativeQCTab facilityId={DEFAULT_FACILITY_ID} materials={materials} />}
-        {activeTab === "calculator"   && <CalculatorTab />}
-        {activeTab === "stats"        && <StatsTab materials={materials} />}
-        {activeTab === "samples"      && <SamplesTab />}
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════ */
-/*  OVERVIEW TAB                                               */
-/* ═══════════════════════════════════════════════════════════ */
-function OverviewTab({ materials, violations, selectedMaterial, setSelectedMaterial }: {
-  materials: Material[];
-  violations: Violation[];
-  selectedMaterial: string | null;
-  setSelectedMaterial: (id: string | null) => void;
-}) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-        <SectionHead icon={Beaker} title="Active Materials" />
-        {materials.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-8">No materials. Import from Lab-hub CSV.</p>
-        ) : (
-          <div className="space-y-1.5">
-            {materials.map((m) => (
-              <button key={m.id} onClick={() => setSelectedMaterial(selectedMaterial === m.id ? null : m.id)}
-                className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-sm ${selectedMaterial === m.id ? "bg-emerald-50 ring-1 ring-emerald-200" : "hover:bg-slate-50"}`}
-              >
-                <div>
-                  <p className="font-medium text-slate-800">{m.name}</p>
-                  {m.analyte && <p className="text-xs text-slate-400">{m.analyte}</p>}
-                </div>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${m.pass === true ? "bg-emerald-100 text-emerald-700" : m.pass === false ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-500"}`}>
-                  {m.pass === true ? "Pass" : m.pass === false ? "Fail" : "—"}
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-        <SectionHead icon={AlertTriangle} title="Recent Violations" />
-        {violations.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-8">No Westgard violations.</p>
-        ) : (
-          <div className="space-y-2">
-            {violations.slice(0, 8).map((v) => (
-              <div key={v.id} className="flex items-start gap-3 py-2 border-b border-slate-50 last:border-0">
-                <div className="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <AlertTriangle size={12} className="text-red-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-red-700">{v.rule}</p>
-                  <p className="text-xs text-slate-400">{new Date(v.detected_at).toLocaleString()}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════ */
-/*  L-J CHART TAB                                              */
-/* ═══════════════════════════════════════════════════════════ */
-function LJTab({ materials, chartData, selectedMaterial, setSelectedMaterial }: {
-  materials: Material[];
-  chartData: { points: LJPoint[]; mean: number; sd: number } | null;
-  selectedMaterial: string | null;
-  setSelectedMaterial: (id: string | null) => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-        <SectionHead icon={Beaker} title="Select material to plot" />
-        <div className="flex flex-wrap gap-2">
-          {materials.length === 0
-            ? <p className="text-sm text-slate-400">No materials. Import a Lab-hub CSV first.</p>
-            : materials.map((m) => (
-              <button key={m.id} onClick={() => setSelectedMaterial(selectedMaterial === m.id ? null : m.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-sm font-medium border transition-all ${selectedMaterial === m.id ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-600 border-slate-200 hover:border-emerald-300"}`}
-              >
-                {m.name}
-              </button>
-            ))}
-        </div>
-      </div>
-      {selectedMaterial && chartData ? (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-          <SectionHead icon={BarChart3} title="Levey-Jennings Chart" />
-          <div className="overflow-x-auto">
-            <LeveyJenningsChart data={chartData.points} mean={chartData.mean} sd={chartData.sd} width={720} height={340} />
-          </div>
-          <div className="mt-4 flex gap-4 text-xs text-slate-500">
-            <span>Mean: <strong className="text-slate-700">{chartData.mean.toFixed(3)}</strong></span>
-            <span>SD: <strong className="text-slate-700">{chartData.sd.toFixed(3)}</strong></span>
-            <span>±1SD: <strong className="text-slate-700">{(chartData.mean - chartData.sd).toFixed(3)} – {(chartData.mean + chartData.sd).toFixed(3)}</strong></span>
-            <span>±2SD: <strong className="text-slate-700">{(chartData.mean - 2 * chartData.sd).toFixed(3)} – {(chartData.mean + 2 * chartData.sd).toFixed(3)}</strong></span>
-          </div>
-        </div>
-      ) : selectedMaterial ? (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 text-center text-slate-400 text-sm">No run data for this material yet.</div>
-      ) : null}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════ */
-/*  WESTGARD TAB                                               */
-/* ═══════════════════════════════════════════════════════════ */
-function WestgardTab({ violations }: { violations: Violation[] }) {
-  return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-      <SectionHead icon={AlertTriangle} title="Westgard Violations Log" />
-      {violations.length === 0 ? (
-        <div className="text-center py-12">
-          <CheckCircle2 size={32} className="text-emerald-400 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm">No Westgard violations detected.</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100">
-                <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Rule</th>
-                <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Value</th>
-                <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Detected</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {violations.map((v) => (
-                <tr key={v.id} className="hover:bg-red-50/40 transition-colors">
-                  <td className="py-3 px-3">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">
-                      <AlertTriangle size={10} /> {v.rule}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 font-mono text-slate-700">{v.run?.value ?? "—"}</td>
-                  <td className="py-3 px-3 text-slate-500">{new Date(v.detected_at).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════ */
-/*  QUALITATIVE QC TAB (ported from existing Kanta code)       */
-/* ═══════════════════════════════════════════════════════════ */
-function QualitativeTab({ configs, entries, facilityId, onRefresh }: {
-  configs: QualConfig[];
-  entries: QualEntry[];
-  facilityId: string;
-  onRefresh: () => void;
-}) {
-  const [showConfigForm, setShowConfigForm] = useState(false);
-  const [configForm, setConfigForm] = useState({ test_name: "", result_type: "Positive / Negative", controls: [{ name: "", expectedResult: "" }] });
-  const [selectedConfigId, setSelectedConfigId] = useState("");
-  const [entryForm, setEntryForm] = useState({ run_at: new Date().toISOString().slice(0, 10), control_results: [] as Array<{ controlName: string; expectedResult: string; observedResult: string }>, corrective_action: "" });
-  const [saving, setSaving] = useState(false);
-
-  const selectedConfig = configs.find((c) => c.id === selectedConfigId);
-  const resultOptions = selectedConfig?.result_type?.split(" / ").map((s) => s.trim()) ?? ["Positive", "Negative"];
-
-  useEffect(() => {
-    if (!selectedConfigId || !selectedConfig) { setEntryForm((p) => ({ ...p, control_results: [] })); return; }
-    setEntryForm((p) => ({ ...p, control_results: (selectedConfig.controls ?? []).map((c) => ({ controlName: c.name, expectedResult: c.expectedResult, observedResult: "" })) }));
-  }, [selectedConfigId, selectedConfig]);
-
-  const handleSaveConfig = async () => {
-    if (!configForm.test_name.trim()) return;
-    const controls = configForm.controls.filter((c) => c.name.trim() && c.expectedResult);
-    if (controls.length === 0) return;
-    setSaving(true);
-    try {
-      await fetch("/api/qc/qualitative/configs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ facility_id: facilityId, test_name: configForm.test_name.trim(), result_type: configForm.result_type, controls }) });
-      setShowConfigForm(false);
-      setConfigForm({ test_name: "", result_type: "Positive / Negative", controls: [{ name: "", expectedResult: "" }] });
-      onRefresh();
-    } catch { alert("Failed to save config"); }
-    finally { setSaving(false); }
-  };
-
-  const handleSaveEntry = async () => {
-    if (!selectedConfigId || !entryForm.run_at) return;
-    if (!entryForm.control_results.every((r) => r.observedResult)) return;
-    const overallPass = entryForm.control_results.every((r) => r.observedResult === r.expectedResult);
-    setSaving(true);
-    try {
-      await fetch("/api/qc/qualitative/entries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ facility_id: facilityId, config_id: selectedConfigId, run_at: entryForm.run_at, control_results: entryForm.control_results, overall_pass: overallPass, corrective_action: entryForm.corrective_action || null, submitted: true }) });
-      setSelectedConfigId("");
-      setEntryForm({ run_at: new Date().toISOString().slice(0, 10), control_results: [], corrective_action: "" });
-      onRefresh();
-    } catch { alert("Failed to save entry"); }
-    finally { setSaving(false); }
-  };
-
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Configs panel */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <SectionHead icon={TestTube} title="Test Configurations" />
-            <button onClick={() => setShowConfigForm(!showConfigForm)} className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold">
-              {showConfigForm ? "Cancel" : "+ Add Config"}
-            </button>
-          </div>
-          {showConfigForm && (
-            <div className="space-y-3 mb-5 p-4 bg-slate-50 rounded-xl border border-slate-100">
-              <input type="text" placeholder="Test name (e.g. HIV Rapid)" value={configForm.test_name} onChange={(e) => setConfigForm((p) => ({ ...p, test_name: e.target.value }))} className={inputCls} />
-              <select value={configForm.result_type} onChange={(e) => setConfigForm((p) => ({ ...p, result_type: e.target.value }))} className={selectCls}>
-                <option>Positive / Negative</option>
-                <option>Reactive / Non-Reactive</option>
-                <option>Detected / Not Detected</option>
-                <option>Pass / Fail</option>
-              </select>
-              {configForm.controls.map((c, i) => (
-                <div key={i} className="flex gap-2">
-                  <input placeholder="Control name" value={c.name} onChange={(e) => setConfigForm((p) => ({ ...p, controls: p.controls.map((x, j) => j === i ? { ...x, name: e.target.value } : x) }))} className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
-                  <select value={c.expectedResult} onChange={(e) => setConfigForm((p) => ({ ...p, controls: p.controls.map((x, j) => j === i ? { ...x, expectedResult: e.target.value } : x) }))} className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none">
-                    {resultOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-              ))}
-              <div className="flex gap-2">
-                <button onClick={() => { const opts = configForm.result_type.split(" / ").map((s) => s.trim()); setConfigForm((p) => ({ ...p, controls: [...p.controls, { name: "", expectedResult: opts[0] ?? "" }] })); }} className="text-xs text-emerald-600 font-medium">+ Add control</button>
-              </div>
-              <button onClick={handleSaveConfig} disabled={saving} className={btnPrimary + " w-full justify-center"}>Save Config</button>
-            </div>
-          )}
-          <div className="space-y-1.5 max-h-56 overflow-y-auto">
-            {configs.length === 0
-              ? <p className="text-sm text-slate-400 text-center py-6">No qualitative configs yet.</p>
-              : configs.map((c) => (
-                <div key={c.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-50 text-sm">
-                  <span className="font-medium text-slate-800">{c.test_name}</span>
-                  <span className="text-xs text-slate-400">{(c.controls ?? []).length} controls</span>
-                </div>
-              ))}
-          </div>
-        </div>
-
-        {/* Record entry */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-          <SectionHead icon={ClipboardList} title="Record Entry" />
-          <div className="space-y-3">
-            <select value={selectedConfigId} onChange={(e) => setSelectedConfigId(e.target.value)} className={selectCls}>
-              <option value="">Select test…</option>
-              {configs.map((c) => <option key={c.id} value={c.id}>{c.test_name}</option>)}
-            </select>
-            <input type="date" value={entryForm.run_at} onChange={(e) => setEntryForm((p) => ({ ...p, run_at: e.target.value }))} className={inputCls} />
-            {entryForm.control_results.map((r, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="text-sm text-slate-600 w-28 truncate font-medium">{r.controlName}</span>
-                <span className="text-xs text-slate-400 w-16">→ {r.expectedResult}</span>
-                <select value={r.observedResult} onChange={(e) => setEntryForm((p) => ({ ...p, control_results: p.control_results.map((x, j) => j === i ? { ...x, observedResult: e.target.value } : x) }))} className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
-                  <option value="">—</option>
-                  {resultOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-                </select>
-              </div>
-            ))}
-            <input type="text" placeholder="Corrective action (if result fails)" value={entryForm.corrective_action} onChange={(e) => setEntryForm((p) => ({ ...p, corrective_action: e.target.value }))} className={inputCls} />
-            <button onClick={handleSaveEntry} disabled={saving || !selectedConfigId || !entryForm.control_results.every((r) => r.observedResult)} className={btnPrimary + " w-full justify-center"}>
-              Save Entry
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent entries */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-        <SectionHead icon={ClipboardList} title="Recent Entries" />
-        <div className="space-y-1.5 max-h-64 overflow-y-auto">
-          {entries.length === 0
-            ? <p className="text-sm text-slate-400 text-center py-6">No qualitative entries yet.</p>
-            : entries.map((e) => (
-              <div key={e.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-50 text-sm">
-                <span className="text-slate-700">{(e.qualitative_qc_configs as { test_name?: string })?.test_name ?? "—"} <span className="text-slate-400">· {e.run_at}</span></span>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${e.overall_pass ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
-                  {e.overall_pass ? "Pass" : "Fail"}
-                </span>
-              </div>
-            ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════ */
-/*  QC CALCULATOR TAB  (ported from Lab-hub QCCalculator.js)  */
-/* ═══════════════════════════════════════════════════════════ */
-function CalculatorTab() {
-  const [inputs, setInputs] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem("kanta-qc-calc-inputs") ?? "null") || Array(25).fill(""); } catch { return Array(25).fill(""); }
-  });
-  const [mean, setMean] = useState<number | null>(null);
-  const [sd, setSD] = useState<number | null>(null);
-  const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => { try { localStorage.setItem("kanta-qc-calc-inputs", JSON.stringify(inputs)); } catch {} }, [inputs]);
-
-  const handleChange = (idx: number, val: string) => {
-    const next = [...inputs]; next[idx] = val.replace(/[^0-9.-]/g, ""); setInputs(next);
-  };
-
-  const handleCalculate = (e: React.FormEvent) => {
-    e.preventDefault(); setError(""); setCopied(false);
-    const values = inputs.map(Number);
-    if (values.some(isNaN)) { setError("Please enter a valid number in every field."); setMean(null); setSD(null); return; }
-    const m = values.reduce((a, v) => a + v, 0) / values.length;
-    const s = Math.sqrt(values.reduce((a, v) => a + Math.pow(v - m, 2), 0) / values.length);
-    setMean(m); setSD(s);
-  };
-
-  const handleReset = () => { setInputs(Array(25).fill("")); setMean(null); setSD(null); setError(""); setCopied(false); try { localStorage.removeItem("kanta-qc-calc-inputs"); } catch {} };
-
-  const handleCopy = () => {
-    if (mean != null && sd != null) {
-      navigator.clipboard.writeText(`Mean: ${mean.toFixed(4)}\nSD: ${sd.toFixed(4)}`);
-      setCopied(true); setTimeout(() => setCopied(false), 1500);
-    }
-  };
-
-  return (
-    <div className="max-w-2xl space-y-5">
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <SectionHead icon={Calculator} title="QC Mean & SD Calculator" />
-        <p className="text-sm text-slate-500 mb-5">Enter up to 25 QC run values to calculate the Mean and Standard Deviation for a new control lot.</p>
-        <form onSubmit={handleCalculate} className="space-y-5">
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-            {inputs.map((val, idx) => (
-              <div key={idx}>
-                <input
-                  type="number" step="any" value={val} onChange={(e) => handleChange(idx, e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all"
-                  placeholder={`${idx + 1}`} required
-                />
-              </div>
-            ))}
-          </div>
-          {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
-          <div className="flex flex-wrap gap-3">
-            <button type="submit" className={btnPrimary}>
-              <Calculator size={14} /> Calculate
-            </button>
-            <button type="button" onClick={handleReset} className={btnSecondary}>Reset</button>
-            <button type="button" onClick={handleCopy} disabled={mean == null} className={btnSecondary + " disabled:opacity-40"}>
-              {copied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy Results</>}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {mean != null && sd != null && (
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6">
-          <h3 className="font-semibold text-emerald-800 mb-4" style={{ fontSize: "0.9375rem" }}>Results</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-emerald-100">
-              <p className="text-xs font-semibold uppercase tracking-widest text-emerald-500 mb-1">Mean</p>
-              <p className="text-2xl font-bold text-emerald-700" style={{ letterSpacing: "-0.03em" }}>{mean.toFixed(4)}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-emerald-100">
-              <p className="text-xs font-semibold uppercase tracking-widest text-emerald-500 mb-1">Std Deviation</p>
-              <p className="text-2xl font-bold text-emerald-700" style={{ letterSpacing: "-0.03em" }}>{sd.toFixed(4)}</p>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-emerald-700">
-            <p>±1 SD: <strong>{(mean - sd).toFixed(3)}</strong> – <strong>{(mean + sd).toFixed(3)}</strong></p>
-            <p>±2 SD: <strong>{(mean - 2 * sd).toFixed(3)}</strong> – <strong>{(mean + 2 * sd).toFixed(3)}</strong></p>
-            <p>±3 SD: <strong>{(mean - 3 * sd).toFixed(3)}</strong> – <strong>{(mean + 3 * sd).toFixed(3)}</strong></p>
-            <p>CV%: <strong>{((sd / mean) * 100).toFixed(2)}%</strong></p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════ */
-/*  QC STATS TAB  (ported from Lab-hub QCStats.js)            */
-/* ═══════════════════════════════════════════════════════════ */
-function StatsTab({ materials }: { materials: Material[] }) {
-  const [runs, setRuns] = useState<QCRun[]>([]);
-  const [selectedMaterialId, setSelectedMaterialId] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [loadingRuns, setLoadingRuns] = useState(false);
-
-  useEffect(() => {
-    if (!selectedMaterialId) { setRuns([]); return; }
-    setLoadingRuns(true);
-    fetch(`/api/qc/runs?material_id=${selectedMaterialId}&limit=200`)
-      .then((r) => r.json())
-      .then((j) => setRuns(j.data?.points ?? []))
-      .catch(() => setRuns([]))
-      .finally(() => setLoadingRuns(false));
-  }, [selectedMaterialId]);
-
-  const filtered = runs.filter((r) => {
-    const d = r.run_at?.slice(0, 10) ?? "";
-    if (startDate && d < startDate) return false;
-    if (endDate && d > endDate) return false;
-    return true;
-  });
-
-  const values = filtered.map((r) => r.value).filter((v) => !isNaN(v));
-  const stats = values.length > 0 ? {
-    count: values.length,
-    mean: (values.reduce((a, v) => a + v, 0) / values.length).toFixed(3),
-    sd: Math.sqrt(values.reduce((a, v) => a + Math.pow(v - values.reduce((a2, v2) => a2 + v2, 0) / values.length, 2), 0) / values.length).toFixed(3),
-    min: Math.min(...values).toFixed(3),
-    max: Math.max(...values).toFixed(3),
-  } : null;
-
-  return (
-    <div className="space-y-5">
-      {/* Filters */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-        <SectionHead icon={TrendingUp} title="Filter Options" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Material</label>
-            <select value={selectedMaterialId} onChange={(e) => setSelectedMaterialId(e.target.value)} className={selectCls}>
-              <option value="">Select material…</option>
-              {materials.map((m) => <option key={m.id} value={m.id}>{m.name} {m.analyte ? `· ${m.analyte}` : ""}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Start Date</label>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">End Date</label>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputCls} />
-          </div>
-        </div>
-      </div>
-
-      {/* Statistics summary */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard label="Total Values" value={stats.count} />
-          <StatCard label="Mean" value={stats.mean} />
-          <StatCard label="Std Deviation" value={stats.sd} />
-          <StatCard label="Minimum" value={stats.min} />
-          <StatCard label="Maximum" value={stats.max} />
-        </div>
-      )}
-
-      {/* Data table */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-        <SectionHead icon={ClipboardList} title="QC Run Values" />
-        {loadingRuns ? (
-          <div className="flex items-center justify-center py-10 gap-2 text-slate-400 text-sm">
-            <div className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" /> Loading…
-          </div>
-        ) : filtered.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-8">
-            {selectedMaterialId ? "No runs found for the selected date range." : "Select a material above to view run data."}
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  {["Date", "Value", "Status"].map((h) => (
-                    <th key={h} className="text-left py-2.5 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filtered.slice().reverse().map((r, idx) => (
-                  <tr key={r.id ?? idx} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-3 text-slate-600">{r.run_at?.slice(0, 10) ?? "—"}</td>
-                    <td className="py-3 px-3 font-mono font-semibold text-slate-800">{r.value}</td>
-                    <td className="py-3 px-3">
-                      {r.pass
-                        ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold"><CheckCircle2 size={10} /> Pass</span>
-                        : <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold"><XCircle size={10} /> Fail</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════ */
-/*  SAMPLE MANAGEMENT TAB  (Lab-hub integration)              */
-/* ═══════════════════════════════════════════════════════════ */
-
-const LAB_HUB_URL_KEY = "kanta-lab-hub-url";
-
-type Rack = {
-  id: number;
-  rack_name: string;
-  rack_date: string;
-  rack_type: "normal" | "igra";
-  description?: string;
-  status: "empty" | "partial" | "full";
-  total_samples: number;
-};
-
-type SampleResult = {
-  id: number;
-  barcode: string;
-  patient_id?: string;
-  sample_type?: string;
-  position: number;
-  collection_date?: string;
-  notes?: string;
-  rack_id: number;
-  discarded_at?: string;
-};
-
-type LabHubStats = {
-  total_racks: number;
-  total_samples: number;
-  pending_discarding: number;
-  rack_status: { empty: number; partial: number; full: number };
-};
-
-type SampleSubTab = "dashboard" | "racks" | "search";
-
-const SAMPLE_SUB_TABS: { id: SampleSubTab; label: string; icon: typeof Grid3X3 }[] = [
-  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-  { id: "racks",     label: "Racks",     icon: Grid3X3   },
-  { id: "search",    label: "Search",    icon: Search    },
-];
-
-function rackStatusColor(status: string) {
-  if (status === "full")    return "bg-emerald-100 text-emerald-700";
-  if (status === "partial") return "bg-amber-100 text-amber-700";
-  return "bg-slate-100 text-slate-500";
-}
-
-function positionLabel(position: number) {
-  const row = Math.floor(position / 10);
-  const col = (position % 10) + 1;
-  return `${String.fromCharCode(65 + row)}${col}`;
-}
-
-function SamplesTab() {
+  const [activeTab, setActiveTab] = useState<Tab>("config");
   const [labHubUrl, setLabHubUrl] = useState<string>(() => {
     try { return localStorage.getItem(LAB_HUB_URL_KEY) ?? "http://localhost:8000"; } catch { return "http://localhost:8000"; }
   });
-  const [urlInput, setUrlInput] = useState(labHubUrl);
-  const [connected, setConnected] = useState<boolean | null>(null);
-  const [checking, setChecking] = useState(false);
+  const [urlInput, setUrlInput]     = useState(labHubUrl);
+  const [connected, setConnected]   = useState<boolean | null>(null);
+  const [checking, setChecking]     = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [subTab, setSubTab] = useState<SampleSubTab>("dashboard");
 
-  const [stats, setStats] = useState<LabHubStats | null>(null);
-  const [recentRacks, setRecentRacks] = useState<Rack[]>([]);
-  const [racks, setRacks] = useState<Rack[]>([]);
-  const [racksLoading, setRacksLoading] = useState(false);
-  const [filters, setFilters] = useState({ startDate: "", endDate: "", status: "" });
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newRack, setNewRack] = useState({ rack_name: "", rack_date: new Date().toISOString().slice(0, 10), rack_type: "normal", description: "" });
-  const [creating, setCreating] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchField, setSearchField] = useState("all");
-  const [searchResults, setSearchResults] = useState<SampleResult[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [searched, setSearched] = useState(false);
-
-  const apiFetch = (path: string, options?: RequestInit) =>
-    fetch(`${labHubUrl}${path}`, { ...options, headers: { "Content-Type": "application/json", ...(options?.headers ?? {}) } });
-
-  const checkConnection = async (url = labHubUrl) => {
+  const checkConnection = useCallback(async (url = labHubUrl) => {
     setChecking(true);
     try {
       const res = await fetch(`${url}/api/health`, { signal: AbortSignal.timeout(4000) });
-      const ok = res.ok;
-      setConnected(ok);
-      if (ok) { loadDashboard(url); loadRacks(url); }
-      return ok;
-    } catch {
-      setConnected(false);
-      return false;
-    } finally { setChecking(false); }
-  };
+      setConnected(res.ok);
+    } catch { setConnected(false); }
+    finally { setChecking(false); }
+  }, [labHubUrl]);
 
   const saveUrl = async () => {
     const trimmed = urlInput.replace(/\/$/, "");
@@ -856,87 +184,22 @@ function SamplesTab() {
     await checkConnection(trimmed);
   };
 
-  const loadDashboard = async (url = labHubUrl) => {
-    try {
-      const [statsRes, racksRes] = await Promise.all([
-        fetch(`${url}/api/stats`),
-        fetch(`${url}/api/racks/?limit=5`),
-      ]);
-      if (statsRes.ok) setStats(await statsRes.json());
-      if (racksRes.ok) setRecentRacks(await racksRes.json());
-    } catch {}
-  };
-
-  const loadRacks = async (url = labHubUrl) => {
-    setRacksLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (filters.startDate) params.set("start_date", filters.startDate);
-      if (filters.endDate)   params.set("end_date",   filters.endDate);
-      if (filters.status)    params.set("status",     filters.status);
-      const res = await fetch(`${url}/api/racks/?${params}`);
-      if (res.ok) setRacks(await res.json());
-    } catch {}
-    finally { setRacksLoading(false); }
-  };
-
-  const handleCreateRack = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreating(true);
-    try {
-      const res = await apiFetch("/api/racks/", {
-        method: "POST",
-        body: JSON.stringify({ ...newRack, rack_date: new Date(newRack.rack_date).toISOString() }),
-      });
-      if (!res.ok) throw new Error("failed");
-      setShowCreateModal(false);
-      setNewRack({ rack_name: "", rack_date: new Date().toISOString().slice(0, 10), rack_type: "normal", description: "" });
-      loadRacks(); loadDashboard();
-    } catch { alert("Failed to create rack."); }
-    finally { setCreating(false); }
-  };
-
-  const handleDeleteRack = async (id: number, name: string) => {
-    if (!confirm(`Delete rack "${name}" and all its samples?`)) return;
-    try { await apiFetch(`/api/racks/${id}`, { method: "DELETE" }); loadRacks(); loadDashboard(); }
-    catch { alert("Failed to delete rack."); }
-  };
-
-  const handleExport = async () => {
-    try {
-      const params = new URLSearchParams({ format: "csv" });
-      if (filters.startDate) params.set("start_date", filters.startDate);
-      if (filters.endDate)   params.set("end_date",   filters.endDate);
-      if (filters.status)    params.set("status",     filters.status);
-      const res = await fetch(`${labHubUrl}/api/export/?${params}`);
-      if (!res.ok) throw new Error("failed");
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `lab_samples_${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a); a.click(); a.remove();
-    } catch { alert("Export failed — check Lab-hub connection."); }
-  };
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setSearching(true); setSearched(true);
-    try {
-      const res = await apiFetch("/api/samples/search", {
-        method: "POST",
-        body: JSON.stringify({ query: searchQuery.trim(), search_type: searchField }),
-      });
-      setSearchResults(res.ok ? await res.json() : []);
-    } catch { setSearchResults([]); }
-    finally { setSearching(false); }
-  };
-
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { checkConnection(); }, []);
 
   return (
-    <div className="space-y-5">
+    <div className="max-w-[1280px] space-y-5">
+
+      {/* Page header */}
+      <div className="animate-slide-up">
+        <p className="text-eyebrow mb-1">Quality Management</p>
+        <h1 className="text-slate-900" style={{ fontSize: "1.625rem", fontWeight: 700, letterSpacing: "-0.025em" }}>
+          Quality Control Management
+        </h1>
+        <p className="text-slate-500 mt-0.5 text-sm">
+          QC configuration, data entry, Levey-Jennings visualization, statistics and qualitative QC.
+        </p>
+      </div>
 
       {/* Settings modal */}
       {showSettings && (
@@ -962,8 +225,7 @@ function SamplesTab() {
         : connected === true ? "bg-emerald-50 border border-emerald-100 text-emerald-700"
         : "bg-amber-50 border border-amber-100 text-amber-700"
       }`}>
-        {checking
-          ? <RefreshCw size={15} className="animate-spin" />
+        {checking ? <RefreshCw size={15} className="animate-spin" />
           : connected === false ? <WifiOff size={15} />
           : <Wifi size={15} />}
         <span className="flex-1">
@@ -972,306 +234,1496 @@ function SamplesTab() {
             : connected === true ? `Connected · ${labHubUrl}`
             : "Connecting…"}
         </span>
-        <button onClick={() => setShowSettings(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all">
+        <button onClick={() => setShowSettings(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all">
           <Settings2 size={12} /> Configure
         </button>
-        <button onClick={() => checkConnection()} disabled={checking}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all disabled:opacity-50">
+        <button onClick={() => checkConnection()} disabled={checking} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-all disabled:opacity-50">
           <RefreshCw size={12} className={checking ? "animate-spin" : ""} /> Retry
         </button>
       </div>
 
-      {/* Sub-tabs */}
-      <div className="flex items-center gap-1 bg-slate-100/70 p-1 rounded-2xl w-fit">
-        {SAMPLE_SUB_TABS.map(({ id, label, icon: Icon }) => (
-          <button key={id} onClick={() => setSubTab(id)}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all text-sm font-medium whitespace-nowrap ${
-              subTab === id ? "bg-white text-emerald-700 shadow-sm font-semibold" : "text-slate-500 hover:text-slate-700"
-            }`}>
+      {/* Tab bar */}
+      <div className="flex items-center border-b border-slate-200 overflow-x-auto animate-slide-up">
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button key={id} onClick={() => setActiveTab(id)}
+            className={`inline-flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-all ${
+              activeTab === id
+                ? "border-emerald-500 text-emerald-700"
+                : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
+            }`}
+          >
             <Icon size={13} />{label}
           </button>
         ))}
       </div>
 
-      {/* ── Dashboard ── */}
-      {subTab === "dashboard" && (
+      {/* Tab content */}
+      <div className="animate-fade-in">
+        {activeTab === "config"      && <QCConfigTab      labHubUrl={labHubUrl} />}
+        {activeTab === "data"        && <QCDataEntryTab   labHubUrl={labHubUrl} />}
+        {activeTab === "visual"      && <QCVisualizationTab labHubUrl={labHubUrl} />}
+        {activeTab === "calc"        && <QCCalculatorTab />}
+        {activeTab === "stats"       && <QCStatsTab       labHubUrl={labHubUrl} />}
+        {activeTab === "qual-config" && <QualConfigTab    labHubUrl={labHubUrl} />}
+        {activeTab === "qual-entry"  && <QualEntryTab     labHubUrl={labHubUrl} />}
+        {activeTab === "qual-log"    && <QualLogTab       labHubUrl={labHubUrl} />}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  QC CONFIG TAB  (Lab-hub QCConfig.js)                      */
+/* ═══════════════════════════════════════════════════════════ */
+function QCConfigTab({ labHubUrl }: { labHubUrl: string }) {
+  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
+  const [qcConfigs, setQcConfigs]   = useState<QcItem[]>([]);
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [isLoading, setIsLoading]   = useState(false);
+  const [error, setError]           = useState("");
+  const [success, setSuccess]       = useState("");
+  const [confirm, setConfirm]       = useState<ConfirmState>(closedConfirm);
+  const [form, setForm] = useState({ qcName: "", level: "", lotNumber: "", expiryDate: "", mean: "", sd: "", units: "μmol/L" });
+
+  const fetchConfigs = useCallback(async () => {
+    setIsLoading(true); setError("");
+    try {
+      const data = await api.getItems();
+      const items = Array.isArray(data) ? data : (data?.data ?? []);
+      setQcConfigs(items.filter((item: QcItem) => item.qcName && item.mean != null && item.sd != null));
+    } catch (e) { setError(`Error fetching QC configs: ${(e as Error).message}`); }
+    finally { setIsLoading(false); }
+  }, [api]);
+
+  useEffect(() => { fetchConfigs(); }, [fetchConfigs]);
+
+  const resetForm = () => {
+    setForm({ qcName: "", level: "", lotNumber: "", expiryDate: "", mean: "", sd: "", units: "μmol/L" });
+    setEditingId(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); setError(""); setSuccess(""); setIsLoading(true);
+    if (!form.qcName.trim() || form.level === "" || form.mean === "" || form.sd === "") {
+      alert("Please fill all required fields: QC Name, Level, Mean, and SD.");
+      setIsLoading(false); return;
+    }
+    const payload: QcItem = {
+      id: editingId || String(Date.now()),
+      qcName: form.qcName.trim(), level: Number(form.level),
+      lotNumber: form.lotNumber, expiryDate: form.expiryDate,
+      mean: parseFloat(form.mean), sd: parseFloat(form.sd), units: form.units,
+    };
+    try {
+      if (editingId) await api.putItem(payload); else await api.postItem(payload);
+      setSuccess(`QC configuration ${editingId ? "updated" : "saved"} successfully!`);
+      fetchConfigs(); resetForm();
+    } catch (e) { setError(`Error saving QC config: ${(e as Error).message}`); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleEdit = (config: QcItem) => {
+    setForm({ qcName: config.qcName, level: String(config.level), lotNumber: config.lotNumber || "", expiryDate: config.expiryDate || "", mean: String(config.mean), sd: String(config.sd), units: config.units || "μmol/L" });
+    setEditingId(String(config.id));
+  };
+
+  const handleToggleEnabled = (config: QcItem) => {
+    const newEnabled = !(config.enabled !== false);
+    setConfirm({
+      open: true,
+      title: newEnabled ? "Enable QC Config?" : "Disable QC Config?",
+      message: <>{newEnabled ? "Enable" : "Disable"} <strong>{config.qcName} Level {config.level}</strong>{newEnabled ? " for data entry?" : "? It will no longer appear in QC Data Entry."}</>,
+      confirmLabel: newEnabled ? "Enable" : "Disable",
+      variant: "warning",
+      onConfirm: async () => {
+        setConfirm((c) => ({ ...c, open: false })); setIsLoading(true);
+        try {
+          await api.putItem({ ...config, enabled: newEnabled });
+          setSuccess(`QC config ${newEnabled ? "enabled" : "disabled"} successfully.`); fetchConfigs();
+        } catch (e) { setError(`Error: ${(e as Error).message}`); }
+        finally { setIsLoading(false); }
+      },
+    });
+  };
+
+  const handleDelete = (config: QcItem) => {
+    setConfirm({
+      open: true, title: "Delete QC Config?",
+      message: <>Are you sure you want to delete <strong>{config.qcName} Level {config.level}</strong>? Existing QC entries will remain but may show incomplete data.</>,
+      confirmLabel: "Delete Config", variant: "danger",
+      onConfirm: async () => {
+        setConfirm((c) => ({ ...c, open: false })); setIsLoading(true);
+        try {
+          await api.deleteItem(String(config.id));
+          setSuccess("QC configuration deleted successfully!"); fetchConfigs();
+          if (editingId === String(config.id)) resetForm();
+        } catch (e) { setError(`Error deleting QC config: ${(e as Error).message}`); }
+        finally { setIsLoading(false); }
+      },
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading…</div>}
+      {error   && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm font-medium">{error}</div>}
+      {success && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm font-medium">{success}</div>}
+
+      <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+        <SectionHead icon={ShieldCheck} title="QC Configuration Manager" />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">QC Name <span className="text-red-500">*</span></label>
+              <input type="text" value={form.qcName} onChange={(e) => setForm({ ...form, qcName: e.target.value })} className={inputCls} required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Level <span className="text-red-500">*</span></label>
+              <input type="number" min={1} value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })} className={inputCls} required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Lot Number</label>
+              <input type="text" value={form.lotNumber} onChange={(e) => setForm({ ...form, lotNumber: e.target.value })} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Expiry Date</label>
+              <input type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Mean <span className="text-red-500">*</span></label>
+              <input type="number" step="any" value={form.mean} onChange={(e) => setForm({ ...form, mean: e.target.value })} className={inputCls} required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Standard Deviation (SD) <span className="text-red-500">*</span></label>
+              <input type="number" step="any" value={form.sd} onChange={(e) => setForm({ ...form, sd: e.target.value })} className={inputCls} required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Units of Measure</label>
+              <select value={form.units} onChange={(e) => setForm({ ...form, units: e.target.value })} className={selectCls}>
+                <option value="μmol/L">μmol/L</option>
+                <option value="IU/mL">IU/mL</option>
+                <option value="g/dL">g/dL</option>
+                <option value="mg/dL">mg/dL</option>
+                <option value="mmol/L">mmol/L</option>
+                <option value="U/L">U/L</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button type="submit" disabled={isLoading} className={btnPrimary}>{editingId ? "Update QC Config" : "Save QC Config"}</button>
+            <button type="button" onClick={resetForm} className={btnSecondary}>Clear Form</button>
+          </div>
+        </form>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <SectionHead icon={BarChart3} title="Existing QC Configurations" />
+        <div className="overflow-x-auto rounded-xl border border-slate-100">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 border-b border-slate-100">
+              <tr>{["QC Name", "Level", "Units", "Lot Number", "Expiry Date", "Mean", "SD", "Status", "Actions"].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {qcConfigs.filter((qc) => qc.qcName?.trim()).length === 0 ? (
+                <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-400">No QC configurations found.</td></tr>
+              ) : qcConfigs.filter((qc) => qc.qcName?.trim()).map((config) => (
+                <tr key={config.id} className="hover:bg-slate-50 transition-colors">
+                  <td className={tblCell + " font-semibold text-slate-800"}>{config.qcName}</td>
+                  <td className={tblCell}>{config.level}</td>
+                  <td className={tblCell}>{config.units || "μmol/L"}</td>
+                  <td className={tblCell}>{config.lotNumber || "—"}</td>
+                  <td className={tblCell}>{config.expiryDate || "—"}</td>
+                  <td className={tblCell + " font-mono"}>{config.mean}</td>
+                  <td className={tblCell + " font-mono"}>{config.sd}</td>
+                  <td className={tblCell}>
+                    {config.enabled !== false
+                      ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Enabled</span>
+                      : <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Disabled</span>}
+                  </td>
+                  <td className={tblCell}>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => handleEdit(config)} className="text-emerald-600 hover:text-emerald-800 font-semibold text-xs">Edit</button>
+                      <button onClick={() => handleToggleEnabled(config)} className="text-amber-600 hover:text-amber-800 font-semibold text-xs">{config.enabled !== false ? "Disable" : "Enable"}</button>
+                      <button onClick={() => handleDelete(config)} className="text-red-600 hover:text-red-800 font-semibold text-xs">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <ConfirmModal {...confirm} onCancel={() => setConfirm(closedConfirm)} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  QC DATA ENTRY TAB  (Lab-hub QCDataEntry.js)               */
+/* ═══════════════════════════════════════════════════════════ */
+function QCDataEntryTab({ labHubUrl }: { labHubUrl: string }) {
+  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
+  const [allQcData, setAllQcData]           = useState<QcItem[]>([]);
+  const [qcConfigs, setQcConfigs]           = useState<QcItem[]>([]);
+  const [allQcConfigs, setAllQcConfigs]     = useState<QcItem[]>([]);
+  const [allEntries, setAllEntries]         = useState<QcItem[]>([]);
+  const [selectedConfigId, setSelectedConfigId] = useState("");
+  const [qcValue, setQcValue]               = useState("");
+  const [selectedDate, setSelectedDate]     = useState("");
+  const [editingId, setEditingId]           = useState<string | null>(null);
+  const [isLoading, setIsLoading]           = useState(false);
+  const [error, setError]                   = useState("");
+  const [success, setSuccess]               = useState("");
+  const [confirm, setConfirm]               = useState<ConfirmState>(closedConfirm);
+
+  const fetchAllQcData = useCallback(async () => {
+    try {
+      const data = await api.getItems();
+      setAllQcData(Array.isArray(data) ? data : (data?.data ?? []));
+    } catch (e) { setError(`Error fetching QC data: ${(e as Error).message}`); }
+  }, [api]);
+
+  useEffect(() => { fetchAllQcData(); }, [fetchAllQcData]);
+
+  useEffect(() => {
+    if (!allQcData.length) { setQcConfigs([]); setAllQcConfigs([]); setAllEntries([]); return; }
+    const today = todayStr();
+    const allConfigs = allQcData.filter((item) =>
+      item.qcName && typeof item.qcName === "string" && item.qcName.trim() !== "" &&
+      item.level != null && !isNaN(Number(item.level)) && item.mean != null && item.sd != null
+    );
+    const configs = allConfigs.filter((c) => {
+      if (c.enabled === false) return false;
+      if (c.expiryDate && c.expiryDate < today) return false;
+      return true;
+    });
+    const entries = allQcData
+      .filter((item) => item.qcConfigId && item.date && item.value != null && !isNaN(Number(item.value)))
+      .sort((a, b) => a.date > b.date ? 1 : -1);
+    setAllQcConfigs(allConfigs); setQcConfigs(configs); setAllEntries(entries);
+  }, [allQcData]);
+
+  const draftEntries = allEntries.filter((e) => e.qcConfigId === selectedConfigId && !e.submitted);
+  const resetForm = () => { setQcValue(""); setSelectedDate(""); setEditingId(null); };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); setError(""); setSuccess(""); setIsLoading(true);
+    if (!selectedConfigId || !selectedDate || !qcValue) { setError("Please fill all required fields."); setIsLoading(false); return; }
+    const payload: QcItem = { id: editingId || String(Date.now()), qcConfigId: selectedConfigId, date: selectedDate, value: parseFloat(qcValue), submitted: false };
+    try {
+      if (editingId) await api.putItem(payload); else await api.postItem(payload);
+      setSuccess(`Entry ${editingId ? "updated" : "saved"} successfully!`);
+      resetForm(); fetchAllQcData();
+    } catch (e) { setError(`Error saving QC entry: ${(e as Error).message}`); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleLock = async (id: string) => {
+    const entry = allEntries.find((e) => e.id === id);
+    if (!entry) return;
+    setIsLoading(true);
+    try {
+      await api.putItem({ ...entry, submitted: true });
+      setSuccess("Entry submitted (locked) successfully!"); fetchAllQcData();
+    } catch (e) { setError(`Error submitting entry: ${(e as Error).message}`); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleDelete = (entry: QcItem) => {
+    const config = allQcConfigs.find((c) => c.id === entry.qcConfigId);
+    setConfirm({
+      open: true, title: "Delete QC Entry?",
+      message: <>Are you sure you want to delete this entry <strong>({config?.qcName} Level {config?.level}, {entry.date}, value: {entry.value})</strong>? This cannot be undone.</>,
+      confirmLabel: "Delete", variant: "danger",
+      onConfirm: async () => {
+        setConfirm((c) => ({ ...c, open: false })); setIsLoading(true);
+        try {
+          await api.deleteItem(String(entry.id));
+          setSuccess("Entry deleted successfully!"); fetchAllQcData();
+          if (editingId === String(entry.id)) resetForm();
+        } catch (e) { setError(`Error: ${(e as Error).message}`); }
+        finally { setIsLoading(false); }
+      },
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading…</div>}
+      {error   && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
+      {success && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm">{success}</div>}
+
+      <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+        <SectionHead icon={ClipboardList} title="QC Data Entry" />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Select QC Config</label>
+              <select value={selectedConfigId} onChange={(e) => setSelectedConfigId(e.target.value)} className={selectCls} required>
+                <option value="">-- Choose QC --</option>
+                {qcConfigs.map((qc) => <option key={qc.id} value={qc.id}>{qc.qcName} (Level {qc.level}){qc.lotNumber ? ` - Lot: ${qc.lotNumber}` : ""}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Units of Measure</label>
+              <div className="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-100 font-semibold text-slate-700 text-sm min-h-[42px] flex items-center">
+                {selectedConfigId ? (qcConfigs.find((c) => c.id === selectedConfigId)?.units || "μmol/L") : "—"}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Date</label>
+              <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className={inputCls} required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">QC Value</label>
+              <input type="number" step="any" value={qcValue} onChange={(e) => setQcValue(e.target.value)} className={inputCls} required />
+            </div>
+          </div>
+          <button type="submit" disabled={isLoading} className={btnPrimary}>{editingId ? "Update Entry" : "Save Entry"}</button>
+        </form>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <SectionHead icon={ClipboardList} title="Draft Entries" />
+        <div className="overflow-x-auto rounded-xl border border-slate-100">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 border-b border-slate-100">
+              <tr>{["QC Name", "Level", "Date", "Value", "Actions"].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {draftEntries.length === 0 ? (
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">No draft entries to show.</td></tr>
+              ) : draftEntries.map((entry) => {
+                const config = allQcConfigs.find((c) => c.id === entry.qcConfigId);
+                return (
+                  <tr key={entry.id} className="hover:bg-slate-50">
+                    <td className={tblCell + " font-semibold text-slate-800"}>{config?.qcName || "N/A"}</td>
+                    <td className={tblCell}>{config?.level ?? "N/A"}</td>
+                    <td className={tblCell + " font-semibold"}>{entry.date}</td>
+                    <td className={tblCell}>{entry.value}</td>
+                    <td className={tblCell}>
+                      <div className="flex gap-3">
+                        <button onClick={() => { setEditingId(String(entry.id)); setSelectedConfigId(entry.qcConfigId); setSelectedDate(entry.date); setQcValue(String(entry.value)); }} className="text-emerald-600 hover:text-emerald-800 font-semibold text-xs">Edit</button>
+                        <button onClick={() => handleDelete(entry)} className="text-red-600 hover:text-red-800 font-semibold text-xs">Delete</button>
+                        <button onClick={() => handleLock(String(entry.id))} className="text-emerald-700 hover:text-emerald-900 font-semibold text-xs">Submit</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <ConfirmModal {...confirm} onCancel={() => setConfirm(closedConfirm)} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  QC VISUALIZATION TAB  (Lab-hub QCVisualization.js)        */
+/* ═══════════════════════════════════════════════════════════ */
+function QCVisualizationTab({ labHubUrl }: { labHubUrl: string }) {
+  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
+  const [qcConfigs, setQcConfigs]           = useState<QcItem[]>([]);
+  const [allEntries, setAllEntries]         = useState<QcItem[]>([]);
+  const [selectedConfigId, setSelectedConfigId]   = useState("");
+  const [selectedConfigId2, setSelectedConfigId2] = useState("");
+  const [fromDate, setFromDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`; });
+  const [toDate, setToDate]     = useState(() => new Date().toISOString().slice(0, 10));
+
+  const fetchData = useCallback(async () => {
+    try {
+      const data = await api.getItems();
+      const items = Array.isArray(data) ? data : (data?.data ?? []);
+      setQcConfigs(items.filter((item: QcItem) => item.qcName && item.level != null && item.mean != null && item.sd != null));
+      setAllEntries(items.filter((item: QcItem) => item.qcConfigId && item.date && item.value != null).sort((a: QcItem, b: QcItem) => a.date > b.date ? 1 : -1));
+    } catch {}
+  }, [api]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const filterEntries = (configId: string) => {
+    let entries = allEntries.filter((e) => e.qcConfigId === configId && e.submitted === true);
+    if (fromDate) entries = entries.filter((e) => e.date >= fromDate);
+    if (toDate)   entries = entries.filter((e) => e.date <= toDate);
+    return entries;
+  };
+
+  const selectedConfig  = qcConfigs.find((c) => c.id === selectedConfigId);
+  const selectedConfig2 = qcConfigs.find((c) => c.id === selectedConfigId2);
+  const filtered1 = filterEntries(selectedConfigId);
+  const filtered2 = filterEntries(selectedConfigId2);
+  const analyzed1 = selectedConfig  && filtered1.length > 0 ? applyWestgard(filtered1.map((e)  => ({ ...e, name: fmtShort(e.date) })), Number(selectedConfig.mean),  Number(selectedConfig.sd))  : [];
+  const analyzed2 = selectedConfig2 && filtered2.length > 0 ? applyWestgard(filtered2.map((e) => ({ ...e, name: fmtShort(e.date) })), Number(selectedConfig2.mean), Number(selectedConfig2.sd)) : [];
+
+  const renderGraph = (config: QcItem, data: QcItem[], compact = false) => {
+    const mean = Number(config.mean), sd = Number(config.sd);
+    const yLabel = `${config.qcName} Level ${config.level} (${config.units || "μmol/L"})`;
+    return (
+      <div key={config.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="text-center border-b border-slate-100 pb-4 mb-4">
+          <h3 className={`font-bold text-slate-800 uppercase tracking-wide ${compact ? "text-sm" : "text-base"}`}>IOM UGANDA QUALITY CONTROL GRAPH</h3>
+          <h4 className={`font-bold text-slate-900 mt-1 ${compact ? "text-lg" : "text-2xl"}`}>{config.qcName} Level {config.level}</h4>
+          {config.lotNumber && <p className="text-slate-500 text-xs mt-0.5">Control Lot: {config.lotNumber}</p>}
+          {(fromDate || toDate) && (
+            <p className="text-slate-400 text-xs mt-0.5">
+              {fromDate && toDate ? `${fmtDate(fromDate)} – ${fmtDate(toDate)}` : fromDate ? `From ${fmtDate(fromDate)}` : `To ${fmtDate(toDate)}`}
+            </p>
+          )}
+        </div>
+        <ResponsiveContainer width="100%" height={compact ? 260 : 380}>
+          <LineChart data={data} margin={{ left: 80, right: 80, top: 10, bottom: 40 }}>
+            <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 11 }} padding={{ left: 10, right: 10 }} />
+            <YAxis
+              domain={[mean - 3 * sd, mean + 3 * sd]}
+              tick={{ fill: "#64748b", fontSize: 10 }}
+              tickFormatter={(v) => v.toFixed(2)}
+              label={{ value: yLabel, angle: -90, position: "insideLeft", offset: -65, style: { fill: "#475569", fontSize: 11, fontWeight: 600 } }}
+            />
+            <Tooltip contentStyle={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12 }} />
+            <Line type="linear" dataKey="value" stroke="#0f172a" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+            <Line
+              type="monotone" dataKey="value" stroke="transparent"
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              dot={(props: any) => (
+                <circle
+                  key={`dot-${props.index}`}
+                  cx={props.cx} cy={props.cy} r={5}
+                  fill={props.payload._status === "failure" ? "#dc2626" : props.payload._status === "warning" ? "#f59e0b" : "#16a34a"}
+                  stroke="#0f172a" strokeWidth={1}
+                />
+              )}
+              isAnimationActive={false}
+            />
+            <ReferenceLine y={mean}          stroke="#0f172a" strokeWidth={1.5} strokeDasharray="4 4" />
+            <ReferenceLine y={mean + sd}     stroke="#16a34a" strokeWidth={1}   strokeDasharray="3 3" />
+            <ReferenceLine y={mean - sd}     stroke="#16a34a" strokeWidth={1}   strokeDasharray="3 3" />
+            <ReferenceLine y={mean + 2 * sd} stroke="#f59e0b" strokeWidth={1}   strokeDasharray="3 3" />
+            <ReferenceLine y={mean - 2 * sd} stroke="#f59e0b" strokeWidth={1}   strokeDasharray="3 3" />
+            <ReferenceLine y={mean + 3 * sd} stroke="#ef4444" strokeWidth={1.5} />
+            <ReferenceLine y={mean - 3 * sd} stroke="#ef4444" strokeWidth={1.5} />
+          </LineChart>
+        </ResponsiveContainer>
+        <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500 justify-center">
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Normal</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> 1₂s Warning</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> Westgard Violation</span>
+        </div>
+      </div>
+    );
+  };
+
+  const hasBoth = !!(selectedConfigId && selectedConfigId2 && analyzed1.length > 0 && analyzed2.length > 0);
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <SectionHead icon={BarChart3} title="Visualization" />
+        <div className="flex flex-wrap gap-3">
+          <select value={selectedConfigId} onChange={(e) => setSelectedConfigId(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400">
+            <option value="">Select QC Config 1</option>
+            {qcConfigs.map((qc) => <option key={qc.id} value={qc.id}>{qc.qcName} (Level {qc.level}){qc.lotNumber ? ` - Lot: ${qc.lotNumber}` : ""}</option>)}
+          </select>
+          <select value={selectedConfigId2} onChange={(e) => setSelectedConfigId2(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400">
+            <option value="">+ Add 2nd graph (optional)</option>
+            {qcConfigs.filter((qc) => qc.id !== selectedConfigId).map((qc) => <option key={qc.id} value={qc.id}>{qc.qcName} (Level {qc.level}){qc.lotNumber ? ` - Lot: ${qc.lotNumber}` : ""}</option>)}
+          </select>
+          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400" />
+          <input type="date" value={toDate}   onChange={(e) => setToDate(e.target.value)}   className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400" />
+        </div>
+      </div>
+
+      {((selectedConfig && analyzed1.length > 0) || (selectedConfig2 && analyzed2.length > 0)) ? (
         <div className="space-y-5">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {([
-              { label: "Total Racks",     value: stats?.total_racks          ?? "—", icon: Grid3X3,  color: "bg-indigo-50 text-indigo-600"   },
-              { label: "Total Samples",   value: stats?.total_samples        ?? "—", icon: Package,  color: "bg-emerald-50 text-emerald-600" },
-              { label: "Partial Racks",   value: stats?.rack_status?.partial ?? "—", icon: BarChart3, color: "bg-amber-50 text-amber-600"   },
-              { label: "Pending Discard", value: stats?.pending_discarding   ?? "—", icon: Trash2,   color: "bg-red-50 text-red-600"         },
-            ] as { label: string; value: number | string; icon: typeof Grid3X3; color: string }[]).map(({ label, value, icon: Icon, color }) => (
-              <div key={label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}><Icon size={18} /></div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">{label}</p>
-                  <p className="text-2xl font-bold text-slate-900" style={{ letterSpacing: "-0.03em" }}>{value}</p>
-                </div>
+          {selectedConfig  && analyzed1.length > 0 && renderGraph(selectedConfig,  analyzed1, hasBoth)}
+          {selectedConfig2 && analyzed2.length > 0 && renderGraph(selectedConfig2, analyzed2, hasBoth)}
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center text-slate-400">
+          {(selectedConfigId || selectedConfigId2)
+            ? "No submitted entries found for the selected configuration(s) and date range."
+            : "Select a QC configuration and date range to view the Levey-Jennings chart."}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  QC CALCULATOR TAB  (Lab-hub QCCalculator.js)              */
+/* ═══════════════════════════════════════════════════════════ */
+function QCCalculatorTab() {
+  const [inputs, setInputs] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("kanta-qc-calc-inputs") ?? "null") || Array(25).fill(""); } catch { return Array(25).fill(""); }
+  });
+  const [mean, setMean] = useState<number | null>(() => {
+    try { return JSON.parse(localStorage.getItem("kanta-qc-calc-mean-sd") ?? "null")?.mean ?? null; } catch { return null; }
+  });
+  const [sd, setSD] = useState<number | null>(() => {
+    try { return JSON.parse(localStorage.getItem("kanta-qc-calc-mean-sd") ?? "null")?.sd ?? null; } catch { return null; }
+  });
+  const [error, setError]   = useState("");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => { try { localStorage.setItem("kanta-qc-calc-inputs", JSON.stringify(inputs)); } catch {} }, [inputs]);
+  useEffect(() => { try { localStorage.setItem("kanta-qc-calc-mean-sd", JSON.stringify({ mean, sd })); } catch {} }, [mean, sd]);
+
+  const handleChange = (idx: number, val: string) => {
+    const next = [...inputs]; next[idx] = val.replace(/[^0-9.-]/g, ""); setInputs(next);
+  };
+
+  const handleCalculate = (e: React.FormEvent) => {
+    e.preventDefault(); setError(""); setCopied(false);
+    const values = inputs.map(Number);
+    if (values.some(isNaN)) { setError("Please enter a valid number in every field."); setMean(null); setSD(null); return; }
+    const m = values.reduce((a, v) => a + v, 0) / values.length;
+    const s = Math.sqrt(values.reduce((a, v) => a + Math.pow(v - m, 2), 0) / values.length);
+    setMean(m); setSD(s);
+  };
+
+  const handleReset = () => {
+    setInputs(Array(25).fill("")); setMean(null); setSD(null); setError(""); setCopied(false);
+    try { localStorage.removeItem("kanta-qc-calc-inputs"); localStorage.removeItem("kanta-qc-calc-mean-sd"); } catch {}
+  };
+
+  const handleCopy = () => {
+    if (mean != null && sd != null) {
+      navigator.clipboard.writeText(`Mean: ${mean}\nSD: ${sd}`);
+      setCopied(true); setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl space-y-5">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <SectionHead icon={Calculator} title="QC Mean & SD Calculator" />
+        <p className="text-sm text-slate-500 mb-5">Enter up to 25 QC run values to calculate the Mean and Standard Deviation for a new control lot.</p>
+        <form onSubmit={handleCalculate} className="space-y-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {inputs.map((val, idx) => (
+              <input key={idx} type="number" step="any" value={val} onChange={(e) => handleChange(idx, e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all"
+                placeholder={`Value ${idx + 1}`} required />
+            ))}
+          </div>
+          {error && <p className="text-sm text-red-600 font-medium text-center">{error}</p>}
+          <div className="flex flex-wrap gap-3 justify-center">
+            <button type="submit" className={btnPrimary}><Calculator size={14} /> Calculate</button>
+            <button type="button" onClick={handleReset} className={btnSecondary}>Reset</button>
+            <button type="button" onClick={handleCopy} disabled={mean == null} className={btnSecondary + " disabled:opacity-50"}>
+              {copied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy Results</>}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {mean != null && sd != null && (
+        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6">
+          <h3 className="font-semibold text-emerald-800 mb-4">Results</h3>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-emerald-100">
+              <p className="text-xs font-semibold uppercase tracking-widest text-emerald-500 mb-1">Mean</p>
+              <p className="text-2xl font-bold text-emerald-700" style={{ letterSpacing: "-0.03em" }}>{mean.toFixed(4)}</p>
+            </div>
+            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-emerald-100">
+              <p className="text-xs font-semibold uppercase tracking-widest text-emerald-500 mb-1">Std Deviation</p>
+              <p className="text-2xl font-bold text-emerald-700" style={{ letterSpacing: "-0.03em" }}>{sd.toFixed(4)}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm text-emerald-700">
+            <p>±1 SD: <strong>{(mean - sd).toFixed(3)}</strong> – <strong>{(mean + sd).toFixed(3)}</strong></p>
+            <p>±2 SD: <strong>{(mean - 2 * sd).toFixed(3)}</strong> – <strong>{(mean + 2 * sd).toFixed(3)}</strong></p>
+            <p>±3 SD: <strong>{(mean - 3 * sd).toFixed(3)}</strong> – <strong>{(mean + 3 * sd).toFixed(3)}</strong></p>
+            <p>CV%: <strong>{((sd / mean) * 100).toFixed(2)}%</strong></p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  QC STATS TAB  (Lab-hub QCStats.js)                        */
+/* ═══════════════════════════════════════════════════════════ */
+function QCStatsTab({ labHubUrl }: { labHubUrl: string }) {
+  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
+  const [qcConfigs, setQcConfigs]       = useState<QcItem[]>([]);
+  const [qcData, setQcData]             = useState<QcItem[]>([]);
+  const [selectedConfig, setSelectedConfig] = useState("");
+  const [startDate, setStartDate]       = useState("");
+  const [endDate, setEndDate]           = useState("");
+  const [error, setError]               = useState("");
+  const [confirm, setConfirm]           = useState<ConfirmState>(closedConfirm);
+  const [resolvingId, setResolvingId]   = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const data = await api.getItems();
+      const items = Array.isArray(data) ? data : (data?.data ?? []);
+      setQcConfigs(items.filter((item: QcItem) => item.mean != null && item.sd != null && item.qcName?.trim()));
+      setQcData(items.filter((item: QcItem) => item.qcConfigId != null && item.value != null && item.date != null));
+    } catch (e) { setError(`Error fetching QC data: ${(e as Error).message}`); }
+  }, [api]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const selectedConfigObj = qcConfigs.find((c) => c.id === selectedConfig);
+  const filteredData = useMemo(() => {
+    if (!selectedConfig || !qcData.length || !selectedConfigObj) return [];
+    let filtered = qcData.filter((item) => item.qcConfigId === selectedConfigObj.id && item.submitted === true);
+    if (startDate) filtered = filtered.filter((item) => item.date >= startDate);
+    if (endDate)   filtered = filtered.filter((item) => item.date <= endDate);
+    return filtered.sort((a, b) => a.date < b.date ? 1 : -1);
+  }, [selectedConfig, startDate, endDate, qcData, selectedConfigObj]);
+
+  const statistics = useMemo(() => {
+    const values = filteredData.map((item) => parseFloat(item.value)).filter((v) => !isNaN(v));
+    if (!values.length) return null;
+    const mean = values.reduce((s, v) => s + v, 0) / values.length;
+    const sd = Math.sqrt(values.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / values.length);
+    return { count: values.length, mean: mean.toFixed(3), sd: sd.toFixed(3), min: Math.min(...values).toFixed(3), max: Math.max(...values).toFixed(3) };
+  }, [filteredData]);
+
+  const handleDelete = (item: QcItem) => {
+    setConfirm({
+      open: true, title: "Delete QC Entry?",
+      message: <>Are you sure you want to delete this QC entry <strong>({item.date}, value: {item.value})</strong>? This cannot be undone.</>,
+      confirmLabel: "Delete", variant: "danger",
+      onConfirm: async () => {
+        setConfirm((c) => ({ ...c, open: false }));
+        try { await api.deleteItem(String(item.id)); fetchData(); }
+        catch (e) { setError(`Error deleting: ${(e as Error).message}`); }
+      },
+    });
+  };
+
+  const handleMarkResolved = (item: QcItem) => {
+    setConfirm({
+      open: true, title: "Mark as Resolved?",
+      message: <>Mark this QC failure <strong>({item.date}, value: {item.value})</strong> as resolved? The alert will be cleared.</>,
+      confirmLabel: "Mark Resolved", variant: "success",
+      onConfirm: async () => {
+        setConfirm((c) => ({ ...c, open: false })); setResolvingId(String(item.id));
+        try { await api.putItem({ ...item, resolved: true }); fetchData(); }
+        catch (e) { setError(`Error: ${(e as Error).message}`); }
+        finally { setResolvingId(null); }
+      },
+    });
+  };
+
+  const handleExportCSV = () => {
+    if (!selectedConfig || !filteredData.length) return;
+    const configLabel = selectedConfigObj ? `${selectedConfigObj.qcName} Level ${selectedConfigObj.level}` : selectedConfig;
+    const rows: (string | number | null)[][] = [
+      ["QC Statistics Export"], ["Configuration", configLabel],
+      ["Date Range", startDate && endDate ? `${startDate} to ${endDate}` : "All"],
+      [], ["Date", "QC Name", "Level", "Value", "Lot Number", "Date Entered"],
+    ];
+    filteredData.forEach((item) => {
+      const config = qcConfigs.find((c) => c.id === item.qcConfigId);
+      rows.push([item.date, config?.qcName ?? "—", config?.level ?? "—", item.value, config?.lotNumber ?? "—", item.createdAt ? new Date(item.createdAt).toLocaleString() : "—"]);
+    });
+    downloadCSV(rows, `QC_Statistics_${configLabel.replace(/\s+/g, "_")}_${todayStr()}.csv`);
+  };
+
+  return (
+    <div className="space-y-5">
+      {error && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
+
+      <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5">
+        <SectionHead icon={TrendingUp} title="Filter Options" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Select QC Configuration</label>
+            <select value={selectedConfig} onChange={(e) => setSelectedConfig(e.target.value)} className={selectCls}>
+              <option value="">-- Select Configuration --</option>
+              {qcConfigs.map((config) => <option key={config.id} value={config.id}>{config.qcName} - Level {config.level}{config.lotNumber ? ` - Lot: ${config.lotNumber}` : ""}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Start Date</label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">End Date</label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputCls} />
+          </div>
+        </div>
+      </div>
+
+      {statistics && (
+        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-emerald-800 mb-4 uppercase tracking-wider">Statistics Summary</h3>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[
+              { label: "Total Values", value: statistics.count },
+              { label: "Mean",         value: statistics.mean  },
+              { label: "Std Dev",      value: statistics.sd    },
+              { label: "Minimum",      value: statistics.min   },
+              { label: "Maximum",      value: statistics.max   },
+            ].map(({ label, value }) => (
+              <div key={label} className="text-center">
+                <div className="text-2xl font-bold text-emerald-700">{value}</div>
+                <div className="text-xs text-emerald-600 mt-0.5">{label}</div>
               </div>
             ))}
           </div>
+        </div>
+      )}
 
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-4">
-              <SectionHead icon={Grid3X3} title="Recent Racks" />
-              <button onClick={() => setSubTab("racks")} className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold">View all →</button>
-            </div>
-            {recentRacks.length === 0 ? (
-              <div className="text-center py-10">
-                <Grid3X3 size={28} className="text-slate-300 mx-auto mb-3" />
-                <p className="text-sm text-slate-400 mb-3">No racks yet.</p>
-                <button onClick={() => { setSubTab("racks"); setShowCreateModal(true); }} className={btnPrimary + " mx-auto"}>
-                  <Plus size={14} /> Create First Rack
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {recentRacks.map((rack) => {
-                  const cap = rack.rack_type === "igra" ? 40 : 100;
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="flex items-center justify-between mb-4">
+          <SectionHead icon={ClipboardList} title="QC Values (Submitted Only)" />
+          <button onClick={handleExportCSV} disabled={!selectedConfig || !filteredData.length} className={btnSecondary + " disabled:opacity-40"}>
+            <Download size={14} /> Export CSV
+          </button>
+        </div>
+        {filteredData.length === 0 ? (
+          <p className="text-sm text-slate-400 text-center py-8">
+            {selectedConfig ? "No submitted QC values found for the selected configuration and date range." : "Please select a QC configuration to view statistics."}
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-slate-100">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>{["Date", "QC Name", "Level", "Value", "Lot Number", "Date Entered", "Resolve", ""].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredData.map((item, idx) => {
+                  const config = qcConfigs.find((c) => c.id === item.qcConfigId);
+                  const isFailure = selectedConfigObj && Math.abs(Number(item.value) - Number(selectedConfigObj.mean)) > 2 * Number(selectedConfigObj.sd);
                   return (
-                    <div key={rack.id} className="flex items-center justify-between px-3 py-3 rounded-xl hover:bg-slate-50 transition-all">
-                      <div>
-                        <p className="font-medium text-slate-800 text-sm">{rack.rack_name}</p>
-                        <p className="text-xs text-slate-400">{new Date(rack.rack_date).toLocaleDateString()} · {rack.rack_type === "igra" ? "IGRA" : "Normal"}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-xs text-slate-500">{rack.total_samples}/{cap} samples</p>
-                          <div className="w-24 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                            <div className="h-full bg-emerald-400 rounded-full" style={{ width: `${(rack.total_samples / cap) * 100}%` }} />
-                          </div>
-                        </div>
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${rackStatusColor(rack.status)}`}>{rack.status}</span>
-                      </div>
-                    </div>
+                    <tr key={item.id ?? idx} className="hover:bg-slate-50 transition-colors">
+                      <td className={tblCell}>{fmtDate(item.date)}</td>
+                      <td className={tblCell + " font-semibold text-slate-800"}>{config?.qcName ?? "—"}</td>
+                      <td className={tblCell}>{config?.level ?? "—"}</td>
+                      <td className={tblCell + " font-mono font-bold text-emerald-700"}>{item.value}</td>
+                      <td className={tblCell}>{config?.lotNumber ?? "—"}</td>
+                      <td className={tblCell + " text-slate-500"}>{item.createdAt ? new Date(item.createdAt).toLocaleString() : "—"}</td>
+                      <td className={tblCell}>
+                        {isFailure && !item.resolved ? (
+                          <button onClick={() => handleMarkResolved(item)} disabled={resolvingId === String(item.id)}
+                            className="px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold disabled:opacity-60">
+                            {resolvingId === String(item.id) ? "Resolving…" : "Mark Resolved"}
+                          </button>
+                        ) : item.resolved ? (
+                          <span className="text-xs text-emerald-600 font-semibold">Resolved</span>
+                        ) : <span className="text-slate-300">—</span>}
+                      </td>
+                      <td className={tblCell}>
+                        <button onClick={() => handleDelete(item)} className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold">Delete</button>
+                      </td>
+                    </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      <ConfirmModal {...confirm} onCancel={() => setConfirm(closedConfirm)} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  QUALITATIVE QC CONFIG TAB  (Lab-hub QualitativeQCConfig)  */
+/* ═══════════════════════════════════════════════════════════ */
+const RESULT_TYPES = ["Reactive / Non-Reactive", "Positive / Negative", "Detected / Not Detected", "Pass / Fail"];
+const FREQUENCIES  = ["Daily", "Weekly", "Per Batch"];
+const LEVEL_OPTIONS = ["Positive Control", "Negative Control"];
+
+function getExpectedOptions(resultType: string) {
+  if (!resultType) return ["Reactive", "Non-Reactive"];
+  const parts = resultType.split(" / ");
+  return [parts[0]?.trim() ?? "", parts[1]?.trim() ?? ""];
+}
+
+const blankQualForm = () => ({
+  testName: "", resultType: RESULT_TYPES[0], lotNumber: "", manufacturer: "", expiryDate: "", frequency: "Daily",
+  controls: [{ name: "", level: LEVEL_OPTIONS[0], expectedResult: "", notes: "" }],
+});
+
+function QualConfigTab({ labHubUrl }: { labHubUrl: string }) {
+  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
+  const [form, setForm]             = useState(blankQualForm());
+  const [configs, setConfigs]       = useState<QcItem[]>([]);
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [isLoading, setIsLoading]   = useState(false);
+  const [error, setError]           = useState("");
+  const [success, setSuccess]       = useState("");
+  const [confirm, setConfirm]       = useState<ConfirmState>(closedConfirm);
+
+  const fetchConfigs = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await api.getItems();
+      const items = Array.isArray(data) ? data : (data?.data ?? []);
+      setConfigs(items.filter((item: QcItem) => item.qualitative === true && item.testName && !item.qualEntry));
+    } catch (e) { setError(`Error fetching configs: ${(e as Error).message}`); }
+    finally { setIsLoading(false); }
+  }, [api]);
+
+  useEffect(() => { fetchConfigs(); }, [fetchConfigs]);
+
+  const resetForm = () => { setForm(blankQualForm()); setEditingId(null); setError(""); setSuccess(""); };
+
+  const updateControl = (idx: number, field: string, value: string) => {
+    setForm({ ...form, controls: form.controls.map((c, i) => i === idx ? { ...c, [field]: value } : c) });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); setError(""); setSuccess("");
+    if (!form.testName.trim()) { setError("Test Name is required."); return; }
+    for (const c of form.controls) {
+      if (!c.name.trim() || !c.expectedResult) { setError("Each control must have a name and an expected result."); return; }
+    }
+    setIsLoading(true);
+    const payload: QcItem = {
+      id: editingId || String(Date.now()), qualitative: true,
+      testName: form.testName.trim(), resultType: form.resultType,
+      lotNumber: form.lotNumber, manufacturer: form.manufacturer,
+      expiryDate: form.expiryDate, frequency: form.frequency, controls: form.controls,
+    };
+    try {
+      if (editingId) await api.putItem(payload); else await api.postItem(payload);
+      setSuccess(`Configuration ${editingId ? "updated" : "saved"} successfully!`);
+      fetchConfigs(); resetForm();
+    } catch (e) { setError(`Error saving config: ${(e as Error).message}`); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleDelete = (config: QcItem) => {
+    setConfirm({
+      open: true, title: "Delete Qualitative QC Config?",
+      message: <>Are you sure you want to delete <strong>{config.testName}</strong>? Existing QC run records will remain.</>,
+      confirmLabel: "Delete Config", variant: "danger",
+      onConfirm: async () => {
+        setConfirm((c) => ({ ...c, open: false })); setIsLoading(true);
+        try {
+          await api.deleteItem(String(config.id)); setSuccess("Configuration deleted."); fetchConfigs();
+          if (editingId === String(config.id)) resetForm();
+        } catch (e) { setError(`Error: ${(e as Error).message}`); }
+        finally { setIsLoading(false); }
+      },
+    });
+  };
+
+  const expectedOptions = getExpectedOptions(form.resultType);
+
+  return (
+    <div className="space-y-6">
+      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading…</div>}
+      {error   && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
+      {success && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm">{success}</div>}
+
+      <form onSubmit={handleSubmit} className="bg-slate-50 rounded-2xl border border-slate-200 p-6 space-y-6">
+        <SectionHead icon={FlaskConical} title={`${editingId ? "Edit" : ""} Qualitative QC Configuration`} />
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-3 flex items-center gap-2">Test Information <span className="flex-1 h-px bg-emerald-200 ml-2" /></h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Test Name <span className="text-red-500">*</span></label>
+              <input type="text" value={form.testName} onChange={(e) => setForm({ ...form, testName: e.target.value })} placeholder="e.g. HIV Rapid Test" className={inputCls} required />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Result Type <span className="text-red-500">*</span></label>
+              <select value={form.resultType} onChange={(e) => setForm({ ...form, resultType: e.target.value })} className={selectCls}>
+                {RESULT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Frequency</label>
+              <select value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value })} className={selectCls}>
+                {FREQUENCIES.map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Manufacturer / Kit Name</label>
+              <input type="text" value={form.manufacturer} onChange={(e) => setForm({ ...form, manufacturer: e.target.value })} placeholder="e.g. Determine™ HIV 1/2" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Lot Number</label>
+              <input type="text" value={form.lotNumber} onChange={(e) => setForm({ ...form, lotNumber: e.target.value })} placeholder="e.g. LOT-2025-HIV-04" className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Expiry Date</label>
+              <input type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} className={inputCls} />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-3 flex items-center gap-2">Control Levels &amp; Expected Results <span className="flex-1 h-px bg-emerald-200 ml-2" /></h3>
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>{["Control Name", "Level", "Expected Result", "Notes", ""].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {form.controls.map((ctrl, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50">
+                    <td className="px-4 py-3"><input type="text" value={ctrl.name} onChange={(e) => updateControl(idx, "name", e.target.value)} placeholder="e.g. Strong Positive Control" className={inputCls} required /></td>
+                    <td className="px-4 py-3"><select value={ctrl.level} onChange={(e) => updateControl(idx, "level", e.target.value)} className={selectCls}>{LEVEL_OPTIONS.map((l) => <option key={l} value={l}>{l}</option>)}</select></td>
+                    <td className="px-4 py-3"><select value={ctrl.expectedResult} onChange={(e) => updateControl(idx, "expectedResult", e.target.value)} className={selectCls} required><option value="">-- Select --</option>{expectedOptions.map((o) => <option key={o} value={o}>{o}</option>)}</select></td>
+                    <td className="px-4 py-3"><input type="text" value={ctrl.notes} onChange={(e) => updateControl(idx, "notes", e.target.value)} placeholder="e.g. Strong band at C and T" className={inputCls} /></td>
+                    <td className="px-4 py-3">
+                      <button type="button" onClick={() => { if (form.controls.length > 1) setForm({ ...form, controls: form.controls.filter((_, i) => i !== idx) }); }} disabled={form.controls.length === 1}
+                        className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 disabled:opacity-30 transition-all">
+                        <XIcon size={12} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button type="button" onClick={() => setForm({ ...form, controls: [...form.controls, { name: "", level: LEVEL_OPTIONS[0], expectedResult: "", notes: "" }] })}
+            className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-emerald-200 rounded-xl text-emerald-600 font-semibold text-sm hover:bg-emerald-50 transition">
+            <Plus size={14} /> Add Control Level
+          </button>
+        </div>
+
+        <div className="flex gap-3 pt-1">
+          <button type="submit" disabled={isLoading} className={btnPrimary}>{editingId ? "Update Configuration" : "Save Configuration"}</button>
+          <button type="button" onClick={resetForm} className={btnSecondary}>Clear Form</button>
+        </div>
+      </form>
+
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <SectionHead icon={FlaskConical} title="Existing Qualitative QC Configurations" />
+        {configs.length === 0 ? (
+          <p className="text-sm text-slate-400 text-center py-8">No qualitative QC configurations found. Create one above.</p>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-slate-100">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>{["Test Name", "Result Type", "Controls", "Lot Number", "Expiry", "Frequency", "Actions"].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {configs.map((cfg) => (
+                  <tr key={cfg.id} className="hover:bg-slate-50 transition-colors">
+                    <td className={tblCell + " font-semibold text-slate-800"}>{cfg.testName}</td>
+                    <td className={tblCell}>{cfg.resultType}</td>
+                    <td className={tblCell}><span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">{cfg.controls?.length || 0} control{cfg.controls?.length !== 1 ? "s" : ""}</span></td>
+                    <td className={tblCell + " font-mono"}>{cfg.lotNumber || "—"}</td>
+                    <td className={tblCell}>
+                      {cfg.expiryDate ? (
+                        <span className={new Date(cfg.expiryDate) < new Date() ? "text-red-600 font-semibold" : ""}>
+                          {fmtDate(cfg.expiryDate)}{new Date(cfg.expiryDate) < new Date() ? " ⚠️" : ""}
+                        </span>
+                      ) : "—"}
+                    </td>
+                    <td className={tblCell}>{cfg.frequency}</td>
+                    <td className={tblCell}>
+                      <div className="flex gap-2">
+                        <button onClick={() => { setForm({ testName: cfg.testName || "", resultType: cfg.resultType || RESULT_TYPES[0], lotNumber: cfg.lotNumber || "", manufacturer: cfg.manufacturer || "", expiryDate: cfg.expiryDate || "", frequency: cfg.frequency || "Daily", controls: cfg.controls?.length ? cfg.controls : [{ name: "", level: LEVEL_OPTIONS[0], expectedResult: "", notes: "" }] }); setEditingId(String(cfg.id)); }} className="px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold">Edit</button>
+                        <button onClick={() => handleDelete(cfg)} className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      <ConfirmModal {...confirm} onCancel={() => setConfirm(closedConfirm)} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  QUALITATIVE QC ENTRY TAB  (Lab-hub QualitativeQCEntry)    */
+/* ═══════════════════════════════════════════════════════════ */
+const LEVEL_COLORS: Record<string, string> = {
+  "High Positive":    "bg-pink-100 text-pink-800",
+  "Low Positive":     "bg-purple-100 text-purple-700",
+  "Positive Control": "bg-pink-100 text-pink-800",
+  "Negative Control": "bg-emerald-100 text-emerald-700",
+  "Negative":         "bg-emerald-100 text-emerald-700",
+  "External Control": "bg-amber-100 text-amber-700",
+};
+
+function QualEntryTab({ labHubUrl }: { labHubUrl: string }) {
+  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
+  const [qualConfigs, setQualConfigs]         = useState<QcItem[]>([]);
+  const [allEntries, setAllEntries]           = useState<QcItem[]>([]);
+  const [selectedConfigId, setSelectedConfigId] = useState("");
+  const [selectedDate, setSelectedDate]       = useState(todayStr());
+  const [controlResults, setControlResults]   = useState<QcItem[]>([]);
+  const [correctiveAction, setCorrectiveAction] = useState("");
+  const [editingId, setEditingId]             = useState<string | null>(null);
+  const [isLoading, setIsLoading]             = useState(false);
+  const [error, setError]                     = useState("");
+  const [success, setSuccess]                 = useState("");
+  const [confirm, setConfirm]                 = useState<ConfirmState>(closedConfirm);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const data = await api.getItems();
+      const items = Array.isArray(data) ? data : (data?.data ?? []);
+      setQualConfigs(items.filter((item: QcItem) => item.qualitative === true && item.testName && !item.qualEntry));
+      setAllEntries(items.filter((item: QcItem) => item.qualitative === true && item.qualEntry === true).sort((a: QcItem, b: QcItem) => a.date < b.date ? 1 : -1));
+    } catch (e) { setError(`Error loading configurations: ${(e as Error).message}`); }
+  }, [api]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    if (!selectedConfigId || editingId) return;
+    const cfg = qualConfigs.find((c) => c.id === selectedConfigId);
+    if (!cfg) return;
+    setControlResults((cfg.controls || []).map((ctrl: QcItem) => ({
+      controlName: ctrl.name, level: ctrl.level, expectedResult: ctrl.expectedResult, notes: ctrl.notes || "", observedResult: "",
+    })));
+    setCorrectiveAction("");
+  }, [selectedConfigId, qualConfigs, editingId]);
+
+  const selectedConfig = qualConfigs.find((c) => c.id === selectedConfigId);
+  const resultOptions  = selectedConfig ? selectedConfig.resultType.split(" / ").map((s: string) => s.trim()) : [];
+  const getStatus = (r: QcItem) => !r.observedResult ? "pending" : r.observedResult === r.expectedResult ? "pass" : "fail";
+  const allFilled  = controlResults.length > 0 && controlResults.every((r) => r.observedResult);
+  const anyFail    = controlResults.some((r) => getStatus(r) === "fail");
+  const overallPass = allFilled && !anyFail;
+
+  const resetForm = () => {
+    setSelectedConfigId(""); setControlResults([]); setCorrectiveAction("");
+    setSelectedDate(todayStr()); setEditingId(null); setError(""); setSuccess("");
+  };
+
+  const handleSave = async (submit: boolean) => {
+    setError(""); setSuccess("");
+    if (!selectedConfigId || !selectedDate) { setError("Please select a test configuration and date."); return; }
+    if (submit && !allFilled) { setError("Please record observed results for all controls before submitting."); return; }
+    if (submit && anyFail && !correctiveAction.trim()) { setError("A corrective action description is required when any control fails."); return; }
+    setIsLoading(true);
+    const payload: QcItem = {
+      id: editingId || String(Date.now()), qualitative: true, qualEntry: true,
+      qcConfigId: selectedConfigId, testName: selectedConfig?.testName || "",
+      lotNumber: selectedConfig?.lotNumber || "", date: selectedDate,
+      controlResults, overallPass: allFilled && !anyFail,
+      correctiveAction: anyFail ? correctiveAction.trim() : "", submitted: submit,
+    };
+    try {
+      if (editingId) await api.putItem(payload); else await api.postItem(payload);
+      setSuccess(submit ? `QC Run submitted — Overall: ${overallPass ? "PASS" : "FAIL"}` : (editingId ? "Draft updated." : "Draft saved."));
+      resetForm(); fetchData();
+    } catch (e) { setError(`Error: ${(e as Error).message}`); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleSubmitDraft = async (entry: QcItem) => {
+    if (!entry.controlResults?.every((r: QcItem) => r.observedResult)) { setError("Cannot submit: not all control results are filled in. Edit the draft first."); return; }
+    setIsLoading(true);
+    try { await api.putItem({ ...entry, submitted: true }); setSuccess("Draft submitted successfully."); fetchData(); }
+    catch (e) { setError(`Error: ${(e as Error).message}`); }
+    finally { setIsLoading(false); }
+  };
+
+  const handleDelete = (entry: QcItem) => {
+    setConfirm({
+      open: true, title: "Delete QC Run Draft?",
+      message: <>Are you sure you want to delete this draft for <strong>{entry.testName}</strong> ({entry.date})? This cannot be undone.</>,
+      confirmLabel: "Delete Draft", variant: "danger",
+      onConfirm: async () => {
+        setConfirm((c) => ({ ...c, open: false })); setIsLoading(true);
+        try {
+          await api.deleteItem(String(entry.id)); setSuccess("Draft deleted."); fetchData();
+          if (editingId === String(entry.id)) resetForm();
+        } catch (e) { setError(`Error: ${(e as Error).message}`); }
+        finally { setIsLoading(false); }
+      },
+    });
+  };
+
+  const draftEntries = allEntries.filter((e) => !e.submitted);
+
+  return (
+    <div className="space-y-6">
+      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading…</div>}
+      {error   && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
+      {success && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm">{success}</div>}
+
+      <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
+        <SectionHead icon={TestTube} title={`Qualitative QC Data Entry${editingId ? " — Editing Draft" : ""}`} />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+          <div>
+            <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Select Test <span className="text-red-500">*</span></label>
+            <select value={selectedConfigId} onChange={(e) => { setSelectedConfigId(e.target.value); if (!editingId) setControlResults([]); }} className={selectCls} required>
+              <option value="">-- Choose Test --</option>
+              {qualConfigs.map((cfg) => <option key={cfg.id} value={cfg.id}>{cfg.testName}</option>)}
+            </select>
+            {qualConfigs.length === 0 && <p className="text-xs text-amber-600 mt-1">No tests configured. Add one in Qual. Config first.</p>}
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Lot Number</label>
+            <div className="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-100 font-mono font-semibold text-slate-700 text-sm min-h-[42px] flex items-center">{selectedConfig?.lotNumber || "—"}</div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Date <span className="text-red-500">*</span></label>
+            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className={inputCls} required />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Result Type</label>
+            <div className="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-100 text-slate-700 text-sm min-h-[42px] flex items-center">{selectedConfig?.resultType || "—"}</div>
+          </div>
+        </div>
+
+        {controlResults.length > 0 && (
+          <div className="bg-white rounded-xl border border-slate-100 p-4 mb-5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-3 flex items-center gap-2">Record Control Results <span className="flex-1 h-px bg-emerald-200 ml-2" /></h3>
+            <div className="overflow-x-auto rounded-xl border border-slate-100">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b border-slate-100">
+                  <tr>{["Control Name", "Level", "Expected", "Observed Result", "Status"].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {controlResults.map((result, idx) => {
+                    const status = getStatus(result);
+                    return (
+                      <tr key={idx} className={status === "fail" ? "bg-red-50" : status === "pass" ? "bg-emerald-50/30" : "hover:bg-slate-50"}>
+                        <td className={tblCell + " font-semibold text-slate-800"}>{result.controlName}</td>
+                        <td className={tblCell}><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${LEVEL_COLORS[result.level] || "bg-slate-100 text-slate-700"}`}>{result.level}</span></td>
+                        <td className={tblCell}><span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">{result.expectedResult}</span></td>
+                        <td className={tblCell}>
+                          <div className="flex gap-2">
+                            {resultOptions.map((opt: string) => (
+                              <button key={opt} type="button" onClick={() => setControlResults((prev) => prev.map((r, i) => i === idx ? { ...r, observedResult: opt } : r))}
+                                className={`flex-1 px-3 py-2 rounded-xl border-2 text-sm font-bold transition ${
+                                  result.observedResult === opt
+                                    ? opt === result.expectedResult ? "bg-emerald-100 border-emerald-500 text-emerald-700" : "bg-red-100 border-red-500 text-red-700"
+                                    : "bg-white border-slate-200 text-slate-500 hover:border-emerald-300"
+                                }`}
+                              >{opt}</button>
+                            ))}
+                          </div>
+                        </td>
+                        <td className={tblCell}>
+                          {status === "pass"    && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Pass</span>}
+                          {status === "fail"    && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Fail</span>}
+                          {status === "pending" && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Pending</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {allFilled && (
+              <div className={`mt-4 p-4 rounded-xl border-2 flex items-center gap-3 font-bold text-base ${overallPass ? "bg-emerald-50 border-emerald-500 text-emerald-700" : "bg-red-50 border-red-500 text-red-700"}`}>
+                <span className="text-2xl">{overallPass ? "✓" : "✗"}</span>
+                <div>
+                  <div>Overall QC Run: <strong>{overallPass ? "PASS" : "FAIL"}</strong>{" — "}{controlResults.filter((r) => getStatus(r) === "pass").length} of {controlResults.length} controls concordant</div>
+                  {!overallPass && <div className="font-normal text-sm mt-1">Corrective action is required before releasing patient results.</div>}
+                </div>
               </div>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── Racks ── */}
-      {subTab === "racks" && (
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <SectionHead icon={Grid3X3} title="Sample Racks" />
-            <div className="flex gap-2">
-              <button onClick={handleExport} className={btnSecondary}><Download size={14} /> Export CSV</button>
-              <button onClick={() => setShowCreateModal(true)} className={btnPrimary}><Plus size={14} /> New Rack</button>
-            </div>
+        {anyFail && (
+          <div className="bg-red-50 rounded-xl border border-red-200 p-4 mb-5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-red-600 mb-3 flex items-center gap-2">Corrective Action Required <span className="flex-1 h-px bg-red-200 ml-2" /></h3>
+            <textarea value={correctiveAction} onChange={(e) => setCorrectiveAction(e.target.value)}
+              placeholder="Describe the corrective action taken…" rows={3}
+              className={inputCls + " resize-y"} required={anyFail} />
           </div>
+        )}
 
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Filter size={14} className="text-slate-400" />
-              <span className="text-sm font-semibold text-slate-600">Filters</span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Start Date</label>
-                <input type="date" value={filters.startDate} onChange={(e) => setFilters((f) => ({ ...f, startDate: e.target.value }))} className={inputCls} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">End Date</label>
-                <input type="date" value={filters.endDate} onChange={(e) => setFilters((f) => ({ ...f, endDate: e.target.value }))} className={inputCls} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Status</label>
-                <select value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))} className={selectCls}>
-                  <option value="">All</option>
-                  <option value="empty">Empty</option>
-                  <option value="partial">Partial</option>
-                  <option value="full">Full</option>
-                </select>
-              </div>
-              <div className="flex items-end">
-                <button onClick={() => loadRacks()} disabled={racksLoading} className={btnPrimary + " w-full justify-center"}>
-                  {racksLoading ? <RefreshCw size={13} className="animate-spin" /> : <Filter size={13} />} Apply
-                </button>
-              </div>
-            </div>
+        {selectedConfigId && (
+          <div className="flex gap-3 flex-wrap">
+            <button type="button" onClick={() => handleSave(false)} disabled={isLoading || !selectedConfigId} className={btnSecondary}>{editingId ? "Update Draft" : "Save Draft"}</button>
+            <button type="button" onClick={() => handleSave(true)}  disabled={isLoading || !selectedConfigId} className={btnPrimary}>{editingId ? "Submit Entry" : "Save & Submit"}</button>
+            <button type="button" onClick={resetForm} className={btnSecondary}>Clear</button>
           </div>
+        )}
+      </div>
 
-          {racksLoading ? (
-            <div className="flex items-center justify-center py-12 gap-2 text-slate-400 text-sm">
-              <RefreshCw size={16} className="animate-spin" /> Loading racks…
-            </div>
-          ) : racks.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 text-center">
-              <Grid3X3 size={28} className="text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-500 text-sm mb-4">No racks found.</p>
-              <button onClick={() => setShowCreateModal(true)} className={btnPrimary + " mx-auto"}>
-                <Plus size={14} /> Create First Rack
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {racks.map((rack) => {
-                const cap = rack.rack_type === "igra" ? 40 : 100;
-                const pct = Math.round((rack.total_samples / cap) * 100);
-                return (
-                  <div key={rack.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-4 hover:shadow-md transition-all">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold text-slate-900 text-sm" style={{ letterSpacing: "-0.01em" }}>{rack.rack_name}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{new Date(rack.rack_date).toLocaleDateString()}</p>
-                      </div>
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${rackStatusColor(rack.status)}`}>{rack.status}</span>
-                    </div>
-                    {rack.description && <p className="text-xs text-slate-500">{rack.description}</p>}
-                    <div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
-                        <span>{rack.rack_type === "igra" ? "IGRA Rack" : "Normal Rack"}</span>
-                        <span>{rack.total_samples}/{cap} ({pct}%)</span>
-                      </div>
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${rack.status === "full" ? "bg-emerald-500" : rack.status === "partial" ? "bg-amber-400" : "bg-slate-300"}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex gap-2 pt-1">
-                      <a href={`${labHubUrl}/rack/${rack.id}`} target="_blank" rel="noopener noreferrer"
-                        className={btnPrimary + " flex-1 justify-center text-xs"}>
-                        View in Lab-hub ↗
-                      </a>
-                      <button onClick={() => handleDeleteRack(rack.id, rack.rack_name)}
-                        className="px-3 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-all">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {showCreateModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={() => setShowCreateModal(false)}>
-              <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
-                <h3 className="font-bold text-slate-900" style={{ fontSize: "1.125rem", letterSpacing: "-0.02em" }}>Create New Rack</h3>
-                <form onSubmit={handleCreateRack} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Rack Name *</label>
-                    <input type="text" value={newRack.rack_name} onChange={(e) => setNewRack((r) => ({ ...r, rack_name: e.target.value }))}
-                      required placeholder="e.g. Morning Batch 001" className={inputCls} autoFocus />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Date *</label>
-                    <input type="date" value={newRack.rack_date} onChange={(e) => setNewRack((r) => ({ ...r, rack_date: e.target.value }))}
-                      required className={inputCls} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Rack Type *</label>
-                    <select value={newRack.rack_type} onChange={(e) => setNewRack((r) => ({ ...r, rack_type: e.target.value }))} className={selectCls}>
-                      <option value="normal">Normal Rack (100 positions — 10×10)</option>
-                      <option value="igra">IGRA Rack (40 positions — 10×4)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Description</label>
-                    <textarea value={newRack.description} onChange={(e) => setNewRack((r) => ({ ...r, description: e.target.value }))}
-                      rows={2} placeholder="Optional…" className={inputCls + " resize-none"} />
-                  </div>
-                  <div className="flex gap-3 pt-1">
-                    <button type="submit" disabled={creating} className={btnPrimary + " flex-1 justify-center"}>
-                      {creating ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} />} Create Rack
-                    </button>
-                    <button type="button" onClick={() => setShowCreateModal(false)} className={btnSecondary}>Cancel</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Search ── */}
-      {subTab === "search" && (
-        <div className="space-y-5">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
-            <SectionHead icon={Search} title="Search Samples" />
-            <form onSubmit={handleSearch} className="space-y-4">
-              <div className="flex gap-3">
-                <div className="flex-1 relative">
-                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  <input
-                    type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by barcode, patient ID, sample type…"
-                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all"
-                    autoFocus
-                  />
-                </div>
-                <button type="submit" disabled={searching || !searchQuery.trim()} className={btnPrimary}>
-                  {searching ? <RefreshCw size={14} className="animate-spin" /> : <Search size={14} />}
-                  {searching ? "Searching…" : "Search"}
-                </button>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Search in:</span>
-                {(["all", "barcode", "patient_id"] as const).map((val) => (
-                  <label key={val} className="flex items-center gap-1.5 cursor-pointer text-sm text-slate-600">
-                    <input type="radio" value={val} checked={searchField === val} onChange={(e) => setSearchField(e.target.value)} className="accent-emerald-600" />
-                    {val === "all" ? "All Fields" : val === "barcode" ? "Barcode" : "Patient ID"}
-                  </label>
-                ))}
-              </div>
-            </form>
-          </div>
-
-          {searched && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-4">
-                <SectionHead icon={Package} title="Search Results" />
-                <span className="text-xs font-semibold text-slate-400">
-                  {searchResults.length} {searchResults.length === 1 ? "sample" : "samples"} found
-                </span>
-              </div>
-              {searchResults.length === 0 ? (
-                <div className="text-center py-10">
-                  <Package size={28} className="text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-400 text-sm">No samples match your search.</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {searchResults.map((s) => (
-                    <div key={s.id} className="flex items-start justify-between gap-4 px-4 py-3.5 rounded-xl border border-slate-100 hover:bg-slate-50 transition-all">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <Package size={14} className="text-slate-400" />
-                          <span className="font-semibold text-slate-800 text-sm">{s.barcode}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${s.discarded_at ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
-                            {s.discarded_at ? "Discarded" : "Active"}
-                          </span>
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <SectionHead icon={ClipboardList} title="Draft Entries" />
+        {draftEntries.length === 0 ? (
+          <p className="text-sm text-slate-400 text-center py-6">No draft QC runs.</p>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-slate-100">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>{["Test", "Date", "Controls", "Filled", "Operator", "Actions"].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {draftEntries.map((entry) => {
+                  const controls = entry.controlResults || [];
+                  const filled   = controls.filter((r: QcItem) => r.observedResult).length;
+                  return (
+                    <tr key={entry.id} className="hover:bg-slate-50">
+                      <td className={tblCell + " font-semibold text-slate-800"}>{entry.testName}</td>
+                      <td className={tblCell}>{entry.date}</td>
+                      <td className={tblCell + " text-center"}>{controls.length}</td>
+                      <td className={tblCell + " text-center"}>
+                        <span className={`font-semibold ${filled === controls.length ? "text-emerald-600" : "text-amber-600"}`}>{filled}/{controls.length}</span>
+                      </td>
+                      <td className={tblCell}>{entry.enteredBy || "—"}</td>
+                      <td className={tblCell}>
+                        <div className="flex gap-2 flex-wrap">
+                          <button onClick={() => { setEditingId(String(entry.id)); setSelectedConfigId(entry.qcConfigId); setSelectedDate(entry.date); setControlResults(entry.controlResults || []); setCorrectiveAction(entry.correctiveAction || ""); }} className="px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold">Edit</button>
+                          <button onClick={() => handleSubmitDraft(entry)} className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">Submit</button>
+                          <button onClick={() => handleDelete(entry)} className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold">Delete</button>
                         </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-                          {s.patient_id  && <span>Patient: <strong className="text-slate-700">{s.patient_id}</strong></span>}
-                          {s.sample_type && <span>Type: <strong className="text-slate-700">{s.sample_type}</strong></span>}
-                          <span>Position: <strong className="text-slate-700">{positionLabel(s.position)}</strong></span>
-                          {s.collection_date && (
-                            <span>Collected: <strong className="text-slate-700">{new Date(s.collection_date).toLocaleDateString()}</strong></span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      <ConfirmModal {...confirm} onCancel={() => setConfirm(closedConfirm)} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*  QUALITATIVE QC LOG TAB  (Lab-hub QualitativeQCLog.js)     */
+/* ═══════════════════════════════════════════════════════════ */
+function QualLogTab({ labHubUrl }: { labHubUrl: string }) {
+  const api = useMemo(() => makeApi(labHubUrl), [labHubUrl]);
+  const [allRuns, setAllRuns]       = useState<QcItem[]>([]);
+  const [filterTest, setFilterTest] = useState("");
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo]     = useState("");
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [isLoading, setIsLoading]   = useState(false);
+  const [error, setError]           = useState("");
+  const [confirm, setConfirm]       = useState<ConfirmState>(closedConfirm);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await api.getItems();
+      const items = Array.isArray(data) ? data : (data?.data ?? []);
+      const runs = items
+        .filter((item: QcItem) => item.qualitative === true && item.qualEntry === true && item.submitted === true)
+        .sort((a: QcItem, b: QcItem) => a.date < b.date ? 1 : -1);
+      setAllRuns(runs);
+    } catch (e) { setError(`Error loading data: ${(e as Error).message}`); }
+    finally { setIsLoading(false); }
+  }, [api]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const filtered = allRuns.filter((run) => {
+    if (filterTest && run.testName !== filterTest) return false;
+    if (filterFrom && run.date < filterFrom) return false;
+    if (filterTo   && run.date > filterTo)   return false;
+    return true;
+  });
+
+  const totalRuns  = filtered.length;
+  const passedRuns = filtered.filter((r) => r.overallPass).length;
+  const failedRuns = totalRuns - passedRuns;
+  const passRate   = totalRuns > 0 ? ((passedRuns / totalRuns) * 100).toFixed(1) : "—";
+  const testNames  = [...new Set(allRuns.map((r) => r.testName).filter(Boolean))];
+
+  const handleDelete = (run: QcItem) => {
+    setConfirm({
+      open: true, title: "Delete QC Run Record?",
+      message: <>Are you sure you want to delete this QC run <strong>{run.testName}</strong> from <strong>{run.date}</strong>? This cannot be undone.</>,
+      confirmLabel: "Delete", variant: "danger",
+      onConfirm: async () => {
+        setConfirm((c) => ({ ...c, open: false }));
+        try { await api.deleteItem(String(run.id)); fetchData(); }
+        catch (e) { setError(`Error: ${(e as Error).message}`); }
+      },
+    });
+  };
+
+  const handleMarkResolved = (run: QcItem) => {
+    setConfirm({
+      open: true, title: "Mark as Resolved?",
+      message: <>Mark failed QC run <strong>{run.testName}</strong> ({run.date}) as resolved? The alert will be cleared.</>,
+      confirmLabel: "Mark Resolved", variant: "success",
+      onConfirm: async () => {
+        setConfirm((c) => ({ ...c, open: false })); setResolvingId(String(run.id));
+        try { await api.putItem({ ...run, resolved: true }); fetchData(); }
+        catch (e) { setError(`Error: ${(e as Error).message}`); }
+        finally { setResolvingId(null); }
+      },
+    });
+  };
+
+  const handleExportCSV = () => {
+    if (!filtered.length) return;
+    const rows: (string | number | null)[][] = [
+      ["Qualitative QC Log Export"], ["Generated", new Date().toLocaleDateString()],
+      ["Filter: Test", filterTest || "All"], ["Filter: Date Range", filterFrom && filterTo ? `${filterFrom} to ${filterTo}` : "All"],
+      [], ["Summary"], ["Total Runs", "Passed", "Failed", "Pass Rate"],
+      [totalRuns, passedRuns, failedRuns, passRate !== "—" ? `${passRate}%` : "—"],
+      [], ["Date", "Test Name", "Lot Number", "Controls Run", "Passed", "Failed", "Overall Result", "Operator", "Corrective Action"],
+    ];
+    filtered.forEach((run) => {
+      const controls = run.controlResults || [];
+      const passed = controls.filter((c: QcItem) => c.observedResult === c.expectedResult).length;
+      rows.push([run.date, run.testName, run.lotNumber || "—", controls.length, passed, controls.length - passed, run.overallPass ? "PASS" : "FAIL", run.enteredBy || "—", run.correctiveAction || "—"]);
+    });
+    downloadCSV(rows, `QualitativeQC_Log_${todayStr()}.csv`);
+  };
+
+  return (
+    <div className="space-y-5">
+      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading…</div>}
+      {error && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Total Runs", value: totalRuns,  border: "border-slate-100",   color: "text-emerald-600" },
+          { label: "Passed",     value: passedRuns, border: "border-emerald-100", color: "text-emerald-600" },
+          { label: "Failed",     value: failedRuns, border: "border-red-100",     color: "text-red-600"     },
+          { label: "Pass Rate",  value: passRate !== "—" ? `${passRate}%` : "—",
+            border: "border-slate-100",
+            color: passRate === "—" ? "text-slate-600" : parseFloat(passRate) >= 90 ? "text-emerald-600" : parseFloat(passRate) >= 75 ? "text-amber-600" : "text-red-600" },
+        ].map(({ label, value, border, color }) => (
+          <div key={label} className={`bg-white ${border} border rounded-2xl p-5 text-center shadow-sm`}>
+            <div className={`text-3xl font-bold ${color}`}>{value}</div>
+            <div className="text-xs text-slate-500 mt-1 font-semibold uppercase tracking-wide">{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-3">Filter Options</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Test Name</label>
+            <select value={filterTest} onChange={(e) => setFilterTest(e.target.value)} className={selectCls}>
+              <option value="">All Tests</option>
+              {testNames.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">Start Date</label>
+            <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-1.5">End Date</label>
+            <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className={inputCls} />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="flex items-center justify-between mb-4">
+          <SectionHead icon={Activity} title="QC Run History" />
+          <button onClick={handleExportCSV} disabled={!filtered.length} className={btnSecondary + " disabled:opacity-40"}>
+            <Download size={14} /> Export CSV
+          </button>
+        </div>
+        {filtered.length === 0 ? (
+          <div className="text-center py-10 text-slate-400">
+            {allRuns.length === 0 ? "No qualitative QC runs recorded yet." : "No runs match the current filters."}
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-slate-100">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>{["Date", "Test", "Lot No.", "Controls", "Pass", "Fail", "Overall", "Date Entered", "Details", "Resolve", ""].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filtered.flatMap((run) => {
+                  const controls   = run.controlResults || [];
+                  const passed     = controls.filter((c: QcItem) => c.observedResult === c.expectedResult).length;
+                  const failed     = controls.length - passed;
+                  const isExpanded = expandedRow === String(run.id);
+
+                  const mainRow = (
+                    <tr key={String(run.id)} className={`hover:bg-slate-50 ${!run.overallPass ? "border-l-4 border-l-red-400" : ""}`}>
+                      <td className={tblCell}>{fmtDate(run.date)}</td>
+                      <td className={tblCell + " font-semibold text-slate-800"}>{run.testName}</td>
+                      <td className={tblCell + " font-mono text-slate-500"}>{run.lotNumber || "—"}</td>
+                      <td className={tblCell + " text-center"}>{controls.length}</td>
+                      <td className={tblCell + " font-bold text-emerald-600 text-center"}>{passed}</td>
+                      <td className={tblCell + " font-bold text-center"}><span className={failed > 0 ? "text-red-600" : "text-slate-400"}>{failed}</span></td>
+                      <td className={tblCell}><PassBadge pass={run.overallPass} /></td>
+                      <td className={tblCell + " text-slate-500"}>{run.createdAt ? new Date(run.createdAt).toLocaleString() : "—"}</td>
+                      <td className={tblCell}>
+                        <button onClick={() => setExpandedRow(isExpanded ? null : String(run.id))} className="text-emerald-600 hover:text-emerald-800 text-xs font-semibold underline flex items-center gap-1">
+                          {isExpanded ? <><ChevronUp size={12} /> Hide</> : <><ChevronDown size={12} /> View</>}
+                        </button>
+                      </td>
+                      <td className={tblCell}>
+                        {!run.overallPass && !run.resolved ? (
+                          <button onClick={() => handleMarkResolved(run)} disabled={resolvingId === String(run.id)}
+                            className="px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold disabled:opacity-60">
+                            {resolvingId === String(run.id) ? "Resolving…" : "Mark Resolved"}
+                          </button>
+                        ) : run.resolved ? (
+                          <span className="text-xs text-emerald-600 font-semibold">Resolved</span>
+                        ) : <span className="text-slate-300">—</span>}
+                      </td>
+                      <td className={tblCell}>
+                        <button onClick={() => handleDelete(run)} className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold">Delete</button>
+                      </td>
+                    </tr>
+                  );
+
+                  if (!isExpanded) return [mainRow];
+
+                  const detailRow = (
+                    <tr key={`${run.id}-detail`} className="bg-slate-50">
+                      <td colSpan={11} className="px-6 py-4">
+                        <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+                          <h4 className="font-bold text-emerald-700 mb-3 text-sm">Control Results Detail</h4>
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="text-xs text-emerald-600 font-bold uppercase">
+                                <th className="text-left pb-2 pr-4">Control</th>
+                                <th className="text-left pb-2 pr-4">Level</th>
+                                <th className="text-left pb-2 pr-4">Expected</th>
+                                <th className="text-left pb-2 pr-4">Observed</th>
+                                <th className="text-left pb-2">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {controls.map((ctrl: QcItem, cIdx: number) => (
+                                <Fragment key={cIdx}>
+                                  <tr className="border-t border-slate-100">
+                                    <td className="py-2 pr-4 font-medium text-slate-800">{ctrl.controlName}</td>
+                                    <td className="py-2 pr-4 text-slate-500">{ctrl.level}</td>
+                                    <td className="py-2 pr-4"><span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">{ctrl.expectedResult}</span></td>
+                                    <td className="py-2 pr-4">
+                                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${ctrl.observedResult === ctrl.expectedResult ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>{ctrl.observedResult}</span>
+                                    </td>
+                                    <td className="py-2">
+                                      {ctrl.observedResult === ctrl.expectedResult
+                                        ? <span className="text-emerald-600 font-bold text-xs">Concordant</span>
+                                        : <span className="text-red-600 font-bold text-xs">Discordant</span>}
+                                    </td>
+                                  </tr>
+                                </Fragment>
+                              ))}
+                            </tbody>
+                          </table>
+                          {run.correctiveAction && (
+                            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+                              <span className="text-xs font-bold text-red-700 uppercase">Corrective Action: </span>
+                              <span className="text-sm text-red-900">{run.correctiveAction}</span>
+                            </div>
                           )}
                         </div>
-                        {s.notes && <p className="text-xs text-slate-400 italic">&ldquo;{s.notes}&rdquo;</p>}
-                      </div>
-                      <a href={`${labHubUrl}/rack/${s.rack_id}`} target="_blank" rel="noopener noreferrer"
-                        className={btnSecondary + " text-xs whitespace-nowrap flex-shrink-0"}>
-                        View Rack ↗
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                      </td>
+                    </tr>
+                  );
+
+                  return [mainRow, detailRow];
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      <ConfirmModal {...confirm} onCancel={() => setConfirm(closedConfirm)} />
     </div>
   );
 }
