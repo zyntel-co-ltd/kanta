@@ -2,6 +2,7 @@
 
 import "@/components/charts/registry";
 import { useEffect, useState, useCallback } from "react";
+import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
 import {
   PieChart,
   Pie,
@@ -206,6 +207,11 @@ export default function TATPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* ── Lab Metrics Tab Navigation ── */}
+      <div className="bg-white border-b border-slate-100 px-6 py-3">
+        <LabMetricsTabs />
+      </div>
+
       {/* ── Filter Bar ────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="flex flex-wrap items-end gap-4">

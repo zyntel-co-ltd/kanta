@@ -57,6 +57,8 @@ type NavGroup = {
   collapsible?: {
     parentHref: string;
     parentIcon: NavItem["icon"];
+    /** Extra paths (besides parentHref) that trigger the "active" highlight */
+    activePaths?: string[];
   };
 };
 
@@ -64,6 +66,17 @@ const navGroups: NavGroup[] = [
   { title: "Home", items: [{ label: "Home", icon: Home, href: "/dashboard/home" }] },
   {
     title: "Lab Metrics",
+    collapsible: {
+      parentHref: "/dashboard/tat",
+      parentIcon: BarChart3,
+      activePaths: [
+        "/dashboard/tests",
+        "/dashboard/numbers",
+        "/dashboard/meta",
+        "/dashboard/revenue",
+        "/dashboard/performance",
+      ],
+    },
     items: [
       { label: "TAT",         icon: Clock,      href: "/dashboard/tat"         },
       { label: "Tests",       icon: Beaker,     href: "/dashboard/tests"       },
@@ -106,6 +119,18 @@ const navGroups: NavGroup[] = [
   },
   {
     title: "Asset Management",
+    collapsible: {
+      parentHref: "/dashboard/equipment",
+      parentIcon: ScanLine,
+      activePaths: [
+        "/dashboard",
+        "/dashboard/scan",
+        "/dashboard/maintenance",
+        "/dashboard/refrigerator",
+        "/dashboard/analytics",
+        "/dashboard/reports",
+      ],
+    },
     items: [
       { label: "Overview",     icon: LayoutDashboard, href: "/dashboard"              },
       { label: "Scan",         icon: ScanSearch,      href: "/dashboard/scan"         },
@@ -178,6 +203,13 @@ export default function Sidebar() {
     const toOpen: string[] = [];
     if (pathname.startsWith("/dashboard/qc"))      toOpen.push("Quality Management");
     if (pathname.startsWith("/dashboard/samples")) toOpen.push("Samples");
+
+    const labMetricsPaths = ["/dashboard/tat", "/dashboard/tests", "/dashboard/numbers", "/dashboard/meta", "/dashboard/revenue", "/dashboard/performance"];
+    if (labMetricsPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) toOpen.push("Lab Metrics");
+
+    const assetPaths = ["/dashboard/equipment", "/dashboard/scan", "/dashboard/maintenance", "/dashboard/refrigerator", "/dashboard/analytics", "/dashboard/reports"];
+    if (pathname === "/dashboard" || assetPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) toOpen.push("Asset Management");
+
     if (toOpen.length === 0) return;
     setOpenGroups((prev) => {
       const next = new Set(prev);
@@ -230,8 +262,13 @@ export default function Sidebar() {
           {navGroups.map((group) => {
             /* ── Collapsible accordion group (Quality Management) ── */
             if (group.collapsible) {
-              const { parentHref, parentIcon: ParentIcon } = group.collapsible;
-              const isQCPage   = pathname.startsWith(parentHref);
+              const { parentHref, parentIcon: ParentIcon, activePaths = [] } = group.collapsible;
+              const allPaths = [parentHref, ...activePaths];
+              const isQCPage = allPaths.some((p) =>
+                p === "/dashboard"
+                  ? pathname === "/dashboard"
+                  : pathname === p || pathname.startsWith(p + "/")
+              );
               const isOpen     = openGroups.has(group.title);
               const parentKey  = parentHref + group.title;
               const showTooltip = collapsed && (isQCPage || hoveredItem === parentKey);
