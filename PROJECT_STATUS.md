@@ -5,6 +5,36 @@
 
 ---
 
+## Repo map (high-signal)
+
+Generated from a `repomix --no-files` snapshot (paths only). **No secrets or file contents** are included here.
+
+### Top-level
+
+```text
+.cursor/
+.github/
+app/
+components/
+lib/
+prisma/
+public/
+scripts/
+styles/
+supabase/
+types/
+```
+
+### Key entrypoints
+
+```text
+.env.example
+next.config.ts
+package.json
+prisma/schema.prisma
+PROJECT_STATUS.md
+```
+
 ## What This Project Is
 
 Kanta is the flagship SaaS product — Hospital Operational Intelligence Platform. Equipment tracking (QR, sensors), TAT intelligence, departmental workflow visibility for hospitals. Lab-first launch strategy. MVP in active development.
