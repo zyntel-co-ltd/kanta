@@ -77,9 +77,9 @@ export const assetValueData = assetValueDataByPeriod["7d"];
 // ── Category Donut Chart ─────────────────────────────────────────────────────
 
 export const equipmentCategoryData = [
-  { name: "Diagnostic", value: 142, color: "#6366f1" },
-  { name: "Surgical", value: 87, color: "#a5b4fc" },
-  { name: "Monitoring", value: 63, color: "#e0e7ff" },
+  { name: "Diagnostic", value: 142, color: "#059669" },
+  { name: "Surgical", value: 87, color: "#6ee7b7" },
+  { name: "Monitoring", value: 63, color: "#d1fae5" },
   { name: "Life Support", value: 38, color: "#c7d2fe" },
 ];
 
@@ -146,7 +146,7 @@ export const equipmentStatusData = equipmentStatusDataByPeriod["12m"];
 export const inventoryData = {
   accuracy: 72,
   breakdown: [
-    { label: "Fully Stocked", value: 50, color: "#6366f1" },
+    { label: "Fully Stocked", value: 50, color: "#059669" },
     { label: "Low Supply", value: 35, color: "#94a3b8" },
     { label: "Critical", value: 15, color: "#e2e8f0" },
   ],

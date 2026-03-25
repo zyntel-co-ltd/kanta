@@ -4,38 +4,47 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
-  --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
 
   /* Neutral warm-white page gradient */
   --page-bg-start: #f8fafc;
   --page-bg-mid:   #ffffff;
   --page-bg-end:   #f1f5f9;
 
-  /* ── Brand green (matches login page) ── */
-  --brand:          #059669;   /* emerald-600 — primary accent */
-  --brand-dark:     #047857;   /* emerald-700 */
-  --brand-darker:   #065f46;   /* emerald-800 — sidebar bg */
-  --brand-deepest:  #042f2e;   /* login gradient start */
-  --brand-light:    #d1fae5;   /* emerald-100 */
-  --brand-muted:    #6ee7b7;   /* emerald-300 — highlights */
-  --brand-text:     #065f46;   /* on-light brand text */
-  --brand-sidebar:  #065f46;   /* sidebar background */
+  /* ── Brand green — identity only (sidebar, primary CTAs, active nav), not “success” ── */
+  --brand:          #059669;
+  --brand-dark:     #047857;
+  --brand-darker:   #065f46;
+  --brand-deepest:  #042f2e;
+  --brand-light:    #d1fae5;
+  --brand-muted:    #6ee7b7;
+  --brand-text:     #065f46;
+  --brand-sidebar:  #065f46;
+
+  /* Structural surfaces */
+  --surface-page: #f8fafc;
+  --surface-card: #ffffff;
+
+  /* Status — semantic only (badges, KPIs, chart series when data is state) */
+  --status-ok:    #059669;
+  --status-warn:  #d97706;
+  --status-bad:   #dc2626;
+  --status-info:  #2563eb;
 }
 
 /* ── Base ── */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter);
+  font-family: var(--font-sans);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.01em;
 }
 
-/* Use CSS variable so Inter loads from next/font */
 html {
-  font-family: var(--font-inter);
+  font-family: var(--font-sans);
 }
 
 * {
@@ -89,22 +98,9 @@ html {
 }
 
 /* Gradient text */
-.gradient-text-indigo {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
+/* Prefer slate + brand; avoid decorative multi-hue gradients on structural text */
 .gradient-text-emerald {
-  background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-text-amber {
-  background: linear-gradient(135deg, #d97706 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #065f46 0%, #059669 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -156,9 +152,9 @@ html {
 }
 
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.25); }
-  70%  { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.35); }
+  70%  { box-shadow: 0 0 0 8px rgba(5, 150, 105, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
 }
 
 @keyframes shimmer {
@@ -208,3 +204,36 @@ html {
   animation: shimmer 1.5s infinite;
   border-radius: 0.75rem;
 }
+
+/* =============================================================================
+   Kanta UI system — implementation map (§1–§12)
+   §1  Foundations — :root tokens above
+   §2  Typography — DM Sans via next/font (--font-dm-sans)
+   §3  Global shell — Sidebar (brand), TopBar (slate), main surface
+   §4  No per-app accent colors — emerald + slate only for chrome
+   §5  Lab Metrics pages — inherit shell; filters/cards slate
+   §6  Charts — components/charts/registry.ts defaults + lib/chart-theme.ts
+   §7  Tables — prefer border-slate-200, hover:bg-slate-50, text-slate-900/600
+   §8  LRIDS — display mode route (fullscreen), separate board palette
+   §9  Status — components/ui/StatusBadge.tsx + --status-* tokens only
+   §10 QA — no decorative indigo/teal/purple on structural UI
+   §11 Rollout — token exports lib/design-tokens.ts
+   §12 Non-goals — brand emerald ≠ “pass/success” (use --status-ok)
+   ============================================================================= */
+
+/* Structural helpers */
+.kanta-card {
+  background: var(--surface-card);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+}
+
+.kanta-table-header {
+  @apply text-left text-xs font-semibold uppercase tracking-wider text-slate-500 bg-slate-50 border-b border-slate-200;
+}
+
+/* Status text (semantic) */
+.kanta-text-status-ok   { color: var(--status-ok); }
+.kanta-text-status-warn { color: var(--status-warn); }
+.kanta-text-status-bad  { color: var(--status-bad); }
+.kanta-text-status-info { color: var(--status-info); }

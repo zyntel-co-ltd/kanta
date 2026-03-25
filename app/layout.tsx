@@ -1,16 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { Inter } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { OfflineSyncProvider } from "@/components/OfflineSyncProvider";
 import { PostHogProvider } from "@/components/PostHogProvider";
 import { AuthProvider } from "@/lib/AuthContext";
 
-const inter = Inter({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-dm-sans",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const APP_NAME = "Kanta";
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1e293b",
+  themeColor: "#065f46",
 };
 
 export default function RootLayout({
@@ -49,8 +49,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body>
+    <html lang="en" className={dmSans.variable}>
+      <body className={dmSans.className}>
         <PostHogProvider>
           <AuthProvider>
             <OfflineSyncProvider>{children}</OfflineSyncProvider>

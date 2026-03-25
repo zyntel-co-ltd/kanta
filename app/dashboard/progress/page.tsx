@@ -51,7 +51,7 @@ export default function ProgressPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/dashboard/lrids"
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
           >
             LRIDS →
           </Link>
@@ -68,7 +68,7 @@ export default function ProgressPage() {
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-          <Activity size={16} className="text-indigo-600" />
+          <Activity size={16} className="text-emerald-600" />
           <span className="font-semibold text-slate-800">Progress by Lab Number</span>
         </div>
         {loading ? (

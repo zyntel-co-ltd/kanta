@@ -21,7 +21,7 @@ export default function AuthErrorPage() {
         </p>
         <Link
           href="/forgot-password"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-500 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-500 transition-colors"
         >
           Request new reset link
         </Link>

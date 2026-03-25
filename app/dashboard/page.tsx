@@ -16,11 +16,11 @@ import FloatingActionButton from "@/components/dashboard/FloatingActionButton";
 function SectionDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 flex-shrink-0" />
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 flex-shrink-0" />
       <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest whitespace-nowrap">
         {label}
       </span>
-      <div className="flex-1 h-px bg-gradient-to-r from-cyan-100 to-transparent" />
+      <div className="flex-1 h-px bg-gradient-to-r from-slate-200 to-transparent" />
     </div>
   );
 }
@@ -44,17 +44,17 @@ export default function DashboardPage() {
         {/* ── Medicare-style hero header ── */}
         <div
           className="rounded-2xl overflow-hidden animate-slide-up"
-          style={{ background: "linear-gradient(135deg, #0e7490 0%, #0891b2 50%, #06b6d4 100%)" }}
+          style={{ background: "linear-gradient(145deg, #042f2e 0%, #065f46 55%, #047857 100%)" }}
         >
           <div className="px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <span className="inline-block text-[11px] font-semibold uppercase tracking-widest text-cyan-200 mb-1">
+              <span className="inline-block text-[11px] font-semibold uppercase tracking-widest text-emerald-200 mb-1">
                 Asset Management
               </span>
               <h1 className="text-2xl font-bold text-white tracking-tight" style={{ letterSpacing: "-0.025em" }}>
                 Assets Overview
               </h1>
-              <p className="text-sm text-cyan-100 mt-0.5">
+              <p className="text-sm text-emerald-100 mt-0.5">
                 Real-time equipment intelligence across your facility.
               </p>
             </div>
@@ -62,7 +62,7 @@ export default function DashboardPage() {
               <AssetsSearchBar variant="light" />
               <Link
                 href="/dashboard/reports"
-                className="flex items-center gap-2 px-4 py-2 bg-white text-cyan-800 text-sm font-semibold rounded-xl transition-all hover:bg-cyan-50 shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-white text-emerald-800 text-sm font-semibold rounded-xl transition-all hover:bg-emerald-50 shadow-sm"
               >
                 <span className="text-base leading-none">+</span>
                 New Report

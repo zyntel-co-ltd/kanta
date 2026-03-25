@@ -58,7 +58,7 @@ export default function EquipmentStatusSelect({ value, onChange, disabled }: Pro
           "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium capitalize transition-colors min-w-[100px] justify-between",
           current.color,
           (disabled || saving) && "opacity-60 cursor-not-allowed",
-          !disabled && !saving && "hover:ring-2 hover:ring-offset-1 hover:ring-indigo-300"
+          !disabled && !saving && "hover:ring-2 hover:ring-offset-1 hover:ring-emerald-300"
         )}
       >
         <span>{current.label}</span>
@@ -77,11 +77,11 @@ export default function EquipmentStatusSelect({ value, onChange, disabled }: Pro
               onClick={() => handleSelect(s.value)}
               className={clsx(
                 "w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors",
-                s.value === value && "bg-indigo-50"
+                s.value === value && "bg-emerald-50"
               )}
             >
               <span className="text-slate-700">{s.label}</span>
-              {s.value === value && <Check size={14} className="text-indigo-600" />}
+              {s.value === value && <Check size={14} className="text-emerald-600" />}
             </button>
           ))}
         </div>

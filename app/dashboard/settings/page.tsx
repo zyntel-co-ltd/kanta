@@ -79,7 +79,7 @@ export default function SettingsPage() {
         </div>
         <Link
           href="/dashboard/admin"
-          className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
         >
           Admin Panel →
         </Link>
@@ -87,7 +87,7 @@ export default function SettingsPage() {
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-6">
-          <Building2 size={20} className="text-indigo-600" />
+          <Building2 size={20} className="text-emerald-600" />
           <h2 className="text-lg font-semibold text-slate-800">Facility Capability</h2>
         </div>
         <p className="text-sm text-slate-500 mb-6">
@@ -113,7 +113,7 @@ export default function SettingsPage() {
                       p ? { ...p, [key]: e.target.checked } : p
                     )
                   }
-                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                 />
               </div>
             ))}
@@ -124,7 +124,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving || !capability}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
           >
             <Save size={14} />
             {saving ? "Saving..." : "Save"}

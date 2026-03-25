@@ -254,7 +254,7 @@ export default function AdminPage() {
         </p>
         <Link
           href="/dashboard/home"
-          className="inline-block mt-6 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          className="inline-block mt-6 text-sm font-medium text-emerald-600 hover:text-emerald-700"
         >
           Back to Home
         </Link>
@@ -449,7 +449,7 @@ export default function AdminPage() {
         </div>
         <Link
           href="/dashboard/home"
-          className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
         >
           ← Home
         </Link>
@@ -463,7 +463,7 @@ export default function AdminPage() {
             onClick={() => setActiveTab(id)}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
               activeTab === id
-                ? "border-indigo-600 text-indigo-600"
+                ? "border-emerald-600 text-emerald-600"
                 : "border-transparent text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -502,9 +502,9 @@ export default function AdminPage() {
         <>
           {activeTab === "users" && (
             <div className="space-y-4">
-              <div className="rounded-xl border border-indigo-100 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950">
-                <p className="font-semibold text-indigo-900 mb-1">How users work</p>
-                <ul className="list-disc list-inside space-y-1 text-indigo-900/90">
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-950">
+                <p className="font-semibold text-emerald-900 mb-1">How users work</p>
+                <ul className="list-disc list-inside space-y-1 text-emerald-900/90">
                   <li>
                     <strong>Admins add staff here</strong> — creates the Supabase Auth account and links them to
                     this facility with a role.
@@ -526,7 +526,7 @@ export default function AdminPage() {
                     setUserForm({ username: "", email: "", password: "", role: "lab_technician" });
                     setUserModalOpen(true);
                   }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
                 >
                   <Plus size={14} />
                   Add User
@@ -580,7 +580,7 @@ export default function AdminPage() {
                               });
                               setUserModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50"
+                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50"
                             title="Edit"
                           >
                             <Pencil size={14} />
@@ -631,7 +631,7 @@ export default function AdminPage() {
                     <button
                       onClick={handleAddAllToMeta}
                       disabled={unmatchedSaving === "all"}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
                     >
                       <Save size={14} />
                       {unmatchedSaving === "all" ? "Saving..." : "Save All to Meta"}
@@ -708,7 +708,7 @@ export default function AdminPage() {
                                   <button
                                     onClick={() => handleAddToMeta(t.id)}
                                     disabled={unmatchedSaving !== null || edit.price <= 0}
-                                    className="px-2 py-1 rounded bg-indigo-100 text-indigo-700 text-xs font-medium hover:bg-indigo-200 disabled:opacity-50"
+                                    className="px-2 py-1 rounded bg-emerald-100 text-emerald-700 text-xs font-medium hover:bg-emerald-200 disabled:opacity-50"
                                   >
                                     {unmatchedSaving === t.id ? "Saving..." : "Add to Meta"}
                                   </button>
@@ -830,7 +830,7 @@ export default function AdminPage() {
                   onClick={() => setAuditSubTab("login")}
                   className={`px-3 py-2 rounded-lg text-sm font-medium ${
                     auditSubTab === "login"
-                      ? "bg-indigo-600 text-white"
+                      ? "bg-emerald-600 text-white"
                       : "bg-slate-100 text-slate-700"
                   }`}
                 >
@@ -840,7 +840,7 @@ export default function AdminPage() {
                   onClick={() => setAuditSubTab("operations")}
                   className={`px-3 py-2 rounded-lg text-sm font-medium ${
                     auditSubTab === "operations"
-                      ? "bg-indigo-600 text-white"
+                      ? "bg-emerald-600 text-white"
                       : "bg-slate-100 text-slate-700"
                   }`}
                 >
@@ -913,7 +913,7 @@ export default function AdminPage() {
                 </select>
                 <button
                   onClick={fetchAudit}
-                  className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+                  className="px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
                 >
                   Apply
                 </button>
@@ -1047,7 +1047,7 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={() => saveTarget("revenue", monthlyTarget)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
                   >
                     <Save size={14} />
                     Save
@@ -1107,7 +1107,7 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={() => saveTarget("tests", testsTarget)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
                   >
                     <Save size={14} />
                     Save
@@ -1167,7 +1167,7 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={() => saveTarget("numbers", numbersTarget)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
                   >
                     <Save size={14} />
                     Save
@@ -1249,7 +1249,7 @@ export default function AdminPage() {
               <button
                 onClick={handleUserSubmit}
                 disabled={!editingUser && (!userForm.email?.trim() || !userForm.password)}
-                className="flex-1 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
               >
                 {editingUser ? "Update" : "Create"}
               </button>
@@ -1284,7 +1284,7 @@ export default function AdminPage() {
               <button
                 onClick={handleResetPassword}
                 disabled={!resetPasswordValue.trim()}
-                className="flex-1 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
               >
                 Reset
               </button>

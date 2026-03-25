@@ -4,6 +4,7 @@ import { useState } from "react";
 import "@/components/charts/registry";
 import { Line } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
+import { CHART_AXIS, CHART_BRAND_SECONDARY, CHART_STATUS } from "@/lib/chart-theme";
 import { assetValueDataByPeriod } from "@/lib/data";
 import { useDashboardData } from "@/lib/DashboardDataContext";
 
@@ -30,8 +31,8 @@ export default function AssetValueChart() {
       {
         label: "Operational",
         data: data.map((d) => d.operational),
-        borderColor: "#6366f1",
-        backgroundColor: "rgba(99,102,241,0.12)",
+        borderColor: CHART_STATUS.ok.border,
+        backgroundColor: CHART_STATUS.ok.background,
         borderWidth: 2.5,
         pointRadius: 0,
         pointHoverRadius: 4,
@@ -41,8 +42,8 @@ export default function AssetValueChart() {
       {
         label: "Maintenance",
         data: data.map((d) => d.maintenance),
-        borderColor: "#a5b4fc",
-        backgroundColor: "rgba(165,180,252,0.10)",
+        borderColor: CHART_BRAND_SECONDARY.border,
+        backgroundColor: CHART_BRAND_SECONDARY.background,
         borderWidth: 2,
         pointRadius: 0,
         pointHoverRadius: 3,
@@ -68,7 +69,7 @@ export default function AssetValueChart() {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { font: { size: 11 }, color: "#94a3b8" },
+        ticks: { font: { size: 11 }, color: CHART_AXIS.tick },
       },
       y: {
         display: false,
@@ -87,10 +88,10 @@ export default function AssetValueChart() {
           <h3 className="text-sm font-semibold text-slate-800">Equipment Activity</h3>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-xs text-slate-400 flex items-center gap-1">
-              <span className="inline-block w-2 h-2 rounded-sm bg-indigo-500" />Operational
+              <span className="inline-block w-2 h-2 rounded-sm bg-emerald-500" />Operational
             </span>
             <span className="text-xs text-slate-400 flex items-center gap-1">
-              <span className="inline-block w-2 h-2 rounded-sm bg-indigo-200" />Maintenance
+              <span className="inline-block w-2 h-2 rounded-sm bg-emerald-200" />Maintenance
             </span>
           </div>
         </div>
@@ -102,7 +103,7 @@ export default function AssetValueChart() {
               onClick={() => setPeriod(key)}
               className={`text-xs px-2 py-1 rounded-md font-medium transition-all ${
                 period === key
-                  ? "bg-white text-indigo-600 shadow-sm border border-slate-200"
+                  ? "bg-white text-emerald-600 shadow-sm border border-slate-200"
                   : "text-slate-400 hover:text-slate-600"
               }`}
             >

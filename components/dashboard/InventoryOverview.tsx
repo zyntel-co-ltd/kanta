@@ -55,7 +55,7 @@ export default function InventoryOverview() {
             className={clsx(
               "flex-1 min-w-0 py-2.5 px-3 rounded-xl text-center text-xs font-semibold transition-all",
               item.label === "Fully Stocked"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
+                ? "bg-emerald-600 text-white shadow-md shadow-emerald-200"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             )}
           >

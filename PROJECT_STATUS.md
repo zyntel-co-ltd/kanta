@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 27 March 2026 (Phase 22 — RBAC v2, invites, Zyntel default facility)  
+**Last updated:** 25 March 2026 (Phase 23 — Design system: tokens, charts, StatusBadge, accent unification)  
 **Updated by:** Cursor
 
 ---
@@ -88,6 +88,30 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 20: Quality & samples hub + combined sidebar** *(26 March 2026)* — see section below
 - [x] **Phase 21: ESLint cleanup + Lab Metrics icon refresh** *(27 March 2026)* — see section below
 - [x] **Phase 22: RBAC v2, registration & invites, Zyntel default facility** *(27 March 2026)* — see section below
+- [x] **Phase 23: Design system — tokens, Chart.js theme, StatusBadge, UI accent unification** *(25 March 2026)* — see section below
+
+### Phase 23 — Design System: Tokens, Charts, StatusBadge, Accent Unification (25 March 2026)
+
+#### Summary
+Unified the **Kanta UI** around **emerald (brand) + slate (structure) + semantic status colours** (amber / red / blue for state, not decoration). Added shared **`lib/design-tokens.ts`** (BRAND, STATUS, STRUCTURE), **`lib/chart-theme.ts`** (`CHART_NEUTRAL`, `CHART_STATUS`, `CHART_AXIS`, `CHART_TAT`, `CHART_EQUIPMENT_STACK`, `CHART_BRAND_SECONDARY`), **`components/ui/StatusBadge`**, and **`components/charts/registry.ts`** global Chart.js defaults + tooltip plugin. **`app/globals.css`** documents the §1–§12 implementation map and adds `.kanta-card`, `.kanta-table-header`, `.kanta-text-status-*`. Replaced remaining **indigo / violet / teal / purple** Tailwind accents across auth, scan, and dashboard routes; aligned chart hex and demo data colours with tokens. **TAT**, **QC**, and **Performance** tables use **StatusBadge**; key charts import theme constants instead of hard-coded palette.
+
+#### Key files
+| File | Change |
+|------|--------|
+| `lib/design-tokens.ts` | **New** — BRAND / STATUS / STRUCTURE (+ BRAND.LIGHT, BRAND.MUTED) |
+| `lib/chart-theme.ts` | **New** — chart series, TAT, equipment stack, axis, tooltip plugin |
+| `components/ui/StatusBadge.tsx` | **New** — semantic `ok` / `warn` / `bad` / `info` / `neutral` |
+| `components/charts/registry.ts` | Chart.js defaults + tooltip styling |
+| `components/dashboard/DashboardChrome.tsx` | **New** — LRIDS / dashboard chrome |
+| `app/globals.css` | §1–§12 comment block; structural/status utility classes |
+| `app/dashboard/tat/page.tsx`, `qc/page.tsx`, `performance/page.tsx` | Tokens + StatusBadge where applicable |
+| `components/dashboard/*Chart*.tsx`, `components/qc/LeveyJenningsChart.tsx` | Wired to `chart-theme` / `design-tokens` |
+
+#### Verification
+- `npm run type-check` — **passes**
+- `npm run lint` — **passes** (existing `AuthContext` hooks warning may remain)
+
+---
 
 ### Phase 22 — RBAC v2, Registration & Invites, Zyntel Default Facility (27 March 2026)
 
@@ -770,8 +794,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | Phase 21 — ESLint cleanup + Lab Metrics icon refresh | Live on Vercel |
-| `development` | Integration/Preview | Phase 21 — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | Phase 23 — Design system (tokens, charts, StatusBadge) | Live on Vercel |
+| `development` | Integration/Preview | Track `main` | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---

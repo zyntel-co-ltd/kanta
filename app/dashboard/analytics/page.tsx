@@ -40,7 +40,7 @@ export default function AnalyticsPage() {
               onClick={() => setPeriod(p)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 period === p
-                  ? "bg-white text-indigo-600 shadow-sm border border-slate-200"
+                  ? "bg-white text-emerald-600 shadow-sm border border-slate-200"
                   : "text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -54,8 +54,8 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-              <ScanLine size={20} className="text-indigo-600" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+              <ScanLine size={20} className="text-emerald-600" />
             </div>
             <div>
               <p className="text-2xl font-bold text-slate-900">{loading ? "—" : totalScans}</p>
@@ -87,8 +87,8 @@ export default function AnalyticsPage() {
         </div>
         <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center">
-              <Activity size={20} className="text-teal-600" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+              <Activity size={20} className="text-emerald-600" />
             </div>
             <div>
               <p className="text-2xl font-bold text-slate-900">{loading ? "—" : `${fleetHealth}%`}</p>

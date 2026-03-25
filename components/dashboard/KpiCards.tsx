@@ -31,10 +31,10 @@ const cardThemes = {
     iconBg: "bg-white/20",
     pulse: true,
   },
-  indigo: {
-    gradient: "from-cyan-500 to-sky-600",
-    glow: "shadow-cyan-200",
-    sparkColor: "#67e8f9",
+  slate: {
+    gradient: "from-slate-600 to-slate-800",
+    glow: "shadow-slate-200",
+    sparkColor: "#94a3b8",
     badge: "bg-white/20 text-white",
     iconBg: "bg-white/20",
     pulse: false,
@@ -48,7 +48,7 @@ const cardThemes = {
     pulse: false,
   },
   emerald: {
-    gradient: "from-emerald-400 to-teal-500",
+    gradient: "from-emerald-400 to-emerald-500",
     glow: "shadow-emerald-200",
     sparkColor: "#6ee7b7",
     badge: "bg-white/20 text-white",
@@ -135,7 +135,7 @@ function ComplianceBar({
 
 const cardConfig = [
   { id: "critical_alerts" as const, label: "Critical Alerts", unit: "", color: "red" as const, iconKey: "alerts" as const, changeKey: "critical_alerts_change" as const },
-  { id: "equipment_scanned_this_week" as const, label: "Equipment Scanned", unit: "", color: "indigo" as const, iconKey: "scanned" as const, changeKey: "scanned_change" as const },
+  { id: "equipment_scanned_this_week" as const, label: "Equipment Scanned", unit: "", color: "slate" as const, iconKey: "scanned" as const, changeKey: "scanned_change" as const },
   { id: "maintenance_due" as const, label: "Maintenance Compliance", unit: "%", color: "amber" as const, iconKey: "maintenance" as const, changeKey: "maintenance_change" as const },
   { id: "fleet_health_score" as const, label: "Fleet Health Score", unit: "%", color: "emerald" as const, iconKey: "health" as const, changeKey: "health_change" as const },
 ] as const;

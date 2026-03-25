@@ -20,7 +20,7 @@ import NLQueryBar from "@/components/ai/NLQueryBar";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 const HOSPITAL_NAME =
-  process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Nakasero Hospital";
+  process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Zyntel Hospital";
 const HOSPITAL_LOGO_URL = process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
 const IS_PRO = process.env.NEXT_PUBLIC_PRO_FEATURES === "true";
 

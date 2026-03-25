@@ -51,7 +51,7 @@ export default function InviteAcceptPage() {
           </p>
           <Link
             href="/login"
-            className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
           >
             Sign in
           </Link>
@@ -85,13 +85,13 @@ export default function InviteAcceptPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
           >
             {loading ? "Saving…" : "Accept & continue"}
           </button>
         </form>
         <p className="mt-6 text-center text-sm text-slate-500">
-          <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-700">
+          <Link href="/login" className="font-medium text-emerald-600 hover:text-emerald-700">
             Back to sign in
           </Link>
         </p>

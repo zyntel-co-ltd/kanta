@@ -118,7 +118,7 @@ export default function DepartmentsPage() {
               dept.healthScore >= 90
                 ? "bg-emerald-100 text-emerald-700"
                 : dept.healthScore >= 70
-                ? "bg-indigo-100 text-indigo-700"
+                ? "bg-emerald-100 text-emerald-700"
                 : "bg-amber-100 text-amber-700";
 
             return (
@@ -132,8 +132,8 @@ export default function DepartmentsPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-bold text-indigo-600">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-emerald-600">
                           {dept.name.slice(0, 2).toUpperCase()}
                         </span>
                       </div>
@@ -182,7 +182,7 @@ export default function DepartmentsPage() {
                         <div className="space-y-2">
                           {dept.technicians.map((t, i) => (
                             <div key={i} className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700">
+                              <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700">
                                 {t.avatar_initials ?? t.name.slice(0, 2).toUpperCase()}
                               </div>
                               <span className="text-sm text-slate-700">{t.name}</span>

@@ -45,9 +45,9 @@ type AppConfig = {
 
 const LAB_METRICS: AppConfig = {
   name: "Lab Metrics",
-  gradient: "from-indigo-500 to-indigo-700",
-  activeClass: "bg-indigo-600 text-white",
-  iconBg: "bg-indigo-50 text-indigo-600",
+  gradient: "from-emerald-600 to-emerald-800",
+  activeClass: "bg-emerald-600 text-white",
+  iconBg: "bg-emerald-50 text-emerald-700",
   AppIcon: FlaskConical,
   tabs: [
     { label: "TAT",         href: "/dashboard/tat",         icon: Timer,             matchPrefixes: ["/dashboard/tat"] },
@@ -61,9 +61,9 @@ const LAB_METRICS: AppConfig = {
 
 const QUALITY_MGMT: AppConfig = {
   name: "Quality Management",
-  gradient: "from-emerald-500 to-emerald-700",
+  gradient: "from-emerald-600 to-emerald-800",
   activeClass: "bg-emerald-600 text-white",
-  iconBg: "bg-emerald-50 text-emerald-600",
+  iconBg: "bg-emerald-50 text-emerald-700",
   AppIcon: ShieldCheck,
   tabs: [
     { label: "QC Overview",    href: "/dashboard/qc", icon: ShieldCheck,  matchPrefixes: ["/dashboard/qc"] },
@@ -78,9 +78,9 @@ const QUALITY_MGMT: AppConfig = {
 
 const ASSET_MGMT: AppConfig = {
   name: "Asset Management",
-  gradient: "from-orange-500 to-orange-700",
-  activeClass: "bg-orange-600 text-white",
-  iconBg: "bg-orange-50 text-orange-600",
+  gradient: "from-emerald-600 to-emerald-800",
+  activeClass: "bg-emerald-600 text-white",
+  iconBg: "bg-emerald-50 text-emerald-700",
   AppIcon: Layers,
   tabs: [
     { label: "Overview",   href: "/dashboard",              icon: LayoutDashboard, matchPrefixes: ["/dashboard$"] },

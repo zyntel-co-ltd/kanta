@@ -55,7 +55,7 @@ export default function RefrigeratorUnitPage() {
       <div className="space-y-4">
         <Link
           href="/dashboard/refrigerator"
-          className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-indigo-600"
+          className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-emerald-600"
         >
           <ArrowLeft size={14} /> Back to units
         </Link>
@@ -93,7 +93,7 @@ export default function RefrigeratorUnitPage() {
               onClick={() => setRange(r)}
               className={`px-4 py-2 rounded-xl text-sm font-medium ${
                 range === r
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-emerald-600 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
@@ -105,7 +105,7 @@ export default function RefrigeratorUnitPage() {
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-          <Thermometer size={16} className="text-indigo-600" />
+          <Thermometer size={16} className="text-emerald-600" />
           <span className="font-semibold text-slate-800">Temperature Timeline</span>
         </div>
         <div className="p-6">

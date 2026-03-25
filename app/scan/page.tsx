@@ -85,7 +85,7 @@ export default function StandaloneScanPage() {
           <ArrowLeft size={18} />
           Back
         </Link>
-        <span className="text-sm font-semibold text-indigo-400">Kanta Scanner</span>
+        <span className="text-sm font-semibold text-emerald-400">Kanta Scanner</span>
       </header>
 
       {/* Scanner or result */}
@@ -117,7 +117,7 @@ export default function StandaloneScanPage() {
                   onClick={() => setStatus(opt.value)}
                   className={`py-3 rounded-xl text-sm font-medium transition-all ${
                     status === opt.value
-                      ? "bg-indigo-600 text-white"
+                      ? "bg-emerald-600 text-white"
                       : "bg-slate-800 text-slate-300"
                   }`}
                 >
@@ -136,7 +136,7 @@ export default function StandaloneScanPage() {
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex-1 py-3 bg-indigo-600 rounded-xl text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 py-3 bg-emerald-600 rounded-xl text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {submitting ? <Loader2 size={18} className="animate-spin" /> : null}
                 Record

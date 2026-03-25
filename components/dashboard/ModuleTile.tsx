@@ -66,11 +66,11 @@ export default function ModuleTile({
     >
       {href ? (
         <a href={href} className="flex items-center gap-2 mb-3 group">
-          <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
-            <Zap size={16} className="text-indigo-600" />
+          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+            <Zap size={16} className="text-emerald-600" />
           </div>
           <div>
-            <p className="font-semibold text-slate-800 group-hover:text-indigo-600">{title}</p>
+            <p className="font-semibold text-slate-800 group-hover:text-emerald-600">{title}</p>
             {description && (
               <p className="text-xs text-slate-500">{description}</p>
             )}
@@ -78,8 +78,8 @@ export default function ModuleTile({
         </a>
       ) : (
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-            <Zap size={16} className="text-indigo-600" />
+          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <Zap size={16} className="text-emerald-600" />
           </div>
           <div>
             <p className="font-semibold text-slate-800">{title}</p>

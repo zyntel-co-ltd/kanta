@@ -7,6 +7,8 @@ import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwe
 import { Doughnut, Line, Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { CHART_AXIS, CHART_TAT } from "@/lib/chart-theme";
+import { STATUS } from "@/lib/design-tokens";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const PERIODS = [
@@ -31,8 +33,6 @@ const LABORATORIES = [
   { value: "Main Laboratory",  label: "Main Laboratory"   },
   { value: "Annex",            label: "Annex"             },
 ];
-
-const PIE_COLORS = ["#10b981", "#f59e0b", "#ef4444", "#94a3b8"];
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type TATData = {
@@ -177,7 +177,7 @@ export default function TATPage() {
     datasets: [
       {
         data: pieValues,
-        backgroundColor: pieLabels.map((_, idx) => PIE_COLORS[idx % PIE_COLORS.length]),
+        backgroundColor: pieLabels.map((_, idx) => CHART_TAT.pie[idx % CHART_TAT.pie.length]),
         borderWidth: 0,
       },
     ],
@@ -204,8 +204,8 @@ export default function TATPage() {
       {
         label: "On Time",
         data: (data?.dailyTrend ?? []).map((d) => d.onTime),
-        borderColor: "#10b981",
-        backgroundColor: "rgba(16,185,129,0.10)",
+        borderColor: CHART_TAT.lineOnTime.border,
+        backgroundColor: CHART_TAT.lineOnTime.fill,
         borderWidth: 2,
         pointRadius: 0,
         tension: 0.35,
@@ -213,8 +213,8 @@ export default function TATPage() {
       {
         label: "Delayed",
         data: (data?.dailyTrend ?? []).map((d) => d.delayed),
-        borderColor: "#ef4444",
-        backgroundColor: "rgba(239,68,68,0.08)",
+        borderColor: CHART_TAT.lineDelayed.border,
+        backgroundColor: CHART_TAT.lineDelayed.fill,
         borderWidth: 2,
         pointRadius: 0,
         tension: 0.35,
@@ -222,8 +222,8 @@ export default function TATPage() {
       {
         label: "Not Uploaded",
         data: (data?.dailyTrend ?? []).map((d) => d.notUploaded),
-        borderColor: "#94a3b8",
-        backgroundColor: "rgba(148,163,184,0.08)",
+        borderColor: CHART_TAT.lineNotUploaded.border,
+        backgroundColor: CHART_TAT.lineNotUploaded.fill,
         borderWidth: 2,
         pointRadius: 0,
         tension: 0.35,
@@ -257,7 +257,7 @@ export default function TATPage() {
           },
         },
       },
-      y: { grid: { color: "#f1f5f9" }, ticks: { font: { size: 11 } } },
+      y: { grid: { color: CHART_AXIS.grid }, ticks: { font: { size: 11 } } },
     },
   };
 
@@ -268,21 +268,21 @@ export default function TATPage() {
       {
         label: "On Time",
         data: hourlyData.map((h) => h.onTime),
-        backgroundColor: "#10b981",
+        backgroundColor: CHART_TAT.barOnTime,
         stack: "a",
         borderWidth: 0,
       },
       {
         label: "Delayed",
         data: hourlyData.map((h) => h.delayed),
-        backgroundColor: "#ef4444",
+        backgroundColor: CHART_TAT.barDelayed,
         stack: "a",
         borderWidth: 0,
       },
       {
         label: "Not Uploaded",
         data: hourlyData.map((h) => h.notUploaded),
-        backgroundColor: "#94a3b8",
+        backgroundColor: CHART_TAT.barNotUploaded,
         stack: "a",
         borderWidth: 0,
         borderRadius: 4,
@@ -303,7 +303,7 @@ export default function TATPage() {
     },
     scales: {
       x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } },
-      y: { stacked: true, grid: { color: "#f1f5f9" }, ticks: { font: { size: 11 } } },
+      y: { stacked: true, grid: { color: CHART_AXIS.grid }, ticks: { font: { size: 11 } } },
     },
   };
 
@@ -418,13 +418,13 @@ export default function TATPage() {
                     label="Total Delayed Requests"
                     value={data.kpis.delayedRequests}
                     total={data.kpis.totalRequests}
-                    color="#ef4444"
+                    color={STATUS.BAD}
                   />
                   <ProgressBar
                     label="Total On-Time Requests"
                     value={data.kpis.onTimeRequests}
                     total={data.kpis.totalRequests}
-                    color="#10b981"
+                    color={STATUS.OK}
                   />
                 </>
               ) : (

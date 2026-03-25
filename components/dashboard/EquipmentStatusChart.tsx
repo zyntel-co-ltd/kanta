@@ -3,6 +3,7 @@
 import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
+import { CHART_AXIS, CHART_EQUIPMENT_STACK } from "@/lib/chart-theme";
 import { useDashboardData } from "@/lib/DashboardDataContext";
 
 export default function EquipmentStatusChart() {
@@ -27,7 +28,7 @@ export default function EquipmentStatusChart() {
       {
         label: "Operational",
         data: safe.map((d) => d.operational),
-        backgroundColor: "#6366f1",
+        backgroundColor: CHART_EQUIPMENT_STACK.operational,
         borderWidth: 0,
         stack: "stack1",
         barThickness: 10,
@@ -35,7 +36,7 @@ export default function EquipmentStatusChart() {
       {
         label: "Maintenance",
         data: safe.map((d) => d.maintenance),
-        backgroundColor: "#fbbf24",
+        backgroundColor: CHART_EQUIPMENT_STACK.maintenance,
         borderWidth: 0,
         stack: "stack1",
         barThickness: 10,
@@ -43,7 +44,7 @@ export default function EquipmentStatusChart() {
       {
         label: "Retired",
         data: safe.map((d) => d.retired),
-        backgroundColor: "#e2e8f0",
+        backgroundColor: CHART_EQUIPMENT_STACK.retired,
         borderWidth: 0,
         stack: "stack1",
         barThickness: 10,
@@ -67,7 +68,7 @@ export default function EquipmentStatusChart() {
       x: {
         stacked: true,
         grid: { display: false },
-        ticks: { font: { size: 10 }, color: "#94a3b8" },
+        ticks: { font: { size: 10 }, color: CHART_AXIS.tick },
       },
       y: {
         stacked: true,
@@ -84,7 +85,7 @@ export default function EquipmentStatusChart() {
           <h3 className="text-sm font-semibold text-slate-800">Equipment Status</h3>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-xs text-slate-400 flex items-center gap-1">
-              <span className="inline-block w-2 h-2 rounded-sm bg-indigo-500" />Operational
+              <span className="inline-block w-2 h-2 rounded-sm bg-emerald-500" />Operational
             </span>
             <span className="text-xs text-slate-400 flex items-center gap-1">
               <span className="inline-block w-2 h-2 rounded-sm bg-amber-400" />Maintenance

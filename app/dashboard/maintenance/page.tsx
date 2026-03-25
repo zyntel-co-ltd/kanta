@@ -154,7 +154,7 @@ export default function MaintenancePage() {
             onClick={() => setTab(id)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
               tab === id
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
                 : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
             }`}
           >

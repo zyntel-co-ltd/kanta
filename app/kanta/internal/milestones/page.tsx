@@ -83,7 +83,7 @@ export default function MilestonesPage() {
             >
               <button
                 onClick={() => toggle(m.id)}
-                className="flex-shrink-0 mt-0.5 text-slate-400 hover:text-indigo-600"
+                className="flex-shrink-0 mt-0.5 text-slate-400 hover:text-emerald-600"
               >
                 {m.done ? (
                   <CheckCircle2 size={22} className="text-emerald-500" />
@@ -104,7 +104,7 @@ export default function MilestonesPage() {
                   placeholder="Notes..."
                   value={m.notes}
                   onChange={(e) => updateNotes(m.id, e.target.value)}
-                  className="mt-2 w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="mt-2 w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             </div>
@@ -114,7 +114,7 @@ export default function MilestonesPage() {
         <button
           onClick={save}
           disabled={saving}
-          className="mt-6 flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+          className="mt-6 flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
         >
           <Save size={14} />
           {saving ? "Saved" : "Save to localStorage"}

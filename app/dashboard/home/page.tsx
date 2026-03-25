@@ -43,19 +43,11 @@ type AppCard = {
   description: string;
   href: string;
   icon: React.ComponentType<IconProps>;
-  accent: string;
-  accentBg: string;
-  pillBg: string;
-  pillText: string;
-  iconGradient: string;
-  /** Distinct gradient for card header — different per workspace */
-  cardGradient: string;
-  /** Action-oriented CTA label (replaces generic "Open") */
   ctaLabel: string;
   tabs: SubTab[];
 };
 
-/* ─────────────────────────── data ─────────────────────────── */
+/* ─────────────────────────── data — single brand + slate structure ─────────────────────────── */
 
 const apps: AppCard[] = [
   {
@@ -65,12 +57,6 @@ const apps: AppCard[] = [
       "Monitor turnaround times, test volumes, patient numbers, test catalogue and revenue — all in one place.",
     href: "/dashboard/tat",
     icon: FlaskConical,
-    accent: "border-emerald-400",
-    accentBg: "bg-emerald-50",
-    pillBg: "bg-emerald-50",
-    pillText: "text-emerald-700",
-    iconGradient: "from-emerald-500 to-emerald-700",
-    cardGradient: "linear-gradient(135deg, #042f2e 0%, #065f46 50%, #047857 100%)",
     ctaLabel: "View metrics",
     tabs: [
       { label: "TAT", href: "/dashboard/tat", icon: Timer },
@@ -88,12 +74,6 @@ const apps: AppCard[] = [
       "QC controls, charts, and qualitative workflows — plus racks, search, and specimen tracking in one workspace.",
     href: "/dashboard/quality-samples",
     icon: ShieldCheck,
-    accent: "border-indigo-400",
-    accentBg: "bg-indigo-50",
-    pillBg: "bg-indigo-50",
-    pillText: "text-indigo-700",
-    iconGradient: "from-indigo-500 to-indigo-700",
-    cardGradient: "linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #6366f1 100%)",
     ctaLabel: "Open workspace",
     tabs: [
       { label: "QC", href: "/dashboard/qc", icon: ShieldCheck },
@@ -108,12 +88,6 @@ const apps: AppCard[] = [
       "Track every piece of equipment, schedule maintenance, monitor cold-chain temperatures and review fleet analytics.",
     href: "/dashboard",
     icon: Layers,
-    accent: "border-teal-400",
-    accentBg: "bg-teal-50",
-    pillBg: "bg-teal-50",
-    pillText: "text-teal-700",
-    iconGradient: "from-teal-500 to-teal-700",
-    cardGradient: "linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%)",
     ctaLabel: "View assets",
     tabs: [
       { label: "Assets Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -132,7 +106,7 @@ export default function DashboardHomePage() {
   return (
     <div className="max-w-[1280px] mx-auto space-y-6 pb-10">
 
-      {/* ── Login-page emerald hero banner ── */}
+      {/* Brand hero — identity only */}
       <div
         className="rounded-2xl overflow-hidden animate-slide-up stagger-1"
         style={{ background: "linear-gradient(145deg, #042f2e 0%, #065f46 55%, #047857 100%)" }}
@@ -167,10 +141,9 @@ export default function DashboardHomePage() {
               Scan equipment
             </Link>
           </div>
-          {/* Quick metric strip */}
-            <div className="flex sm:flex-col gap-3 sm:gap-1.5 flex-shrink-0">
+          <div className="flex sm:flex-col gap-3 sm:gap-1.5 flex-shrink-0">
             <div className="flex items-center gap-2 bg-white/15 rounded-xl px-4 py-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
               <span className="text-sm font-semibold text-white">System Online</span>
             </div>
             <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2">
@@ -180,13 +153,12 @@ export default function DashboardHomePage() {
         </div>
       </div>
 
-      {/* ── Recently visited + Quick actions (reduce sidebar redundancy) ── */}
       <div className="space-y-6 animate-slide-up stagger-2">
         <RecentlyVisited />
         <QuickActions />
       </div>
 
-      {/* ── 3 App Cards ── */}
+      {/* App cards — slate structure + brand icon only (no per-app accent hues) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-slide-up stagger-2">
         {apps.map((app) => {
           const AppIcon = app.icon;
@@ -195,31 +167,22 @@ export default function DashboardHomePage() {
               key={app.title}
               href={app.href}
               className={clsx(
-                "flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-                app.title === "Lab Metrics" && "focus-visible:ring-emerald-400",
-                app.title === "Quality & samples" && "focus-visible:ring-indigo-400",
-                app.title === "Asset Management" && "focus-visible:ring-teal-400"
+                "flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-600"
               )}
             >
-              {/* Card header with distinct gradient per workspace */}
-              <div
-                className="px-6 py-5 flex items-center gap-4"
-                style={{ background: app.cardGradient }}
-              >
-                <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+              <div className="px-6 py-5 flex items-center gap-4 bg-slate-50 border-b border-slate-200">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm">
                   <AppIcon size={20} className="text-white" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/80">{app.eyebrow}</p>
-                  <h2 className="text-white font-semibold text-base leading-tight">{app.title}</h2>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{app.eyebrow}</p>
+                  <h2 className="text-slate-900 font-semibold text-base leading-tight">{app.title}</h2>
                 </div>
               </div>
 
-              {/* Card body */}
               <div className="flex flex-col flex-1 p-6 gap-4">
-                <p className="text-slate-500 text-sm leading-relaxed">{app.description}</p>
+                <p className="text-slate-600 text-sm leading-relaxed">{app.description}</p>
 
-                {/* Modules list — visible on hover (desktop) or always (mobile) */}
                 <div className="flex flex-wrap gap-1.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 min-h-[28px]">
                   {app.tabs.map((tab) => (
                     <span
@@ -231,8 +194,7 @@ export default function DashboardHomePage() {
                   ))}
                 </div>
 
-                {/* CTA */}
-                <div className={`flex items-center gap-1 ${app.pillText} text-sm font-semibold mt-auto pt-2`}>
+                <div className="flex items-center gap-1 text-slate-700 group-hover:text-emerald-700 text-sm font-semibold mt-auto pt-2">
                   {app.ctaLabel}
                   <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-150" />
                 </div>
@@ -242,11 +204,10 @@ export default function DashboardHomePage() {
         })}
       </div>
 
-      {/* ── Bottom tagline ── */}
-      <div className="animate-slide-up stagger-4 border-t border-slate-100 pt-5">
-        <p style={{ fontSize: "0.8125rem", fontWeight: 400, color: "#94a3b8" }}>
+      <div className="animate-slide-up stagger-4 border-t border-slate-200 pt-5">
+        <p className="text-sm text-slate-500">
           Kanta · QR-first asset intelligence for East African laboratories ·{" "}
-          <span style={{ fontWeight: 600, color: "#047857" }}>Offline-capable</span>
+          <span className="font-semibold text-slate-700">Offline-capable</span>
         </p>
       </div>
     </div>

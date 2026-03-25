@@ -189,10 +189,10 @@ export async function getEquipmentByCategory(hospitalId: string) {
   if (error) throw error;
 
   const colors: Record<string, string> = {
-    Diagnostic: "#6366f1",
-    Surgical: "#a5b4fc",
+    Diagnostic: "#059669",
+    Surgical: "#6ee7b7",
     Monitoring: "#c7d2fe",
-    "Life Support": "#e0e7ff",
+    "Life Support": "#d1fae5",
     Other: "#f1f5f9",
   };
 
@@ -379,7 +379,7 @@ export async function getInventoryFromEquipment(hospitalId: string) {
     accuracy,
     restock_due_days: critical > 0 ? 3 : 7,
     breakdown: [
-      { label: "Fully Stocked", value: Math.max(0, full), color: "#6366f1" },
+      { label: "Fully Stocked", value: Math.max(0, full), color: "#059669" },
       { label: "Low Supply", value: low, color: "#94a3b8" },
       { label: "Critical", value: critical, color: "#e11d48" },
     ],

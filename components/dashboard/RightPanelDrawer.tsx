@@ -13,7 +13,7 @@ export default function RightPanelDrawer() {
       {/* Floating trigger button — only visible below xl */}
       <button
         onClick={() => setOpen(true)}
-        className="xl:hidden fixed bottom-20 right-5 z-40 flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-2xl shadow-xl hover:bg-indigo-600 transition-colors"
+        className="xl:hidden fixed bottom-20 right-5 z-40 flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-2xl shadow-xl hover:bg-emerald-600 transition-colors"
       >
         <LayoutList size={15} />
         Live Feed

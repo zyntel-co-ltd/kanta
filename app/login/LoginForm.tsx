@@ -65,7 +65,7 @@ export default function LoginForm() {
   return (
     <div
       className="min-h-screen flex"
-      style={{ fontFamily: "var(--font-inter)", background: "#f8fafc" }}
+      style={{ fontFamily: "var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif", background: "#f8fafc" }}
     >
       {/* ── LEFT PANEL ── */}
       <div

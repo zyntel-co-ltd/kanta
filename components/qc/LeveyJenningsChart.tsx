@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { BRAND, STATUS, STRUCTURE } from "@/lib/design-tokens";
 
 export type LJPoint = {
   runNumber: number;
@@ -48,13 +49,13 @@ export default function LeveyJenningsChart({
     padding.left + (i / Math.max(1, points.length - 1)) * chartWidth;
 
   const lines = [
-    { y: mean, label: "Mean", color: "#6366f1" },
-    { y: mean + sd, label: "+1s", color: "#94a3b8" },
-    { y: mean - sd, label: "-1s", color: "#94a3b8" },
-    { y: mean + 2 * sd, label: "+2s", color: "#f59e0b" },
-    { y: mean - 2 * sd, label: "-2s", color: "#f59e0b" },
-    { y: mean + 3 * sd, label: "+3s", color: "#ef4444" },
-    { y: mean - 3 * sd, label: "-3s", color: "#ef4444" },
+    { y: mean, label: "Mean", color: BRAND.DEFAULT },
+    { y: mean + sd, label: "+1s", color: STRUCTURE.TEXT_HINT },
+    { y: mean - sd, label: "-1s", color: STRUCTURE.TEXT_HINT },
+    { y: mean + 2 * sd, label: "+2s", color: STATUS.WARN },
+    { y: mean - 2 * sd, label: "-2s", color: STATUS.WARN },
+    { y: mean + 3 * sd, label: "+3s", color: STATUS.BAD },
+    { y: mean - 3 * sd, label: "-3s", color: STATUS.BAD },
   ];
 
   return (
@@ -79,10 +80,10 @@ export default function LeveyJenningsChart({
           r={5}
           fill={
             p.status === "rejection"
-              ? "#ef4444"
+              ? STATUS.BAD
               : p.status === "warning"
-              ? "#f59e0b"
-              : "#22c55e"
+              ? STATUS.WARN
+              : STATUS.OK
           }
           stroke="#fff"
           strokeWidth={1}
@@ -96,15 +97,15 @@ export default function LeveyJenningsChart({
             y1={toY(points[i].value)}
             x2={toX(i + 1)}
             y2={toY(points[i + 1].value)}
-            stroke="#94a3b8"
+            stroke={STRUCTURE.TEXT_HINT}
             strokeWidth={1}
             opacity={0.6}
           />
         ))}
-      <text x={padding.left - 5} y={toY(mean)} textAnchor="end" fontSize={10} fill="#64748b">
+      <text x={padding.left - 5} y={toY(mean)} textAnchor="end" fontSize={10} fill={STRUCTURE.TEXT_SECONDARY}>
         {mean.toFixed(2)}
       </text>
-      <text x={width - padding.right + 5} y={height - padding.bottom} textAnchor="start" fontSize={10} fill="#64748b">
+      <text x={width - padding.right + 5} y={height - padding.bottom} textAnchor="start" fontSize={10} fill={STRUCTURE.TEXT_SECONDARY}>
         Run #
       </text>
     </svg>

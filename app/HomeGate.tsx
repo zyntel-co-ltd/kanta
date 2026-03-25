@@ -39,7 +39,7 @@ function HomeGateInner() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950">
-      <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }
@@ -49,7 +49,7 @@ export default function HomeGate() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-slate-950">
-          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >

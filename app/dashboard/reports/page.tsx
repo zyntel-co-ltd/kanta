@@ -139,21 +139,21 @@ export default function ReportsPage() {
             key={t.id}
             className={`bg-white rounded-2xl border shadow-sm p-4 transition-all cursor-pointer ${
               selected === t.id
-                ? "border-indigo-500 ring-2 ring-indigo-500/20"
+                ? "border-emerald-500 ring-2 ring-emerald-500/20"
                 : "border-slate-100 hover:border-slate-200"
             }`}
             onClick={() => setSelected(t.id)}
           >
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                <FileText size={20} className="text-indigo-600" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                <FileText size={20} className="text-emerald-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-800">{t.label}</p>
                 <p className="text-sm text-slate-500 mt-0.5">{t.description}</p>
               </div>
               {selected === t.id && (
-                <CheckCircle2 size={20} className="text-indigo-600 flex-shrink-0" />
+                <CheckCircle2 size={20} className="text-emerald-600 flex-shrink-0" />
               )}
             </div>
           </div>
@@ -189,7 +189,7 @@ export default function ReportsPage() {
       <button
         onClick={generateReport}
         disabled={!selected || generating}
-        className="flex items-center gap-2 px-5 py-3 bg-gradient-to-br from-indigo-600 to-violet-600 text-white font-medium rounded-xl shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        className="flex items-center gap-2 px-5 py-3 bg-gradient-to-br from-emerald-600 to-emerald-600 text-white font-medium rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
       >
         {generating ? (
           <Loader2 size={18} className="animate-spin" />

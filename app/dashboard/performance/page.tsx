@@ -8,6 +8,7 @@ import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { Download, RefreshCw } from "lucide-react";
+import StatusBadge from "@/components/ui/StatusBadge";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const PERIODS = [
@@ -18,7 +19,7 @@ const PERIODS = [
 
 const SECTION_COLORS = [
   "#10b981", "#059669", "#34d399", "#6ee7b7",
-  "#f59e0b", "#3b82f6", "#8b5cf6", "#ef4444",
+  "#f59e0b", "#3b82f6", "#047857", "#ef4444",
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -390,15 +391,9 @@ export default function PerformancePage() {
                               {fmtMinutes(row.avgTat)}
                             </td>
                             <td className="px-5 py-3 text-right">
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                  ok
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : "bg-red-100 text-red-700"
-                                }`}
-                              >
+                              <StatusBadge variant={ok ? "ok" : "bad"}>
                                 {ok ? "On Target" : "Over Target"}
-                              </span>
+                              </StatusBadge>
                             </td>
                           </tr>
                         );
@@ -415,8 +410,8 @@ export default function PerformancePage() {
               <div className="px-5 py-4 border-b border-slate-100">
                 <h3 className="text-sm font-semibold text-slate-700">
                   Recent TAT Breaches
-                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                    {breaches.length}
+                  <span className="ml-2 inline-flex">
+                    <StatusBadge variant="bad">{breaches.length}</StatusBadge>
                   </span>
                 </h3>
               </div>
@@ -441,9 +436,7 @@ export default function PerformancePage() {
                           )}
                         </td>
                         <td className="px-5 py-3 text-slate-600">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                            {b.request?.section ?? "—"}
-                          </span>
+                          <StatusBadge variant="neutral">{b.request?.section ?? "—"}</StatusBadge>
                         </td>
                         <td className="px-5 py-3 text-right text-red-600 font-medium">
                           {fmtMinutes(b.breach_minutes)}

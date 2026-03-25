@@ -94,11 +94,11 @@ export default function ScanFeed() {
               onClick={() => exportToCSV(scans)}
               title="Export to CSV"
               disabled={scans.length === 0}
-              className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors disabled:opacity-50"
+              className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-colors disabled:opacity-50"
             >
               <Download size={13} />
             </button>
-            <button className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 hover:bg-indigo-100 transition-colors">
+            <button className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 hover:bg-emerald-100 transition-colors">
               <ArrowUpRight size={13} />
             </button>
           </div>
@@ -125,7 +125,7 @@ export default function ScanFeed() {
                     <Icon size={13} className={config.color} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-slate-800 truncate group-hover:text-indigo-600 transition-colors leading-snug">
+                    <p className="text-xs font-semibold text-slate-800 truncate group-hover:text-emerald-600 transition-colors leading-snug">
                       {item.equipment?.name ?? "Unknown"}
                     </p>
                     <p className="text-xs text-slate-400 truncate">

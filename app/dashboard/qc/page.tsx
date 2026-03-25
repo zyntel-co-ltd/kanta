@@ -11,6 +11,9 @@ import {
 import { Line } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import StatusBadge from "@/components/ui/StatusBadge";
+import { STATUS, STRUCTURE } from "@/lib/design-tokens";
+import { CHART_AXIS } from "@/lib/chart-theme";
 
 /* ─────────────────── Theme constants ─────────────────── */
 const inputCls =
@@ -303,9 +306,7 @@ function SectionHead({ icon: Icon, title }: { icon: React.ElementType; title: st
 
 /* ─────────────────── PassBadge ─────────────────── */
 function PassBadge({ pass }: { pass: boolean }) {
-  return pass
-    ? <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Pass</span>
-    : <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Fail</span>;
+  return <StatusBadge variant={pass ? "ok" : "bad"}>{pass ? "Pass" : "Fail"}</StatusBadge>;
 }
 
 /* ─────────────────── Tabs ─────────────────── */
@@ -541,8 +542,8 @@ function QCConfigTab() {
                   <td className={tblCell + " font-mono"}>{config.sd}</td>
                   <td className={tblCell}>
                     {config.enabled
-                      ? <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Enabled</span>
-                      : <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Disabled</span>}
+                      ? <StatusBadge variant="ok">Enabled</StatusBadge>
+                      : <StatusBadge variant="neutral">Disabled</StatusBadge>}
                   </td>
                   <td className={tblCell}>
                     <div className="flex items-center gap-3">
@@ -759,7 +760,7 @@ function QCVisualizationTab() {
     const labels = data.map((d) => String(d.name ?? ""));
     const values = data.map((d) => Number(d.value));
     const pointColors = data.map((d) =>
-      d._status === "failure" ? "#dc2626" : d._status === "warning" ? "#f59e0b" : "#16a34a"
+      d._status === "failure" ? STATUS.BAD : d._status === "warning" ? STATUS.WARN : STATUS.OK
     );
 
     const chartData: ChartData<"line"> = {
@@ -769,22 +770,22 @@ function QCVisualizationTab() {
         {
           label: "QC Value",
           data: values,
-          borderColor: "#0f172a",
+          borderColor: STRUCTURE.TEXT,
           borderWidth: 1.5,
           pointRadius: 5,
           pointHoverRadius: 6,
           pointBackgroundColor: pointColors,
-          pointBorderColor: "#0f172a",
+          pointBorderColor: STRUCTURE.TEXT,
           pointBorderWidth: 1,
           tension: 0,
         },
-        { label: "Mean",  data: labels.map(() => mean),          borderColor: "#0f172a", borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0 },
-        { label: "+1 SD", data: labels.map(() => mean + sd),     borderColor: "#16a34a", borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
-        { label: "-1 SD", data: labels.map(() => mean - sd),     borderColor: "#16a34a", borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
-        { label: "+2 SD", data: labels.map(() => mean + 2 * sd), borderColor: "#f59e0b", borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
-        { label: "-2 SD", data: labels.map(() => mean - 2 * sd), borderColor: "#f59e0b", borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
-        { label: "+3 SD", data: labels.map(() => mean + 3 * sd), borderColor: "#ef4444", borderWidth: 1.5, pointRadius: 0 },
-        { label: "-3 SD", data: labels.map(() => mean - 3 * sd), borderColor: "#ef4444", borderWidth: 1.5, pointRadius: 0 },
+        { label: "Mean",  data: labels.map(() => mean),          borderColor: STRUCTURE.TEXT, borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0 },
+        { label: "+1 SD", data: labels.map(() => mean + sd),     borderColor: STATUS.OK, borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
+        { label: "-1 SD", data: labels.map(() => mean - sd),     borderColor: STATUS.OK, borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
+        { label: "+2 SD", data: labels.map(() => mean + 2 * sd), borderColor: STATUS.WARN, borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
+        { label: "-2 SD", data: labels.map(() => mean - 2 * sd), borderColor: STATUS.WARN, borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
+        { label: "+3 SD", data: labels.map(() => mean + 3 * sd), borderColor: STATUS.BAD, borderWidth: 1.5, pointRadius: 0 },
+        { label: "-3 SD", data: labels.map(() => mean - 3 * sd), borderColor: STATUS.BAD, borderWidth: 1.5, pointRadius: 0 },
       ],
     };
 
@@ -821,7 +822,7 @@ function QCVisualizationTab() {
         y: {
           min: mean - 3 * sd,
           max: mean + 3 * sd,
-          grid: { color: "#f1f5f9" },
+          grid: { color: CHART_AXIS.grid },
           ticks: {
             color: "#64748b",
             font: { size: 10 },
@@ -1133,10 +1134,10 @@ function QCStatsTab() {
                       <td className={tblCell + " font-mono text-slate-500"}>{item.zScore != null ? Number(item.zScore).toFixed(2) : "—"}</td>
                       <td className={tblCell}>
                         {isFailure
-                          ? <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Violation</span>
+                          ? <StatusBadge variant="bad">Violation</StatusBadge>
                           : item._status === "warning"
-                          ? <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Warning</span>
-                          : <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Normal</span>}
+                          ? <StatusBadge variant="warn">Warning</StatusBadge>
+                          : <StatusBadge variant="ok">Normal</StatusBadge>}
                       </td>
                       <td className={tblCell}>
                         <button onClick={() => handleDelete(item)} className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold">Delete</button>
@@ -1325,7 +1326,7 @@ function QualConfigTab() {
                   <tr key={cfg.id} className="hover:bg-slate-50 transition-colors">
                     <td className={tblCell + " font-semibold text-slate-800"}>{cfg.testName}</td>
                     <td className={tblCell}>{cfg.resultType}</td>
-                    <td className={tblCell}><span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">{cfg.controls?.length || 0} control{cfg.controls?.length !== 1 ? "s" : ""}</span></td>
+                    <td className={tblCell}><StatusBadge variant="neutral">{cfg.controls?.length || 0} control{cfg.controls?.length !== 1 ? "s" : ""}</StatusBadge></td>
                     <td className={tblCell + " font-mono"}>{cfg.lotNumber || "—"}</td>
                     <td className={tblCell}>
                       {cfg.expiryDate ? (
@@ -1358,7 +1359,7 @@ function QualConfigTab() {
 /* ═══════════════════════════════════════════════════════════ */
 const LEVEL_COLORS: Record<string, string> = {
   "High Positive":    "bg-pink-100 text-pink-800",
-  "Low Positive":     "bg-purple-100 text-purple-700",
+  "Low Positive":     "bg-slate-100 text-slate-700",
   "Positive Control": "bg-pink-100 text-pink-800",
   "Negative Control": "bg-emerald-100 text-emerald-700",
   "Negative":         "bg-emerald-100 text-emerald-700",
@@ -1520,9 +1521,9 @@ function QualEntryTab() {
                           </div>
                         </td>
                         <td className={tblCell}>
-                          {status === "pass"    && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Pass</span>}
-                          {status === "fail"    && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Fail</span>}
-                          {status === "pending" && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Pending</span>}
+                          {status === "pass"    && <StatusBadge variant="ok">Pass</StatusBadge>}
+                          {status === "fail"    && <StatusBadge variant="bad">Fail</StatusBadge>}
+                          {status === "pending" && <StatusBadge variant="warn">Pending</StatusBadge>}
                         </td>
                       </tr>
                     );

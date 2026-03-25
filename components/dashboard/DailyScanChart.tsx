@@ -3,6 +3,8 @@
 import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
+import { CHART_AXIS, CHART_STATUS } from "@/lib/chart-theme";
+import { BRAND } from "@/lib/design-tokens";
 import { useDashboardData } from "@/lib/DashboardDataContext";
 
 export default function DailyScanChart() {
@@ -27,8 +29,12 @@ export default function DailyScanChart() {
       {
         label: "Scans",
         data: values,
-        backgroundColor: labels.map((day) => (day === maxDay.day ? "#6366f1" : "#e0e7ff")),
-        borderColor: labels.map((day) => (day === maxDay.day ? "#6366f1" : "#e0e7ff")),
+        backgroundColor: labels.map((day) =>
+          day === maxDay.day ? CHART_STATUS.ok.border : BRAND.LIGHT
+        ),
+        borderColor: labels.map((day) =>
+          day === maxDay.day ? CHART_STATUS.ok.border : BRAND.LIGHT
+        ),
         borderWidth: 1,
         borderRadius: 6,
         barThickness: 18,
@@ -51,7 +57,7 @@ export default function DailyScanChart() {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { font: { size: 11 }, color: "#94a3b8" },
+        ticks: { font: { size: 11 }, color: CHART_AXIS.tick },
       },
       y: {
         display: false,
@@ -75,7 +81,7 @@ export default function DailyScanChart() {
             peak scans
           </span>
         </p>
-        <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full mt-1">
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1">
           +41% avg admissions
         </span>
       </div>

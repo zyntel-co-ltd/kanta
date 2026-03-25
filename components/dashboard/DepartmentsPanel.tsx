@@ -37,7 +37,7 @@ export default function DepartmentsPanel() {
     <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-slate-800">Departments</h3>
-        <button className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center text-white hover:bg-indigo-600 transition-colors">
+        <button className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center text-white hover:bg-emerald-600 transition-colors">
           <ArrowUpRight size={13} />
         </button>
       </div>
@@ -53,7 +53,7 @@ export default function DepartmentsPanel() {
               healthScore >= 90
                 ? "text-emerald-600 bg-emerald-50"
                 : healthScore >= 80
-                ? "text-indigo-600 bg-indigo-50"
+                ? "text-emerald-600 bg-emerald-50"
                 : "text-amber-600 bg-amber-50";
             const techs = dept.technicians ?? [];
 
@@ -67,8 +67,8 @@ export default function DepartmentsPanel() {
                   onClick={() => setExpanded(isOpen ? null : dept.id)}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-indigo-600">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-emerald-600">
                         {dept.name.slice(0, 2).toUpperCase()}
                       </span>
                     </div>
@@ -102,7 +102,7 @@ export default function DepartmentsPanel() {
                     </p>
                     {techs.map((tech, i) => (
                       <div key={i} className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700 flex-shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700 flex-shrink-0">
                           {tech.avatar_initials ?? tech.name.slice(0, 2).toUpperCase()}
                         </div>
                         <div className="min-w-0">

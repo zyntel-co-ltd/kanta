@@ -111,7 +111,7 @@ export default function ScanPage() {
           href="/scan"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
         >
           Open full-screen scanner (mobile) →
         </a>
@@ -122,7 +122,7 @@ export default function ScanPage() {
         <button
           onClick={() => setMode("scan")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            mode === "scan" ? "bg-white shadow text-indigo-600" : "text-slate-600"
+            mode === "scan" ? "bg-white shadow text-emerald-600" : "text-slate-600"
           }`}
         >
           <ScanLine size={16} className="inline mr-2 -mt-0.5" />
@@ -131,7 +131,7 @@ export default function ScanPage() {
         <button
           onClick={() => setMode("search")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            mode === "search" ? "bg-white shadow text-indigo-600" : "text-slate-600"
+            mode === "search" ? "bg-white shadow text-emerald-600" : "text-slate-600"
           }`}
         >
           <Search size={16} className="inline mr-2 -mt-0.5" />
@@ -154,12 +154,12 @@ export default function ScanPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Search by name, QR code, or serial..."
-              className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
             <button
               onClick={handleSearch}
               disabled={searching}
-              className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl font-medium text-sm hover:bg-indigo-700 disabled:opacity-50"
+              className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-medium text-sm hover:bg-emerald-700 disabled:opacity-50"
             >
               {searching ? <Loader2 size={18} className="animate-spin" /> : "Search"}
             </button>
@@ -215,7 +215,7 @@ export default function ScanPage() {
                       onClick={() => setStatus(opt.value)}
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                         status === opt.value
-                          ? "bg-indigo-600 text-white"
+                          ? "bg-emerald-600 text-white"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                       }`}
                     >
@@ -229,7 +229,7 @@ export default function ScanPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-medium text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl font-medium text-sm hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting ? <Loader2 size={18} className="animate-spin" /> : null}
                   Record scan
