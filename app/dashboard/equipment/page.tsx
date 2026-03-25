@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchEquipment, updateEquipmentStatus } from "@/lib/api";
 import { useEquipmentStore } from "@/lib/EquipmentStore";
 import type { Equipment } from "@/types";
@@ -34,7 +34,7 @@ export default function EquipmentPage() {
     window.dispatchEvent(new CustomEvent("equipment-updated"));
   };
 
-  const loadEquipment = async () => {
+  const loadEquipment = useCallback(async () => {
     setLoading(true);
     setError(null);
     const res = await fetchEquipment(DEFAULT_HOSPITAL_ID);
@@ -48,17 +48,17 @@ export default function EquipmentPage() {
     const apiIds = new Set(fromApi.map((e: Equipment) => e.id));
     const fromSession = sessionEquipment.filter((e) => !apiIds.has(e.id));
     setEquipment([...fromApi, ...fromSession].sort((a, b) => a.name.localeCompare(b.name)));
-  };
+  }, [sessionEquipment]);
 
   useEffect(() => {
-    loadEquipment();
-  }, [refreshKey, sessionEquipment]);
+    void loadEquipment();
+  }, [refreshKey, loadEquipment]);
 
   useEffect(() => {
-    const handler = () => loadEquipment();
+    const handler = () => void loadEquipment();
     window.addEventListener("equipment-added", handler);
     return () => window.removeEventListener("equipment-added", handler);
-  }, [sessionEquipment]);
+  }, [loadEquipment]);
 
   return (
     <div className="space-y-6">

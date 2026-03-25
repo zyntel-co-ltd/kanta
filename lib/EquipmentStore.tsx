@@ -5,7 +5,6 @@ import {
   useContext,
   useCallback,
   useState,
-  useRef,
   type ReactNode,
 } from "react";
 import type { Equipment } from "@/types";

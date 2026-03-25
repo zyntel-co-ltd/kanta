@@ -26,7 +26,6 @@ export function evaluateWestgard(
   const values = runs.map((r) => r.value);
   const zScores = values.map((v) => (v - mean) / sd);
 
-  const last = values[values.length - 1];
   const lastZ = zScores[zScores.length - 1];
 
   if (lastZ >= 2 && lastZ < 3) {
@@ -37,7 +36,6 @@ export function evaluateWestgard(
   }
 
   if (values.length >= 2) {
-    const prev = values[values.length - 2];
     const prevZ = zScores[zScores.length - 2];
     if (
       (lastZ >= 2 && prevZ >= 2) ||

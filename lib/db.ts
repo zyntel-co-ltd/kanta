@@ -144,7 +144,6 @@ export async function getKpiSparklines(hospitalId: string): Promise<KpiSparkline
     .eq("hospital_id", hospitalId)
     .gte("created_at", sevenDaysAgo.toISOString());
 
-  const days = ["S", "M", "T", "W", "T", "F", "S"];
   const alerts: number[] = [];
   const scanned: number[] = [];
   const maintenance: number[] = [];
@@ -156,9 +155,6 @@ export async function getKpiSparklines(hospitalId: string): Promise<KpiSparkline
     d.setHours(0, 0, 0, 0);
     const next = new Date(d);
     next.setDate(next.getDate() + 1);
-
-    const dayStart = d.toISOString();
-    const dayEnd = next.toISOString();
 
     const dayScans = (data ?? []).filter((r) => {
       const t = new Date(r.created_at).getTime();

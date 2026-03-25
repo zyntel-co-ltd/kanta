@@ -23,7 +23,6 @@ export default function LeveyJenningsChart({
   data,
   mean,
   sd,
-  units = "",
   width = 600,
   height = 300,
 }: LeveyJenningsChartProps) {

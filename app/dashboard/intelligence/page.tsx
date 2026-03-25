@@ -184,7 +184,9 @@ export default function IntelligencePage() {
             <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center">
               <Calendar size={24} className="text-slate-300 mx-auto mb-2" />
               <p className="text-sm text-slate-500">No summaries yet.</p>
-              <p className="text-xs text-slate-400 mt-1">Summaries auto-generate every Monday, or click "Generate now" above.</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Summaries auto-generate every Monday, or click &ldquo;Generate now&rdquo; above.
+              </p>
             </div>
           ) : (
             <div className="space-y-3">

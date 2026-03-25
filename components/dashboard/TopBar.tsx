@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
@@ -103,12 +103,6 @@ const severityIcon = {
   error: <AlertCircle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />,
 };
 
-const severityBg = {
-  info: "bg-emerald-50 border-emerald-100",
-  warning: "bg-amber-50 border-amber-100",
-  error: "bg-red-50 border-red-100",
-};
-
 export default function TopBar() {
   const [secondsAgo, setSecondsAgo] = useState(0);
   const { status, pendingCount, retry } = useSyncStatus();
@@ -121,11 +115,11 @@ export default function TopBar() {
   const alertsRef = useRef<HTMLDivElement>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const loadAlerts = async () => {
+  const loadAlerts = useCallback(async () => {
     const { alerts: fetched, unread_count } = await fetchAlerts(DEFAULT_FACILITY_ID);
     setAlerts(fetched);
     setUnreadCount(unread_count);
-  };
+  }, []);
 
   /* ── User dropdown ── */
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -138,11 +132,10 @@ export default function TopBar() {
   }, []);
 
   useEffect(() => {
-    loadAlerts();
-    const alertInterval = setInterval(loadAlerts, 60_000);
+    void loadAlerts();
+    const alertInterval = setInterval(() => void loadAlerts(), 60_000);
     return () => clearInterval(alertInterval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadAlerts]);
 
   /* ── Close panels on outside click ── */
   useEffect(() => {

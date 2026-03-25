@@ -83,7 +83,7 @@ export default function AdminPage() {
       created_at: string;
     }>
   >([]);
-  const [auditTotals, setAuditTotals] = useState({ login: 0, op: 0 });
+  const [, setAuditTotals] = useState({ login: 0, op: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 

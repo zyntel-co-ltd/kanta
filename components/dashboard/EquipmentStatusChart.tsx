@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";

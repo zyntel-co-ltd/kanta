@@ -78,14 +78,6 @@ export async function flushQueue(
   let failed = 0;
 
   for (const scan of pending) {
-    const payload = {
-      equipment_id: scan.equipment_id,
-      hospital_id: scan.hospital_id,
-      scanned_by: scan.scanned_by,
-      status_at_scan: scan.status_at_scan,
-      location: scan.location,
-      notes: scan.notes,
-    };
     const res = await postFn(scan);
     if (res.data && !res.error) {
       await removeQueuedScan(scan.id);

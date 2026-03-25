@@ -3,8 +3,8 @@
 import "@/components/charts/registry";
 import { useEffect, useState, useCallback, useMemo, Fragment } from "react";
 import {
-  ShieldCheck, AlertTriangle, BarChart3, TestTube, Calculator,
-  TrendingUp, Settings2, ClipboardList,
+  ShieldCheck, BarChart3, TestTube, Calculator,
+  TrendingUp, ClipboardList,
   Download, Copy, Check, Plus, FlaskConical, Activity,
   ChevronDown, ChevronUp, X as XIcon,
 } from "lucide-react";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Thermometer } from "lucide-react";
 
@@ -11,7 +11,6 @@ type Reading = { temp: number; at: string };
 
 export default function RefrigeratorUnitPage() {
   const params = useParams();
-  const router = useRouter();
   const unitId = params.id as string;
   const [unit, setUnit] = useState<{ name: string; min_temp_celsius: number; max_temp_celsius: number } | null>(null);
   const [readings, setReadings] = useState<Reading[]>([]);

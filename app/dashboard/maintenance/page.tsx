@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchMaintenanceDue, markMaintained } from "@/lib/api";
 import { useEquipmentStore } from "@/lib/EquipmentStore";
 import type { Equipment } from "@/types";
@@ -47,7 +47,7 @@ export default function MaintenancePage() {
   const [markingId, setMarkingId] = useState<string | null>(null);
   const { sessionEquipment, refreshKey } = useEquipmentStore();
 
-  const loadMaintenanceDue = async () => {
+  const loadMaintenanceDue = useCallback(async () => {
     setLoading(true);
     setError(null);
     const res = await fetchMaintenanceDue(DEFAULT_HOSPITAL_ID);
@@ -76,17 +76,17 @@ export default function MaintenancePage() {
       return new Date(aDue).getTime() - new Date(bDue).getTime();
     });
     setItems(merged);
-  };
+  }, [sessionEquipment]);
 
   useEffect(() => {
-    loadMaintenanceDue();
-  }, [refreshKey, sessionEquipment]);
+    void loadMaintenanceDue();
+  }, [refreshKey, loadMaintenanceDue]);
 
   useEffect(() => {
-    const handler = () => loadMaintenanceDue();
+    const handler = () => void loadMaintenanceDue();
     window.addEventListener("equipment-added", handler);
     return () => window.removeEventListener("equipment-added", handler);
-  }, [sessionEquipment]);
+  }, [loadMaintenanceDue]);
 
   const handleMarkMaintained = async (eq: MaintenanceItem) => {
     setMarkingId(eq.id);

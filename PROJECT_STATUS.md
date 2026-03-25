@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 26 March 2026 (Phase 20 — Quality & samples hub + combined sidebar)  
+**Last updated:** 27 March 2026 (Phase 21 — ESLint cleanup + Lab Metrics icon refresh)  
 **Updated by:** Cursor
 
 ---
@@ -86,6 +86,36 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 18: Homepage UX improvements** *(23 March 2026)* — see section below
 - [x] **Phase 19: Chart.js full migration — Recharts removed** *(25 March 2026)* — see section below
 - [x] **Phase 20: Quality & samples hub + combined sidebar** *(26 March 2026)* — see section below
+- [x] **Phase 21: ESLint cleanup + Lab Metrics icon refresh** *(27 March 2026)* — see section below
+
+### Phase 21 — ESLint Cleanup + Lab Metrics Icon Refresh (27 March 2026)
+
+#### Summary
+CI-quality **ESLint** with **zero errors and zero warnings** (`eslint . --max-warnings 0` passes). Lab Metrics navigation uses a **consistent modern Lucide icon set** across tabs, sidebar, home pills, and quick actions.
+
+#### ESLint
+- **`eslint.config.mjs`** — `react-hooks/set-state-in-effect` **off** (common data-fetch / hydration patterns); **`@typescript-eslint/no-require-imports`** off for `next.config.ts` and `scripts/**/*.js`.
+- **Fixes (examples):** `prefer-const`; removed unused imports/vars; `react/no-unescaped-entities` (HTML entities / curly quotes); **`useCallback`** for stable loaders (`equipment`, `maintenance`, `tracker`, **`TopBar`** `loadAlerts`); **`QRCodeDisplay`** uses **`next/image`** with **`unoptimized`** for data URLs; **`supabase/functions/anomaly-scan`** stub simplified; misc. API and lib cleanups.
+
+#### Lab Metrics icons (Lucide)
+| Item | Icon |
+|------|------|
+| Lab Metrics (sidebar parent) | `ChartColumnIncreasing` |
+| TAT | `Timer` |
+| Tests | `Microscope` |
+| Numbers | `Binary` |
+| Meta | `TableProperties` |
+| Revenue | `CircleDollarSign` |
+| Performance | `ChartSpline` |
+
+**Files:** `LabMetricsTabs.tsx`, `Sidebar.tsx`, `AppTabBar.tsx` (also adds **Performance** tab + `/dashboard/performance` in `labPrefixes`), `home/page.tsx` pills, `QuickActions.tsx` (View TAT → `Timer`). Tab strip: slightly larger stroke / opacity tweak in `LabMetricsTabs`.
+
+#### Verification
+- `npm run type-check` — **passes**
+- `npm run lint` — **passes** (0 errors, 0 warnings)
+- `eslint . --max-warnings 0` — **passes**
+
+---
 
 ### Phase 20 — Quality & Samples Hub + Combined Sidebar (26 March 2026)
 
@@ -703,8 +733,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | Phase 20 — Quality & samples hub + combined sidebar | Live on Vercel |
-| `development` | Integration/Preview | Phase 20 — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | Phase 21 — ESLint cleanup + Lab Metrics icon refresh | Live on Vercel |
+| `development` | Integration/Preview | Phase 21 — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---

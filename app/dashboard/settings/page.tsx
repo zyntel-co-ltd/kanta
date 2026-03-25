@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Settings, Save, Building2 } from "lucide-react";
+import { Save, Building2 } from "lucide-react";
 import Link from "next/link";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 

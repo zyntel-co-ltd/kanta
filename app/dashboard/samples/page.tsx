@@ -89,7 +89,7 @@ function statusBadge(s: RackStatus) {
   return "bg-slate-100 text-slate-500";
 }
 
-function positionLabel(position: number, type: RackType = "normal") {
+function positionLabel(position: number) {
   const cols = 10;
   const row  = Math.floor(position / cols);
   const col  = (position % cols) + 1;
@@ -255,11 +255,10 @@ function RackGridView({
 
   const handlePrintManifest = () => {
     if (!rack) return;
-    const rows_ = ROWS(rack.rack_type);
     const rows: string[] = [];
     for (let pos = 0; pos < CAPACITY(rack.rack_type); pos++) {
       const s = samples[pos];
-      const lbl = positionLabel(pos, rack.rack_type);
+      const lbl = positionLabel(pos);
       rows.push(`<tr><td>${lbl}</td><td>${s?.barcode || "—"}</td><td>${s?.patient_id || "—"}</td><td>${s?.sample_type || "—"}</td><td>${s?.collection_date ? new Date(s.collection_date).toLocaleDateString() : "—"}</td><td>${s?.notes || "—"}</td></tr>`);
     }
     const html = `<!DOCTYPE html><html><head><title>Rack Manifest – ${rack.rack_name}</title>
@@ -387,7 +386,7 @@ function RackGridView({
                 </button>
               </div>
               <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                Position {positionLabel(selected, rack.rack_type)}
+                Position {positionLabel(selected)}
               </p>
               {[
                 ["Barcode",    selectedSample.barcode,                                       "font-mono"],
@@ -424,7 +423,7 @@ function RackGridView({
                 </button>
               </div>
               <p className="text-[11px] text-slate-500">
-                Position <strong>{positionLabel(selected!, rack.rack_type)}</strong>
+                Position <strong>{positionLabel(selected!)}</strong>
               </p>
 
               {rack.rack_type === "igra" && (
@@ -486,7 +485,7 @@ function RackGridView({
       {delConfirm && (
         <Confirm
           title="Delete Sample?"
-          message={<>Delete sample <strong>"{delConfirm.barcode}"</strong>? This cannot be undone.</>}
+          message={<>Delete sample <strong>&ldquo;{delConfirm.barcode}&rdquo;</strong>? This cannot be undone.</>}
           confirmLabel="Delete Sample"
           onConfirm={handleDeleteSample}
           onCancel={() => setDelConfirm(null)}
@@ -1002,7 +1001,7 @@ export default function SamplesPage() {
                           <td className="px-4 py-3 font-mono text-xs text-slate-800">{s.barcode}</td>
                           <td className="px-4 py-3 text-slate-600">{s.patient_id || "—"}</td>
                           <td className="px-4 py-3 text-slate-500">{s.sample_type || "—"}</td>
-                          <td className="px-4 py-3 text-slate-500 font-mono">{positionLabel(s.position, "normal")}</td>
+                          <td className="px-4 py-3 text-slate-500 font-mono">{positionLabel(s.position)}</td>
                           <td className="px-4 py-3 text-slate-500">{(s.lab_racks as { rack_name: string } | undefined)?.rack_name || "—"}</td>
                           <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{s.collection_date ? new Date(s.collection_date).toLocaleDateString() : "—"}</td>
                           <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{s.discarded_at ? new Date(s.discarded_at).toLocaleString() : "—"}</td>
@@ -1166,7 +1165,7 @@ export default function SamplesPage() {
       {delRackConfirm && (
         <Confirm
           title="Delete Rack?"
-          message={<>Delete <strong>"{delRackConfirm.rack_name}"</strong> and all its samples? This cannot be undone.</>}
+          message={<>Delete <strong>&ldquo;{delRackConfirm.rack_name}&rdquo;</strong> and all its samples? This cannot be undone.</>}
           confirmLabel="Delete Rack"
           onConfirm={handleDeleteRack}
           onCancel={() => setDelRackConfirm(null)}
@@ -1177,7 +1176,7 @@ export default function SamplesPage() {
       {discardConfirm && (
         <Confirm
           title="Discard Rack?"
-          message={<>Mark all samples in <strong>"{discardConfirm.rack_name}"</strong> as discarded? They will be moved to the Discarded log.</>}
+          message={<>Mark all samples in <strong>&ldquo;{discardConfirm.rack_name}&rdquo;</strong> as discarded? They will be moved to the Discarded log.</>}
           confirmLabel="Discard Rack"
           variant="warning"
           onConfirm={handleDiscard}
@@ -1189,7 +1188,7 @@ export default function SamplesPage() {
       {delSampleConfirm && (
         <Confirm
           title="Delete Discarded Record?"
-          message={<>Permanently delete record <strong>"{delSampleConfirm.barcode}"</strong>? This cannot be undone.</>}
+          message={<>Permanently delete record <strong>&ldquo;{delSampleConfirm.barcode}&rdquo;</strong>? This cannot be undone.</>}
           confirmLabel="Delete Record"
           onConfirm={handleDeleteDiscarded}
           onCancel={() => setDelSampleConfirm(null)}

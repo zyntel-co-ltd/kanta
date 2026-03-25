@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ScanSearch, Clock, ClipboardList } from "lucide-react";
+import { ScanSearch, Timer, ClipboardList } from "lucide-react";
 
 const ACTIONS = [
   { label: "Scan equipment", href: "/dashboard/scan", icon: ScanSearch },
-  { label: "View TAT", href: "/dashboard/tat", icon: Clock },
+  { label: "View TAT", href: "/dashboard/tat", icon: Timer },
   { label: "QC Data Entry", href: "/dashboard/qc?tab=data", icon: ClipboardList },
 ];
 

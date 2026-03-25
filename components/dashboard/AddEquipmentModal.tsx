@@ -120,7 +120,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
         `);
         printWindow.document.close();
       }
-    } catch (err) {
+    } catch {
       setError("Could not generate QR code for printing.");
     }
   };

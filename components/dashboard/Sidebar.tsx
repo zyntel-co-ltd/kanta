@@ -14,18 +14,20 @@ import {
   Wrench,
   Building2,
   BarChart3,
+  Binary,
+  ChartColumnIncreasing,
+  ChartSpline,
+  CircleDollarSign,
   FileText,
   Settings,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Clock,
-  DollarSign,
   Thermometer,
-  Beaker,
-  Database,
+  Microscope,
   Shield,
-  Hash,
+  TableProperties,
+  Timer,
   LogOut,
   Home,
   FlaskConical,
@@ -33,7 +35,6 @@ import {
   Monitor,
   TestTube,
   TrendingUp,
-  Package,
   Brain,
   Activity,
   Calculator,
@@ -70,7 +71,7 @@ const navGroups: NavGroup[] = [
     title: "Lab Metrics",
     collapsible: {
       parentHref: "/dashboard/tat",
-      parentIcon: BarChart3,
+      parentIcon: ChartColumnIncreasing,
       activePaths: [
         "/dashboard/tests",
         "/dashboard/numbers",
@@ -80,12 +81,12 @@ const navGroups: NavGroup[] = [
       ],
     },
     items: [
-      { label: "TAT",         icon: Clock,      href: "/dashboard/tat"         },
-      { label: "Tests",       icon: Beaker,     href: "/dashboard/tests"       },
-      { label: "Numbers",     icon: Hash,       href: "/dashboard/numbers"     },
-      { label: "Meta",        icon: Database,   href: "/dashboard/meta"        },
-      { label: "Revenue",     icon: DollarSign, href: "/dashboard/revenue"     },
-      { label: "Performance", icon: TrendingUp, href: "/dashboard/performance" },
+      { label: "TAT",         icon: Timer,             href: "/dashboard/tat"         },
+      { label: "Tests",       icon: Microscope,        href: "/dashboard/tests"       },
+      { label: "Numbers",     icon: Binary,            href: "/dashboard/numbers"     },
+      { label: "Meta",        icon: TableProperties,   href: "/dashboard/meta"        },
+      { label: "Revenue",     icon: CircleDollarSign,  href: "/dashboard/revenue"     },
+      { label: "Performance", icon: ChartSpline,       href: "/dashboard/performance" },
     ],
   },
   {
@@ -176,7 +177,7 @@ function isSubLinkActive(
   const expected = new URLSearchParams(queryPart);
   const actual = searchParams ?? new URLSearchParams();
   for (const [key, value] of expected.entries()) {
-    let got = actual.get(key);
+    const got = actual.get(key);
     if (got === value) continue;
     /* QC / Samples pages default tab when ?tab= is omitted in the URL */
     if (key === "tab" && got === null) {
@@ -253,7 +254,8 @@ export default function Sidebar() {
   const toggleGroup = (title: string) =>
     setOpenGroups((prev) => {
       const next = new Set(prev);
-      next.has(title) ? next.delete(title) : next.add(title);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
       return next;
     });
 

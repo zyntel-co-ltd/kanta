@@ -230,7 +230,7 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
     return NextResponse.json({ summaries: data ?? [] });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch summaries" }, { status: 500 });
   }
 }

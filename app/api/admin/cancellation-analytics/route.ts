@@ -49,8 +49,6 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const facilityId = searchParams.get("facility_id");
   const period = searchParams.get("period") ?? "thisMonth";
-  const labSection = searchParams.get("labSection");
-
   if (!facilityId) {
     return NextResponse.json({ error: "facility_id required" }, { status: 400 });
   }
@@ -65,7 +63,7 @@ export async function GET(req: NextRequest) {
 
     const { start, end } = getDateRange(period);
 
-    let query = db
+    const query = db
       .from("test_cancellations")
       .select("reason")
       .eq("facility_id", facilityId)

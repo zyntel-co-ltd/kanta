@@ -2,15 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clock, Beaker, Hash, Database, DollarSign, TrendingUp } from "lucide-react";
+import {
+  Timer,
+  Microscope,
+  Binary,
+  TableProperties,
+  CircleDollarSign,
+  ChartSpline,
+} from "lucide-react";
 
 const TABS = [
-  { label: "TAT",         href: "/dashboard/tat",         icon: Clock       },
-  { label: "Tests",       href: "/dashboard/tests",       icon: Beaker      },
-  { label: "Numbers",     href: "/dashboard/numbers",     icon: Hash        },
-  { label: "Meta",        href: "/dashboard/meta",        icon: Database    },
-  { label: "Revenue",     href: "/dashboard/revenue",     icon: DollarSign  },
-  { label: "Performance", href: "/dashboard/performance", icon: TrendingUp  },
+  { label: "TAT",         href: "/dashboard/tat",         icon: Timer             },
+  { label: "Tests",       href: "/dashboard/tests",       icon: Microscope        },
+  { label: "Numbers",     href: "/dashboard/numbers",     icon: Binary            },
+  { label: "Meta",        href: "/dashboard/meta",        icon: TableProperties   },
+  { label: "Revenue",     href: "/dashboard/revenue",     icon: CircleDollarSign  },
+  { label: "Performance", href: "/dashboard/performance", icon: ChartSpline       },
 ];
 
 export default function LabMetricsTabs() {
@@ -30,7 +37,7 @@ export default function LabMetricsTabs() {
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-800"
             }`}
           >
-            <Icon size={14} strokeWidth={1.8} />
+            <Icon size={15} strokeWidth={2} className="opacity-95" />
             {label}
           </Link>
         );

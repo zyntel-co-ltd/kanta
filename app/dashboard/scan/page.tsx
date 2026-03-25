@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { fetchEquipment, fetchEquipmentByQr, logScan } from "@/lib/api";
+import { fetchEquipment, fetchEquipmentByQr } from "@/lib/api";
 import { useLogScan } from "@/lib/useLogScan";
 import type { Equipment } from "@/types";
 import { CheckCircle2, Search, ScanLine, Loader2 } from "lucide-react";

@@ -51,7 +51,6 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
 
     const items = (data ?? []).map((r) => {
-      const requested = r.requested_at ? new Date(r.requested_at) : null;
       const received = r.received_at ? new Date(r.received_at) : null;
       const resulted = r.resulted_at ? new Date(r.resulted_at) : null;
       let tatMinutes: number | null = null;

@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
 import clsx from "clsx";
 import {
-  Clock,
-  Beaker,
-  Hash,
-  Database,
-  DollarSign,
+  Binary,
+  ChartSpline,
+  CircleDollarSign,
+  Microscope,
+  TableProperties,
+  Timer,
   ShieldCheck,
   Activity,
   BarChart3,
@@ -22,7 +23,6 @@ import {
   FileText,
   Layers,
   Home,
-  ArrowLeft,
 } from "lucide-react";
 
 type Tab = {
@@ -50,11 +50,12 @@ const LAB_METRICS: AppConfig = {
   iconBg: "bg-indigo-50 text-indigo-600",
   AppIcon: FlaskConical,
   tabs: [
-    { label: "TAT",     href: "/dashboard/tat",     icon: Clock,      matchPrefixes: ["/dashboard/tat"] },
-    { label: "Tests",   href: "/dashboard/tests",   icon: Beaker,     matchPrefixes: ["/dashboard/tests"] },
-    { label: "Numbers", href: "/dashboard/numbers", icon: Hash,       matchPrefixes: ["/dashboard/numbers"] },
-    { label: "Meta",    href: "/dashboard/meta",    icon: Database,   matchPrefixes: ["/dashboard/meta"] },
-    { label: "Revenue", href: "/dashboard/revenue", icon: DollarSign, matchPrefixes: ["/dashboard/revenue"] },
+    { label: "TAT",         href: "/dashboard/tat",         icon: Timer,             matchPrefixes: ["/dashboard/tat"] },
+    { label: "Tests",       href: "/dashboard/tests",       icon: Microscope,        matchPrefixes: ["/dashboard/tests"] },
+    { label: "Numbers",     href: "/dashboard/numbers",     icon: Binary,            matchPrefixes: ["/dashboard/numbers"] },
+    { label: "Meta",        href: "/dashboard/meta",        icon: TableProperties,   matchPrefixes: ["/dashboard/meta"] },
+    { label: "Revenue",     href: "/dashboard/revenue",     icon: CircleDollarSign,  matchPrefixes: ["/dashboard/revenue"] },
+    { label: "Performance", href: "/dashboard/performance", icon: ChartSpline,       matchPrefixes: ["/dashboard/performance"] },
   ],
 };
 
@@ -95,7 +96,14 @@ const ASSET_MGMT: AppConfig = {
 /* ─── Path → App resolver ─── */
 
 function resolveApp(pathname: string): AppConfig | null {
-  const labPrefixes = ["/dashboard/tat", "/dashboard/tests", "/dashboard/numbers", "/dashboard/meta", "/dashboard/revenue"];
+  const labPrefixes = [
+    "/dashboard/tat",
+    "/dashboard/tests",
+    "/dashboard/numbers",
+    "/dashboard/meta",
+    "/dashboard/revenue",
+    "/dashboard/performance",
+  ];
   const qcPrefixes  = ["/dashboard/qc"];
   const assetPrefixes = [
     "/dashboard/scan",

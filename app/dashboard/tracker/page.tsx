@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ListTodo, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
@@ -27,7 +27,7 @@ export default function TrackerPage() {
   const [total, setTotal] = useState(0);
   const limit = 50;
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(
@@ -41,11 +41,11 @@ export default function TrackerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
-    fetchData();
-  }, [page]);
+    void fetchData();
+  }, [fetchData]);
 
   const totalPages = Math.ceil(total / limit) || 1;
 

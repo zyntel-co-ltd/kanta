@@ -1,11 +1,12 @@
 import Link from "next/link";
 import clsx from "clsx";
 import {
-  Clock,
-  Beaker,
-  Hash,
-  Database,
-  DollarSign,
+  Timer,
+  Microscope,
+  Binary,
+  TableProperties,
+  CircleDollarSign,
+  ChartSpline,
   ShieldCheck,
   LayoutDashboard,
   ScanSearch,
@@ -14,7 +15,6 @@ import {
   Thermometer,
   BarChart3,
   ArrowRight,
-  Activity,
   FlaskConical,
   Layers,
   Zap,
@@ -70,11 +70,12 @@ const apps: AppCard[] = [
     cardGradient: "linear-gradient(135deg, #042f2e 0%, #065f46 50%, #047857 100%)",
     ctaLabel: "View metrics",
     tabs: [
-      { label: "TAT", href: "/dashboard/tat", icon: Clock },
-      { label: "Tests", href: "/dashboard/tests", icon: Beaker },
-      { label: "Numbers", href: "/dashboard/numbers", icon: Hash },
-      { label: "Meta", href: "/dashboard/meta", icon: Database },
-      { label: "Revenue", href: "/dashboard/revenue", icon: DollarSign },
+      { label: "TAT", href: "/dashboard/tat", icon: Timer },
+      { label: "Tests", href: "/dashboard/tests", icon: Microscope },
+      { label: "Numbers", href: "/dashboard/numbers", icon: Binary },
+      { label: "Meta", href: "/dashboard/meta", icon: TableProperties },
+      { label: "Revenue", href: "/dashboard/revenue", icon: CircleDollarSign },
+      { label: "Performance", href: "/dashboard/performance", icon: ChartSpline },
     ],
   },
   {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import QRCode from "qrcode";
 
 type Props = {
@@ -23,11 +24,13 @@ export default function QRCodeDisplay({ value, size = 200, className = "" }: Pro
   if (error) return <div className="text-red-500 text-sm">Failed to generate QR</div>;
   if (!dataUrl) return <div className="bg-slate-100 animate-pulse rounded-lg" style={{ width: size, height: size }} />;
   return (
-    <img
+    <Image
       src={dataUrl}
       alt="QR Code"
+      width={size}
+      height={size}
       className={className}
-      style={{ width: size, height: size }}
+      unoptimized
     />
   );
 }
