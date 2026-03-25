@@ -21,6 +21,7 @@ const PATH_LABELS: Record<string, string> = {
   "/dashboard/revenue": "Revenue",
   "/dashboard/performance": "Performance",
   "/dashboard/qc": "Quality Management",
+  "/dashboard/quality-samples": "Quality & samples",
   "/dashboard/samples": "Samples",
   "/dashboard/lrids": "LRIDS",
   "/dashboard/scan": "Scan",

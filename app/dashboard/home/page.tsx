@@ -18,6 +18,8 @@ import {
   FlaskConical,
   Layers,
   Zap,
+  Package,
+  ClipboardList,
 } from "lucide-react";
 import RecentlyVisited from "@/components/dashboard/RecentlyVisited";
 import QuickActions from "@/components/dashboard/QuickActions";
@@ -77,10 +79,10 @@ const apps: AppCard[] = [
   },
   {
     eyebrow: "Clinical Excellence",
-    title: "Quality Management",
+    title: "Quality & samples",
     description:
-      "Run Westgard rules, plot Levey-Jennings charts and manage qualitative QC to keep results accurate and compliant.",
-    href: "/dashboard/qc",
+      "QC controls, charts, and qualitative workflows — plus racks, search, and specimen tracking in one workspace.",
+    href: "/dashboard/quality-samples",
     icon: ShieldCheck,
     accent: "border-indigo-400",
     accentBg: "bg-indigo-50",
@@ -88,12 +90,11 @@ const apps: AppCard[] = [
     pillText: "text-indigo-700",
     iconGradient: "from-indigo-500 to-indigo-700",
     cardGradient: "linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #6366f1 100%)",
-    ctaLabel: "Manage QC",
+    ctaLabel: "Open workspace",
     tabs: [
-      { label: "QC Overview", href: "/dashboard/qc", icon: ShieldCheck },
-      { label: "L-J Charts", href: "/dashboard/qc", icon: Activity },
-      { label: "Westgard", href: "/dashboard/qc", icon: BarChart3 },
-      { label: "Qualitative QC", href: "/dashboard/qc", icon: FlaskConical },
+      { label: "QC", href: "/dashboard/qc", icon: ShieldCheck },
+      { label: "Samples", href: "/dashboard/samples", icon: Package },
+      { label: "Data entry", href: "/dashboard/qc?tab=data", icon: ClipboardList },
     ],
   },
   {
@@ -189,7 +190,7 @@ export default function DashboardHomePage() {
               className={clsx(
                 "flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
                 app.title === "Lab Metrics" && "focus-visible:ring-emerald-400",
-                app.title === "Quality Management" && "focus-visible:ring-indigo-400",
+                app.title === "Quality & samples" && "focus-visible:ring-indigo-400",
                 app.title === "Asset Management" && "focus-visible:ring-teal-400"
               )}
             >

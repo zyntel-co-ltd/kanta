@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 25 March 2026 (Phase 19 — Chart.js full migration, Recharts removed)  
+**Last updated:** 26 March 2026 (Phase 20 — Quality & samples hub + combined sidebar)  
 **Updated by:** Cursor
 
 ---
@@ -85,6 +85,48 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 17: Lab Metrics top tabs + collapsible sidebar groups** *(23 March 2026)* — see section below
 - [x] **Phase 18: Homepage UX improvements** *(23 March 2026)* — see section below
 - [x] **Phase 19: Chart.js full migration — Recharts removed** *(25 March 2026)* — see section below
+- [x] **Phase 20: Quality & samples hub + combined sidebar** *(26 March 2026)* — see section below
+
+### Phase 20 — Quality & Samples Hub + Combined Sidebar (26 March 2026)
+
+#### Summary
+Merged **Quality Management** and **Samples** into a single sidebar workspace: **“Quality & samples”**, with a dedicated **hub page** at `/dashboard/quality-samples` that links to the existing QC and Samples apps. `/dashboard/qc` and `/dashboard/samples` are unchanged; only navigation and entry points were unified.
+
+#### Changes
+
+**Hub page**
+- **`app/dashboard/quality-samples/page.tsx`** — Server-rendered landing: hero strip + two cards (QC & compliance → `/dashboard/qc`; Sample management → `/dashboard/samples?tab=dashboard`).
+
+**Sidebar**
+- `components/dashboard/Sidebar.tsx` — Replaced separate “Quality Management” and “Samples” accordions with one collapsible group titled **Quality & samples**; parent href `parentHref: /dashboard/quality-samples`; `activePaths: [/dashboard/qc, /dashboard/samples]`.
+- Sub-items use **section labels** (`QC` / `Samples`) via optional `section?: string` on `NavItem`.
+- **Sub-link active state** — `useSearchParams` + `isSubLinkActive()` matches pathname and `?tab=`; if `tab` is omitted, defaults match app behaviour (`QC` → `config`, Samples → `dashboard`).
+- Chevron `aria-label` uses `group.title` dynamically.
+
+**Layout**
+- `app/dashboard/layout.tsx` — `<Sidebar />` wrapped in **`<Suspense>`** (fallback aside placeholder) because `useSearchParams` is used in the sidebar.
+
+**Home**
+- `app/dashboard/home/page.tsx` — Third workspace card retitled **“Quality & samples”**; primary link to `/dashboard/quality-samples`; CTA **“Open workspace”**; pills: QC, Samples, Data entry.
+
+**Recent visits**
+- `lib/recentVisits.ts` — `PATH_LABELS["/dashboard/quality-samples"]` → **“Quality & samples”**.
+
+#### Verification
+- `npm run type-check` — **passes**
+- `npm run build` — **passes**
+
+#### Files changed
+
+| File | Change |
+|------|--------|
+| `app/dashboard/quality-samples/page.tsx` | **New** — hub page |
+| `app/dashboard/layout.tsx` | `Suspense` around `Sidebar` |
+| `components/dashboard/Sidebar.tsx` | Merged group, sections, `isSubLinkActive`, `useSearchParams` |
+| `app/dashboard/home/page.tsx` | Card → Quality & samples + hub href |
+| `lib/recentVisits.ts` | Label for hub path |
+
+---
 
 ### Phase 19 — Chart.js Full Migration, Recharts Removed (25 March 2026)
 
@@ -661,8 +703,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | Phase 19 — Chart.js full migration, Recharts removed | Live on Vercel |
-| `development` | Integration/Preview | Phase 19 — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | Phase 20 — Quality & samples hub + combined sidebar | Live on Vercel |
+| `development` | Integration/Preview | Phase 20 — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---
@@ -711,7 +753,7 @@ Set these in Vercel **without surrounding quotes** — for **both Production and
 - **Navigation model:** Collapsible white sidebar (`components/dashboard/Sidebar.tsx`) handles all navigation. AppTabBar removed. Homepage (`/dashboard/home`) is the app selector — clicking a card navigates to the first page of that app.
 - **3 app domains:**
   - **Lab Metrics** → `/dashboard/tat`, `/dashboard/tests`, `/dashboard/numbers`, `/dashboard/meta`, `/dashboard/revenue`, `/dashboard/performance`
-  - **Quality Management** → `/dashboard/qc`
+  - **Quality & samples** — Hub `/dashboard/quality-samples`; **QC** → `/dashboard/qc`; **Samples** → `/dashboard/samples`
   - **Asset Management** → `/dashboard`, `/dashboard/scan`, `/dashboard/equipment`, `/dashboard/maintenance`, `/dashboard/refrigerator`, `/dashboard/analytics`, `/dashboard/reports`
 - **Key files:**
   - `app/dashboard/home/page.tsx` — 3-app workspace hub (homepage)

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { useState, useEffect } from "react";
 import type { ComponentType } from "react";
@@ -48,6 +48,8 @@ type NavItem = {
   label: string;
   icon: ComponentType<{ size?: number; className?: string; strokeWidth?: number; style?: React.CSSProperties }>;
   href: string;
+  /** When set, a section label is rendered above this item (collapsible sub-menus only). */
+  section?: string;
 };
 
 type NavGroup = {
@@ -87,10 +89,14 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Quality Management",
-    collapsible: { parentHref: "/dashboard/qc", parentIcon: ShieldCheck },
+    title: "Quality & samples",
+    collapsible: {
+      parentHref: "/dashboard/quality-samples",
+      parentIcon: ShieldCheck,
+      activePaths: ["/dashboard/qc", "/dashboard/samples"],
+    },
     items: [
-      { label: "QC Config",     icon: ShieldCheck,   href: "/dashboard/qc?tab=config"      },
+      { section: "QC", label: "QC Config",     icon: ShieldCheck,   href: "/dashboard/qc?tab=config"      },
       { label: "Data Entry",    icon: ClipboardList, href: "/dashboard/qc?tab=data"        },
       { label: "Visualization", icon: BarChart3,      href: "/dashboard/qc?tab=visual"      },
       { label: "QC Calculator", icon: Calculator,     href: "/dashboard/qc?tab=calc"        },
@@ -98,13 +104,7 @@ const navGroups: NavGroup[] = [
       { label: "Qual. Config",  icon: FlaskConical,   href: "/dashboard/qc?tab=qual-config" },
       { label: "Qual. Entry",   icon: TestTube,       href: "/dashboard/qc?tab=qual-entry"  },
       { label: "Qual. Log",     icon: Activity,       href: "/dashboard/qc?tab=qual-log"    },
-    ],
-  },
-  {
-    title: "Samples",
-    collapsible: { parentHref: "/dashboard/samples", parentIcon: Package },
-    items: [
-      { label: "Dashboard",          icon: BarChart3,     href: "/dashboard/samples?tab=dashboard" },
+      { section: "Samples", label: "Dashboard",          icon: BarChart3,     href: "/dashboard/samples?tab=dashboard" },
       { label: "Racks",              icon: Grid3X3,       href: "/dashboard/samples?tab=racks"     },
       { label: "Pending Discarding", icon: AlertTriangle, href: "/dashboard/samples?tab=pending"   },
       { label: "Discarded",          icon: Archive,       href: "/dashboard/samples?tab=discarded" },
@@ -162,6 +162,32 @@ function isNavActive(pathname: string, href: string) {
   return norm.startsWith(h + "/");
 }
 
+/** Collapsible sub-links: match pathname + query string when the href includes ?tab= etc. */
+function isSubLinkActive(
+  pathname: string,
+  searchParams: Pick<URLSearchParams, "get"> | null,
+  href: string
+) {
+  const [pathPart, queryPart] = href.split("?");
+  const base = pathPart.replace(/\/$/, "") || "/";
+  const norm = pathname.replace(/\/$/, "") || "/";
+  if (norm !== base) return false;
+  if (!queryPart) return true;
+  const expected = new URLSearchParams(queryPart);
+  const actual = searchParams ?? new URLSearchParams();
+  for (const [key, value] of expected.entries()) {
+    let got = actual.get(key);
+    if (got === value) continue;
+    /* QC / Samples pages default tab when ?tab= is omitted in the URL */
+    if (key === "tab" && got === null) {
+      if (base === "/dashboard/qc" && value === "config") continue;
+      if (base === "/dashboard/samples" && value === "dashboard") continue;
+    }
+    return false;
+  }
+  return true;
+}
+
 function getFirstName(user: { email?: string; user_metadata?: { full_name?: string; name?: string } }) {
   const name = user?.user_metadata?.full_name || user?.user_metadata?.name;
   if (name) return name.split(" ")[0];
@@ -191,6 +217,7 @@ const ACTIVE_TEXT    = "#ecfdf5";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, signOut } = useAuth();
   const { collapsed, setCollapsed } = useSidebarLayout();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -201,8 +228,13 @@ export default function Sidebar() {
   /* Auto-expand the relevant accordion group based on current page */
   useEffect(() => {
     const toOpen: string[] = [];
-    if (pathname.startsWith("/dashboard/qc"))      toOpen.push("Quality Management");
-    if (pathname.startsWith("/dashboard/samples")) toOpen.push("Samples");
+    if (
+      pathname.startsWith("/dashboard/qc") ||
+      pathname.startsWith("/dashboard/samples") ||
+      pathname.startsWith("/dashboard/quality-samples")
+    ) {
+      toOpen.push("Quality & samples");
+    }
 
     const labMetricsPaths = ["/dashboard/tat", "/dashboard/tests", "/dashboard/numbers", "/dashboard/meta", "/dashboard/revenue", "/dashboard/performance"];
     if (labMetricsPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) toOpen.push("Lab Metrics");
@@ -264,14 +296,14 @@ export default function Sidebar() {
             if (group.collapsible) {
               const { parentHref, parentIcon: ParentIcon, activePaths = [] } = group.collapsible;
               const allPaths = [parentHref, ...activePaths];
-              const isQCPage = allPaths.some((p) =>
+              const isCollapsibleActive = allPaths.some((p) =>
                 p === "/dashboard"
                   ? pathname === "/dashboard"
                   : pathname === p || pathname.startsWith(p + "/")
               );
               const isOpen     = openGroups.has(group.title);
               const parentKey  = parentHref + group.title;
-              const showTooltip = collapsed && (isQCPage || hoveredItem === parentKey);
+              const showTooltip = collapsed && (isCollapsibleActive || hoveredItem === parentKey);
 
               return (
                 <div key={group.title} className="mb-2">
@@ -289,14 +321,14 @@ export default function Sidebar() {
                     onMouseLeave={() => setHoveredItem(null)}
                   >
                     {/* Active bar (left edge) */}
-                    {isQCPage && (
+                    {isCollapsibleActive && (
                       <span
                         className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10"
                         style={{ background: GRADIENT }}
                       />
                     )}
                     {/* Active pill background */}
-                    {isQCPage && !collapsed && (
+                    {isCollapsibleActive && !collapsed && (
                       <span
                         className="absolute inset-y-0 left-1 right-1 rounded-xl"
                         style={{ backgroundColor: ACTIVE_PILL_BG, zIndex: 0 }}
@@ -311,9 +343,9 @@ export default function Sidebar() {
                         className={clsx(
                           "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1] flex-1",
                           collapsed ? "justify-center px-0" : "gap-3 px-4",
-                          !isQCPage && "hover:bg-white/10"
+                          !isCollapsibleActive && "hover:bg-white/10"
                         )}
-                        style={{ color: isQCPage ? ACTIVE_TEXT : TEXT }}
+                        style={{ color: isCollapsibleActive ? ACTIVE_TEXT : TEXT }}
                       >
                         <ParentIcon size={collapsed ? 22 : 20} strokeWidth={1.5} className="flex-shrink-0" />
                         {!collapsed && (
@@ -326,9 +358,9 @@ export default function Sidebar() {
                         <button
                           type="button"
                           onClick={() => toggleGroup(group.title)}
-                          aria-label={isOpen ? "Collapse Quality Management" : "Expand Quality Management"}
+                          aria-label={isOpen ? `Collapse ${group.title}` : `Expand ${group.title}`}
                           className="relative z-[1] flex-shrink-0 p-2 rounded-lg hover:bg-white/10 transition-all duration-150 mr-1"
-                          style={{ color: isQCPage ? ACTIVE_TEXT : MUTED }}
+                          style={{ color: isCollapsibleActive ? ACTIVE_TEXT : MUTED }}
                         >
                           <ChevronDown
                             size={13}
@@ -359,23 +391,51 @@ export default function Sidebar() {
                   {/* Sub-items — only shown when sidebar is expanded AND accordion is open */}
                   {!collapsed && isOpen && (
                     <div className="mt-1 ml-3 pl-3 border-l border-white/15 flex flex-col gap-0.5">
-                      {group.items.map(({ label, icon: Icon, href }) => {
+                      {group.items.map(({ label, icon: Icon, href, section }, idx) => {
                         const key = href + label;
+                        const subActive = isSubLinkActive(pathname, searchParams, href);
                         return (
-                          <div
-                            key={key}
-                            className="relative"
-                            onMouseEnter={() => setHoveredItem(key)}
-                            onMouseLeave={() => setHoveredItem(null)}
-                          >
-                            <Link
-                              href={href}
-                              className="relative flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none hover:bg-white/10"
-                              style={{ color: TEXT }}
+                          <div key={key}>
+                            {section && (
+                              <p
+                                className={clsx(
+                                  "pb-1 text-[10px] font-semibold uppercase tracking-widest pl-1",
+                                  idx === 0 ? "pt-0" : "pt-2"
+                                )}
+                                style={{ color: MUTED }}
+                              >
+                                {section}
+                              </p>
+                            )}
+                            <div
+                              className="relative"
+                              onMouseEnter={() => setHoveredItem(key)}
+                              onMouseLeave={() => setHoveredItem(null)}
                             >
-                              <Icon size={15} strokeWidth={1.5} className="flex-shrink-0" />
-                              <span className="truncate text-xs font-medium">{label}</span>
-                            </Link>
+                              {subActive && (
+                                <span
+                                  className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full z-10"
+                                  style={{ background: GRADIENT }}
+                                />
+                              )}
+                              {subActive && (
+                                <span
+                                  className="absolute inset-y-0 left-0 right-0 rounded-lg"
+                                  style={{ backgroundColor: ACTIVE_PILL_BG, zIndex: 0 }}
+                                />
+                              )}
+                              <Link
+                                href={href}
+                                className={clsx(
+                                  "relative z-[1] flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none",
+                                  subActive ? "" : "hover:bg-white/10"
+                                )}
+                                style={{ color: subActive ? ACTIVE_TEXT : TEXT }}
+                              >
+                                <Icon size={15} strokeWidth={1.5} className="flex-shrink-0" />
+                                <span className="truncate text-xs font-medium">{label}</span>
+                              </Link>
+                            </div>
                           </div>
                         );
                       })}
