@@ -12,6 +12,15 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["recharts", "@sentry/nextjs"],
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.jsdelivr.net",
+        pathname: "/gh/twitter/twemoji@14.0.2/assets/72x72/**",
+      },
+    ],
+  },
 };
 
 // Sentry — wrap when package is installed

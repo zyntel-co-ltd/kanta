@@ -3,6 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -27,6 +28,22 @@ export async function POST(
   try {
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
+
+    const { data: row } = await db
+      .from("facility_users")
+      .select("facility_id")
+      .eq("id", id)
+      .single();
+
+    if (!row?.facility_id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const ctx = await getAuthContext(req, {
+      facilityIdHint: row.facility_id as string,
+    });
+    const denied = requireAdminUserManagement(ctx, row.facility_id as string);
+    if (denied) return denied;
 
     const { error } = await db
       .from("facility_users")

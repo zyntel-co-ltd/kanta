@@ -9,10 +9,21 @@ import {
   type ReactNode,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
+import type { FacilityRole } from "@/lib/auth/roles";
 
 // Generic types — supabase-js surface can differ slightly between environments
 type User = { id: string; email?: string; user_metadata?: Record<string, unknown> };
 type Session = { user: User };
+
+export type FacilityAuthState = {
+  facilityId: string | null;
+  role: FacilityRole | null;
+  isSuperAdmin: boolean;
+  canAccessAdmin: boolean;
+  canViewRevenue: boolean;
+  canManageUsers: boolean;
+  canWrite: boolean;
+};
 
 /** Bridge casts: Vercel/CI uses stricter checks on SupabaseAuthClient overlaps */
 type BrowserAuth = {
@@ -35,6 +46,9 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /** RBAC from GET /api/me — null when logged out or before fetch completes */
+  facilityAuth: FacilityAuthState | null;
+  facilityAuthLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
@@ -46,6 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [facilityAuth, setFacilityAuth] = useState<FacilityAuthState | null>(null);
+  const [facilityAuthLoading, setFacilityAuthLoading] = useState(true);
 
   useEffect(() => {
     const client = createClient();
@@ -65,6 +81,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      setFacilityAuth(null);
+      setFacilityAuthLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setFacilityAuthLoading(true);
+
+    fetch("/api/me", { credentials: "same-origin" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) {
+          if (!cancelled) setFacilityAuth(null);
+          return;
+        }
+        setFacilityAuth({
+          facilityId: data.facilityId ?? null,
+          role: data.role ?? null,
+          isSuperAdmin: !!data.isSuperAdmin,
+          canAccessAdmin: !!data.canAccessAdmin,
+          canViewRevenue: !!data.canViewRevenue,
+          canManageUsers: !!data.canManageUsers,
+          canWrite: !!data.canWrite,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setFacilityAuth(null);
+      })
+      .finally(() => {
+        if (!cancelled) setFacilityAuthLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
   const signIn = useCallback(
     async (email: string, password: string) => {
       const client = createClient();
@@ -78,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     const client = createClient();
     const auth = client.auth as unknown as BrowserAuth;
+    setFacilityAuth(null);
     await auth.signOut();
   }, []);
 
@@ -96,7 +152,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, session, loading, signIn, signOut, resetPassword }}
+      value={{
+        user,
+        session,
+        loading,
+        facilityAuth,
+        facilityAuthLoading,
+        signIn,
+        signOut,
+        resetPassword,
+      }}
     >
       {children}
     </AuthContext.Provider>

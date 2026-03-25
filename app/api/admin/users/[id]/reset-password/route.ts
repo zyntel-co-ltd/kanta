@@ -3,6 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -31,7 +32,21 @@ export async function POST(
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
 
-    const { data: fu } = await db.from("facility_users").select("user_id").eq("id", id).single();
+    const { data: fu } = await db
+      .from("facility_users")
+      .select("user_id, facility_id")
+      .eq("id", id)
+      .single();
+
+    if (!fu?.facility_id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const ctx = await getAuthContext(req, {
+      facilityIdHint: fu.facility_id as string,
+    });
+    const denied = requireAdminUserManagement(ctx, fu.facility_id as string);
+    if (denied) return denied;
     const userId = fu?.user_id ?? id;
 
     // Service role client has auth.admin

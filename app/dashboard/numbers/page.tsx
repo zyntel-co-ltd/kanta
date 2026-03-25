@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
+import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
 import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
@@ -85,18 +86,21 @@ function KPICard({
   value,
   tooltip,
   full,
+  iconId,
 }: {
   title: string;
   value: string | number;
   tooltip?: string;
   full?: boolean;
+  iconId?: KpiTwemojiId;
 }) {
   return (
     <div
-      className={`bg-white border border-slate-200 rounded-xl p-4 ${full ? "col-span-2" : ""}`}
+      className={`bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-2 ${full ? "col-span-2" : ""}`}
       title={tooltip}
     >
-      <p className="text-xs text-slate-500 mb-1">{title}</p>
+      {iconId && <KpiTwemojiIcon id={iconId} size={40} />}
+      <p className="text-xs text-slate-500">{title}</p>
       <p className="text-xl font-bold text-slate-800">{value ?? "—"}</p>
     </div>
   );
@@ -330,17 +334,20 @@ export default function NumbersPage() {
                 title="Avg Daily Requests"
                 value={data?.avgDailyRequests?.toFixed(1) ?? "0"}
                 tooltip="For the selected date range"
+                iconId="barChart"
                 full
               />
               <KPICard
                 title="Busiest Hour"
                 value={data?.busiestHour ?? (data ? "—" : "N/A")}
                 tooltip="For the selected date range"
+                iconId="delayed"
               />
               <KPICard
                 title="Busiest Day"
                 value={data?.busiestDay ?? (data ? "—" : "N/A")}
                 tooltip="For the selected date range"
+                iconId="calendar"
                 full
               />
             </div>

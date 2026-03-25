@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import { useState, useEffect } from "react";
 import type { ComponentType } from "react";
-import { useAuth } from "@/lib/AuthContext";
+import { useAuth, type FacilityAuthState } from "@/lib/AuthContext";
 import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
 import {
   LayoutDashboard,
@@ -65,7 +65,7 @@ type NavGroup = {
   };
 };
 
-const navGroups: NavGroup[] = [
+const navGroupsBase: NavGroup[] = [
   { title: "Home", items: [{ label: "Home", icon: Home, href: "/dashboard/home" }] },
   {
     title: "Lab Metrics",
@@ -153,6 +153,63 @@ const navGroups: NavGroup[] = [
   },
 ];
 
+function filterNavForFacilityAuth(
+  groups: NavGroup[],
+  fa: FacilityAuthState | null,
+  opts: { loading: boolean; hasUser: boolean }
+): NavGroup[] {
+  if (!opts.hasUser || opts.loading) {
+    return groups;
+  }
+
+  const effective: FacilityAuthState =
+    fa ?? {
+      facilityId: null,
+      role: null,
+      isSuperAdmin: false,
+      canAccessAdmin: false,
+      canViewRevenue: false,
+      canManageUsers: false,
+      canWrite: false,
+    };
+
+  if (effective.isSuperAdmin) {
+    return groups;
+  }
+
+  const canViewRevenue = effective.canViewRevenue;
+  const canAccessAdmin = effective.canAccessAdmin;
+  const canWrite = effective.canWrite;
+
+  return groups
+    .map((g) => {
+      if (g.collapsible) {
+        const items = g.items.filter((item) => {
+          if (item.href.startsWith("/dashboard/revenue") && !canViewRevenue) return false;
+          if (item.href.startsWith("/dashboard/admin") && !canAccessAdmin) return false;
+          if (item.href.startsWith("/dashboard/departments") && !canAccessAdmin) return false;
+          if (!canWrite) {
+            if (item.href.includes("tab=data")) return false;
+            if (item.href.includes("tab=qual-entry")) return false;
+            if (item.href.includes("tab=pending")) return false;
+          }
+          return true;
+        });
+        if (items.length === 0) return null;
+        return { ...g, items };
+      }
+      const items = g.items.filter((item) => {
+        if (item.href.startsWith("/dashboard/revenue") && !canViewRevenue) return false;
+        if (item.href.startsWith("/dashboard/admin") && !canAccessAdmin) return false;
+        if (item.href.startsWith("/dashboard/departments") && !canAccessAdmin) return false;
+        return true;
+      });
+      if (items.length === 0) return null;
+      return { ...g, items };
+    })
+    .filter((x): x is NavGroup => x !== null);
+}
+
 /** Checks whether a plain (no-query-param) nav href is active for the current pathname */
 function isNavActive(pathname: string, href: string) {
   const base = href.split("?")[0];
@@ -219,7 +276,12 @@ const ACTIVE_TEXT    = "#ecfdf5";
 export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, signOut } = useAuth();
+  const { user, signOut, facilityAuth, facilityAuthLoading } = useAuth();
+
+  const navGroups = filterNavForFacilityAuth(navGroupsBase, facilityAuth, {
+    loading: facilityAuthLoading,
+    hasUser: !!user,
+  });
   const { collapsed, setCollapsed } = useSidebarLayout();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 

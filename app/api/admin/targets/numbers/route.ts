@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -22,6 +23,10 @@ export async function GET(req: NextRequest) {
   if (!supabaseConfigured) {
     return NextResponse.json({ target: 15000 });
   }
+
+  const ctx = await getAuthContext(req);
+  const denied = requireAdminUserManagement(ctx, facilityId);
+  if (denied) return denied;
 
   try {
     const periodStart = `${year}-${String(month).padStart(2, "0")}-01`;
@@ -57,6 +62,10 @@ export async function POST(req: NextRequest) {
   if (!supabaseConfigured) {
     return NextResponse.json({ ok: true });
   }
+
+  const ctx = await getAuthContext(req, { facilityIdHint: facility_id });
+  const denied = requireAdminUserManagement(ctx, facility_id);
+  if (denied) return denied;
 
   try {
     const periodStart = `${year}-${String(month).padStart(2, "0")}-01`;

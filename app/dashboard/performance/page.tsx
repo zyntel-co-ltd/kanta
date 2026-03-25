@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
+import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
 import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
@@ -62,18 +63,21 @@ function StatCard({
   value,
   sub,
   highlight,
+  iconId,
 }: {
   title: string;
   value: string | number;
   sub?: string;
   highlight?: boolean;
+  iconId?: KpiTwemojiId;
 }) {
   return (
     <div
-      className={`bg-white border rounded-2xl p-5 shadow-sm flex flex-col gap-1 ${
+      className={`bg-white border rounded-2xl p-5 shadow-sm flex flex-col gap-2 ${
         highlight ? "border-emerald-300 bg-emerald-50/40" : "border-slate-200"
       }`}
     >
+      {iconId && <KpiTwemojiIcon id={iconId} size={40} />}
       <p className="text-xs text-slate-500 uppercase tracking-wide">{title}</p>
       <p className={`text-3xl font-bold ${highlight ? "text-emerald-700" : "text-slate-800"}`}>
         {value}
@@ -274,21 +278,25 @@ export default function PerformancePage() {
               value={(data?.totalResulted ?? 0).toLocaleString()}
               sub="Completed in period"
               highlight
+              iconId="testsResulted"
             />
             <StatCard
               title="Tests Received"
               value={(data?.totalReceived ?? 0).toLocaleString()}
               sub="Including in-progress"
+              iconId="testsReceived"
             />
             <StatCard
               title="Avg. TAT"
               value={fmtMinutes(data?.avgTatMinutes ?? 0)}
               sub="For resulted tests"
+              iconId="avgTat"
             />
             <StatCard
               title="TAT Breaches"
               value={(data?.breachCount ?? 0).toLocaleString()}
               sub="SLA violations"
+              iconId="breaches"
             />
           </div>
 

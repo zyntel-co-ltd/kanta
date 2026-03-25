@@ -3,6 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -19,6 +20,10 @@ export async function GET(req: NextRequest) {
   if (!supabaseConfigured) {
     return NextResponse.json([]);
   }
+
+  const ctx = await getAuthContext(req);
+  const denied = requireAdminUserManagement(ctx, facilityId);
+  if (denied) return denied;
 
   try {
     const { createAdminClient } = await import("@/lib/supabase");

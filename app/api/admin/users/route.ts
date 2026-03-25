@@ -4,6 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
+import { FACILITY_ROLES, isFacilityRole } from "@/lib/auth/roles";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -20,6 +22,10 @@ export async function GET(req: NextRequest) {
   if (!supabaseConfigured) {
     return NextResponse.json([]);
   }
+
+  const ctx = await getAuthContext(req);
+  const denied = requireAdminUserManagement(ctx, facilityId);
+  if (denied) return denied;
 
   try {
     const { createAdminClient } = await import("@/lib/supabase");
@@ -93,6 +99,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id: "mock-1" }, { status: 201 });
   }
 
+  const ctx = await getAuthContext(req, { facilityIdHint: facility_id });
+  const denied = requireAdminUserManagement(ctx, facility_id);
+  if (denied) return denied;
+
+  const resolvedRole = isFacilityRole(role) ? role : "viewer";
+
   try {
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
@@ -124,7 +136,7 @@ export async function POST(req: NextRequest) {
       .insert({
         facility_id,
         user_id: userId,
-        role: ["admin", "manager", "technician", "viewer", "reception"].includes(role) ? role : "viewer",
+        role: FACILITY_ROLES.includes(resolvedRole) ? resolvedRole : "viewer",
         is_active: true,
       })
       .select("id")

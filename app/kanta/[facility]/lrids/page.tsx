@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Building2 } from "lucide-react";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 const REFRESH_MS = 30_000;
-const HOSPITAL_NAME = process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Nakasero Hospital";
+const HOSPITAL_NAME = process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Zyntel Hospital";
 const HOSPITAL_LOGO_URL = process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
 
 type LRIDSItem = {
@@ -40,7 +41,7 @@ function LiveClock() {
 
 export default function LRIDSDisplayPage() {
   const params = useParams();
-  const facilityId = (params.facility as string) ?? "6eafdd6c-cc3b-47cf-8bf6-44d7254be4b5";
+  const facilityId = (params.facility as string) ?? DEFAULT_FACILITY_ID;
 
   const [data, setData] = useState<LRIDSItem[]>([]);
   const [loading, setLoading] = useState(true);

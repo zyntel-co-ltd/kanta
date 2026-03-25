@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 27 March 2026 (Phase 21 — ESLint cleanup + Lab Metrics icon refresh)  
+**Last updated:** 27 March 2026 (Phase 22 — RBAC v2, invites, Zyntel default facility)  
 **Updated by:** Cursor
 
 ---
@@ -87,6 +87,43 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 19: Chart.js full migration — Recharts removed** *(25 March 2026)* — see section below
 - [x] **Phase 20: Quality & samples hub + combined sidebar** *(26 March 2026)* — see section below
 - [x] **Phase 21: ESLint cleanup + Lab Metrics icon refresh** *(27 March 2026)* — see section below
+- [x] **Phase 22: RBAC v2, registration & invites, Zyntel default facility** *(27 March 2026)* — see section below
+
+### Phase 22 — RBAC v2, Registration & Invites, Zyntel Default Facility (27 March 2026)
+
+#### Summary
+End-to-end **facility-scoped roles** with server enforcement, **platform super-admins**, **facility invites** (Resend when configured), **public facility registration**, and a single **default facility** documented as **Zyntel Hospital** (override via env).
+
+#### Database (`supabase/migrations/20260325000000_kanta_rbac_roles_v2.sql`)
+- **`facility_role`** migrated to: `facility_admin`, `lab_manager`, `lab_technician`, `viewer` (maps legacy `admin`/`manager`/`technician`/`reception`/`viewer`).
+- **`platform_admins`** — cross-facility super admins (`user_id` only).
+- **`facility_invites`** — email, role, token, expiry, acceptance tracking.
+
+#### Auth & API
+- **`lib/auth/roles.ts`** — `getPermissions`, role allowlists for admin vs revenue.
+- **`lib/auth/server.ts`** — `getAuthContext()`, `requireAdminUserManagement()`, `requireRevenueAccess()`, optional `facilityIdHint` for POST bodies.
+- **`GET /api/me`** — session + `facilityId`, `role`, `isSuperAdmin`, permission flags for the client.
+- **`/api/admin/*`** — protected (facility admin / lab manager or platform super admin); **`DELETE /api/admin/users/:id`** returns **405** (deactivate only).
+- **`GET /api/revenue`** — protected by revenue-capable roles.
+- **`POST /api/auth/register-facility`** — creates `hospitals` + first `facility_admin`.
+- **`POST /api/invites`** + **`POST /api/invites/accept`** — invite flow; **`resend`** dependency for email.
+
+#### Client
+- **`AuthContext`** — `facilityAuth` / `facilityAuthLoading` from `/api/me`.
+- **`Sidebar`** — hides Revenue, Admin, Departments, and some write-only QC/Samples links by permission.
+- **`/dashboard/admin`** — role labels updated; delete-user UI removed; access denied when not admin-capable.
+
+#### Default facility (Zyntel Hospital)
+- **`lib/constants.ts`** — `DEFAULT_FACILITY_ID` resolves **`NEXT_PUBLIC_DEFAULT_FACILITY_ID`** or fallback UUID documented as Zyntel Hospital.
+- **`.env.example`** — `NEXT_PUBLIC_DEFAULT_FACILITY_ID` documented.
+- **`/api/capability`**, **`/api/qc/import`**, **`app/kanta/[facility]/lrids`** — use shared constant instead of hardcoded UUID.
+- **`/dashboard/home`** — shows **`NEXT_PUBLIC_HOSPITAL_NAME`** (default Zyntel Hospital) in the hero.
+
+#### Verification
+- `npm run type-check` — **passes**
+- Apply the SQL migration on Supabase before relying on new tables/enums in production.
+
+---
 
 ### Phase 21 — ESLint Cleanup + Lab Metrics Icon Refresh (27 March 2026)
 

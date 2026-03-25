@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
+import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
 import "@/components/charts/registry";
 import { Doughnut, Line, Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
@@ -63,17 +64,20 @@ function KPICard({
   value,
   sub,
   full,
+  iconId,
 }: {
   title: string;
   value: string;
   sub?: string;
   full?: boolean;
+  iconId?: KpiTwemojiId;
 }) {
   return (
-    <div className={`bg-white border border-slate-200 rounded-xl p-4 ${full ? "col-span-2" : ""}`}>
-      <p className="text-xs text-slate-500 mb-1">{title}</p>
+    <div className={`bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-2 ${full ? "col-span-2" : ""}`}>
+      {iconId && <KpiTwemojiIcon id={iconId} size={40} />}
+      <p className="text-xs text-slate-500">{title}</p>
       <p className="text-lg font-bold text-slate-800 truncate">{value}</p>
-      {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+      {sub && <p className="text-xs text-slate-400">{sub}</p>}
     </div>
   );
 }
@@ -352,8 +356,13 @@ export default function RevenuePage() {
           <aside className="w-72 flex-shrink-0 flex flex-col gap-4">
             {/* Total Revenue Card */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-              <p className="text-sm font-semibold text-slate-700 mb-1">Total Revenue</p>
-              <p className="text-2xl font-bold text-emerald-600">{fmtUGX(totalRevenue)}</p>
+              <div className="flex items-start gap-3 mb-4">
+                <KpiTwemojiIcon id="moneyBag" size={40} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-700 mb-1">Total Revenue</p>
+                  <p className="text-2xl font-bold text-emerald-600">{fmtUGX(totalRevenue)}</p>
+                </div>
+              </div>
               <div className="mt-4 flex flex-col gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Today</span>
@@ -374,15 +383,18 @@ export default function RevenuePage() {
               <KPICard
                 title="Avg. Daily Revenue"
                 value={fmtUGX(Math.round(avgDaily))}
+                iconId="banknote"
                 full
               />
               <KPICard
                 title="Cancellation Rate"
                 value={`${(data?.cancellationRate ?? 0).toFixed(1)}%`}
+                iconId="crossMark"
               />
               <KPICard
                 title="Pending"
                 value={String(data?.pendingCount ?? 0)}
+                iconId="pending"
               />
             </div>
           </aside>

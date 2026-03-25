@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
+import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
 import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
@@ -107,11 +108,21 @@ function TargetProgress({
   );
 }
 
-function KPICard({ title, value, icon, full }: { title: string; value: string | number; icon?: string; full?: boolean }) {
+function KPICard({
+  title,
+  value,
+  iconId,
+  full,
+}: {
+  title: string;
+  value: string | number;
+  iconId?: KpiTwemojiId;
+  full?: boolean;
+}) {
   return (
-    <div className={`bg-white border border-slate-200 rounded-xl p-4 ${full ? "col-span-2" : ""}`}>
-      {icon && <span className="text-2xl block mb-1">{icon}</span>}
-      <p className="text-xs text-slate-500 mb-1">{title}</p>
+    <div className={`bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-2 ${full ? "col-span-2" : ""}`}>
+      {iconId && <KpiTwemojiIcon id={iconId} size={40} />}
+      <p className="text-xs text-slate-500">{title}</p>
       <p className="text-xl font-bold text-slate-800">{value ?? "—"}</p>
     </div>
   );
@@ -375,7 +386,7 @@ export default function TestsPage() {
               <KPICard
                 title="Avg. Daily Tests"
                 value={data?.avgDailyTests?.toFixed(1) ?? "0"}
-                icon="📈"
+                iconId="chartTrending"
                 full
               />
             </div>

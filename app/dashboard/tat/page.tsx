@@ -3,6 +3,7 @@
 import "@/components/charts/registry";
 import { useEffect, useState, useCallback } from "react";
 import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
+import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
 import { Doughnut, Line, Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
@@ -91,19 +92,19 @@ function ProgressBar({
 function KPICard({
   title,
   value,
-  icon,
+  iconId,
   full,
 }: {
   title: string;
   value: string | number;
-  icon: string;
+  iconId: KpiTwemojiId;
   full?: boolean;
 }) {
   return (
     <div
-      className={`bg-white border border-slate-200 rounded-xl p-3 flex flex-col gap-1 ${full ? "col-span-2" : ""}`}
+      className={`bg-white border border-slate-200 rounded-xl p-3 flex flex-col gap-2 ${full ? "col-span-2" : ""}`}
     >
-      <span className="text-2xl">{icon}</span>
+      <KpiTwemojiIcon id={iconId} size={40} />
       <p className="text-xs text-slate-500 leading-tight">{title}</p>
       <p className="text-lg font-bold text-slate-800 truncate">{value ?? "—"}</p>
     </div>
@@ -436,27 +437,27 @@ export default function TATPage() {
               <KPICard
                 title="Avg Daily On-Time"
                 value={data?.kpis.avgDailyOnTime ?? "—"}
-                icon="✅"
+                iconId="onTime"
               />
               <KPICard
                 title="Avg Daily Delayed"
                 value={data?.kpis.avgDailyDelayed ?? "—"}
-                icon="🕐"
+                iconId="delayed"
               />
               <KPICard
                 title="Avg Daily Not Uploaded"
                 value={data?.kpis.avgDailyNotUploaded ?? "—"}
-                icon="📤"
+                iconId="notUploaded"
               />
               <KPICard
                 title="Most Delayed Hour"
                 value={data?.kpis.mostDelayedHour ?? "—"}
-                icon="⏳"
+                iconId="hourly"
               />
               <KPICard
                 title="Most Delayed Day"
                 value={data?.kpis.mostDelayedDay ?? "—"}
-                icon="📅"
+                iconId="calendar"
                 full
               />
             </div>

@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -11,7 +12,7 @@ const supabaseConfigured =
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const facilityId = searchParams.get("facility_id") ?? "6eafdd6c-cc3b-47cf-8bf6-44d7254be4b5";
+  const facilityId = searchParams.get("facility_id") ?? DEFAULT_FACILITY_ID;
 
   if (!supabaseConfigured) {
     return NextResponse.json({

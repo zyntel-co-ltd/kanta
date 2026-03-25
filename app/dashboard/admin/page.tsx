@@ -9,7 +9,6 @@ import {
   Sliders,
   Plus,
   Pencil,
-  Trash2,
   Key,
   Check,
   X,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { useAuth } from "@/lib/AuthContext";
 
 const LAB_SECTIONS = [
   "CHEMISTRY",
@@ -93,8 +93,10 @@ export default function AdminPage() {
     username: "",
     email: "",
     password: "",
-    role: "technician" as string,
+    role: "lab_technician" as string,
   });
+
+  const { facilityAuth, facilityAuthLoading } = useAuth();
 
   const [resetPasswordModal, setResetPasswordModal] = useState<{ id: string; username: string } | null>(null);
   const [resetPasswordValue, setResetPasswordValue] = useState("");
@@ -134,7 +136,7 @@ export default function AdminPage() {
     limit: 50,
   });
 
-  const facilityId = DEFAULT_FACILITY_ID;
+  const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
 
   const fetchTargets = useCallback(async () => {
     try {
@@ -160,7 +162,15 @@ export default function AdminPage() {
     } catch (e) {
       console.error("Error fetching targets:", e);
     }
-  }, [facilityId, monthlyTarget.month, monthlyTarget.year, testsTarget.month, testsTarget.year, numbersTarget.month, numbersTarget.year]);
+  }, [
+    facilityId,
+    monthlyTarget.month,
+    monthlyTarget.year,
+    testsTarget.month,
+    testsTarget.year,
+    numbersTarget.month,
+    numbersTarget.year,
+  ]);
 
   const fetchAudit = useCallback(async () => {
     const params = new URLSearchParams();
@@ -227,6 +237,31 @@ export default function AdminPage() {
     if (activeTab === "settings") fetchTargets();
   }, [activeTab, fetchTargets]);
 
+  if (facilityAuthLoading) {
+    return (
+      <div className="min-h-[40vh] flex items-center justify-center text-slate-500">
+        Loading…
+      </div>
+    );
+  }
+
+  if (!facilityAuth?.canAccessAdmin && !facilityAuth?.isSuperAdmin) {
+    return (
+      <div className="max-w-lg mx-auto mt-16 p-8 rounded-2xl border border-slate-200 bg-white shadow-sm text-center">
+        <h1 className="text-lg font-semibold text-slate-900 mb-2">Access restricted</h1>
+        <p className="text-slate-600 text-sm">
+          You don&apos;t have permission to view Admin. Contact a facility administrator if you need access.
+        </p>
+        <Link
+          href="/dashboard/home"
+          className="inline-block mt-6 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          Back to Home
+        </Link>
+      </div>
+    );
+  }
+
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "users", label: "User Management", icon: <Users size={16} /> },
     { id: "unmatched", label: "Unmatched Tests", icon: <AlertTriangle size={16} /> },
@@ -269,18 +304,6 @@ export default function AdminPage() {
       fetchData();
     } catch (e) {
       setToast({ message: (e as Error).message || "Error", type: "error" });
-    }
-  };
-
-  const handleDeleteUser = async (id: string) => {
-    if (!confirm("Delete this user?")) return;
-    try {
-      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
-      setToast({ message: "User deleted", type: "success" });
-      fetchData();
-    } catch {
-      setToast({ message: "Failed to delete", type: "error" });
     }
   };
 
@@ -500,7 +523,7 @@ export default function AdminPage() {
                 <button
                   onClick={() => {
                     setEditingUser(null);
-                    setUserForm({ username: "", email: "", password: "", role: "technician" });
+                    setUserForm({ username: "", email: "", password: "", role: "lab_technician" });
                     setUserModalOpen(true);
                   }}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
@@ -528,9 +551,9 @@ export default function AdminPage() {
                         <td className="px-4 py-3">
                           <span
                             className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                              u.role === "admin"
+                              u.role === "facility_admin"
                                 ? "bg-red-100 text-red-700"
-                                : u.role === "manager"
+                                : u.role === "lab_manager"
                                 ? "bg-amber-100 text-amber-700"
                                 : "bg-slate-100 text-slate-700"
                             }`}
@@ -575,13 +598,6 @@ export default function AdminPage() {
                             title={u.is_active ? "Deactivate" : "Activate"}
                           >
                             {u.is_active ? <X size={14} /> : <Check size={14} />}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(u.id)}
-                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50"
-                            title="Delete"
-                          >
-                            <Trash2 size={14} />
                           </button>
                         </td>
                       </tr>
@@ -1216,11 +1232,10 @@ export default function AdminPage() {
                   onChange={(e) => setUserForm((p) => ({ ...p, role: e.target.value }))}
                   className="w-full rounded border border-slate-200 px-3 py-2 text-sm"
                 >
-                  <option value="admin">Admin</option>
-                  <option value="manager">Manager</option>
-                  <option value="technician">Technician</option>
+                  <option value="facility_admin">Facility admin</option>
+                  <option value="lab_manager">Lab manager</option>
+                  <option value="lab_technician">Lab technician</option>
                   <option value="viewer">Viewer</option>
-                  <option value="reception">Reception</option>
                 </select>
               </div>
             </div>

@@ -24,6 +24,9 @@ import {
 import RecentlyVisited from "@/components/dashboard/RecentlyVisited";
 import QuickActions from "@/components/dashboard/QuickActions";
 
+const HOSPITAL_DISPLAY_NAME =
+  process.env.NEXT_PUBLIC_HOSPITAL_NAME?.trim() || "Zyntel Hospital";
+
 /* ─────────────────────────── types ─────────────────────────── */
 
 type IconProps = { size?: number; className?: string; strokeWidth?: number; style?: React.CSSProperties };
@@ -152,6 +155,9 @@ export default function DashboardHomePage() {
             </h1>
             <p className="text-emerald-100 mt-1.5" style={{ fontSize: "0.9375rem", lineHeight: 1.6 }}>
               Choose a workspace below — data, charts and controls in one focused view.
+            </p>
+            <p className="text-emerald-200/90 text-sm mt-2 font-medium">
+              {HOSPITAL_DISPLAY_NAME}
             </p>
             <Link
               href="/dashboard/scan"

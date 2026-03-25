@@ -3,6 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -47,6 +48,12 @@ export async function POST(
         { status: 404 }
       );
     }
+
+    const ctx = await getAuthContext(req, {
+      facilityIdHint: unmatched.facility_id as string,
+    });
+    const denied = requireAdminUserManagement(ctx, unmatched.facility_id as string);
+    if (denied) return denied;
 
     const { error: insertErr } = await db.from("test_metadata").insert({
       facility_id: unmatched.facility_id,

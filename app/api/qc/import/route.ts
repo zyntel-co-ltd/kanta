@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not configured" }, { status: 501 });
   }
 
-  const facilityId = req.headers.get("x-facility-id") ?? "6eafdd6c-cc3b-47cf-8bf6-44d7254be4b5";
+  const facilityId = req.headers.get("x-facility-id") ?? DEFAULT_FACILITY_ID;
 
   try {
     const formData = await req.formData();
