@@ -1,5 +1,6 @@
 "use client";
 
+import "@/components/charts/registry";
 import { useEffect, useState, useCallback, useMemo, Fragment } from "react";
 import {
   ShieldCheck, AlertTriangle, BarChart3, TestTube, Calculator,
@@ -7,10 +8,8 @@ import {
   Download, Copy, Check, Plus, FlaskConical, Activity,
   ChevronDown, ChevronUp, X as XIcon,
 } from "lucide-react";
-import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine,
-  ResponsiveContainer,
-} from "recharts";
+import { Line } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 /* ─────────────────── Theme constants ─────────────────── */
@@ -757,6 +756,86 @@ function QCVisualizationTab() {
   const renderGraph = (config: QcItem, data: QcItem[], compact = false) => {
     const mean = Number(config.mean), sd = Number(config.sd);
     const yLabel = `${config.qcName} Level ${config.level} (${config.units || "μmol/L"})`;
+    const labels = data.map((d) => String(d.name ?? ""));
+    const values = data.map((d) => Number(d.value));
+    const pointColors = data.map((d) =>
+      d._status === "failure" ? "#dc2626" : d._status === "warning" ? "#f59e0b" : "#16a34a"
+    );
+
+    const chartData: ChartData<"line"> = {
+      labels,
+      datasets: [
+        // main series (with colored points)
+        {
+          label: "QC Value",
+          data: values,
+          borderColor: "#0f172a",
+          borderWidth: 1.5,
+          pointRadius: 5,
+          pointHoverRadius: 6,
+          pointBackgroundColor: pointColors,
+          pointBorderColor: "#0f172a",
+          pointBorderWidth: 1,
+          tension: 0,
+        },
+        { label: "Mean",  data: labels.map(() => mean),          borderColor: "#0f172a", borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0 },
+        { label: "+1 SD", data: labels.map(() => mean + sd),     borderColor: "#16a34a", borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
+        { label: "-1 SD", data: labels.map(() => mean - sd),     borderColor: "#16a34a", borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
+        { label: "+2 SD", data: labels.map(() => mean + 2 * sd), borderColor: "#f59e0b", borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
+        { label: "-2 SD", data: labels.map(() => mean - 2 * sd), borderColor: "#f59e0b", borderWidth: 1,   borderDash: [3, 3], pointRadius: 0 },
+        { label: "+3 SD", data: labels.map(() => mean + 3 * sd), borderColor: "#ef4444", borderWidth: 1.5, pointRadius: 0 },
+        { label: "-3 SD", data: labels.map(() => mean - 3 * sd), borderColor: "#ef4444", borderWidth: 1.5, pointRadius: 0 },
+      ],
+    };
+
+    const options: ChartOptions<"line"> = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#f8fafc",
+          titleColor: "#0f172a",
+          bodyColor: "#334155",
+          borderColor: "#e2e8f0",
+          borderWidth: 1,
+          callbacks: {
+            title: (items) => items[0]?.label ?? "",
+            label: (ctx) => {
+              if (ctx.datasetIndex !== 0) return "";
+              const v = Number(ctx.parsed.y ?? 0);
+              const status = data[ctx.dataIndex]?._status;
+              const tag = status === "failure" ? "Violation" : status === "warning" ? "Warning" : "Normal";
+              return `Value: ${v} (${tag})`;
+            },
+          },
+          filter: (item) => item.datasetIndex === 0,
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: "#64748b", font: { size: 11 }, maxRotation: 45 },
+        },
+        y: {
+          min: mean - 3 * sd,
+          max: mean + 3 * sd,
+          grid: { color: "#f1f5f9" },
+          ticks: {
+            color: "#64748b",
+            font: { size: 10 },
+            callback: (v) => Number(v).toFixed(2),
+          },
+          title: {
+            display: true,
+            text: yLabel,
+            color: "#475569",
+            font: { size: 11, weight: 600 },
+          },
+        },
+      },
+    };
     return (
       <div key={config.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <div className="text-center border-b border-slate-100 pb-4 mb-4">
@@ -769,39 +848,9 @@ function QCVisualizationTab() {
             </p>
           )}
         </div>
-        <ResponsiveContainer width="100%" height={compact ? 260 : 380}>
-          <LineChart data={data} margin={{ left: 80, right: 80, top: 10, bottom: 40 }}>
-            <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 11 }} padding={{ left: 10, right: 10 }} />
-            <YAxis
-              domain={[mean - 3 * sd, mean + 3 * sd]}
-              tick={{ fill: "#64748b", fontSize: 10 }}
-              tickFormatter={(v) => v.toFixed(2)}
-              label={{ value: yLabel, angle: -90, position: "insideLeft", offset: -65, style: { fill: "#475569", fontSize: 11, fontWeight: 600 } }}
-            />
-            <Tooltip contentStyle={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12 }} />
-            <Line type="linear" dataKey="value" stroke="#0f172a" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-            <Line
-              type="monotone" dataKey="value" stroke="transparent"
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              dot={(props: any) => (
-                <circle
-                  key={`dot-${props.index}`}
-                  cx={props.cx} cy={props.cy} r={5}
-                  fill={props.payload._status === "failure" ? "#dc2626" : props.payload._status === "warning" ? "#f59e0b" : "#16a34a"}
-                  stroke="#0f172a" strokeWidth={1}
-                />
-              )}
-              isAnimationActive={false}
-            />
-            <ReferenceLine y={mean}          stroke="#0f172a" strokeWidth={1.5} strokeDasharray="4 4" />
-            <ReferenceLine y={mean + sd}     stroke="#16a34a" strokeWidth={1}   strokeDasharray="3 3" />
-            <ReferenceLine y={mean - sd}     stroke="#16a34a" strokeWidth={1}   strokeDasharray="3 3" />
-            <ReferenceLine y={mean + 2 * sd} stroke="#f59e0b" strokeWidth={1}   strokeDasharray="3 3" />
-            <ReferenceLine y={mean - 2 * sd} stroke="#f59e0b" strokeWidth={1}   strokeDasharray="3 3" />
-            <ReferenceLine y={mean + 3 * sd} stroke="#ef4444" strokeWidth={1.5} />
-            <ReferenceLine y={mean - 3 * sd} stroke="#ef4444" strokeWidth={1.5} />
-          </LineChart>
-        </ResponsiveContainer>
+        <div style={{ height: compact ? 260 : 380 }}>
+          <Line data={chartData} options={options} />
+        </div>
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500 justify-center">
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Normal</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> 1₂s Warning</span>

@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TrendingUp, TrendingDown, AlertTriangle, ScanLine, Wrench, Activity } from "lucide-react";
-import { LineChart, Line, ResponsiveContainer } from "recharts";
+import "@/components/charts/registry";
+import { Line } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 import clsx from "clsx";
 import { useDashboardData } from "@/lib/DashboardDataContext";
 
@@ -208,19 +210,38 @@ export default function KpiCards() {
 
             {/* Sparkline */}
             <div className="mt-3 h-10 min-h-[40px] min-w-[80px] relative z-10 -mx-1">
-              <ResponsiveContainer width="100%" height="100%" minHeight={40} minWidth={80}>
-                <LineChart data={sparkData.length ? sparkData : [{ v: 0 }, { v: 0 }]}>
-                  <Line
-                    type="monotone"
-                    dataKey="v"
-                    stroke={theme.sparkColor}
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={true}
-                    animationDuration={1200}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {(() => {
+                const safe = sparkData.length ? sparkData : [{ v: 0 }, { v: 0 }];
+                const chartData: ChartData<"line"> = {
+                  labels: safe.map((_, idx) => String(idx)),
+                  datasets: [
+                    {
+                      label: "trend",
+                      data: safe.map((d) => d.v),
+                      borderColor: theme.sparkColor,
+                      borderWidth: 2,
+                      pointRadius: 0,
+                      tension: 0.35,
+                    },
+                  ],
+                };
+
+                const options: ChartOptions<"line"> = {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  animation: { duration: 1200 },
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false },
+                  },
+                  scales: {
+                    x: { display: false },
+                    y: { display: false },
+                  },
+                };
+
+                return <Line data={chartData} options={options} />;
+              })()}
             </div>
 
             {/* Alert card: severity breakdown - use real severity from API */}

@@ -1,40 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import "@/components/charts/registry";
+import { Bar } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 import { useDashboardData } from "@/lib/DashboardDataContext";
-
-const CustomTooltip = ({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { value: number; name: string }[];
-  label?: string;
-}) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-slate-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl border border-white/10">
-        <p className="font-semibold mb-1 text-slate-300">{label}</p>
-        {payload.map((p) => (
-          <p key={p.name} className="text-slate-300 capitalize">
-            {p.name}: <span className="text-white font-bold">{p.value}</span>
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
 
 export default function EquipmentStatusChart() {
   const { dashboard, loading } = useDashboardData();
@@ -48,6 +18,65 @@ export default function EquipmentStatusChart() {
       </div>
     );
   }
+
+  const safe = data.length ? data : [{ month: "—", operational: 0, maintenance: 0, retired: 0 }];
+  const labels = safe.map((d) => d.month);
+
+  const chartData: ChartData<"bar"> = {
+    labels,
+    datasets: [
+      {
+        label: "Operational",
+        data: safe.map((d) => d.operational),
+        backgroundColor: "#6366f1",
+        borderWidth: 0,
+        stack: "stack1",
+        barThickness: 10,
+      },
+      {
+        label: "Maintenance",
+        data: safe.map((d) => d.maintenance),
+        backgroundColor: "#fbbf24",
+        borderWidth: 0,
+        stack: "stack1",
+        barThickness: 10,
+      },
+      {
+        label: "Retired",
+        data: safe.map((d) => d.retired),
+        backgroundColor: "#e2e8f0",
+        borderWidth: 0,
+        stack: "stack1",
+        barThickness: 10,
+      },
+    ],
+  };
+
+  const options: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        stacked: true,
+        grid: { display: false },
+        ticks: { font: { size: 10 }, color: "#94a3b8" },
+      },
+      y: {
+        stacked: true,
+        display: false,
+        grid: { display: false },
+      },
+    },
+  };
 
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow h-full">
@@ -84,22 +113,7 @@ export default function EquipmentStatusChart() {
       </div>
 
       <div className="mt-4 h-40 min-h-[160px] min-w-[1px]">
-        <ResponsiveContainer width="100%" height="100%" minHeight={160}>
-          <BarChart data={data.length ? data : [{ month: "—", operational: 0, maintenance: 0, retired: 0 }]} barSize={10} barGap={1} barCategoryGap="30%">
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis
-              dataKey="month"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 10, fill: "#94a3b8" }}
-            />
-            <YAxis hide />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f8fafc" }} />
-            <Bar dataKey="operational" stackId="a" fill="#6366f1" radius={[0, 0, 0, 0]} isAnimationActive animationDuration={500} />
-            <Bar dataKey="maintenance" stackId="a" fill="#fbbf24" radius={[0, 0, 0, 0]} isAnimationActive animationDuration={600} />
-            <Bar dataKey="retired"     stackId="a" fill="#e2e8f0" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={700} />
-          </BarChart>
-        </ResponsiveContainer>
+        <Bar data={chartData} options={options} />
       </div>
     </div>
   );

@@ -2,21 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import "@/components/charts/registry";
+import { Doughnut, Line, Bar } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -90,28 +78,6 @@ function KPICard({
   );
 }
 
-function ChartTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { name: string; value: number; color: string }[];
-  label?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-semibold text-slate-700 mb-1 truncate max-w-xs">{label}</p>
-      {payload.map((p) => (
-        <p key={p.name} style={{ color: p.color }}>
-          {p.name}: <strong>{fmtUGX(p.value)}</strong>
-        </p>
-      ))}
-    </div>
-  );
-}
-
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function RevenuePage() {
   const [filters, setFilters] = useState({
@@ -169,6 +135,129 @@ export default function RevenuePage() {
         t.test_name.toLowerCase().includes(filters.testName.trim().toLowerCase())
       )
     : (data?.testRevenue ?? []).slice(0, 30);
+
+  const sectionLabels = (data?.sectionRevenue ?? []).map((d) => d.section);
+  const sectionValues = (data?.sectionRevenue ?? []).map((d) => d.revenue);
+  const sectionColors = sectionLabels.map((_, idx) => SECTION_COLORS[idx % SECTION_COLORS.length]);
+  const sectionChartData: ChartData<"doughnut"> = {
+    labels: sectionLabels,
+    datasets: [
+      {
+        data: sectionValues,
+        backgroundColor: sectionColors,
+        borderWidth: 0,
+      },
+    ],
+  };
+  const sectionOptions: ChartOptions<"doughnut"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: "60%",
+    plugins: {
+      legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 12 } } },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => fmtUGX(Number(ctx.parsed ?? 0)),
+        },
+      },
+    },
+  };
+
+  const dailyLabels = (data?.dailyRevenue ?? []).map((d) => d.date);
+  const dailyValues = (data?.dailyRevenue ?? []).map((d) => d.revenue);
+  const dailyChartData: ChartData<"line"> = {
+    labels: dailyLabels,
+    datasets: [
+      {
+        label: "Revenue",
+        data: dailyValues,
+        borderColor: "#10b981",
+        backgroundColor: "rgba(16,185,129,0.10)",
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.35,
+      },
+    ],
+  };
+  const dailyOptions: ChartOptions<"line"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 12 } } },
+      tooltip: {
+        callbacks: {
+          title: (items) => {
+            const raw = items[0]?.label ?? "";
+            return typeof raw === "string" ? raw : String(raw);
+          },
+          label: (ctx) => `${ctx.dataset.label}: ${fmtUGX(Number(ctx.parsed.y ?? 0))}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          font: { size: 10 },
+          callback: (value, index) => {
+            const raw = dailyLabels[index] ?? "";
+            return typeof raw === "string" ? raw.slice(5) : String(raw);
+          },
+        },
+      },
+      y: {
+        grid: { color: "#f1f5f9" },
+        ticks: {
+          font: { size: 10 },
+          callback: (v) => `${(Number(v) / 1000).toFixed(0)}k`,
+        },
+      },
+    },
+  };
+
+  const testLabels = filteredTestRevenue.map((t) => t.test_name);
+  const testValues = filteredTestRevenue.map((t) => t.revenue);
+  const testChartData: ChartData<"bar"> = {
+    labels: testLabels,
+    datasets: [
+      {
+        label: "Revenue",
+        data: testValues,
+        backgroundColor: "#059669",
+        borderRadius: 4,
+        barThickness: 14,
+      },
+    ],
+  };
+  const testOptions: ChartOptions<"bar"> = {
+    indexAxis: "y",
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => fmtUGX(Number(ctx.parsed.x ?? 0)),
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { color: "#f1f5f9" },
+        ticks: {
+          font: { size: 10 },
+          callback: (v) => `${(Number(v) / 1000).toFixed(0)}k`,
+        },
+      },
+      y: {
+        grid: { display: false },
+        ticks: { font: { size: 11 } },
+      },
+    },
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -308,30 +397,9 @@ export default function RevenuePage() {
                   <span className="text-emerald-600">◕</span> Revenue by Laboratory Section
                 </h3>
                 {(data?.sectionRevenue ?? []).length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie
-                        data={data!.sectionRevenue}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={2}
-                        dataKey="revenue"
-                        nameKey="section"
-                        label={({ percent }: { percent?: number }) =>
-                          (percent ?? 0) > 0.04 ? `${((percent ?? 0) * 100).toFixed(0)}%` : ""
-                        }
-                        labelLine={false}
-                      >
-                        {data!.sectionRevenue.map((_, idx) => (
-                          <Cell key={idx} fill={SECTION_COLORS[idx % SECTION_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(v: number | string | undefined) => fmtUGX(typeof v === "number" ? v : 0)} />
-                      <Legend iconSize={12} wrapperStyle={{ fontSize: 12 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="h-[280px]">
+                    <Doughnut data={sectionChartData} options={sectionOptions} />
+                  </div>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
                     No data available
@@ -345,27 +413,9 @@ export default function RevenuePage() {
                   <span className="text-emerald-600">📈</span> Daily Revenue
                 </h3>
                 {(data?.dailyRevenue ?? []).length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <LineChart data={data!.dailyRevenue} margin={{ left: 10, right: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 10 }}
-                        tickFormatter={(v: string) => v.slice(5)}
-                      />
-                      <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(v: number | string | undefined) => fmtUGX(typeof v === "number" ? v : 0)} />
-                      <Legend iconSize={12} wrapperStyle={{ fontSize: 12 }} />
-                      <Line
-                        type="monotone"
-                        dataKey="revenue"
-                        name="Revenue"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <div className="h-[280px]">
+                    <Line data={dailyChartData} options={dailyOptions} />
+                  </div>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
                     No data available
@@ -380,26 +430,9 @@ export default function RevenuePage() {
                 <span className="text-emerald-600">🧪</span> Revenue by Test
               </h3>
               {filteredTestRevenue.length > 0 ? (
-                <ResponsiveContainer
-                  width="100%"
-                  height={Math.max(300, filteredTestRevenue.length * 26)}
-                >
-                  <BarChart
-                    data={filteredTestRevenue}
-                    layout="vertical"
-                    margin={{ left: 160, right: 40, top: 5, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                    <XAxis
-                      type="number"
-                      tick={{ fontSize: 10 }}
-                      tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`}
-                    />
-                    <YAxis type="category" dataKey="test_name" tick={{ fontSize: 11 }} width={155} />
-                    <Tooltip formatter={(v: number | string | undefined) => fmtUGX(typeof v === "number" ? v : 0)} />
-                    <Bar dataKey="revenue" name="Revenue" fill="#059669" radius={[0, 3, 3, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="w-full" style={{ height: Math.max(300, filteredTestRevenue.length * 26) }}>
+                  <Bar data={testChartData} options={testOptions} />
+                </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
                   No data available

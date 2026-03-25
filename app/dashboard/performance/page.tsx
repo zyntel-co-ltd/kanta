@@ -3,16 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import "@/components/charts/registry";
+import { Bar } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 import { Download, RefreshCw } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -90,28 +83,6 @@ function StatCard({
   );
 }
 
-function ChartTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { name: string; value: number; color: string }[];
-  label?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-semibold text-slate-700 mb-1">{label}</p>
-      {payload.map((p) => (
-        <p key={p.name} style={{ color: p.color }}>
-          {p.name}: <strong>{p.value.toLocaleString()}</strong>
-        </p>
-      ))}
-    </div>
-  );
-}
-
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function PerformancePage() {
   const [period, setPeriod] = useState("today");
@@ -160,6 +131,74 @@ export default function PerformancePage() {
       fmtMinutes(r.avgTat),
     ]);
     downloadCSV([headers, ...rows], `Performance-${period}-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
+  const bySection = data?.bySection ?? [];
+  const sectionLabels = bySection.map((s) => s.section);
+  const countValues = bySection.map((s) => s.count);
+  const avgTatValues = bySection.map((s) => s.avgTat);
+  const sectionColors = sectionLabels.map((_, idx) => SECTION_COLORS[idx % SECTION_COLORS.length]);
+
+  const countChartData: ChartData<"bar"> = {
+    labels: sectionLabels,
+    datasets: [
+      {
+        label: "Tests",
+        data: countValues,
+        backgroundColor: sectionColors,
+        borderRadius: 4,
+        barThickness: 14,
+      },
+    ],
+  };
+  const countOptions: ChartOptions<"bar"> = {
+    indexAxis: "y",
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => `Tests: ${Number(ctx.parsed.x ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      x: { grid: { color: "#f1f5f9" }, ticks: { font: { size: 11 } } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } },
+    },
+  };
+
+  const avgTatChartData: ChartData<"bar"> = {
+    labels: sectionLabels,
+    datasets: [
+      {
+        label: "Avg TAT (min)",
+        data: avgTatValues,
+        backgroundColor: "#f59e0b",
+        borderRadius: 4,
+        barThickness: 14,
+      },
+    ],
+  };
+  const avgTatOptions: ChartOptions<"bar"> = {
+    indexAxis: "y",
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => `Avg TAT: ${fmtMinutes(Number(ctx.parsed.x ?? 0))}`,
+        },
+      },
+    },
+    scales: {
+      x: { grid: { color: "#f1f5f9" }, ticks: { font: { size: 11 } } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } },
+    },
   };
 
   return (
@@ -279,23 +318,9 @@ export default function PerformancePage() {
                 <span className="text-emerald-600">📊</span> Tests Resulted by Section
               </h3>
               {(data?.bySection ?? []).length > 0 ? (
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart
-                    data={data!.bySection}
-                    layout="vertical"
-                    margin={{ left: 90, right: 30, top: 5, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 11 }} />
-                    <YAxis type="category" dataKey="section" tick={{ fontSize: 11 }} width={85} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="count" name="Tests" radius={[0, 3, 3, 0]}>
-                      {(data!.bySection ?? []).map((_, idx) => (
-                        <Cell key={idx} fill={SECTION_COLORS[idx % SECTION_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="h-[260px]">
+                  <Bar data={countChartData} options={countOptions} />
+                </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
                   No section data available
@@ -309,31 +334,9 @@ export default function PerformancePage() {
                 <span className="text-emerald-600">⏱</span> Avg. TAT by Section (minutes)
               </h3>
               {(data?.bySection ?? []).length > 0 ? (
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart
-                    data={data!.bySection}
-                    layout="vertical"
-                    margin={{ left: 90, right: 30, top: 5, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 11 }} />
-                    <YAxis type="category" dataKey="section" tick={{ fontSize: 11 }} width={85} />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload?.length) return null;
-                        return (
-                          <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
-                            <p className="font-semibold text-slate-700 mb-1">{label}</p>
-                            <p className="text-emerald-600">
-                              Avg TAT: <strong>{fmtMinutes(payload[0].value as number)}</strong>
-                            </p>
-                          </div>
-                        );
-                      }}
-                    />
-                    <Bar dataKey="avgTat" name="Avg TAT (min)" fill="#f59e0b" radius={[0, 3, 3, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="h-[260px]">
+                  <Bar data={avgTatChartData} options={avgTatOptions} />
+                </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
                   No TAT data available

@@ -2,15 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import "@/components/charts/registry";
+import { Bar } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -108,28 +102,6 @@ function KPICard({
   );
 }
 
-function ChartTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { name: string; value: number; color: string }[];
-  label?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-semibold text-slate-700 mb-1">{label}</p>
-      {payload.map((p) => (
-        <p key={p.name} style={{ color: p.color }}>
-          {p.name}: <strong>{p.value.toLocaleString()}</strong>
-        </p>
-      ))}
-    </div>
-  );
-}
-
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function NumbersPage() {
   const [filters, setFilters] = useState({
@@ -178,6 +150,67 @@ export default function NumbersPage() {
     hour: `${String(h.hour).padStart(2, "0")}:00`,
     count: h.count,
   }));
+
+  const dailyLabels = (data?.dailyRequestVolume ?? []).map((d) => d.date);
+  const dailyValues = (data?.dailyRequestVolume ?? []).map((d) => d.count);
+  const dailyChartData: ChartData<"bar"> = {
+    labels: dailyLabels,
+    datasets: [
+      { label: "Requests", data: dailyValues, backgroundColor: "#10b981", borderRadius: 4 },
+    ],
+  };
+  const dailyOptions: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => `Requests: ${Number(ctx.parsed.y ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          font: { size: 10 },
+          callback: (value, index) => {
+            const raw = dailyLabels[index] ?? "";
+            return typeof raw === "string" ? raw.slice(5) : String(raw);
+          },
+        },
+      },
+      y: { ticks: { font: { size: 11 } }, grid: { color: "#f1f5f9" } },
+    },
+  };
+
+  const hourlyLabels = hourlyData.map((d) => d.hour);
+  const hourlyValues = hourlyData.map((d) => d.count);
+  const hourlyChartData: ChartData<"bar"> = {
+    labels: hourlyLabels,
+    datasets: [
+      { label: "Requests", data: hourlyValues, backgroundColor: "#059669", borderRadius: 4 },
+    ],
+  };
+  const hourlyOptions: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => `Requests: ${Number(ctx.parsed.y ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+      y: { ticks: { font: { size: 11 } }, grid: { color: "#f1f5f9" } },
+    },
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -322,19 +355,9 @@ export default function NumbersPage() {
                 {data?.granularity === "monthly" ? "Monthly" : "Daily"} Request Volume
               </h3>
               {(data?.dailyRequestVolume ?? []).length > 0 ? (
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={data!.dailyRequestVolume} margin={{ left: 0, right: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 10 }}
-                      tickFormatter={(v: string) => v.slice(5)}
-                    />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="count" name="Requests" fill="#10b981" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="h-[240px]">
+                  <Bar data={dailyChartData} options={dailyOptions} />
+                </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
                   No data available for the selected period
@@ -348,15 +371,9 @@ export default function NumbersPage() {
                 <span className="text-emerald-600">🕐</span> Hourly Request Volume
               </h3>
               {hourlyData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={hourlyData} margin={{ left: 0, right: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="hour" tick={{ fontSize: 9 }} interval={1} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="count" name="Requests" fill="#059669" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="h-[220px]">
+                  <Bar data={hourlyChartData} options={hourlyOptions} />
+                </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
                   No hourly data available

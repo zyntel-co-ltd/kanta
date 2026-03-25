@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 23 March 2026 (Phase 18 — Homepage UX improvements)  
+**Last updated:** 25 March 2026 (Phase 19 — Chart.js full migration, Recharts removed)  
 **Updated by:** Cursor
 
 ---
@@ -84,6 +84,70 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 16: Lab Metrics rebuilt from zyntel-dashboard** *(23 March 2026)* — see section below
 - [x] **Phase 17: Lab Metrics top tabs + collapsible sidebar groups** *(23 March 2026)* — see section below
 - [x] **Phase 18: Homepage UX improvements** *(23 March 2026)* — see section below
+- [x] **Phase 19: Chart.js full migration — Recharts removed** *(25 March 2026)* — see section below
+
+### Phase 19 — Chart.js Full Migration, Recharts Removed (25 March 2026)
+
+#### Summary
+Standardized the entire dashboard on a single charting library — **Chart.js (`react-chartjs-2`)**. All remaining Recharts usage has been removed and `recharts` uninstalled from `package.json`. This eliminates the dual-library bundle weight (~38 packages removed), ensures consistent rendering behavior and theming across all chart types, and removes the maintenance overhead of keeping two charting APIs in sync.
+
+#### What changed
+
+**Dashboard component charts (shared)**
+- `components/dashboard/DailyScanChart.tsx` — Recharts `BarChart` → Chart.js `Bar`
+- `components/dashboard/CategoryDonut.tsx` — Recharts `PieChart/Pie/Cell` → Chart.js `Doughnut`; `cutout` moved to options, hover interaction via Chart.js `onHover` in options
+- `components/dashboard/EquipmentStatusChart.tsx` — Recharts stacked `BarChart` → Chart.js stacked `Bar`
+- `components/dashboard/AssetValueChart.tsx` — Recharts `AreaChart/Area` → Chart.js `Line` with `fill: true` datasets
+- `components/dashboard/KpiCards.tsx` — Recharts `LineChart/Line` sparklines → Chart.js `Line` with no axes/legend
+
+**Lab Metrics pages**
+- `app/dashboard/tests/page.tsx` — daily volume bar + horizontal top-tests bar → Chart.js `Bar` (vertical + `indexAxis: "y"`)
+- `app/dashboard/numbers/page.tsx` — daily + hourly request volume bars → Chart.js `Bar`
+- `app/dashboard/revenue/page.tsx` — section doughnut + daily line + revenue-by-test horizontal bar → Chart.js `Doughnut`, `Line`, `Bar`
+- `app/dashboard/performance/page.tsx` — tests-by-section + avg-TAT-by-section horizontal bars → Chart.js `Bar` with per-bar colors
+- `app/dashboard/tat/page.tsx` — TAT distribution doughnut + daily multi-line + hourly stacked bar → Chart.js `Doughnut`, `Line`, `Bar`
+
+**Quality Management**
+- `app/dashboard/qc/page.tsx` — Levey-Jennings Recharts `LineChart` with `ReferenceLine` → Chart.js `Line`; SD bands replicated as flat-line datasets; point colors per Westgard status retained; tooltip filters to QC Value dataset only
+
+#### Technical notes
+- `cutout` is a `ChartOptions<"doughnut">` field, not a dataset field — moved correctly to `options` level on all doughnut charts
+- `onHover` for CategoryDonut moved into `options.onHover` with proper `ActiveElement[]` typing (removed invalid `onHover` prop from `<Doughnut />`)
+- All chart containers use explicit `h-[Npx]` div wrappers with `responsive: true, maintainAspectRatio: false` — no more `<ResponsiveContainer />`
+- Tooltips use Chart.js `callbacks` pattern throughout; no custom Recharts JSX tooltip components
+- `@/components/charts/registry` import added to every file that didn't already have it
+
+#### Dependency changes
+| Package | Before | After |
+|---------|--------|-------|
+| `recharts` | `^3.7.0` | **Removed** (`npm uninstall recharts`) |
+| `chart.js` | `^4.5.1` | `^4.5.1` (unchanged) |
+| `react-chartjs-2` | `^5.3.1` | `^5.3.1` (unchanged) |
+
+#### Verification
+- `npm run type-check` — **passes** (0 errors)
+- `npm run build` — **passes** (all 90 pages generated successfully)
+- Repo-wide `grep` for `from "recharts"` — **0 results**
+
+#### Files changed
+
+| File | Change |
+|------|--------|
+| `app/dashboard/tat/page.tsx` | Recharts → Chart.js (Doughnut + Line + stacked Bar) |
+| `app/dashboard/tests/page.tsx` | Recharts → Chart.js (vertical Bar + horizontal Bar) |
+| `app/dashboard/numbers/page.tsx` | Recharts → Chart.js (Bar ×2) |
+| `app/dashboard/revenue/page.tsx` | Recharts → Chart.js (Doughnut + Line + horizontal Bar) |
+| `app/dashboard/performance/page.tsx` | Recharts → Chart.js (horizontal Bar ×2 with per-bar colors) |
+| `app/dashboard/qc/page.tsx` | Recharts Levey-Jennings → Chart.js Line with SD band datasets |
+| `components/dashboard/DailyScanChart.tsx` | Recharts → Chart.js Bar |
+| `components/dashboard/CategoryDonut.tsx` | Recharts → Chart.js Doughnut |
+| `components/dashboard/EquipmentStatusChart.tsx` | Recharts → Chart.js stacked Bar |
+| `components/dashboard/AssetValueChart.tsx` | Recharts → Chart.js Line (area fill) |
+| `components/dashboard/KpiCards.tsx` | Recharts → Chart.js Line (sparklines) |
+| `package.json` | `recharts` removed |
+| `package-lock.json` | 38 packages removed |
+
+---
 
 ### Phase 18 — Homepage UX Improvements (23 March 2026)
 
@@ -319,7 +383,7 @@ The entire `/dashboard/qc` Quality Management section was replaced with an exact
 ### What Is Planned (Next Up)
 
 - [ ] First paying hospital on equipment module
-- [ ] Chart.js migration — remaining pages: Tests, Numbers, Revenue, Analytics, Performance, Home (Charts are still Recharts on those pages)
+- [x] Chart.js migration — all pages migrated; Recharts removed (Phase 19, 25 March 2026)
 - [ ] Brand Management — Supabase Storage logo upload + `facility_branding` table persistence
 - [x] TAT Performance card data label cutoff fix — resolved with Chart.js `layout.padding` + `clip: false`
 - [x] Module-level horizontal tabs — implemented on all Lab Metrics pages
@@ -597,8 +661,8 @@ Replaced the dark glassmorphism card with a **split-screen layout**:
 
 | Branch | Purpose | Last commit | Status |
 |--------|---------|-------------|--------|
-| `main` | Production | Phase 17 — Lab Metrics tabs + collapsible sidebar groups | Live on Vercel |
-| `development` | Integration/Preview | Phase 17 — in sync with main | Live on Vercel (needs Preview env vars) |
+| `main` | Production | Phase 19 — Chart.js full migration, Recharts removed | Live on Vercel |
+| `development` | Integration/Preview | Phase 19 — in sync with main | Live on Vercel (needs Preview env vars) |
 | `staging` | Staging | Mirrors main | March 2026 |
 
 ---

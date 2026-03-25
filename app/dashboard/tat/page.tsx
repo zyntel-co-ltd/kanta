@@ -3,21 +3,8 @@
 import "@/components/charts/registry";
 import { useEffect, useState, useCallback } from "react";
 import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { Doughnut, Line, Bar } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -123,29 +110,6 @@ function KPICard({
   );
 }
 
-// ── Custom tooltip ─────────────────────────────────────────────────────────
-function ChartTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { name: string; value: number; color: string }[];
-  label?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-semibold text-slate-700 mb-1">{label}</p>
-      {payload.map((p) => (
-        <p key={p.name} style={{ color: p.color }}>
-          {p.name}: <strong>{p.value.toLocaleString()}</strong>
-        </p>
-      ))}
-    </div>
-  );
-}
-
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function TATPage() {
   const [filters, setFilters] = useState({
@@ -204,6 +168,143 @@ export default function TATPage() {
     ...h,
     hour: `${String(h.hour).padStart(2, "0")}:00`,
   }));
+
+  const pieLabels = pieData.map((d) => d.name);
+  const pieValues = pieData.map((d) => d.value);
+  const pieChartData: ChartData<"doughnut"> = {
+    labels: pieLabels,
+    datasets: [
+      {
+        data: pieValues,
+        backgroundColor: pieLabels.map((_, idx) => PIE_COLORS[idx % PIE_COLORS.length]),
+        borderWidth: 0,
+      },
+    ],
+  };
+  const pieOptions: ChartOptions<"doughnut"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: "60%",
+    plugins: {
+      legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 12 } } },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => `${Number(ctx.parsed ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+  };
+
+  const dailyLabels = (data?.dailyTrend ?? []).map((d) => d.date);
+  const dailyChartData: ChartData<"line"> = {
+    labels: dailyLabels,
+    datasets: [
+      {
+        label: "On Time",
+        data: (data?.dailyTrend ?? []).map((d) => d.onTime),
+        borderColor: "#10b981",
+        backgroundColor: "rgba(16,185,129,0.10)",
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.35,
+      },
+      {
+        label: "Delayed",
+        data: (data?.dailyTrend ?? []).map((d) => d.delayed),
+        borderColor: "#ef4444",
+        backgroundColor: "rgba(239,68,68,0.08)",
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.35,
+      },
+      {
+        label: "Not Uploaded",
+        data: (data?.dailyTrend ?? []).map((d) => d.notUploaded),
+        borderColor: "#94a3b8",
+        backgroundColor: "rgba(148,163,184,0.08)",
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.35,
+      },
+    ],
+  };
+  const dailyOptions: ChartOptions<"line"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 12 } } },
+      tooltip: {
+        callbacks: {
+          title: (items) => {
+            const raw = items[0]?.label ?? "";
+            return typeof raw === "string" ? raw : String(raw);
+          },
+          label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          font: { size: 10 },
+          callback: (value, index) => {
+            const raw = dailyLabels[index] ?? "";
+            return typeof raw === "string" ? raw.slice(5) : String(raw);
+          },
+        },
+      },
+      y: { grid: { color: "#f1f5f9" }, ticks: { font: { size: 11 } } },
+    },
+  };
+
+  const hourlyLabels = hourlyData.map((h) => h.hour);
+  const hourlyChartData: ChartData<"bar"> = {
+    labels: hourlyLabels,
+    datasets: [
+      {
+        label: "On Time",
+        data: hourlyData.map((h) => h.onTime),
+        backgroundColor: "#10b981",
+        stack: "a",
+        borderWidth: 0,
+      },
+      {
+        label: "Delayed",
+        data: hourlyData.map((h) => h.delayed),
+        backgroundColor: "#ef4444",
+        stack: "a",
+        borderWidth: 0,
+      },
+      {
+        label: "Not Uploaded",
+        data: hourlyData.map((h) => h.notUploaded),
+        backgroundColor: "#94a3b8",
+        stack: "a",
+        borderWidth: 0,
+        borderRadius: 4,
+      },
+    ],
+  };
+  const hourlyOptions: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 12 } } },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 } } },
+      y: { stacked: true, grid: { color: "#f1f5f9" }, ticks: { font: { size: 11 } } },
+    },
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -371,29 +472,9 @@ export default function TATPage() {
                   <span className="text-emerald-600">◕</span> TAT Performance Distribution
                 </h3>
                 {pieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={2}
-                        dataKey="value"
-                        label={({ name, percent }: { name?: string; percent?: number }) =>
-                          (percent ?? 0) > 0.03 ? `${((percent ?? 0) * 100).toFixed(0)}%` : ""
-                        }
-                        labelLine={false}
-                      >
-                        {pieData.map((_, idx) => (
-                          <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(v: number | string | undefined) => (v != null && typeof v === "number" ? v.toLocaleString() : String(v ?? ""))} />
-                      <Legend iconSize={12} wrapperStyle={{ fontSize: 12 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="h-[280px]">
+                    <Doughnut data={pieChartData} options={pieOptions} />
+                  </div>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
                     No data available
@@ -408,43 +489,9 @@ export default function TATPage() {
                   {data?.granularity === "monthly" ? "Monthly" : "Daily"} TAT Performance Trend
                 </h3>
                 {(data?.dailyTrend ?? []).length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <LineChart data={data!.dailyTrend} margin={{ left: 0, right: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 10 }}
-                        tickFormatter={(v) => v.slice(5)}
-                      />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip content={<ChartTooltip />} />
-                      <Legend iconSize={12} wrapperStyle={{ fontSize: 12 }} />
-                      <Line
-                        type="monotone"
-                        dataKey="onTime"
-                        name="On Time"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="delayed"
-                        name="Delayed"
-                        stroke="#ef4444"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="notUploaded"
-                        name="Not Uploaded"
-                        stroke="#94a3b8"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <div className="h-[280px]">
+                    <Line data={dailyChartData} options={dailyOptions} />
+                  </div>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
                     No trend data available
@@ -459,18 +506,9 @@ export default function TATPage() {
                 <span className="text-emerald-600">🕐</span> Hourly TAT Performance Trend
               </h3>
               {hourlyData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={hourlyData} margin={{ left: 0, right: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="hour" tick={{ fontSize: 9 }} interval={1} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Legend iconSize={12} wrapperStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="onTime"      name="On Time"      stackId="a" fill="#10b981" radius={[0,0,0,0]} />
-                    <Bar dataKey="delayed"     name="Delayed"      stackId="a" fill="#ef4444" radius={[0,0,0,0]} />
-                    <Bar dataKey="notUploaded" name="Not Uploaded" stackId="a" fill="#94a3b8" radius={[3,3,0,0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="h-[240px]">
+                  <Bar data={hourlyChartData} options={hourlyOptions} />
+                </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
                   No hourly data available

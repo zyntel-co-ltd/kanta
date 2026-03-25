@@ -1,33 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import "@/components/charts/registry";
+import { Doughnut } from "react-chartjs-2";
+import type { ActiveElement, ChartData, ChartEvent, ChartOptions } from "chart.js";
 import { ChevronDown } from "lucide-react";
 import { useDashboardData } from "@/lib/DashboardDataContext";
-
-const CustomTooltip = ({
-  active,
-  payload,
-  data = [],
-}: {
-  active?: boolean;
-  payload?: readonly { name: string; value: number; payload: { color: string } }[];
-  data?: { name: string; value: number; color: string }[];
-}) => {
-  if (active && payload && payload.length) {
-    const total = data.length ? data.reduce((s, d) => s + d.value, 0) : 1;
-    const pct = total > 0 ? Math.round((payload[0].value / total) * 100) : 0;
-    return (
-      <div className="bg-slate-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl border border-white/10">
-        <p className="font-semibold">{payload[0].name}</p>
-        <p className="text-slate-300 mt-0.5">
-          {payload[0].value} items · <span className="text-white font-bold">{pct}%</span>
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
 
 export default function CategoryDonut() {
   const { dashboard, loading } = useDashboardData();
@@ -53,37 +31,63 @@ export default function CategoryDonut() {
       </div>
 
       <div className="relative flex items-center justify-center h-36 min-h-[144px] min-w-[1px]">
-        <ResponsiveContainer width="100%" height="100%" minHeight={144}>
-          <PieChart>
-            <Pie
-              data={data.length ? data : [{ name: "No data", value: 1, color: "#e2e8f0" }]}
-              cx="50%"
-              cy="50%"
-              innerRadius={46}
-              outerRadius={activeIndex !== null ? 72 : 68}
-              paddingAngle={3}
-              dataKey="value"
-              startAngle={90}
-              endAngle={-270}
-              isAnimationActive
-              animationBegin={200}
-              animationDuration={900}
-              onMouseEnter={(_, index) => setActiveIndex(index)}
+        {(() => {
+          const safe = data.length ? data : [{ name: "No data", value: 1, color: "#e2e8f0" }];
+          const labels = safe.map((d) => d.name);
+          const values = safe.map((d) => d.value);
+          const colors = safe.map((d, idx) => {
+            if (activeIndex === null) return d.color;
+            return idx === activeIndex ? d.color : `${d.color}80`;
+          });
+
+          const chartData: ChartData<"doughnut"> = {
+            labels,
+            datasets: [
+              {
+                data: values,
+                backgroundColor: colors,
+                borderWidth: 0,
+                hoverOffset: 6,
+              },
+            ],
+          };
+
+          const options: ChartOptions<"doughnut"> = {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "64%",
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  title: (items) => items[0]?.label ?? "",
+                  label: (ctx) => {
+                    const v = Number(ctx.parsed ?? 0);
+                    const denom = data.length ? total : v || 1;
+                    const pct = denom > 0 ? Math.round((v / denom) * 100) : 0;
+                    return `${v} items · ${pct}%`;
+                  },
+                },
+              },
+            },
+            onHover: (_event: ChartEvent, elements: ActiveElement[]) => {
+              const idx = elements?.[0]?.index;
+              setActiveIndex(typeof idx === "number" ? idx : null);
+            },
+          };
+
+          return (
+            <div
+              className="w-full h-full"
               onMouseLeave={() => setActiveIndex(null)}
             >
-              {(data.length ? data : [{ name: "No data", value: 1, color: "#e2e8f0" }]).map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={entry.color}
-                  stroke="none"
-                  opacity={activeIndex === null || activeIndex === index ? 1 : 0.5}
-                  style={{ cursor: "pointer", transition: "opacity 0.2s" }}
-                />
-              ))}
-            </Pie>
-            <Tooltip content={(props) => <CustomTooltip {...props} data={data} />} />
-          </PieChart>
-        </ResponsiveContainer>
+              <Doughnut
+                data={chartData}
+                options={options}
+              />
+            </div>
+          );
+        })()}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <span className="text-2xl font-bold text-slate-900">{total}</span>
           <span className="text-xs text-slate-400">Total Items</span>

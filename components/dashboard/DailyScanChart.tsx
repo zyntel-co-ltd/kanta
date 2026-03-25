@@ -1,39 +1,9 @@
 "use client";
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Cell,
-  ResponsiveContainer,
-} from "recharts";
+import "@/components/charts/registry";
+import { Bar } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 import { useDashboardData } from "@/lib/DashboardDataContext";
-
-const CustomTooltip = ({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { value: number }[];
-  label?: string;
-}) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-slate-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl">
-        <p className="font-semibold">{label}</p>
-        <p className="text-slate-300">
-          Scans:{" "}
-          <span className="text-white font-bold">{payload[0].value}</span>
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
 
 export default function DailyScanChart() {
   const { dashboard, loading } = useDashboardData();
@@ -47,6 +17,48 @@ export default function DailyScanChart() {
       </div>
     );
   }
+
+  const labels = (data.length ? data : [{ day: "—", scans: 0 }]).map((d) => d.day);
+  const values = (data.length ? data : [{ day: "—", scans: 0 }]).map((d) => d.scans);
+
+  const chartData: ChartData<"bar"> = {
+    labels,
+    datasets: [
+      {
+        label: "Scans",
+        data: values,
+        backgroundColor: labels.map((day) => (day === maxDay.day ? "#6366f1" : "#e0e7ff")),
+        borderColor: labels.map((day) => (day === maxDay.day ? "#6366f1" : "#e0e7ff")),
+        borderWidth: 1,
+        borderRadius: 6,
+        barThickness: 18,
+      },
+    ],
+  };
+
+  const options: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => `Scans: ${Number(ctx.parsed.y ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 11 }, color: "#94a3b8" },
+      },
+      y: {
+        display: false,
+        grid: { display: false },
+      },
+    },
+  };
 
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
@@ -69,31 +81,7 @@ export default function DailyScanChart() {
       </div>
 
       <div className="mt-4 h-36 min-h-[144px] min-w-[1px]">
-        <ResponsiveContainer width="100%" height="100%" minHeight={144}>
-          <BarChart data={data.length ? data : [{ day: "—", scans: 0 }]} barSize={18}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              vertical={false}
-              stroke="#f1f5f9"
-            />
-            <XAxis
-              dataKey="day"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 11, fill: "#94a3b8" }}
-            />
-            <YAxis hide />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f8fafc" }} />
-            <Bar dataKey="scans" radius={[5, 5, 0, 0]} isAnimationActive animationDuration={500}>
-              {(data.length ? data : [{ day: "—", scans: 0 }]).map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={entry.day === maxDay.day ? "#6366f1" : "#e0e7ff"}
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        <Bar data={chartData} options={options} />
       </div>
     </div>
   );

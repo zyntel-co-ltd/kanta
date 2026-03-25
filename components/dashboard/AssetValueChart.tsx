@@ -1,15 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import "@/components/charts/registry";
+import { Line } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 import { assetValueDataByPeriod } from "@/lib/data";
 import { useDashboardData } from "@/lib/DashboardDataContext";
 
@@ -21,31 +15,6 @@ const PERIODS: { key: Period; label: string }[] = [
   { key: "90d", label: "90 days" },
 ];
 
-const CustomTooltip = ({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { value: number; name: string }[];
-  label?: string;
-}) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-slate-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl border border-white/10">
-        <p className="font-semibold mb-1 text-slate-300">{label}</p>
-        {payload.map((p) => (
-          <p key={p.name} className="text-slate-300">
-            {p.name === "operational" ? "Operational" : "Maintenance"}:{" "}
-            <span className="text-white font-bold">{p.value}</span>
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
 export default function AssetValueChart() {
   const [period, setPeriod] = useState<Period>("7d");
   const { dashboard, loading } = useDashboardData();
@@ -53,6 +22,63 @@ export default function AssetValueChart() {
   const fallbackData = assetValueDataByPeriod[period];
   const data = apiData && apiData.length > 0 ? apiData : fallbackData;
   const peak = data.length > 0 ? Math.max(...data.map((d) => d.operational)) : 0;
+
+  const labels = data.map((d) => d.day);
+  const chartData: ChartData<"line"> = {
+    labels,
+    datasets: [
+      {
+        label: "Operational",
+        data: data.map((d) => d.operational),
+        borderColor: "#6366f1",
+        backgroundColor: "rgba(99,102,241,0.12)",
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        tension: 0.35,
+        fill: true,
+      },
+      {
+        label: "Maintenance",
+        data: data.map((d) => d.maintenance),
+        borderColor: "#a5b4fc",
+        backgroundColor: "rgba(165,180,252,0.10)",
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 3,
+        tension: 0.35,
+        fill: true,
+      },
+    ],
+  };
+
+  const options: ChartOptions<"line"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => `${ctx.dataset.label}: ${Number(ctx.parsed.y ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 11 }, color: "#94a3b8" },
+      },
+      y: {
+        display: false,
+        grid: { display: false },
+      },
+    },
+    elements: {
+      point: { hitRadius: 10 },
+    },
+  };
 
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -93,46 +119,7 @@ export default function AssetValueChart() {
       </div>
 
       <div className="mt-4 h-36 min-h-[144px] min-w-[1px]">
-        <ResponsiveContainer width="100%" height="100%" minHeight={144}>
-          <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="gradOperational" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02} />
-              </linearGradient>
-              <linearGradient id="gradMaintenance" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#a5b4fc" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#a5b4fc" stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-            <YAxis hide />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#e0e7ff", strokeWidth: 1 }} />
-            <Area
-              type="monotone"
-              dataKey="operational"
-              stroke="#6366f1"
-              strokeWidth={2.5}
-              fill="url(#gradOperational)"
-              dot={false}
-              activeDot={{ r: 4, fill: "#6366f1", stroke: "#fff", strokeWidth: 2 }}
-              isAnimationActive
-              animationDuration={600}
-            />
-            <Area
-              type="monotone"
-              dataKey="maintenance"
-              stroke="#a5b4fc"
-              strokeWidth={2}
-              fill="url(#gradMaintenance)"
-              dot={false}
-              activeDot={{ r: 3, fill: "#a5b4fc", stroke: "#fff", strokeWidth: 2 }}
-              isAnimationActive
-              animationDuration={700}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <Line data={chartData} options={options} />
       </div>
     </div>
   );

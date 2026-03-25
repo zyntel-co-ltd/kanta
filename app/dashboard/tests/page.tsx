@@ -2,15 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import "@/components/charts/registry";
+import { Bar } from "react-chartjs-2";
+import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -123,28 +117,6 @@ function KPICard({ title, value, icon, full }: { title: string; value: string | 
   );
 }
 
-function ChartTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { name: string; value: number; color: string }[];
-  label?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-semibold text-slate-700 mb-1 truncate max-w-xs">{label}</p>
-      {payload.map((p) => (
-        <p key={p.name} style={{ color: p.color }}>
-          {p.name}: <strong>{p.value.toLocaleString()}</strong>
-        </p>
-      ))}
-    </div>
-  );
-}
-
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function TestsPage() {
   const [filters, setFilters] = useState({
@@ -206,6 +178,82 @@ export default function TestsPage() {
 
   const topTests = flattenTopTests(data, selectedSection);
   const availableSections = ["all", ...(data?.topTestsBySection ?? []).map((s) => s.section)];
+
+  const trendLabels = (data?.testVolumeTrend ?? []).map((d) => d.date);
+  const trendValues = (data?.testVolumeTrend ?? []).map((d) => d.count);
+  const trendChartData: ChartData<"bar"> = {
+    labels: trendLabels,
+    datasets: [
+      {
+        label: "Tests",
+        data: trendValues,
+        backgroundColor: "#10b981",
+        borderRadius: 4,
+      },
+    ],
+  };
+  const trendOptions: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => `Tests: ${Number(ctx.parsed.y ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          font: { size: 10 },
+          callback: (value, index) => {
+            const raw = trendLabels[index] ?? "";
+            return typeof raw === "string" ? raw.slice(5) : String(raw);
+          },
+        },
+      },
+      y: { ticks: { font: { size: 11 } }, grid: { color: "#f1f5f9" } },
+    },
+  };
+
+  const topLabels = topTests.map((t) => t.test);
+  const topValues = topTests.map((t) => t.count);
+  const topChartData: ChartData<"bar"> = {
+    labels: topLabels,
+    datasets: [
+      {
+        label: "Tests",
+        data: topValues,
+        backgroundColor: "#059669",
+        borderRadius: 4,
+        barThickness: 14,
+      },
+    ],
+  };
+  const topOptions: ChartOptions<"bar"> = {
+    indexAxis: "y",
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => `Tests: ${Number(ctx.parsed.x ?? 0).toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      x: { ticks: { font: { size: 11 } }, grid: { color: "#f1f5f9" } },
+      y: {
+        ticks: { font: { size: 11 } },
+        grid: { display: false },
+      },
+    },
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -342,19 +390,9 @@ export default function TestsPage() {
                 {data?.granularity === "monthly" ? "Monthly" : "Daily"} Test Volume Trend
               </h3>
               {(data?.testVolumeTrend ?? []).length > 0 ? (
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={data!.testVolumeTrend} margin={{ left: 0, right: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 10 }}
-                      tickFormatter={(v: string) => v.slice(5)}
-                    />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="count" name="Tests" fill="#10b981" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="h-[240px]">
+                  <Bar data={trendChartData} options={trendOptions} />
+                </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
                   No test volume data available for the selected period
@@ -384,27 +422,9 @@ export default function TestsPage() {
                 )}
               </div>
               {topTests.length > 0 ? (
-                <ResponsiveContainer
-                  width="100%"
-                  height={Math.max(300, topTests.length * 26)}
-                >
-                  <BarChart
-                    data={topTests}
-                    layout="vertical"
-                    margin={{ left: 160, right: 30, top: 5, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 11 }} />
-                    <YAxis
-                      type="category"
-                      dataKey="test"
-                      tick={{ fontSize: 11 }}
-                      width={155}
-                    />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="count" name="Tests" fill="#059669" radius={[0, 3, 3, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="w-full" style={{ height: Math.max(300, topTests.length * 26) }}>
+                  <Bar data={topChartData} options={topOptions} />
+                </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
                   No test volume data available for the selected unit
