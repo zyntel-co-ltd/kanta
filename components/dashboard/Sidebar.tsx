@@ -431,6 +431,7 @@ export default function Sidebar() {
                       <Link
                         href={parentHref}
                         onClick={() => { if (!collapsed) setOpenGroups((prev) => new Set([...prev, group.title])); }}
+                        title={collapsed ? group.title : undefined}
                         className={clsx(
                           "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1] flex-1",
                           collapsed ? "justify-center px-0" : "gap-3 px-4",
@@ -664,10 +665,21 @@ export default function Sidebar() {
         onClick={() => setCollapsed(!collapsed)}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="absolute -right-3 top-20 w-8 h-8 rounded-full bg-white shadow-lg border-2 flex items-center justify-center z-50 transition-all duration-200 hover:scale-105 focus:outline-none"
-        style={{ borderColor: MODULE_THEMES[moduleKey].primary, color: MODULE_THEMES[moduleKey].primary }}
+        className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center z-50 shadow-lg border border-white/30 transition-all duration-200 hover:brightness-110 focus:outline-none"
+        style={{ backgroundColor: "var(--sidebar-active-bg)" }}
       >
-        {collapsed ? <ChevronRight size={14} strokeWidth={2} /> : <ChevronLeft size={14} strokeWidth={2} />}
+        <span
+          className={clsx(
+            "inline-flex items-center justify-center transition-transform duration-200",
+            collapsed ? "rotate-0" : "rotate-180"
+          )}
+        >
+          {collapsed ? (
+            <ChevronRight size={16} strokeWidth={2.2} className="text-white" />
+          ) : (
+            <ChevronLeft size={16} strokeWidth={2.2} className="text-white" />
+          )}
+        </span>
       </button>
     </aside>
   );

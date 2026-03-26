@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 26 March 2026 (Phase 24 — Admin hospital settings, DB-backed branding identity)  
+**Last updated:** 26 March 2026 (Phase 25 — Sidebar collapse control polish, ENG-82)  
 **Updated by:** Cursor
 
 ---
@@ -90,6 +90,18 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 22: RBAC v2, registration & invites, Zyntel default facility** *(27 March 2026)* — see section below
 - [x] **Phase 23: Design system — tokens, Chart.js theme, StatusBadge, UI accent unification** *(25 March 2026)* — see section below
 - [x] **Phase 24: Hospital settings in Admin (ENG-80)** *(26 March 2026)* — see section below
+- [x] **Phase 25: Sidebar collapse polish (ENG-82)** *(26 March 2026)* — see section below
+
+### Phase 25 — Sidebar Collapse Control Polish (ENG-82) (26 March 2026)
+
+#### Summary
+Refined the sidebar collapse/expand control to a module-themed rounded square button positioned at the sidebar’s right edge and vertically centered in the navigation area. The button now uses `var(--sidebar-active-bg)` with white Lucide chevrons (`size=16`) and a 200ms rotation transition. Verified collapsed icon-only navigation keeps working and added native hover tooltips (`title`) for collapsed collapsible parent links to match existing icon-only link behavior.
+
+#### Key files
+| File | Change |
+|------|--------|
+| `components/dashboard/Sidebar.tsx` | Collapse button design/position/theme + 200ms icon rotation; collapsed title tooltip coverage for collapsible parent links |
+| `lib/SidebarLayoutContext.tsx` | Existing `kanta-sidebar-collapsed-v2` key retained (no behavior change) |
 
 ### Phase 24 — Admin Hospital Settings (ENG-80) (26 March 2026)
 
