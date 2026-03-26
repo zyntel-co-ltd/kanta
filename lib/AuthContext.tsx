@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user]);
 
   const signIn = useCallback(
     async (email: string, password: string) => {

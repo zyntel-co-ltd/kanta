@@ -41,7 +41,8 @@ export async function getAuthContext(
     },
   });
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const auth = supabase.auth as unknown as { getUser: () => Promise<{ data: { user: { id: string; email?: string } | null } }> };
+  const { data: { user } } = await auth.getUser();
   if (!user) {
     return {
       user: null,
