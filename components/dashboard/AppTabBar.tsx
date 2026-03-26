@@ -38,9 +38,6 @@ type Tab = {
 
 type AppConfig = {
   name: string;
-  gradient: string;
-  activeClass: string;
-  iconBg: string;
   AppIcon: ComponentType<{ size?: number; className?: string }>;
   tabs: Tab[];
 };
@@ -49,9 +46,6 @@ type AppConfig = {
 
 const LAB_METRICS: AppConfig = {
   name: "Lab Metrics",
-  gradient: "from-emerald-600 to-emerald-800",
-  activeClass: "bg-emerald-600 text-white",
-  iconBg: "bg-emerald-50 text-emerald-700",
   AppIcon: FlaskConical,
   tabs: [
     { label: "Workspace",   href: "/dashboard/lab-analytics", icon: Layers,            matchPrefixes: ["/dashboard/lab-analytics"] },
@@ -66,9 +60,6 @@ const LAB_METRICS: AppConfig = {
 
 const QUALITY_MGMT: AppConfig = {
   name: "Quality Management",
-  gradient: "from-emerald-600 to-emerald-800",
-  activeClass: "bg-emerald-600 text-white",
-  iconBg: "bg-emerald-50 text-emerald-700",
   AppIcon: ShieldCheck,
   tabs: [
     { label: "Workspace",       href: "/dashboard/quality-samples",         icon: Layers,        matchPrefixes: ["/dashboard/quality-samples"] },
@@ -86,9 +77,6 @@ const QUALITY_MGMT: AppConfig = {
 
 const ASSET_MGMT: AppConfig = {
   name: "Asset Management",
-  gradient: "from-emerald-600 to-emerald-800",
-  activeClass: "bg-emerald-600 text-white",
-  iconBg: "bg-emerald-50 text-emerald-700",
   AppIcon: Layers,
   tabs: [
     { label: "Workspace",  href: "/dashboard/assets",       icon: Layers,          matchPrefixes: ["/dashboard/assets"] },
@@ -181,7 +169,10 @@ export default function AppTabBar() {
 
         {/* App badge */}
         <div className="flex items-center gap-2 py-3 pr-4 border-r border-slate-200 flex-shrink-0">
-          <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${app.gradient} flex items-center justify-center`}>
+          <div
+            className="w-6 h-6 rounded-lg flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg, var(--module-primary-dark) 0%, var(--module-primary) 100%)" }}
+          >
             <AppIcon size={12} className="text-white" />
           </div>
           <span
@@ -208,11 +199,13 @@ export default function AppTabBar() {
                 href={tab.href}
                 className={clsx(
                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap transition-all flex-shrink-0",
-                  active
-                    ? app.activeClass
-                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                  active ? "text-white" : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
                 )}
-                style={{ fontSize: "0.8125rem", fontWeight: active ? 600 : 500 }}
+                style={{
+                  fontSize: "0.8125rem",
+                  fontWeight: active ? 600 : 500,
+                  ...(active ? { backgroundColor: "var(--module-primary)" } : {}),
+                }}
               >
                 <Icon size={13} />
                 {tab.label}

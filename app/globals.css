@@ -237,6 +237,11 @@ html {
   --sidebar-active-bg: #059669;
   --sidebar-active-text: #ecfdf5;
   --sidebar-hover-bg: #0f766e;
+  --module-primary: #059669;
+  --module-primary-dark: #047857;
+  --module-primary-light: #d1fae5;
+  --module-primary-soft-text: #a7f3d0;
+  --module-primary-on: #ffffff;
 }
 
 /* Quality Management (hospital blue) */
@@ -245,6 +250,11 @@ html {
   --sidebar-active-bg: #2563eb;
   --sidebar-active-text: #eff6ff;
   --sidebar-hover-bg: #274c7a;
+  --module-primary: #2563eb;
+  --module-primary-dark: #1e3a5f;
+  --module-primary-light: #dbeafe;
+  --module-primary-soft-text: #bfdbfe;
+  --module-primary-on: #ffffff;
 }
 
 /* Asset Management (gentle red) */
@@ -253,12 +263,33 @@ html {
   --sidebar-active-bg: #dc2626;
   --sidebar-active-text: #fef2f2;
   --sidebar-hover-bg: #8b2323;
+  --module-primary: #dc2626;
+  --module-primary-dark: #7f1d1d;
+  --module-primary-light: #fee2e2;
+  --module-primary-soft-text: #fecaca;
+  --module-primary-on: #ffffff;
 }
 
 .kanta-sidebar {
   background-color: var(--sidebar-bg);
   transition: background-color 200ms ease;
 }
+
+/* §14 Module accent helpers beyond sidebar */
+.module-accent-bg { background-color: var(--module-primary); color: var(--module-primary-on); }
+.module-accent-text { color: var(--module-primary); }
+.module-accent-soft-text { color: var(--module-primary-soft-text); }
+.module-accent-ring:focus-visible { outline: 2px solid var(--module-primary); outline-offset: 2px; }
+.module-accent-hover:hover { color: var(--module-primary); }
+.group:hover .module-cta { color: var(--module-primary); }
+
+/* Re-map common emerald utility accents to active module accent */
+[data-module="qualityManagement"] :is(.text-emerald-600, .text-emerald-700) { color: var(--module-primary) !important; }
+[data-module="qualityManagement"] :is(.bg-emerald-600, .bg-emerald-700) { background-color: var(--module-primary) !important; }
+[data-module="qualityManagement"] :is(.border-emerald-200, .border-emerald-400, .border-emerald-600) { border-color: var(--module-primary) !important; }
+[data-module="assetManagement"] :is(.text-emerald-600, .text-emerald-700) { color: var(--module-primary) !important; }
+[data-module="assetManagement"] :is(.bg-emerald-600, .bg-emerald-700) { background-color: var(--module-primary) !important; }
+[data-module="assetManagement"] :is(.border-emerald-200, .border-emerald-400, .border-emerald-600) { border-color: var(--module-primary) !important; }
 
 /* Structural helpers */
 .kanta-card {
