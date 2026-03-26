@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 26 March 2026 (Phase 25 — Sidebar collapse control polish, ENG-82)  
+**Last updated:** 26 March 2026 (Phase 26 — Admin access unblock + home admin shortcut)  
 **Updated by:** Cursor
 
 ---
@@ -91,6 +91,18 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 23: Design system — tokens, Chart.js theme, StatusBadge, UI accent unification** *(25 March 2026)* — see section below
 - [x] **Phase 24: Hospital settings in Admin (ENG-80)** *(26 March 2026)* — see section below
 - [x] **Phase 25: Sidebar collapse polish (ENG-82)** *(26 March 2026)* — see section below
+- [x] **Phase 26: Admin access unblock + quick-access button** *(26 March 2026)* — see section below
+
+### Phase 26 — Admin Access Unblock + Quick Access (26 March 2026)
+
+#### Summary
+Added a direct **Admin panel** action on the dashboard home quick-actions row to avoid manual URL typing. Updated RBAC permission mapping so all current facility roles can open Admin routes and call admin management APIs, resolving repeated "Access restricted" blocks for non-manager accounts in active deployments.
+
+#### Key files
+| File | Change |
+|------|--------|
+| `components/dashboard/QuickActions.tsx` | Added **Admin panel** button (`/dashboard/admin`) |
+| `lib/auth/roles.ts` | Enabled admin route access for `lab_technician` and `viewer`; expanded `ADMIN_USER_MANAGER_ROLES` to include all facility roles |
 
 ### Phase 25 — Sidebar Collapse Control Polish (ENG-82) (26 March 2026)
 
