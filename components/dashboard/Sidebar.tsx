@@ -465,7 +465,10 @@ export default function Sidebar() {
                           style={{ borderRightColor: "var(--sidebar-bg)" }}
                         />
                         <div
-                          className="px-3 py-2 rounded-lg text-white text-sm font-medium whitespace-nowrap shadow-xl"
+                          className={clsx(
+                            "px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-xl",
+                            isNeutralHome ? "text-slate-800 border border-slate-200" : "text-white"
+                          )}
                           style={{ backgroundColor: "var(--sidebar-active-bg)" }}
                         >
                           {group.title}
@@ -588,7 +591,10 @@ export default function Sidebar() {
                               style={{ borderRightColor: "var(--sidebar-bg)" }}
                             />
                             <div
-                              className="px-3 py-2 rounded-lg text-white text-sm font-medium whitespace-nowrap shadow-xl"
+                              className={clsx(
+                                "px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-xl",
+                                isNeutralHome ? "text-slate-800 border border-slate-200" : "text-white"
+                              )}
                               style={{ backgroundColor: "var(--sidebar-active-bg)" }}
                             >
                               {label}
