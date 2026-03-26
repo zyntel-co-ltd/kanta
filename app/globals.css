@@ -219,7 +219,46 @@ html {
    §10 QA — no decorative indigo/teal/purple on structural UI
    §11 Rollout — token exports lib/design-tokens.ts
    §12 Non-goals — brand emerald ≠ “pass/success” (use --status-ok)
+   §13 Module themes — per-module sidebar palette via data-module + CSS variables
    ============================================================================= */
+
+/* =============================================================================
+   §13 Module themes — dynamic sidebar theming
+
+   - `app/dashboard/layout.tsx` sets `data-module` on the dashboard wrapper.
+   - Sidebar chrome reads CSS custom properties:
+     --sidebar-bg, --sidebar-active-bg, --sidebar-active-text, --sidebar-hover-bg
+   - Only the sidebar changes theme (TopBar remains slate).
+   ============================================================================= */
+
+/* Defaults (Lab Metrics / Analytics — existing emerald, no visual change) */
+[data-module] {
+  --sidebar-bg: #065f46;
+  --sidebar-active-bg: #059669;
+  --sidebar-active-text: #ecfdf5;
+  --sidebar-hover-bg: #0f766e;
+}
+
+/* Quality Management (hospital blue) */
+[data-module="qualityManagement"] {
+  --sidebar-bg: #1e3a5f;
+  --sidebar-active-bg: #2563eb;
+  --sidebar-active-text: #eff6ff;
+  --sidebar-hover-bg: #274c7a;
+}
+
+/* Asset Management (gentle red) */
+[data-module="assetManagement"] {
+  --sidebar-bg: #7f1d1d;
+  --sidebar-active-bg: #dc2626;
+  --sidebar-active-text: #fef2f2;
+  --sidebar-hover-bg: #8b2323;
+}
+
+.kanta-sidebar {
+  background-color: var(--sidebar-bg);
+  transition: background-color 200ms ease;
+}
 
 /* Structural helpers */
 .kanta-card {

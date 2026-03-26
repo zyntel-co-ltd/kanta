@@ -29,3 +29,33 @@ export const STRUCTURE = {
   SURFACE: "#ffffff",
   SURFACE_MUTED: "#f8fafc",
 } as const;
+
+export const MODULE_THEMES = {
+  labMetrics: {
+    primary: BRAND.DEFAULT,
+    primaryDark: BRAND.DARK,
+    primaryLight: BRAND.LIGHT,
+    sidebarBg: BRAND.DARKER,
+    sidebarActiveBg: BRAND.DEFAULT,
+    sidebarActiveText: "#ecfdf5",
+    sidebarHoverBg: "#0f766e",
+  },
+  qualityManagement: {
+    primary: "#2563eb",
+    primaryDark: "#1e3a5f",
+    primaryLight: "#dbeafe",
+    sidebarBg: "#1e3a5f",
+    sidebarActiveBg: "#2563eb",
+    sidebarActiveText: "#eff6ff",
+    sidebarHoverBg: "#274c7a",
+  },
+  assetManagement: {
+    primary: "#dc2626",
+    primaryDark: "#7f1d1d",
+    primaryLight: "#fee2e2",
+    sidebarBg: "#7f1d1d",
+    sidebarActiveBg: "#dc2626",
+    sidebarActiveText: "#fef2f2",
+    sidebarHoverBg: "#8b2323",
+  },
+} as const;

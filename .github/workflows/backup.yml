@@ -55,6 +55,25 @@ jobs:
           fi
 
           echo "Creating dump ${FILE}"
+          # Prefer IPv4 on GitHub-hosted runners (some environments have no IPv6 egress)
+          PGHOSTADDR="$(
+            python3 <<'PY'
+            import os, socket
+            from urllib.parse import urlparse
+            
+            u = urlparse(os.environ.get("DATABASE_URL", ""))
+            host = u.hostname
+            if not host:
+              raise SystemExit(0)
+            try:
+              infos = socket.getaddrinfo(host, 5432, socket.AF_INET, socket.SOCK_STREAM)
+              print(infos[0][4][0] if infos else "")
+            except Exception:
+              print("")
+            PY
+          )"
+          export PGHOSTADDR
+
           pg_dump "${DATABASE_URL}" \
             --format=plain \
             --no-owner \

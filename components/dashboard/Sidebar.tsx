@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import type { ComponentType } from "react";
 import { useAuth, type FacilityAuthState } from "@/lib/AuthContext";
 import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
+import { MODULE_THEMES } from "@/lib/design-tokens";
 import {
   LayoutDashboard,
   ScanSearch,
@@ -265,13 +266,15 @@ function getInitials(user: { email?: string; user_metadata?: { full_name?: strin
   return part.slice(0, 2).toUpperCase();
 }
 
-/* ─── Design tokens ─── */
-const GRADIENT       = "linear-gradient(135deg, #042f2e 0%, #065f46 50%, #047857 100%)";
-const BG             = "#065f46";
-const TEXT           = "rgba(255,255,255,0.9)";
-const MUTED          = "rgba(255,255,255,0.6)";
-const ACTIVE_PILL_BG = "rgba(255,255,255,0.12)";
-const ACTIVE_TEXT    = "#ecfdf5";
+type ModuleKey = keyof typeof MODULE_THEMES;
+
+function readModuleFromLayout(): ModuleKey {
+  if (typeof document === "undefined") return "labMetrics";
+  const el = document.querySelector("[data-module]");
+  const raw = el?.getAttribute("data-module") || "labMetrics";
+  if (raw === "labMetrics" || raw === "qualityManagement" || raw === "assetManagement") return raw;
+  return "labMetrics";
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -284,9 +287,14 @@ export default function Sidebar() {
   });
   const { collapsed, setCollapsed } = useSidebarLayout();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [moduleKey, setModuleKey] = useState<ModuleKey>(() => readModuleFromLayout());
 
   /* Groups that are currently expanded (accordion) */
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setModuleKey(readModuleFromLayout());
+  }, [pathname]);
 
   /* Auto-expand the relevant accordion group based on current page */
   useEffect(() => {
@@ -324,10 +332,13 @@ export default function Sidebar() {
   return (
     <aside
       className={clsx(
-        "relative flex flex-col h-screen flex-shrink-0 transition-all duration-300 ease-in-out overflow-visible",
+        "kanta-sidebar relative flex flex-col h-screen flex-shrink-0 transition-all duration-300 ease-in-out overflow-visible",
         collapsed ? "w-[72px]" : "w-[260px]"
       )}
-      style={{ backgroundColor: BG, borderRadius: "0 28px 28px 0" }}
+      style={{
+        backgroundColor: "var(--sidebar-bg)",
+        borderRadius: "0 28px 28px 0",
+      }}
     >
       {/* ── Header ── */}
       <div
@@ -339,12 +350,12 @@ export default function Sidebar() {
       >
         <Link href="/dashboard/home" className={clsx("flex items-center focus:outline-none", collapsed ? "justify-center" : "gap-3")}>
           <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-white shadow-sm">
-            <FlaskConical size={20} strokeWidth={1.5} style={{ color: "#047857" }} />
+            <FlaskConical size={20} strokeWidth={1.5} style={{ color: MODULE_THEMES[moduleKey].primaryDark }} />
           </div>
           {!collapsed && (
             <div>
               <p className="font-bold text-base leading-none tracking-tight text-white">Kanta</p>
-              <p className="text-[10px] mt-1 font-normal" style={{ color: MUTED }}>
+              <p className="text-[10px] mt-1 font-normal text-white/60">
                 Operational Intelligence
               </p>
             </div>
@@ -373,7 +384,7 @@ export default function Sidebar() {
                 <div key={group.title} className="mb-2">
                   {/* Group label (expanded sidebar only) */}
                   {!collapsed && (
-                    <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: MUTED }}>
+                    <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">
                       {group.title}
                     </p>
                   )}
@@ -388,14 +399,14 @@ export default function Sidebar() {
                     {isCollapsibleActive && (
                       <span
                         className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10"
-                        style={{ background: GRADIENT }}
+                        style={{ backgroundColor: "var(--sidebar-active-bg)" }}
                       />
                     )}
                     {/* Active pill background */}
                     {isCollapsibleActive && !collapsed && (
                       <span
                         className="absolute inset-y-0 left-1 right-1 rounded-xl"
-                        style={{ backgroundColor: ACTIVE_PILL_BG, zIndex: 0 }}
+                        style={{ backgroundColor: "color-mix(in srgb, var(--sidebar-active-bg) 22%, transparent)", zIndex: 0 }}
                       />
                     )}
 
@@ -407,9 +418,9 @@ export default function Sidebar() {
                         className={clsx(
                           "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1] flex-1",
                           collapsed ? "justify-center px-0" : "gap-3 px-4",
-                          !isCollapsibleActive && "hover:bg-white/10"
+                          !isCollapsibleActive && "hover:bg-[var(--sidebar-hover-bg)]/30"
                         )}
-                        style={{ color: isCollapsibleActive ? ACTIVE_TEXT : TEXT }}
+                        style={{ color: isCollapsibleActive ? "var(--sidebar-active-text)" : "rgba(255,255,255,0.9)" }}
                       >
                         <ParentIcon size={collapsed ? 22 : 20} strokeWidth={1.5} className="flex-shrink-0" />
                         {!collapsed && (
@@ -424,7 +435,7 @@ export default function Sidebar() {
                           onClick={() => toggleGroup(group.title)}
                           aria-label={isOpen ? `Collapse ${group.title}` : `Expand ${group.title}`}
                           className="relative z-[1] flex-shrink-0 p-2 rounded-lg hover:bg-white/10 transition-all duration-150 mr-1"
-                          style={{ color: isCollapsibleActive ? ACTIVE_TEXT : MUTED }}
+                          style={{ color: isCollapsibleActive ? "var(--sidebar-active-text)" : "rgba(255,255,255,0.6)" }}
                         >
                           <ChevronDown
                             size={13}
@@ -440,11 +451,11 @@ export default function Sidebar() {
                       <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[100] flex items-center">
                         <div
                           className="absolute -left-2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px]"
-                          style={{ borderRightColor: "#065f46" }}
+                          style={{ borderRightColor: "var(--sidebar-bg)" }}
                         />
                         <div
                           className="px-3 py-2 rounded-lg text-white text-sm font-medium whitespace-nowrap shadow-xl"
-                          style={{ background: GRADIENT }}
+                          style={{ backgroundColor: "var(--sidebar-active-bg)" }}
                         >
                           {group.title}
                         </div>
@@ -466,7 +477,7 @@ export default function Sidebar() {
                                   "pb-1 text-[10px] font-semibold uppercase tracking-widest pl-1",
                                   idx === 0 ? "pt-0" : "pt-2"
                                 )}
-                                style={{ color: MUTED }}
+                                style={{ color: "rgba(255,255,255,0.6)" }}
                               >
                                 {section}
                               </p>
@@ -479,22 +490,22 @@ export default function Sidebar() {
                               {subActive && (
                                 <span
                                   className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full z-10"
-                                  style={{ background: GRADIENT }}
+                                  style={{ backgroundColor: "var(--sidebar-active-bg)" }}
                                 />
                               )}
                               {subActive && (
                                 <span
                                   className="absolute inset-y-0 left-0 right-0 rounded-lg"
-                                  style={{ backgroundColor: ACTIVE_PILL_BG, zIndex: 0 }}
+                                  style={{ backgroundColor: "color-mix(in srgb, var(--sidebar-active-bg) 22%, transparent)", zIndex: 0 }}
                                 />
                               )}
                               <Link
                                 href={href}
                                 className={clsx(
                                   "relative z-[1] flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none",
-                                  subActive ? "" : "hover:bg-white/10"
+                                  subActive ? "" : "hover:bg-[var(--sidebar-hover-bg)]/30"
                                 )}
-                                style={{ color: subActive ? ACTIVE_TEXT : TEXT }}
+                                style={{ color: subActive ? "var(--sidebar-active-text)" : "rgba(255,255,255,0.9)" }}
                               >
                                 <Icon size={15} strokeWidth={1.5} className="flex-shrink-0" />
                                 <span className="truncate text-xs font-medium">{label}</span>
@@ -513,7 +524,7 @@ export default function Sidebar() {
             return (
               <div key={group.title} className="mb-2">
                 {!collapsed && (
-                  <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest" style={{ color: MUTED }}>
+                  <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">
                     {group.title}
                   </p>
                 )}
@@ -533,13 +544,13 @@ export default function Sidebar() {
                         {active && (
                           <span
                             className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10"
-                            style={{ background: GRADIENT }}
+                            style={{ backgroundColor: "var(--sidebar-active-bg)" }}
                           />
                         )}
                         {active && !collapsed && (
                           <span
                             className="absolute inset-y-0 left-1 right-1 rounded-xl"
-                            style={{ backgroundColor: ACTIVE_PILL_BG, zIndex: 0 }}
+                            style={{ backgroundColor: "color-mix(in srgb, var(--sidebar-active-bg) 22%, transparent)", zIndex: 0 }}
                           />
                         )}
                         <Link
@@ -548,9 +559,9 @@ export default function Sidebar() {
                           className={clsx(
                             "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1]",
                             collapsed ? "justify-center px-0" : "gap-3 px-4",
-                            !active && "hover:bg-white/10"
+                            !active && "hover:bg-[var(--sidebar-hover-bg)]/30"
                           )}
-                          style={{ color: active ? ACTIVE_TEXT : TEXT }}
+                          style={{ color: active ? "var(--sidebar-active-text)" : "rgba(255,255,255,0.9)" }}
                         >
                           <Icon size={collapsed ? 22 : 20} strokeWidth={1.5} className="flex-shrink-0" />
                           {!collapsed && <span className="truncate text-sm font-medium">{label}</span>}
@@ -560,11 +571,11 @@ export default function Sidebar() {
                           <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[100] flex items-center">
                             <div
                               className="absolute -left-2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px]"
-                              style={{ borderRightColor: "#065f46" }}
+                              style={{ borderRightColor: "var(--sidebar-bg)" }}
                             />
                             <div
                               className="px-3 py-2 rounded-lg text-white text-sm font-medium whitespace-nowrap shadow-xl"
-                              style={{ background: GRADIENT }}
+                              style={{ backgroundColor: "var(--sidebar-active-bg)" }}
                             >
                               {label}
                             </div>
@@ -623,7 +634,7 @@ export default function Sidebar() {
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         className="absolute -right-3 top-20 w-8 h-8 rounded-full bg-white shadow-lg border-2 flex items-center justify-center z-50 transition-all duration-200 hover:scale-105 focus:outline-none"
-        style={{ borderColor: BG, color: BG }}
+        style={{ borderColor: MODULE_THEMES[moduleKey].primary, color: MODULE_THEMES[moduleKey].primary }}
       >
         {collapsed ? <ChevronRight size={14} strokeWidth={2} /> : <ChevronLeft size={14} strokeWidth={2} />}
       </button>
