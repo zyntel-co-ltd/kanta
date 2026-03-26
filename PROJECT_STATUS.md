@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 25 March 2026 (Phase 23 — Design system: tokens, charts, StatusBadge, accent unification)  
+**Last updated:** 26 March 2026 (Phase 24 — Admin hospital settings, DB-backed branding identity)  
 **Updated by:** Cursor
 
 ---
@@ -89,6 +89,25 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 21: ESLint cleanup + Lab Metrics icon refresh** *(27 March 2026)* — see section below
 - [x] **Phase 22: RBAC v2, registration & invites, Zyntel default facility** *(27 March 2026)* — see section below
 - [x] **Phase 23: Design system — tokens, Chart.js theme, StatusBadge, UI accent unification** *(25 March 2026)* — see section below
+- [x] **Phase 24: Hospital settings in Admin (ENG-80)** *(26 March 2026)* — see section below
+
+### Phase 24 — Admin Hospital Settings (ENG-80) (26 March 2026)
+
+#### Summary
+Added a new facility-admin-only **Hospital Settings** page at **`/dashboard/admin/hospital`** for organization identity management (name, logo, contact info). Hospital branding is now **database-backed** via `hospitals` and exposed through **`/api/me`** (`hospitalName`, `hospitalLogoUrl`) for dashboard chrome rendering, with environment variables retained as fallback defaults. Removed the legacy **“Laboratory Management System”** subtitle from UI and redirected old **`/dashboard/settings/brand`** to the new admin page.
+Also kept the Admin panel core workflows (**User Management, Cancellations, Audit Trail, Targets Settings**) intact while hiding **Unmatched Tests** from the visible Admin tabs for non-Nakasero deployments.
+
+#### Key files
+| File | Change |
+|------|--------|
+| `app/dashboard/admin/hospital/page.tsx` | **New** facility admin hospital settings UI (name, logo upload, address, phone) |
+| `app/api/admin/hospital/route.ts` | **New** admin-only GET/PATCH API (enforced with `requireAdminUserManagement()`) |
+| `app/api/me/route.ts` | Returns `hospitalName` and `hospitalLogoUrl` from `hospitals` |
+| `lib/AuthContext.tsx` | Extends `facilityAuth` with hospital branding fields |
+| `components/dashboard/TopBar.tsx` | Uses DB-backed hospital name/logo with env fallback; subtitle removed |
+| `components/dashboard/Sidebar.tsx` | Header shows hospital name/logo; adds **Hospital Settings** nav link |
+| `app/dashboard/settings/brand/page.tsx` | Redirects to `/dashboard/admin/hospital` |
+| `supabase/migrations/20260326113000_hospital_settings_logo_and_contact.sql` | Adds `hospitals.logo_url/address/phone` + `facility-logos` bucket/policies |
 
 ### Phase 23 — Design System: Tokens, Charts, StatusBadge, Accent Unification (25 March 2026)
 

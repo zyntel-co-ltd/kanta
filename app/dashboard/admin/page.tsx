@@ -272,7 +272,6 @@ export default function AdminPage() {
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "users", label: "User Management", icon: <Users size={16} /> },
-    { id: "unmatched", label: "Unmatched Tests", icon: <AlertTriangle size={16} /> },
     { id: "cancellations", label: "Cancellations", icon: <Ban size={16} /> },
     { id: "audit", label: "Audit Trail", icon: <ClipboardList size={16} /> },
     { id: "settings", label: "Settings", icon: <Sliders size={16} /> },
@@ -452,7 +451,7 @@ export default function AdminPage() {
             Admin Panel
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            User management, unmatched tests, cancellations, audit, and settings.
+            User management, cancellations, audit, and settings.
           </p>
         </div>
         <Link

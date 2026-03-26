@@ -103,7 +103,7 @@ const severityIcon = {
 export default function TopBar() {
   const [secondsAgo, setSecondsAgo] = useState(0);
   const { status, pendingCount, retry } = useSyncStatus();
-  const { user, signOut } = useAuth();
+  const { user, signOut, facilityAuth } = useAuth();
   const router = useRouter();
 
   /* ── Alerts panel (Supabase-backed) ── */
@@ -176,17 +176,19 @@ export default function TopBar() {
   }
 
   const avatarUrl = user ? getAvatarUrl(user as Parameters<typeof getAvatarUrl>[0]) : null;
+  const hospitalName = facilityAuth?.hospitalName || HOSPITAL_NAME;
+  const hospitalLogo = facilityAuth?.hospitalLogoUrl || HOSPITAL_LOGO_URL;
 
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between px-5 py-2.5 bg-white/90 backdrop-blur-sm border-b border-slate-100 shadow-sm">
 
       {/* ── Left: Hospital branding ── */}
       <div className="flex items-center gap-3">
-        {HOSPITAL_LOGO_URL ? (
+        {hospitalLogo ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={HOSPITAL_LOGO_URL}
-            alt={HOSPITAL_NAME}
+            src={hospitalLogo}
+            alt={hospitalName}
             className="h-8 w-auto object-contain rounded-lg"
           />
         ) : (
@@ -198,8 +200,7 @@ export default function TopBar() {
           </div>
         )}
         <div className="hidden sm:block">
-          <p className="text-sm font-semibold text-slate-800 leading-none">{HOSPITAL_NAME}</p>
-          <p className="text-[10px] text-slate-400 mt-0.5">Laboratory Management System</p>
+          <p className="text-sm font-semibold text-slate-800 leading-none">{hospitalName}</p>
         </div>
 
         {/* Divider */}

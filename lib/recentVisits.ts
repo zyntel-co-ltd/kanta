@@ -35,6 +35,7 @@ const PATH_LABELS: Record<string, string> = {
   "/dashboard/intelligence": "AI Insights",
   "/dashboard/departments": "Departments",
   "/dashboard/admin": "Admin",
+  "/dashboard/admin/hospital": "Hospital Settings",
   "/dashboard/settings": "Settings",
 };
 

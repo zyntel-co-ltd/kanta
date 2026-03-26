@@ -25,6 +25,8 @@ type Session = { user: User };
 
 export type FacilityAuthState = {
   facilityId: string | null;
+  hospitalName: string | null;
+  hospitalLogoUrl: string | null;
   role: FacilityRole | null;
   isSuperAdmin: boolean;
   canAccessAdmin: boolean;
@@ -115,6 +117,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setFacilityAuth({
           facilityId: data.facilityId ?? null,
+          hospitalName: data.hospitalName ?? null,
+          hospitalLogoUrl: data.hospitalLogoUrl ?? null,
           role: data.role ?? null,
           isSuperAdmin: !!data.isSuperAdmin,
           canAccessAdmin: !!data.canAccessAdmin,

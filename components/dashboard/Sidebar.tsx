@@ -142,6 +142,7 @@ const navGroupsBase: NavGroup[] = [
     items: [
       { label: "Departments", icon: Building2, href: "/dashboard/departments" },
       { label: "Admin",       icon: Shield,    href: "/dashboard/admin"       },
+      { label: "Hospital Settings", icon: Building2, href: "/dashboard/admin/hospital" },
       { label: "Settings",    icon: Settings,  href: "/dashboard/settings"    },
     ],
   },
@@ -159,6 +160,8 @@ function filterNavForFacilityAuth(
   const effective: FacilityAuthState =
     fa ?? {
       facilityId: null,
+      hospitalName: null,
+      hospitalLogoUrl: null,
       role: null,
       isSuperAdmin: false,
       canAccessAdmin: false,
@@ -280,6 +283,8 @@ export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user, signOut, facilityAuth, facilityAuthLoading } = useAuth();
+  const hospitalName = facilityAuth?.hospitalName || process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Zyntel Hospital";
+  const hospitalLogoUrl = facilityAuth?.hospitalLogoUrl || process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
 
   const navGroups = filterNavForFacilityAuth(navGroupsBase, facilityAuth, {
     loading: facilityAuthLoading,
@@ -352,14 +357,18 @@ export default function Sidebar() {
         )}
       >
         <Link href="/dashboard/home" className={clsx("flex items-center focus:outline-none", collapsed ? "justify-center" : "gap-3")}>
-          <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-white shadow-sm">
-            <FlaskConical size={20} strokeWidth={1.5} style={{ color: MODULE_THEMES[moduleKey].primaryDark }} />
-          </div>
+          {hospitalLogoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={hospitalLogoUrl} alt={hospitalName} className="flex-shrink-0 w-10 h-10 rounded-xl object-cover bg-white shadow-sm" />
+          ) : (
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-white shadow-sm">
+              <FlaskConical size={20} strokeWidth={1.5} style={{ color: MODULE_THEMES[moduleKey].primaryDark }} />
+            </div>
+          )}
           {!collapsed && (
             <div>
-              <p className={clsx("font-bold text-base leading-none tracking-tight", isNeutralHome ? "text-slate-900" : "text-white")}>Kanta</p>
-              <p className={clsx("text-[10px] mt-1 font-normal", isNeutralHome ? "text-slate-500" : "text-white/60")}>
-                Operational Intelligence
+              <p className={clsx("font-bold text-sm leading-tight tracking-tight", isNeutralHome ? "text-slate-900" : "text-white")}>
+                {hospitalName}
               </p>
             </div>
           )}
