@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 26 March 2026 (Phase 26 — Admin access unblock + home admin shortcut)  
+**Last updated:** 26 March 2026 (Phase 27 — legacy RBAC role normalization in auth context)  
 **Updated by:** Cursor
 
 ---
@@ -92,6 +92,17 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 24: Hospital settings in Admin (ENG-80)** *(26 March 2026)* — see section below
 - [x] **Phase 25: Sidebar collapse polish (ENG-82)** *(26 March 2026)* — see section below
 - [x] **Phase 26: Admin access unblock + quick-access button** *(26 March 2026)* — see section below
+- [x] **Phase 27: Auth role normalization for legacy rows** *(26 March 2026)* — see section below
+
+### Phase 27 — Auth Role Normalization (26 March 2026)
+
+#### Summary
+Fixed admin API `403` regressions for accounts still stored with legacy role names in `facility_users` (e.g. `admin`, `manager`, `technician`, `reception`). `getAuthContext()` now normalizes legacy values into the RBAC v2 role set before permission checks, so `/api/admin/users` and related endpoints no longer fail due to role parsing.
+
+#### Key files
+| File | Change |
+|------|--------|
+| `lib/auth/server.ts` | Added `normalizeFacilityRole()` and applied it to auth context role resolution |
 
 ### Phase 26 — Admin Access Unblock + Quick Access (26 March 2026)
 

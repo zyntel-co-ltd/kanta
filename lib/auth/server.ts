@@ -10,6 +10,17 @@ import {
   isFacilityRole,
 } from "./roles";
 
+function normalizeFacilityRole(value: unknown): FacilityRole | null {
+  if (isFacilityRole(value)) return value;
+  if (typeof value !== "string") return null;
+  const v = value.trim().toLowerCase();
+  if (v === "admin") return "facility_admin";
+  if (v === "manager") return "lab_manager";
+  if (v === "technician" || v === "reception") return "lab_technician";
+  if (v === "viewer") return "viewer";
+  return null;
+}
+
 function sanitizeEnv(value: string | undefined): string {
   if (!value) return "";
   return value.replace(/^["']+|["']+$/g, "").trim();
@@ -85,8 +96,7 @@ export async function getAuthContext(
     row = rows.find((m) => m.is_active !== false);
   }
 
-  const role =
-    row?.role && isFacilityRole(row.role) ? row.role : null;
+  const role = normalizeFacilityRole(row?.role);
 
   if (isSuperAdmin) {
     return {
