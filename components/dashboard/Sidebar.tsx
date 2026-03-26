@@ -71,9 +71,11 @@ const navGroupsBase: NavGroup[] = [
   {
     title: "Lab Metrics",
     collapsible: {
-      parentHref: "/dashboard/tat",
+      parentHref: "/dashboard/lab-analytics",
       parentIcon: ChartColumnIncreasing,
       activePaths: [
+        "/dashboard/lab-analytics",
+        "/dashboard/tat",
         "/dashboard/tests",
         "/dashboard/numbers",
         "/dashboard/meta",
@@ -122,10 +124,11 @@ const navGroupsBase: NavGroup[] = [
   {
     title: "Asset Management",
     collapsible: {
-      parentHref: "/dashboard/equipment",
+      parentHref: "/dashboard/assets",
       parentIcon: ScanLine,
       activePaths: [
         "/dashboard",
+        "/dashboard/assets",
         "/dashboard/scan",
         "/dashboard/maintenance",
         "/dashboard/refrigerator",
@@ -308,9 +311,10 @@ export default function Sidebar() {
     }
 
     const labMetricsPaths = ["/dashboard/tat", "/dashboard/tests", "/dashboard/numbers", "/dashboard/meta", "/dashboard/revenue", "/dashboard/performance"];
+    if (pathname === "/dashboard/lab-analytics") toOpen.push("Lab Metrics");
     if (labMetricsPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) toOpen.push("Lab Metrics");
 
-    const assetPaths = ["/dashboard/equipment", "/dashboard/scan", "/dashboard/maintenance", "/dashboard/refrigerator", "/dashboard/analytics", "/dashboard/reports"];
+    const assetPaths = ["/dashboard/assets", "/dashboard/equipment", "/dashboard/scan", "/dashboard/maintenance", "/dashboard/refrigerator", "/dashboard/analytics", "/dashboard/reports"];
     if (pathname === "/dashboard" || assetPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) toOpen.push("Asset Management");
 
     if (toOpen.length === 0) return;

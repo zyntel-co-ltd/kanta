@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import TopBar from "@/components/dashboard/TopBar";
+import AppTabBar from "@/components/dashboard/AppTabBar";
 
 /**
  * Standard dashboard chrome (sidebar + top bar + padded main), except LRIDS:
@@ -38,6 +39,7 @@ export default function DashboardChrome({ children }: { children: React.ReactNod
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <TopBar />
+        <AppTabBar />
         <main
           className="flex-1 overflow-y-auto p-6"
           style={{ backgroundColor: "var(--surface-page, #f8fafc)" }}

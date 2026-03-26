@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { ComponentType } from "react";
 import clsx from "clsx";
 import {
@@ -14,6 +14,10 @@ import {
   ShieldCheck,
   Activity,
   BarChart3,
+  ClipboardList,
+  Calculator,
+  TrendingUp,
+  TestTube,
   FlaskConical,
   LayoutDashboard,
   ScanSearch,
@@ -50,6 +54,7 @@ const LAB_METRICS: AppConfig = {
   iconBg: "bg-emerald-50 text-emerald-700",
   AppIcon: FlaskConical,
   tabs: [
+    { label: "Workspace",   href: "/dashboard/lab-analytics", icon: Layers,            matchPrefixes: ["/dashboard/lab-analytics"] },
     { label: "TAT",         href: "/dashboard/tat",         icon: Timer,             matchPrefixes: ["/dashboard/tat"] },
     { label: "Tests",       href: "/dashboard/tests",       icon: Microscope,        matchPrefixes: ["/dashboard/tests"] },
     { label: "Numbers",     href: "/dashboard/numbers",     icon: Binary,            matchPrefixes: ["/dashboard/numbers"] },
@@ -66,13 +71,16 @@ const QUALITY_MGMT: AppConfig = {
   iconBg: "bg-emerald-50 text-emerald-700",
   AppIcon: ShieldCheck,
   tabs: [
-    { label: "QC Overview",    href: "/dashboard/qc", icon: ShieldCheck,  matchPrefixes: ["/dashboard/qc"] },
-    { label: "L-J Chart",      href: "/dashboard/qc", icon: Activity,     matchPrefixes: [] },
-    { label: "Westgard",       href: "/dashboard/qc", icon: BarChart3,    matchPrefixes: [] },
-    { label: "Qualitative QC", href: "/dashboard/qc", icon: FlaskConical, matchPrefixes: [] },
-    { label: "Calculator",     href: "/dashboard/qc", icon: BarChart3,    matchPrefixes: [] },
-    { label: "QC Stats",       href: "/dashboard/qc", icon: Activity,     matchPrefixes: [] },
-    { label: "Sample Mgmt",    href: "/dashboard/qc", icon: Layers,       matchPrefixes: [] },
+    { label: "Workspace",       href: "/dashboard/quality-samples",         icon: Layers,        matchPrefixes: ["/dashboard/quality-samples"] },
+    { label: "QC Config",       href: "/dashboard/qc?tab=config",           icon: ShieldCheck,   matchPrefixes: ["/dashboard/qc"] },
+    { label: "Data Entry",      href: "/dashboard/qc?tab=data",             icon: ClipboardList, matchPrefixes: ["/dashboard/qc"] },
+    { label: "Visualization",   href: "/dashboard/qc?tab=visual",           icon: BarChart3,     matchPrefixes: ["/dashboard/qc"] },
+    { label: "QC Calculator",   href: "/dashboard/qc?tab=calc",             icon: Calculator,    matchPrefixes: ["/dashboard/qc"] },
+    { label: "QC Stats",        href: "/dashboard/qc?tab=stats",            icon: TrendingUp,    matchPrefixes: ["/dashboard/qc"] },
+    { label: "Qual. Config",    href: "/dashboard/qc?tab=qual-config",      icon: FlaskConical,  matchPrefixes: ["/dashboard/qc"] },
+    { label: "Qual. Entry",     href: "/dashboard/qc?tab=qual-entry",       icon: TestTube,      matchPrefixes: ["/dashboard/qc"] },
+    { label: "Qual. Log",       href: "/dashboard/qc?tab=qual-log",         icon: Activity,      matchPrefixes: ["/dashboard/qc"] },
+    { label: "Sample Dashboard",href: "/dashboard/samples?tab=dashboard",   icon: Layers,        matchPrefixes: ["/dashboard/samples"] },
   ],
 };
 
@@ -83,6 +91,7 @@ const ASSET_MGMT: AppConfig = {
   iconBg: "bg-emerald-50 text-emerald-700",
   AppIcon: Layers,
   tabs: [
+    { label: "Workspace",  href: "/dashboard/assets",       icon: Layers,          matchPrefixes: ["/dashboard/assets"] },
     { label: "Overview",   href: "/dashboard",              icon: LayoutDashboard, matchPrefixes: ["/dashboard$"] },
     { label: "Scan",       href: "/dashboard/scan",         icon: ScanSearch,      matchPrefixes: ["/dashboard/scan"] },
     { label: "Equipment",  href: "/dashboard/equipment",    icon: ScanLine,        matchPrefixes: ["/dashboard/equipment"] },
@@ -97,6 +106,7 @@ const ASSET_MGMT: AppConfig = {
 
 function resolveApp(pathname: string): AppConfig | null {
   const labPrefixes = [
+    "/dashboard/lab-analytics",
     "/dashboard/tat",
     "/dashboard/tests",
     "/dashboard/numbers",
@@ -104,7 +114,7 @@ function resolveApp(pathname: string): AppConfig | null {
     "/dashboard/revenue",
     "/dashboard/performance",
   ];
-  const qcPrefixes  = ["/dashboard/qc"];
+  const qcPrefixes  = ["/dashboard/qc", "/dashboard/quality-samples", "/dashboard/samples"];
   const assetPrefixes = [
     "/dashboard/scan",
     "/dashboard/equipment",
@@ -134,6 +144,7 @@ function isTabActive(pathname: string, tab: Tab): boolean {
 
 export default function AppTabBar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Don't show on homepage or other system pages
   if (
@@ -144,7 +155,6 @@ export default function AppTabBar() {
     pathname.startsWith("/dashboard/reception") ||
     pathname.startsWith("/dashboard/tracker") ||
     pathname.startsWith("/dashboard/progress") ||
-    pathname.startsWith("/dashboard/performance") ||
     pathname.startsWith("/dashboard/lrids")
   ) {
     return null;
@@ -186,7 +196,12 @@ export default function AppTabBar() {
         <nav className="flex items-center gap-1 flex-1 overflow-x-auto scrollbar-none py-2">
           {app.tabs.map((tab) => {
             const Icon = tab.icon;
-            const active = isTabActive(pathname, tab);
+            const [base, qs] = tab.href.split("?");
+            const expectedTab = qs ? new URLSearchParams(qs).get("tab") : null;
+            const active =
+              expectedTab !== null
+                ? pathname === base && searchParams.get("tab") === expectedTab
+                : isTabActive(pathname, tab);
             return (
               <Link
                 key={tab.label + tab.href}

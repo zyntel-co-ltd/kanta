@@ -57,20 +57,12 @@ jobs:
           echo "Creating dump ${FILE}"
           # Prefer IPv4 on GitHub-hosted runners (some environments have no IPv6 egress)
           PGHOSTADDR="$(
-            python3 <<'PY'
-            import os, socket
-            from urllib.parse import urlparse
-            
-            u = urlparse(os.environ.get("DATABASE_URL", ""))
-            host = u.hostname
-            if not host:
-              raise SystemExit(0)
-            try:
-              infos = socket.getaddrinfo(host, 5432, socket.AF_INET, socket.SOCK_STREAM)
-              print(infos[0][4][0] if infos else "")
-            except Exception:
-              print("")
-            PY
+            python3 -c "import os,socket;from urllib.parse import urlparse;u=urlparse(os.environ.get('DATABASE_URL',''));h=u.hostname;ip='';\
+try:\
+ ip=socket.getaddrinfo(h,5432,socket.AF_INET,socket.SOCK_STREAM)[0][4][0] if h else ''\
+except Exception:\
+ ip='';\
+print(ip)"
           )"
           export PGHOSTADDR
 
@@ -198,77 +190,27 @@ jobs:
           PREFIX="${BACKUP_PREFIX%/}/"
           export PREFIX
 
-          python3 <<'PY'
-          import json
-          import os
-          import re
-          import subprocess
-          from datetime import datetime
-          
-          bucket = os.environ["R2_BUCKET_NAME"]
-          endpoint = os.environ["ENDPOINT_URL"]
-          prefix = os.environ["PREFIX"]
-          
-          pattern = re.compile(rf"^{re.escape(prefix)}kanta_backup_(\d{{4}}-\d{{2}}-\d{{2}})\.sql\.gz$")
-          
-          def aws_json(args):
-              out = subprocess.check_output(["aws", *args], text=True)
-              return json.loads(out or "{}")
-          
-          def list_all_keys():
-              keys = []
-              token = None
-              while True:
-                  args = [
-                      "s3api", "list-objects-v2",
-                      "--bucket", bucket,
-                      "--prefix", prefix,
-                      "--endpoint-url", endpoint,
-                      "--output", "json",
-                  ]
-                  if token:
-                      args += ["--continuation-token", token]
-                  data = aws_json(args)
-                  for obj in data.get("Contents", []) or []:
-                      k = obj.get("Key")
-                      if k:
-                          keys.append(k)
-                  if data.get("IsTruncated"):
-                      token = data.get("NextContinuationToken")
-                  else:
-                      return keys
-          
-          entries = []
-          for k in list_all_keys():
-              m = pattern.match(k)
-              if not m:
-                  continue
-              d = datetime.strptime(m.group(1), "%Y-%m-%d").date()
-              entries.append((d, k))
-          
-          entries.sort(reverse=True, key=lambda t: t[0])
-          
-          keep = set()
-          # Keep 7 most recent daily backups
-          for d, k in entries[:7]:
-              keep.add(k)
-          
-          # Keep 4 most recent Sunday snapshots
-          sundays = [(d, k) for d, k in entries if d.weekday() == 6]
-          for d, k in sundays[:4]:
-              keep.add(k)
-          
-          to_delete = [k for _, k in entries if k not in keep]
-          
-          print(f"Found {len(entries)} backups; keeping {len(keep)}; deleting {len(to_delete)}.")
-          if not to_delete:
-              raise SystemExit(0)
-          
-          for k in to_delete:
-              subprocess.check_call([
-                  "aws", "s3", "rm",
-                  f"s3://{bucket}/{k}",
-                  "--endpoint-url", endpoint,
-              ])
-          PY
+          python3 -c "import json,os,re,subprocess;from datetime import datetime;\
+b=os.environ['R2_BUCKET_NAME'];e=os.environ['ENDPOINT_URL'];p=os.environ['PREFIX'];\
+rx=re.compile(r'^'+re.escape(p)+r'kanta_backup_(\d{4}-\d{2}-\d{2})\.sql\.gz$');\
+def j(a):\
+ return json.loads(subprocess.check_output(['aws',*a],text=True) or '{}');\
+ks=[];t=None;\
+while True:\
+ a=['s3api','list-objects-v2','--bucket',b,'--prefix',p,'--endpoint-url',e,'--output','json'];\
+ a+=(['--continuation-token',t] if t else []);\
+ d=j(a);\
+ ks+=[o.get('Key') for o in (d.get('Contents') or []) if o.get('Key')];\
+ if d.get('IsTruncated'): t=d.get('NextContinuationToken');\
+ else: break;\
+es=[];\
+for k in ks:\
+ m=rx.match(k);\
+ if m: es.append((datetime.strptime(m.group(1),'%Y-%m-%d').date(),k));\
+es.sort(reverse=True,key=lambda x:x[0]);\
+keep=set(k for _,k in es[:7]);\
+keep.update(k for d,k in [x for x in es if x[0].weekday()==6][:4]);\
+delk=[k for _,k in es if k not in keep];\
+print(f'Found {len(es)} backups; keeping {len(keep)}; deleting {len(delk)}.');\
+[subprocess.check_call(['aws','s3','rm',f's3://{b}/{k}','--endpoint-url',e]) for k in delk]"
 
