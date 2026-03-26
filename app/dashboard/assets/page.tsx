@@ -16,7 +16,7 @@ const CARDS = [
     eyebrow: "Overview",
     title: "Assets overview",
     body: "Fleet status, scan activity, and operational KPIs — centralized for your facility.",
-    cta: "Open overview",
+    cta: "Open Overview",
     Icon: LayoutDashboard,
   },
   {
@@ -24,7 +24,7 @@ const CARDS = [
     eyebrow: "Operations",
     title: "Scan",
     body: "Capture and validate equipment scans — feeding tracking and compliance workflows.",
-    cta: "Open scan",
+    cta: "Open Scan",
     Icon: ScanSearch,
   },
   {
@@ -32,7 +32,7 @@ const CARDS = [
     eyebrow: "Inventory",
     title: "Equipment",
     body: "Asset records, metadata, and lifecycle visibility — managed in one equipment workspace.",
-    cta: "Open equipment",
+    cta: "Open Equipment",
     Icon: ScanLine,
   },
   {
@@ -40,7 +40,7 @@ const CARDS = [
     eyebrow: "Service",
     title: "Maintenance",
     body: "Preventive and corrective maintenance scheduling — planned and tracked per asset.",
-    cta: "Open maintenance",
+    cta: "Open Maintenance",
     Icon: Wrench,
   },
   {
@@ -48,7 +48,7 @@ const CARDS = [
     eyebrow: "Cold chain",
     title: "Refrigerator",
     body: "Temperature monitoring, breach alerts, and unit health signals — for cold-chain operations.",
-    cta: "Open refrigerator",
+    cta: "Open Refrigerator",
     Icon: Thermometer,
   },
   {
@@ -56,7 +56,7 @@ const CARDS = [
     eyebrow: "Insights",
     title: "Analytics",
     body: "Trend, utilization, and performance analysis — across core asset operations.",
-    cta: "Open analytics",
+    cta: "Open Analytics",
     Icon: BarChart3,
   },
   {
@@ -64,7 +64,7 @@ const CARDS = [
     eyebrow: "Reporting",
     title: "Reports",
     body: "Operational reporting for stakeholders and audits — generated from module activity.",
-    cta: "Open reports",
+    cta: "Open Reports",
     Icon: FileText,
   },
 ];

@@ -325,7 +325,7 @@ export default function TATPage() {
             <select
               value={filters.period}
               onChange={(e) => updateFilter("period", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
               {PERIODS.map((p) => (
                 <option key={p.value} value={p.value}>{p.label}</option>
@@ -339,7 +339,7 @@ export default function TATPage() {
             <select
               value={filters.shift}
               onChange={(e) => updateFilter("shift", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
               {SHIFTS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -353,7 +353,7 @@ export default function TATPage() {
             <select
               value={filters.hospitalUnit}
               onChange={(e) => updateFilter("hospitalUnit", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
               {LABORATORIES.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
@@ -368,7 +368,7 @@ export default function TATPage() {
               type="date"
               value={filters.startDate}
               onChange={(e) => updateFilter("startDate", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -377,13 +377,14 @@ export default function TATPage() {
               type="date"
               value={filters.endDate}
               onChange={(e) => updateFilter("endDate", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             />
           </div>
 
           <button
             onClick={resetFilters}
-            className="text-sm text-emerald-600 hover:text-emerald-700 border border-emerald-200 rounded-lg px-3 py-1.5 hover:bg-emerald-50 transition-colors"
+            className="text-sm module-accent-text border rounded-lg px-3 py-1.5 transition-colors"
+            style={{ borderColor: "var(--module-primary)" }}
           >
             Reset
           </button>
@@ -397,8 +398,8 @@ export default function TATPage() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="w-2 h-8 bg-emerald-500 rounded animate-bounce"
-                style={{ animationDelay: `${i * 0.1}s` }}
+                className="w-2 h-8 rounded animate-bounce"
+                style={{ backgroundColor: "var(--module-primary)", animationDelay: `${i * 0.1}s` }}
               />
             ))}
           </div>
@@ -470,7 +471,7 @@ export default function TATPage() {
               {/* TAT Distribution */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                  <span className="text-emerald-600">◕</span> TAT Performance Distribution
+                  <span className="module-accent-text">◕</span> TAT Performance Distribution
                 </h3>
                 {pieData.length > 0 ? (
                   <div className="h-[280px]">
@@ -486,7 +487,7 @@ export default function TATPage() {
               {/* Daily TAT Trend */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                  <span className="text-emerald-600">📈</span>{" "}
+                  <span className="module-accent-text">📈</span>{" "}
                   {data?.granularity === "monthly" ? "Monthly" : "Daily"} TAT Performance Trend
                 </h3>
                 {(data?.dailyTrend ?? []).length > 0 ? (
@@ -504,7 +505,7 @@ export default function TATPage() {
             {/* Row 2 – Hourly */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="text-emerald-600">🕐</span> Hourly TAT Performance Trend
+                <span className="module-accent-text">🕐</span> Hourly TAT Performance Trend
               </h3>
               {hourlyData.length > 0 ? (
                 <div className="h-[240px]">

@@ -75,12 +75,12 @@ function StatCard({
   return (
     <div
       className={`bg-white border rounded-2xl p-5 shadow-sm flex flex-col gap-2 ${
-        highlight ? "border-emerald-300 bg-emerald-50/40" : "border-slate-200"
+        highlight ? "border-[var(--module-primary)] bg-[var(--module-primary-light)]/40" : "border-slate-200"
       }`}
     >
       {iconId && <KpiTwemojiIcon id={iconId} size={40} />}
       <p className="text-xs text-slate-500 uppercase tracking-wide">{title}</p>
-      <p className={`text-3xl font-bold ${highlight ? "text-emerald-700" : "text-slate-800"}`}>
+      <p className={`text-3xl font-bold ${highlight ? "module-accent-text" : "text-slate-800"}`}>
         {value}
       </p>
       {sub && <p className="text-xs text-slate-400">{sub}</p>}
@@ -223,7 +223,7 @@ export default function PerformancePage() {
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
               {PERIODS.map((p) => (
                 <option key={p.value} value={p.value}>{p.label}</option>
@@ -262,8 +262,8 @@ export default function PerformancePage() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="w-2 h-8 bg-emerald-500 rounded animate-bounce"
-                style={{ animationDelay: `${i * 0.1}s` }}
+                className="w-2 h-8 rounded animate-bounce"
+                style={{ backgroundColor: "var(--module-primary)", animationDelay: `${i * 0.1}s` }}
               />
             ))}
           </div>
@@ -305,12 +305,12 @@ export default function PerformancePage() {
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-semibold text-slate-700">Completion Rate</span>
-              <span className="text-sm font-bold text-emerald-600">{completionRate}%</span>
+              <span className="text-sm font-bold module-accent-text">{completionRate}%</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
               <div
-                className="h-4 rounded-full bg-emerald-500 transition-all duration-700"
-                style={{ width: `${completionRate}%` }}
+                className="h-4 rounded-full transition-all duration-700"
+                style={{ width: `${completionRate}%`, backgroundColor: "var(--module-primary)" }}
               />
             </div>
             <div className="flex justify-between text-xs text-slate-500 mt-1">
@@ -324,7 +324,7 @@ export default function PerformancePage() {
             {/* Section Chart */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="text-emerald-600">📊</span> Tests Resulted by Section
+                <span className="module-accent-text">📊</span> Tests Resulted by Section
               </h3>
               {(data?.bySection ?? []).length > 0 ? (
                 <div className="h-[260px]">
@@ -340,7 +340,7 @@ export default function PerformancePage() {
             {/* Avg TAT chart */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="text-emerald-600">⏱</span> Avg. TAT by Section (minutes)
+                <span className="module-accent-text">⏱</span> Avg. TAT by Section (minutes)
               </h3>
               {(data?.bySection ?? []).length > 0 ? (
                 <div className="h-[260px]">

@@ -65,12 +65,12 @@ function TargetProgress({
     <div className="mb-5" title={tooltip}>
       <div className="flex justify-between items-center mb-1">
         <span className="text-sm font-semibold text-slate-700">{title}</span>
-        <span className="text-sm font-bold text-emerald-600">{pct.toFixed(1)}%</span>
+        <span className="text-sm font-bold module-accent-text">{pct.toFixed(1)}%</span>
       </div>
       <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
         <div
-          className="h-4 rounded-full bg-emerald-500 transition-all duration-500"
-          style={{ width: `${pct}%` }}
+          className="h-4 rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, backgroundColor: "var(--module-primary)" }}
         />
       </div>
       <div className="flex justify-between text-xs text-slate-500 mt-1">
@@ -233,7 +233,7 @@ export default function NumbersPage() {
             <select
               value={filters.period}
               onChange={(e) => updateFilter("period", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
               {PERIODS.map((p) => (
                 <option key={p.value} value={p.value}>{p.label}</option>
@@ -246,7 +246,7 @@ export default function NumbersPage() {
             <select
               value={filters.shift}
               onChange={(e) => updateFilter("shift", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
               {SHIFTS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -259,7 +259,7 @@ export default function NumbersPage() {
             <select
               value={filters.hospitalUnit}
               onChange={(e) => updateFilter("hospitalUnit", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
               {LABORATORIES.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
@@ -273,7 +273,7 @@ export default function NumbersPage() {
               type="date"
               value={filters.startDate}
               onChange={(e) => updateFilter("startDate", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             />
           </div>
 
@@ -283,13 +283,14 @@ export default function NumbersPage() {
               type="date"
               value={filters.endDate}
               onChange={(e) => updateFilter("endDate", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             />
           </div>
 
           <button
             onClick={resetFilters}
-            className="text-sm text-emerald-600 hover:text-emerald-700 border border-emerald-200 rounded-lg px-3 py-1.5 hover:bg-emerald-50 transition-colors"
+            className="text-sm module-accent-text border rounded-lg px-3 py-1.5 transition-colors"
+            style={{ borderColor: "var(--module-primary)" }}
           >
             Reset
           </button>
@@ -303,8 +304,8 @@ export default function NumbersPage() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="w-2 h-8 bg-emerald-500 rounded animate-bounce"
-                style={{ animationDelay: `${i * 0.1}s` }}
+                className="w-2 h-8 rounded animate-bounce"
+                style={{ backgroundColor: "var(--module-primary)", animationDelay: `${i * 0.1}s` }}
               />
             ))}
           </div>
@@ -358,7 +359,7 @@ export default function NumbersPage() {
             {/* Daily Volume */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="text-emerald-600">📊</span>{" "}
+                <span className="module-accent-text">📊</span>{" "}
                 {data?.granularity === "monthly" ? "Monthly" : "Daily"} Request Volume
               </h3>
               {(data?.dailyRequestVolume ?? []).length > 0 ? (
@@ -375,7 +376,7 @@ export default function NumbersPage() {
             {/* Hourly Volume */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="text-emerald-600">🕐</span> Hourly Request Volume
+                <span className="module-accent-text">🕐</span> Hourly Request Volume
               </h3>
               {hourlyData.length > 0 ? (
                 <div className="h-[220px]">

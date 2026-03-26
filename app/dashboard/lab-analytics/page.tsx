@@ -23,7 +23,7 @@ const CARDS = [
     eyebrow: "Operations",
     title: "Tests",
     body: "Test throughput, trend monitoring, and departmental load visibility — for day-to-day operations.",
-    cta: "Open tests",
+    cta: "Open Tests",
     Icon: Microscope,
   },
   {
@@ -31,7 +31,7 @@ const CARDS = [
     eyebrow: "Volumes",
     title: "Numbers",
     body: "Aggregate request volumes and benchmark movement over time — with operational context.",
-    cta: "Open numbers",
+    cta: "Open Numbers",
     Icon: Binary,
   },
   {
@@ -39,7 +39,7 @@ const CARDS = [
     eyebrow: "Metadata",
     title: "Meta",
     body: "Supporting metadata and parameter management — used across the Lab Metrics module.",
-    cta: "Open meta",
+    cta: "Open Meta",
     Icon: TableProperties,
   },
   {
@@ -47,7 +47,7 @@ const CARDS = [
     eyebrow: "Finance",
     title: "Revenue",
     body: "Revenue trends, performance windows, and billing-aligned indicators — mapped to test activity.",
-    cta: "Open revenue",
+    cta: "Open Revenue",
     Icon: CircleDollarSign,
   },
   {
@@ -55,7 +55,7 @@ const CARDS = [
     eyebrow: "Insights",
     title: "Performance",
     body: "KPI comparison and performance pattern analysis — for continuous lab optimization.",
-    cta: "Open performance",
+    cta: "Open Performance",
     Icon: ChartSpline,
   },
 ];

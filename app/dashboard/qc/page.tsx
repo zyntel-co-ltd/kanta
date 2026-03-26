@@ -18,13 +18,13 @@ import { CHART_AXIS } from "@/lib/chart-theme";
 /* ─────────────────── Theme constants ─────────────────── */
 const inputCls =
   "w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-900 " +
-  "placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 " +
-  "focus:border-emerald-400 transition-all text-sm";
+  "placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]/30 " +
+  "focus:border-[var(--module-primary)] transition-all text-sm";
 const selectCls =
   "w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 " +
-  "focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all text-sm";
+  "focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]/30 focus:border-[var(--module-primary)] transition-all text-sm";
 const btnPrimary =
-  "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 " +
+  "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--module-primary)] hover:opacity-90 " +
   "text-white text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed";
 const btnSecondary =
   "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 " +
@@ -277,7 +277,7 @@ function ConfirmModal({ open, title, message, confirmLabel, variant = "danger", 
   const cls =
     variant === "danger"  ? "bg-red-600 hover:bg-red-700" :
     variant === "warning" ? "bg-amber-500 hover:bg-amber-600" :
-    "bg-emerald-600 hover:bg-emerald-700";
+    "bg-[var(--module-primary)] hover:opacity-90";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={onCancel}>
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
@@ -296,8 +296,8 @@ function ConfirmModal({ open, title, message, confirmLabel, variant = "danger", 
 function SectionHead({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-4">
-      <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
-        <Icon size={14} className="text-emerald-600" />
+      <div className="w-7 h-7 rounded-lg bg-[var(--module-primary-light)] flex items-center justify-center flex-shrink-0">
+        <Icon size={14} className="module-accent-text" />
       </div>
       <h3 className="font-semibold text-slate-800" style={{ fontSize: "0.9375rem", letterSpacing: "-0.01em" }}>{title}</h3>
     </div>
@@ -360,7 +360,7 @@ export default function QCPage() {
             onClick={() => setActiveTab(id)}
             className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all ${
               activeTab === id
-                ? "border-emerald-500 text-emerald-700"
+                ? "border-[var(--module-primary)] module-accent-text"
                 : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
             }`}
           >

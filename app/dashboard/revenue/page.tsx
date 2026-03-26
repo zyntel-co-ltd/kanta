@@ -280,7 +280,7 @@ export default function RevenuePage() {
             <select
               value={filters.period}
               onChange={(e) => updateFilter("period", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
               {PERIODS.map((p) => (
                 <option key={p.value} value={p.value}>{p.label}</option>
@@ -293,7 +293,7 @@ export default function RevenuePage() {
             <select
               value={filters.labSection}
               onChange={(e) => updateFilter("labSection", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
               {LAB_SECTIONS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -306,7 +306,7 @@ export default function RevenuePage() {
             <select
               value={filters.shift}
               onChange={(e) => updateFilter("shift", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
               {SHIFTS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -321,13 +321,14 @@ export default function RevenuePage() {
               value={filters.testName}
               onChange={(e) => updateFilter("testName", e.target.value)}
               placeholder="Filter by test..."
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 w-40"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)] w-40"
             />
           </div>
 
           <button
             onClick={resetFilters}
-            className="text-sm text-emerald-600 hover:text-emerald-700 border border-emerald-200 rounded-lg px-3 py-1.5 hover:bg-emerald-50 transition-colors"
+            className="text-sm module-accent-text border rounded-lg px-3 py-1.5 transition-colors"
+            style={{ borderColor: "var(--module-primary)" }}
           >
             Reset
           </button>
@@ -341,8 +342,8 @@ export default function RevenuePage() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="w-2 h-8 bg-emerald-500 rounded animate-bounce"
-                style={{ animationDelay: `${i * 0.1}s` }}
+                className="w-2 h-8 rounded animate-bounce"
+                style={{ backgroundColor: "var(--module-primary)", animationDelay: `${i * 0.1}s` }}
               />
             ))}
           </div>
@@ -360,7 +361,7 @@ export default function RevenuePage() {
                 <KpiTwemojiIcon id="moneyBag" size={40} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-700 mb-1">Total Revenue</p>
-                  <p className="text-2xl font-bold text-emerald-600">{fmtUGX(totalRevenue)}</p>
+                  <p className="text-2xl font-bold module-accent-text">{fmtUGX(totalRevenue)}</p>
                 </div>
               </div>
               <div className="mt-4 flex flex-col gap-2 text-sm">
@@ -406,7 +407,7 @@ export default function RevenuePage() {
               {/* Section Revenue Doughnut */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                  <span className="text-emerald-600">◕</span> Revenue by Laboratory Section
+                  <span className="module-accent-text">◕</span> Revenue by Laboratory Section
                 </h3>
                 {(data?.sectionRevenue ?? []).length > 0 ? (
                   <div className="h-[280px]">
@@ -422,7 +423,7 @@ export default function RevenuePage() {
               {/* Daily Revenue Line */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                  <span className="text-emerald-600">📈</span> Daily Revenue
+                  <span className="module-accent-text">📈</span> Daily Revenue
                 </h3>
                 {(data?.dailyRevenue ?? []).length > 0 ? (
                   <div className="h-[280px]">
@@ -439,7 +440,7 @@ export default function RevenuePage() {
             {/* Revenue by Test – horizontal bar */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="text-emerald-600">🧪</span> Revenue by Test
+                <span className="module-accent-text">🧪</span> Revenue by Test
               </h3>
               {filteredTestRevenue.length > 0 ? (
                 <div className="w-full" style={{ height: Math.max(300, filteredTestRevenue.length * 26) }}>
