@@ -13,11 +13,17 @@ import {
 function normalizeFacilityRole(value: unknown): FacilityRole | null {
   if (isFacilityRole(value)) return value;
   if (typeof value !== "string") return null;
-  const v = value.trim().toLowerCase();
-  if (v === "admin") return "facility_admin";
-  if (v === "manager") return "lab_manager";
-  if (v === "technician" || v === "reception") return "lab_technician";
+  const vRaw = value.trim().toLowerCase();
+  // Normalize separators so inputs like "lab technician", "lab-technician",
+  // and "lab_technician" all match the same token.
+  const v = vRaw.replace(/\s+/g, " ").replace(/[-_]+/g, " ");
+
+  if (v === "facility admin" || v === "admin") return "facility_admin";
+  if (v === "lab manager" || v === "manager") return "lab_manager";
+  if (v === "lab technician" || v === "technician" || v === "reception")
+    return "lab_technician";
   if (v === "viewer") return "viewer";
+
   return null;
 }
 
