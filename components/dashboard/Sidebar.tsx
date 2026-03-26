@@ -18,8 +18,6 @@ import {
   ChartColumnIncreasing,
   CircleDollarSign,
   Settings,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
   Thermometer,
   Shield,
@@ -42,6 +40,8 @@ import {
   TestTubes,
   QrCode,
   CalendarClock,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 
 type NavItem = {
@@ -675,9 +675,9 @@ export default function Sidebar() {
           )}
         >
           {collapsed ? (
-            <ChevronRight size={16} strokeWidth={2.2} className="text-white" />
+            <PanelLeftOpen size={16} strokeWidth={2.1} className="text-white" />
           ) : (
-            <ChevronLeft size={16} strokeWidth={2.2} className="text-white" />
+            <PanelLeftClose size={16} strokeWidth={2.1} className="text-white" />
           )}
         </span>
       </button>

@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 26 March 2026 (Phase 27 — legacy RBAC role normalization in auth context)  
+**Last updated:** 26 March 2026 (Phase 28 — admin user display polish, login password toggle, default green theme scope)  
 **Updated by:** Cursor
 
 ---
@@ -93,6 +93,21 @@ Kanta is the flagship SaaS product — Hospital Operational Intelligence Platfor
 - [x] **Phase 25: Sidebar collapse polish (ENG-82)** *(26 March 2026)* — see section below
 - [x] **Phase 26: Admin access unblock + quick-access button** *(26 March 2026)* — see section below
 - [x] **Phase 27: Auth role normalization for legacy rows** *(26 March 2026)* — see section below
+- [x] **Phase 28: UI polish + theme scope correction** *(26 March 2026)* — see section below
+
+### Phase 28 — UI Polish + Theme Scope Correction (26 March 2026)
+
+#### Summary
+Improved Admin users readability by normalizing legacy role labels and avoiding UUID-fragment fallbacks in display names when metadata is missing. Added a show/hide password control on the login form. Updated sidebar collapse iconography to a panel-open/panel-close style inspired by Claude dashboard conventions. Corrected dashboard module detection so only `/dashboard` uses asset (red) theme, while non-asset/non-quality routes (Admin, Settings, Departments, AI Insights, etc.) default to green lab theme.
+
+#### Key files
+| File | Change |
+|------|--------|
+| `app/api/admin/users/route.ts` | Normalize legacy roles and improve display-name fallback |
+| `app/dashboard/admin/page.tsx` | Human-readable role labels in users table |
+| `app/login/LoginForm.tsx` | Added password visibility toggle icon/button |
+| `components/dashboard/Sidebar.tsx` | Panel-style collapse icon update |
+| `app/dashboard/layout.tsx` | Fixed module detection scope (`/dashboard` only for asset theme) |
 
 ### Phase 27 — Auth Role Normalization (26 March 2026)
 

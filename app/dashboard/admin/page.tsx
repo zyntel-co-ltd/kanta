@@ -59,6 +59,14 @@ type Stats = {
 const UNMATCHED_PAGE_SIZE = 15;
 
 export default function AdminPage() {
+  const formatRole = (role: string) => {
+    const r = role?.trim().toLowerCase();
+    if (r === "facility_admin" || r === "admin") return "Facility admin";
+    if (r === "lab_manager" || r === "manager") return "Lab manager";
+    if (r === "lab_technician" || r === "technician" || r === "reception") return "Lab technician";
+    return "Viewer";
+  };
+
   const getInitials = (u: User) => {
     const base = u.username?.trim() || u.email?.split("@")[0] || "U";
     const parts = base.split(/\s+/);
@@ -570,14 +578,14 @@ export default function AdminPage() {
                         <td className="px-4 py-3">
                           <span
                             className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                              u.role === "facility_admin"
+                              (u.role === "facility_admin" || u.role === "admin")
                                 ? "bg-red-100 text-red-700"
-                                : u.role === "lab_manager"
+                                : (u.role === "lab_manager" || u.role === "manager")
                                 ? "bg-amber-100 text-amber-700"
                                 : "bg-slate-100 text-slate-700"
                             }`}
                           >
-                            {u.role}
+                            {formatRole(u.role)}
                           </span>
                         </td>
                         <td className="px-4 py-3">

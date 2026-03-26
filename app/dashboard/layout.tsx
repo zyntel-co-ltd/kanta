@@ -12,6 +12,7 @@ type ModuleKey = "neutral" | "labMetrics" | "qualityManagement" | "assetManageme
 function detectModule(pathname: string): ModuleKey {
   const p = (pathname || "").replace(/\/$/, "") || "/";
   if (p === "/dashboard/home") return "neutral";
+  if (p === "/dashboard") return "assetManagement";
 
   const labMetrics = [
     "/dashboard/tat",
@@ -28,7 +29,6 @@ function detectModule(pathname: string): ModuleKey {
   if (quality.some((x) => p === x || p.startsWith(x + "/"))) return "qualityManagement";
 
   const asset = [
-    "/dashboard",
     "/dashboard/equipment",
     "/dashboard/scan",
     "/dashboard/maintenance",

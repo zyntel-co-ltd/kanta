@@ -7,6 +7,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
 import { FACILITY_ROLES, isFacilityRole } from "@/lib/auth/roles";
 
+function normalizeRole(value: unknown): string {
+  if (typeof value !== "string") return "viewer";
+  const role = value.trim().toLowerCase();
+  if (role === "admin") return "facility_admin";
+  if (role === "manager") return "lab_manager";
+  if (role === "technician" || role === "reception") return "lab_technician";
+  if (role === "viewer") return "viewer";
+  if (isFacilityRole(role)) return role;
+  return "viewer";
+}
+
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
   !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project-ref");
@@ -63,13 +74,15 @@ export async function GET(req: NextRequest) {
 
     const users = (facilityUsers ?? []).map((u) => {
       const uid = u.user_id as string;
+      const email = emailById.get(uid) ?? "";
+      const fallbackName = email ? email.split("@")[0] : "User";
       return {
         id: u.id,
         user_id: uid,
-        username: usernameById.get(uid) || uid?.slice(0, 8) || "—",
+        username: usernameById.get(uid) || fallbackName,
         avatar_url: avatarById.get(uid) ?? null,
-        email: emailById.get(uid) ?? "",
-        role: u.role,
+        email,
+        role: normalizeRole(u.role),
         is_active: u.is_active ?? true,
         last_login: null,
         created_at: u.created_at,
