@@ -7,7 +7,6 @@ import {
   ChevronDown,
   LogOut,
   Settings,
-  User,
   Building2,
   CheckCheck,
   AlertCircle,
@@ -22,7 +21,6 @@ import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 const HOSPITAL_NAME =
   process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Zyntel Hospital";
 const HOSPITAL_LOGO_URL = process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
-const IS_PRO = process.env.NEXT_PUBLIC_PRO_FEATURES === "true";
 
 /* ── Helpers ── */
 function getFirstName(u: {
@@ -53,7 +51,6 @@ function getInitials(u: {
 function getAvatarUrl(u: {
   user_metadata?: { avatar_url?: string; picture?: string };
 }) {
-  if (!IS_PRO) return null;
   return u?.user_metadata?.avatar_url || u?.user_metadata?.picture || null;
 }
 
@@ -359,16 +356,6 @@ export default function TopBar() {
                   <Settings size={14} className="text-slate-400" />
                   Settings
                 </button>
-
-                {IS_PRO && (
-                  <button
-                    onClick={() => { setUserMenuOpen(false); router.push("/dashboard/settings/brand"); }}
-                    className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                  >
-                    <User size={14} className="text-slate-400" />
-                    Brand & Profile
-                  </button>
-                )}
 
                 <div className="border-t border-slate-100 mt-1" />
 

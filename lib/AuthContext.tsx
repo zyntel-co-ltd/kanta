@@ -12,7 +12,15 @@ import { createClient } from "@/lib/supabase/client";
 import type { FacilityRole } from "@/lib/auth/roles";
 
 // Generic types — supabase-js surface can differ slightly between environments
-type User = { id: string; email?: string; user_metadata?: Record<string, unknown> };
+type UserMetadata = {
+  full_name?: string;
+  name?: string;
+  username?: string;
+  display_name?: string;
+  avatar_url?: string;
+  picture?: string;
+};
+type User = { id: string; email?: string; user_metadata?: UserMetadata };
 type Session = { user: User };
 
 export type FacilityAuthState = {
@@ -40,11 +48,17 @@ type BrowserAuth = {
     e: string,
     o: { redirectTo: string }
   ) => Promise<{ error: unknown }>;
+  updateUser: (payload: {
+    password?: string;
+    data?: Record<string, unknown>;
+  }) => Promise<{ error: unknown }>;
 };
 
 type AuthContextType = {
   user: User | null;
   session: Session | null;
+  displayName: string;
+  avatarUrl: string | null;
   loading: boolean;
   /** RBAC from GET /api/me — null when logged out or before fetch completes */
   facilityAuth: FacilityAuthState | null;
@@ -52,6 +66,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -150,17 +165,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    const client = createClient();
+    const auth = client.auth as unknown as BrowserAuth;
+    const { data: { session: s } } = await auth.getSession();
+    setSession(s as Session | null);
+    setUser((s?.user as User) ?? null);
+  }, []);
+
+  const displayName =
+    user?.user_metadata?.display_name ||
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.user_metadata?.username ||
+    user?.email?.split("@")[0] ||
+    "User";
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
+
   return (
     <AuthContext.Provider
       value={{
         user,
         session,
+        displayName,
+        avatarUrl,
         loading,
         facilityAuth,
         facilityAuthLoading,
         signIn,
         signOut,
         resetPassword,
+        refreshUser,
       }}
     >
       {children}

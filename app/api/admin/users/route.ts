@@ -41,14 +41,20 @@ export async function GET(req: NextRequest) {
 
     const emailById = new Map<string, string>();
     const usernameById = new Map<string, string>();
+    const avatarById = new Map<string, string>();
     try {
-      const listUsers = (db.auth as { admin?: { listUsers: (o: { page?: number; perPage?: number }) => Promise<{ data?: { users?: Array<{ id: string; email?: string; user_metadata?: { username?: string } }> } }> } }).admin?.listUsers;
+      const listUsers = (db.auth as { admin?: { listUsers: (o: { page?: number; perPage?: number }) => Promise<{ data?: { users?: Array<{ id: string; email?: string; user_metadata?: { username?: string; display_name?: string; full_name?: string; name?: string; avatar_url?: string } }> } }> } }).admin?.listUsers;
       if (listUsers) {
         const { data: listData } = await listUsers({ page: 1, perPage: 1000 });
         for (const au of listData?.users ?? []) {
           emailById.set(au.id, au.email ?? "");
-          const un = au.user_metadata?.username;
+          const un =
+            au.user_metadata?.display_name ||
+            au.user_metadata?.full_name ||
+            au.user_metadata?.name ||
+            au.user_metadata?.username;
           if (un) usernameById.set(au.id, String(un));
+          if (au.user_metadata?.avatar_url) avatarById.set(au.id, au.user_metadata.avatar_url);
         }
       }
     } catch {
@@ -61,6 +67,7 @@ export async function GET(req: NextRequest) {
         id: u.id,
         user_id: uid,
         username: usernameById.get(uid) || uid?.slice(0, 8) || "—",
+        avatar_url: avatarById.get(uid) ?? null,
         email: emailById.get(uid) ?? "",
         role: u.role,
         is_active: u.is_active ?? true,
@@ -116,7 +123,7 @@ export async function POST(req: NextRequest) {
       email: loginEmail,
       password,
       email_confirm: true,
-      user_metadata: { username: displayName },
+      user_metadata: { username: displayName, display_name: displayName },
     });
 
     if (authError) {

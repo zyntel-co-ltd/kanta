@@ -9,8 +9,14 @@ function sanitizeEnv(value: string | undefined): string {
 const supabaseUrl = sanitizeEnv(process.env.NEXT_PUBLIC_SUPABASE_URL) || "";
 const supabaseAnonKey = sanitizeEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || "";
 
-// Browser / client-side client (uses anon key, respects RLS)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Browser / client-side client (uses anon key, respects RLS).
+// Keep this lazy to avoid throwing during module evaluation in build workers.
+export function createPublicClient() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Supabase public client is not configured");
+  }
+  return createClient(supabaseUrl, supabaseAnonKey);
+}
 
 // Server-side admin client (bypasses RLS — use only in API routes / server actions)
 export function createAdminClient() {

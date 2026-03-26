@@ -35,6 +35,7 @@ type User = {
   id: string;
   username: string;
   email: string;
+  avatar_url?: string | null;
   role: string;
   is_active: boolean;
   last_login: string | null;
@@ -58,6 +59,13 @@ type Stats = {
 const UNMATCHED_PAGE_SIZE = 15;
 
 export default function AdminPage() {
+  const getInitials = (u: User) => {
+    const base = u.username?.trim() || u.email?.split("@")[0] || "U";
+    const parts = base.split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return base.slice(0, 2).toUpperCase();
+  };
+
   const [activeTab, setActiveTab] = useState<Tab>("users");
   const [users, setUsers] = useState<User[]>([]);
   const [unmatchedTests, setUnmatchedTests] = useState<UnmatchedTest[]>([]);
@@ -536,7 +544,7 @@ export default function AdminPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/50">
-                      <th className="text-left px-4 py-3 font-medium text-slate-600">Email</th>
+                      <th className="text-left px-4 py-3 font-medium text-slate-600">User</th>
                       <th className="text-left px-4 py-3 font-medium text-slate-600">Display name</th>
                       <th className="text-left px-4 py-3 font-medium text-slate-600">Role</th>
                       <th className="text-left px-4 py-3 font-medium text-slate-600">Status</th>
@@ -546,7 +554,19 @@ export default function AdminPage() {
                   <tbody>
                     {users.map((u) => (
                       <tr key={u.id} className="border-b border-slate-50">
-                        <td className="px-4 py-3">{u.email || "—"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {u.avatar_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={u.avatar_url} alt={u.username} className="w-7 h-7 rounded-full object-cover border border-slate-200" />
+                            ) : (
+                              <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 text-[10px] font-semibold flex items-center justify-center">
+                                {getInitials(u)}
+                              </div>
+                            )}
+                            <span>{u.email || "—"}</span>
+                          </div>
+                        </td>
                         <td className="px-4 py-3 font-medium">{u.username}</td>
                         <td className="px-4 py-3">
                           <span
