@@ -237,24 +237,24 @@ html {
   --sidebar-active-bg: #059669;
   --sidebar-active-text: #ecfdf5;
   --sidebar-hover-bg: #0f766e;
-  --module-primary: #059669;
-  --module-primary-dark: #047857;
+  --module-primary: #065f46;
+  --module-primary-dark: #065f46;
   --module-primary-light: #d1fae5;
-  --module-primary-soft-text: #a7f3d0;
+  --module-primary-soft-text: #d1fae5;
   --module-primary-on: #ffffff;
 }
 
 /* Quality Management (hospital blue) */
 [data-module="neutral"] {
-  --sidebar-bg: #334155;
-  --sidebar-active-bg: #475569;
-  --sidebar-active-text: #f8fafc;
-  --sidebar-hover-bg: #3f4d63;
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: #e2e8f0;
+  --sidebar-active-text: #0f172a;
+  --sidebar-hover-bg: #f1f5f9;
   --module-primary: #475569;
   --module-primary-dark: #334155;
   --module-primary-light: #e2e8f0;
   --module-primary-soft-text: #cbd5e1;
-  --module-primary-on: #ffffff;
+  --module-primary-on: #0f172a;
 }
 
 /* Quality Management (hospital blue) */
@@ -263,10 +263,10 @@ html {
   --sidebar-active-bg: #2563eb;
   --sidebar-active-text: #eff6ff;
   --sidebar-hover-bg: #274c7a;
-  --module-primary: #2563eb;
+  --module-primary: #1e3a5f;
   --module-primary-dark: #1e3a5f;
   --module-primary-light: #dbeafe;
-  --module-primary-soft-text: #bfdbfe;
+  --module-primary-soft-text: #dbeafe;
   --module-primary-on: #ffffff;
 }
 
@@ -276,10 +276,10 @@ html {
   --sidebar-active-bg: #dc2626;
   --sidebar-active-text: #fef2f2;
   --sidebar-hover-bg: #8b2323;
-  --module-primary: #dc2626;
+  --module-primary: #7f1d1d;
   --module-primary-dark: #7f1d1d;
   --module-primary-light: #fee2e2;
-  --module-primary-soft-text: #fecaca;
+  --module-primary-soft-text: #fee2e2;
   --module-primary-on: #ffffff;
 }
 

@@ -7,6 +7,7 @@ import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { BarChart3, Clock3 } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const PERIODS = [
@@ -359,7 +360,7 @@ export default function NumbersPage() {
             {/* Daily Volume */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="module-accent-text">📊</span>{" "}
+                <BarChart3 size={16} className="module-accent-text" />{" "}
                 {data?.granularity === "monthly" ? "Monthly" : "Daily"} Request Volume
               </h3>
               {(data?.dailyRequestVolume ?? []).length > 0 ? (
@@ -376,7 +377,7 @@ export default function NumbersPage() {
             {/* Hourly Volume */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="module-accent-text">🕐</span> Hourly Request Volume
+                <Clock3 size={16} className="module-accent-text" /> Hourly Request Volume
               </h3>
               {hourlyData.length > 0 ? (
                 <div className="h-[220px]">

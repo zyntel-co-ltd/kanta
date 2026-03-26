@@ -7,6 +7,7 @@ import "@/components/charts/registry";
 import { Doughnut, Line, Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { CircleDot, TrendingUp, TestTube } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const PERIODS = [
@@ -407,7 +408,7 @@ export default function RevenuePage() {
               {/* Section Revenue Doughnut */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                  <span className="module-accent-text">◕</span> Revenue by Laboratory Section
+                  <CircleDot size={16} className="module-accent-text" /> Revenue by Laboratory Section
                 </h3>
                 {(data?.sectionRevenue ?? []).length > 0 ? (
                   <div className="h-[280px]">
@@ -423,7 +424,7 @@ export default function RevenuePage() {
               {/* Daily Revenue Line */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                  <span className="module-accent-text">📈</span> Daily Revenue
+                  <TrendingUp size={16} className="module-accent-text" /> Daily Revenue
                 </h3>
                 {(data?.dailyRevenue ?? []).length > 0 ? (
                   <div className="h-[280px]">
@@ -440,7 +441,7 @@ export default function RevenuePage() {
             {/* Revenue by Test – horizontal bar */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="module-accent-text">🧪</span> Revenue by Test
+                <TestTube size={16} className="module-accent-text" /> Revenue by Test
               </h3>
               {filteredTestRevenue.length > 0 ? (
                 <div className="w-full" style={{ height: Math.max(300, filteredTestRevenue.length * 26) }}>

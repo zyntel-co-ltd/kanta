@@ -1,9 +1,20 @@
 "use client";
 
-import Image from "next/image";
-
-const TWEMOJI_BASE =
-  "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72";
+import type { ComponentType } from "react";
+import {
+  CheckCircle2,
+  Clock3,
+  Upload,
+  CalendarDays,
+  TrendingUp,
+  BarChart3,
+  Wallet,
+  Banknote,
+  XCircle,
+  Inbox,
+  AlarmClock,
+  AlertTriangle,
+} from "lucide-react";
 
 /**
  * Twemoji asset keys (72×72 PNG on jsDelivr).
@@ -26,30 +37,26 @@ export type KpiTwemojiId =
   | "avgTat"
   | "breaches";
 
-const FILES: Record<KpiTwemojiId, string> = {
-  onTime: "2705",
-  delayed: "1f550",
-  notUploaded: "1f4e4",
-  hourly: "23f3",
-  calendar: "1f4c5",
-  chartTrending: "1f4c8",
-  barChart: "1f4ca",
-  moneyBag: "1f4b0",
-  banknote: "1f4b5",
-  crossMark: "274c",
-  pending: "23f3",
-  testsResulted: "2705",
-  testsReceived: "1f4e5",
-  avgTat: "23f3",
-  breaches: "26a0",
+const ICONS: Record<KpiTwemojiId, ComponentType<{ size?: number; className?: string; strokeWidth?: number }>> = {
+  onTime: CheckCircle2,
+  delayed: Clock3,
+  notUploaded: Upload,
+  hourly: AlarmClock,
+  calendar: CalendarDays,
+  chartTrending: TrendingUp,
+  barChart: BarChart3,
+  moneyBag: Wallet,
+  banknote: Banknote,
+  crossMark: XCircle,
+  pending: Clock3,
+  testsResulted: CheckCircle2,
+  testsReceived: Inbox,
+  avgTat: Clock3,
+  breaches: AlertTriangle,
 };
 
-export function kpiTwemojiSrc(id: KpiTwemojiId): string {
-  return `${TWEMOJI_BASE}/${FILES[id]}.png`;
-}
-
 /**
- * Colorful Twemoji icon in a soft “app tile” frame (similar to glossy 3D-style emoji in dashboards).
+ * Neutral Lucide icon tile for KPI cards.
  */
 export default function KpiTwemojiIcon({
   id,
@@ -59,6 +66,7 @@ export default function KpiTwemojiIcon({
   /** Pixel size of the emoji graphic */
   size?: number;
 }) {
+  const Icon = ICONS[id];
   const pad = 10;
   return (
     <div
@@ -66,14 +74,7 @@ export default function KpiTwemojiIcon({
       style={{ width: size + pad * 2, height: size + pad * 2 }}
       aria-hidden
     >
-      <Image
-        src={kpiTwemojiSrc(id)}
-        alt=""
-        width={size}
-        height={size}
-        className="object-contain select-none [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.1))]"
-        unoptimized
-      />
+      <Icon size={size * 0.72} strokeWidth={1.8} className="text-slate-700" />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { CalendarDays, BarChart3 } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const PERIODS = [
@@ -398,7 +399,7 @@ export default function TestsPage() {
             {/* Daily Volume */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="module-accent-text">📅</span>{" "}
+                <CalendarDays size={16} className="module-accent-text" />{" "}
                 {data?.granularity === "monthly" ? "Monthly" : "Daily"} Test Volume Trend
               </h3>
               {(data?.testVolumeTrend ?? []).length > 0 ? (
@@ -416,7 +417,7 @@ export default function TestsPage() {
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  <span className="module-accent-text">📊</span> Top Tests by Volume
+                  <BarChart3 size={16} className="module-accent-text" /> Top Tests by Volume
                 </h3>
                 {availableSections.length > 1 && (
                   <div className="flex items-center gap-2">

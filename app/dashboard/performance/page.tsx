@@ -7,7 +7,7 @@ import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwe
 import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
-import { Download, RefreshCw } from "lucide-react";
+import { Download, RefreshCw, BarChart3, Clock3 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -324,7 +324,7 @@ export default function PerformancePage() {
             {/* Section Chart */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="module-accent-text">📊</span> Tests Resulted by Section
+                <BarChart3 size={16} className="module-accent-text" /> Tests Resulted by Section
               </h3>
               {(data?.bySection ?? []).length > 0 ? (
                 <div className="h-[260px]">
@@ -340,7 +340,7 @@ export default function PerformancePage() {
             {/* Avg TAT chart */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="module-accent-text">⏱</span> Avg. TAT by Section (minutes)
+                <Clock3 size={16} className="module-accent-text" /> Avg. TAT by Section (minutes)
               </h3>
               {(data?.bySection ?? []).length > 0 ? (
                 <div className="h-[260px]">

@@ -9,6 +9,7 @@ import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { CHART_AXIS, CHART_TAT } from "@/lib/chart-theme";
 import { STATUS } from "@/lib/design-tokens";
+import { CircleDot, TrendingUp, Clock3 } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const PERIODS = [
@@ -471,7 +472,7 @@ export default function TATPage() {
               {/* TAT Distribution */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                  <span className="module-accent-text">◕</span> TAT Performance Distribution
+                  <CircleDot size={16} className="module-accent-text" /> TAT Performance Distribution
                 </h3>
                 {pieData.length > 0 ? (
                   <div className="h-[280px]">
@@ -487,7 +488,7 @@ export default function TATPage() {
               {/* Daily TAT Trend */}
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                  <span className="module-accent-text">📈</span>{" "}
+                  <TrendingUp size={16} className="module-accent-text" />{" "}
                   {data?.granularity === "monthly" ? "Monthly" : "Daily"} TAT Performance Trend
                 </h3>
                 {(data?.dailyTrend ?? []).length > 0 ? (
@@ -505,7 +506,7 @@ export default function TATPage() {
             {/* Row 2 – Hourly */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <span className="module-accent-text">🕐</span> Hourly TAT Performance Trend
+                <Clock3 size={16} className="module-accent-text" /> Hourly TAT Performance Trend
               </h3>
               {hourlyData.length > 0 ? (
                 <div className="h-[240px]">

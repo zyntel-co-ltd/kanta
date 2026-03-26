@@ -10,16 +10,17 @@ import {
   ShieldCheck,
   LayoutDashboard,
   ScanSearch,
-  ScanLine,
+  QrCode,
   Wrench,
+  CalendarClock,
   Thermometer,
   BarChart3,
   ArrowRight,
   FlaskConical,
   Layers,
   Zap,
-  Package,
   ClipboardList,
+  TestTubes,
 } from "lucide-react";
 import RecentlyVisited from "@/components/dashboard/RecentlyVisited";
 import QuickActions from "@/components/dashboard/QuickActions";
@@ -83,8 +84,8 @@ const apps: AppCard[] = [
     ctaLabel: "Open workspace",
     theme: { primary: "#2563eb", soft: "#dbeafe", ring: "#2563eb" },
     tabs: [
-      { label: "QC", href: "/dashboard/qc", icon: ShieldCheck },
-      { label: "Samples", href: "/dashboard/samples", icon: Package },
+      { label: "QC", href: "/dashboard/qc", icon: FlaskConical },
+      { label: "Samples", href: "/dashboard/samples", icon: TestTubes },
       { label: "Data entry", href: "/dashboard/qc?tab=data", icon: ClipboardList },
     ],
   },
@@ -99,9 +100,9 @@ const apps: AppCard[] = [
     theme: { primary: "#dc2626", soft: "#fee2e2", ring: "#dc2626" },
     tabs: [
       { label: "Assets Overview", href: "/dashboard", icon: LayoutDashboard },
-      { label: "Scan", href: "/dashboard/scan", icon: ScanSearch },
-      { label: "Equipment", href: "/dashboard/equipment", icon: ScanLine },
-      { label: "Maintenance", href: "/dashboard/maintenance", icon: Wrench },
+      { label: "Scan", href: "/dashboard/scan", icon: QrCode },
+      { label: "Equipment", href: "/dashboard/equipment", icon: Wrench },
+      { label: "Maintenance", href: "/dashboard/maintenance", icon: CalendarClock },
       { label: "Refrigerator", href: "/dashboard/refrigerator", icon: Thermometer },
       { label: "Analytics & Reports", href: "/dashboard/analytics", icon: BarChart3 },
     ],

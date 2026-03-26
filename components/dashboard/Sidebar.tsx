@@ -10,7 +10,6 @@ import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
 import { MODULE_THEMES } from "@/lib/design-tokens";
 import {
   LayoutDashboard,
-  ScanSearch,
   ScanLine,
   Wrench,
   Building2,
@@ -44,6 +43,9 @@ import {
   AlertTriangle,
   Archive,
   Search,
+  TestTubes,
+  QrCode,
+  CalendarClock,
 } from "lucide-react";
 
 type NavItem = {
@@ -100,7 +102,7 @@ const navGroupsBase: NavGroup[] = [
       activePaths: ["/dashboard/qc", "/dashboard/samples"],
     },
     items: [
-      { section: "QC", label: "QC Config",     icon: ShieldCheck,   href: "/dashboard/qc?tab=config"      },
+      { section: "QC", label: "QC Config",     icon: FlaskConical,  href: "/dashboard/qc?tab=config"      },
       { label: "Data Entry",    icon: ClipboardList, href: "/dashboard/qc?tab=data"        },
       { label: "Visualization", icon: BarChart3,      href: "/dashboard/qc?tab=visual"      },
       { label: "QC Calculator", icon: Calculator,     href: "/dashboard/qc?tab=calc"        },
@@ -108,7 +110,7 @@ const navGroupsBase: NavGroup[] = [
       { label: "Qual. Config",  icon: FlaskConical,   href: "/dashboard/qc?tab=qual-config" },
       { label: "Qual. Entry",   icon: TestTube,       href: "/dashboard/qc?tab=qual-entry"  },
       { label: "Qual. Log",     icon: Activity,       href: "/dashboard/qc?tab=qual-log"    },
-      { section: "Samples", label: "Dashboard",          icon: BarChart3,     href: "/dashboard/samples?tab=dashboard" },
+      { section: "Samples", label: "Dashboard",          icon: TestTubes,     href: "/dashboard/samples?tab=dashboard" },
       { label: "Racks",              icon: Grid3X3,       href: "/dashboard/samples?tab=racks"     },
       { label: "Pending Discarding", icon: AlertTriangle, href: "/dashboard/samples?tab=pending"   },
       { label: "Discarded",          icon: Archive,       href: "/dashboard/samples?tab=discarded" },
@@ -138,9 +140,9 @@ const navGroupsBase: NavGroup[] = [
     },
     items: [
       { label: "Overview",     icon: LayoutDashboard, href: "/dashboard"              },
-      { label: "Scan",         icon: ScanSearch,      href: "/dashboard/scan"         },
-      { label: "Equipment",    icon: ScanLine,        href: "/dashboard/equipment"    },
-      { label: "Maintenance",  icon: Wrench,          href: "/dashboard/maintenance"  },
+      { label: "Scan",         icon: QrCode,         href: "/dashboard/scan"         },
+      { label: "Equipment",    icon: Wrench,         href: "/dashboard/equipment"    },
+      { label: "Maintenance",  icon: CalendarClock,  href: "/dashboard/maintenance"  },
       { label: "Refrigerator", icon: Thermometer,     href: "/dashboard/refrigerator" },
       { label: "Analytics",    icon: BarChart3,       href: "/dashboard/analytics"    },
       { label: "Reports",      icon: FileText,        href: "/dashboard/reports"      },
@@ -279,6 +281,13 @@ function readModuleFromLayout(): ModuleKey {
   return "labMetrics";
 }
 
+function homeGroupColor(title: string): string {
+  if (title === "Lab Metrics") return "#065f46";
+  if (title === "Quality & samples") return "#1e3a5f";
+  if (title === "Asset Management") return "#7f1d1d";
+  return "#334155";
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -291,6 +300,7 @@ export default function Sidebar() {
   const { collapsed, setCollapsed } = useSidebarLayout();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [moduleKey, setModuleKey] = useState<ModuleKey>(() => readModuleFromLayout());
+  const isNeutralHome = moduleKey === "neutral";
 
   /* Groups that are currently expanded (accordion) */
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
@@ -349,7 +359,7 @@ export default function Sidebar() {
         className={clsx(
           "flex-shrink-0 flex items-center py-4 border-b",
           collapsed ? "justify-center px-0" : "px-5 gap-3",
-          "border-white/10"
+          isNeutralHome ? "border-slate-200" : "border-white/10"
         )}
       >
         <Link href="/dashboard/home" className={clsx("flex items-center focus:outline-none", collapsed ? "justify-center" : "gap-3")}>
@@ -358,8 +368,8 @@ export default function Sidebar() {
           </div>
           {!collapsed && (
             <div>
-              <p className="font-bold text-base leading-none tracking-tight text-white">Kanta</p>
-              <p className="text-[10px] mt-1 font-normal text-white/60">
+              <p className={clsx("font-bold text-base leading-none tracking-tight", isNeutralHome ? "text-slate-900" : "text-white")}>Kanta</p>
+              <p className={clsx("text-[10px] mt-1 font-normal", isNeutralHome ? "text-slate-500" : "text-white/60")}>
                 Operational Intelligence
               </p>
             </div>
@@ -383,12 +393,16 @@ export default function Sidebar() {
               const isOpen     = openGroups.has(group.title);
               const parentKey  = parentHref + group.title;
               const showTooltip = collapsed && (isCollapsibleActive || hoveredItem === parentKey);
+              const neutralGroup = isNeutralHome ? homeGroupColor(group.title) : undefined;
 
               return (
                 <div key={group.title} className="mb-2">
                   {/* Group label (expanded sidebar only) */}
                   {!collapsed && (
-                    <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">
+                    <p
+                      className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest"
+                      style={{ color: isNeutralHome ? (neutralGroup ?? "#64748b") : "rgba(255,255,255,0.6)" }}
+                    >
                       {group.title}
                     </p>
                   )}
@@ -424,9 +438,13 @@ export default function Sidebar() {
                           collapsed ? "justify-center px-0" : "gap-3 px-4",
                           !isCollapsibleActive && "hover:bg-[var(--sidebar-hover-bg)]/30"
                         )}
-                        style={{ color: isCollapsibleActive ? "var(--sidebar-active-text)" : "rgba(255,255,255,0.9)" }}
+                        style={{
+                          color: isCollapsibleActive
+                            ? "var(--sidebar-active-text)"
+                            : (isNeutralHome ? (neutralGroup ?? "#334155") : "rgba(255,255,255,0.9)"),
+                        }}
                       >
-                        <ParentIcon size={collapsed ? 22 : 20} strokeWidth={1.5} className="flex-shrink-0" />
+                        <ParentIcon size={16} strokeWidth={1.8} className="flex-shrink-0" />
                         {!collapsed && (
                           <span className="truncate text-sm font-medium">{group.title}</span>
                         )}
@@ -439,7 +457,7 @@ export default function Sidebar() {
                           onClick={() => toggleGroup(group.title)}
                           aria-label={isOpen ? `Collapse ${group.title}` : `Expand ${group.title}`}
                           className="relative z-[1] flex-shrink-0 p-2 rounded-lg hover:bg-white/10 transition-all duration-150 mr-1"
-                          style={{ color: isCollapsibleActive ? "var(--sidebar-active-text)" : "rgba(255,255,255,0.6)" }}
+                          style={{ color: isCollapsibleActive ? "var(--sidebar-active-text)" : (isNeutralHome ? (neutralGroup ?? "#64748b") : "rgba(255,255,255,0.6)") }}
                         >
                           <ChevronDown
                             size={13}
@@ -481,7 +499,7 @@ export default function Sidebar() {
                                   "pb-1 text-[10px] font-semibold uppercase tracking-widest pl-1",
                                   idx === 0 ? "pt-0" : "pt-2"
                                 )}
-                                style={{ color: "rgba(255,255,255,0.6)" }}
+                                style={{ color: isNeutralHome ? (neutralGroup ?? "#64748b") : "rgba(255,255,255,0.6)" }}
                               >
                                 {section}
                               </p>
@@ -509,9 +527,9 @@ export default function Sidebar() {
                                   "relative z-[1] flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none",
                                   subActive ? "" : "hover:bg-[var(--sidebar-hover-bg)]/30"
                                 )}
-                                style={{ color: subActive ? "var(--sidebar-active-text)" : "rgba(255,255,255,0.9)" }}
+                                style={{ color: subActive ? "var(--sidebar-active-text)" : (isNeutralHome ? (neutralGroup ?? "#334155") : "rgba(255,255,255,0.9)") }}
                               >
-                                <Icon size={15} strokeWidth={1.5} className="flex-shrink-0" />
+                                <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
                                 <span className="truncate text-xs font-medium">{label}</span>
                               </Link>
                             </div>
@@ -528,7 +546,10 @@ export default function Sidebar() {
             return (
               <div key={group.title} className="mb-2">
                 {!collapsed && (
-                  <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/60">
+                  <p
+                    className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest"
+                    style={{ color: isNeutralHome ? homeGroupColor(group.title) : "rgba(255,255,255,0.6)" }}
+                  >
                     {group.title}
                   </p>
                 )}
@@ -565,9 +586,9 @@ export default function Sidebar() {
                             collapsed ? "justify-center px-0" : "gap-3 px-4",
                             !active && "hover:bg-[var(--sidebar-hover-bg)]/30"
                           )}
-                          style={{ color: active ? "var(--sidebar-active-text)" : "rgba(255,255,255,0.9)" }}
+                          style={{ color: active ? "var(--sidebar-active-text)" : (isNeutralHome ? homeGroupColor(group.title) : "rgba(255,255,255,0.9)") }}
                         >
-                          <Icon size={collapsed ? 22 : 20} strokeWidth={1.5} className="flex-shrink-0" />
+                          <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
                           {!collapsed && <span className="truncate text-sm font-medium">{label}</span>}
                         </Link>
 
@@ -595,15 +616,15 @@ export default function Sidebar() {
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex-shrink-0 border-t border-white/10 pt-3 pb-4 px-3">
+        <div className={clsx("flex-shrink-0 border-t pt-3 pb-4 px-3", isNeutralHome ? "border-slate-200" : "border-white/10")}>
           {user && (
             <div className={clsx("flex items-center gap-3", collapsed ? "justify-center mb-3" : "mb-3")}>
-              <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold bg-white/20 text-white border border-white/25">
+              <div className={clsx("flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border", isNeutralHome ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-white/20 text-white border-white/25")}>
                 {getInitials(user)}
               </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0 flex items-center justify-between">
-                  <p className="text-sm font-medium truncate text-white/90">{getFirstName(user)}</p>
+                  <p className={clsx("text-sm font-medium truncate", isNeutralHome ? "text-slate-700" : "text-white/90")}>{getFirstName(user)}</p>
                   <button
                     type="button"
                     onClick={() => signOut()}

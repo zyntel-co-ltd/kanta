@@ -20,13 +20,14 @@ import {
   TestTube,
   FlaskConical,
   LayoutDashboard,
-  ScanSearch,
-  ScanLine,
   Wrench,
+  QrCode,
+  CalendarClock,
   Thermometer,
   FileText,
   Layers,
   Home,
+  TestTubes,
 } from "lucide-react";
 
 type Tab = {
@@ -63,7 +64,7 @@ const QUALITY_MGMT: AppConfig = {
   AppIcon: ShieldCheck,
   tabs: [
     { label: "Workspace",       href: "/dashboard/quality-samples",         icon: Layers,        matchPrefixes: ["/dashboard/quality-samples"] },
-    { label: "QC Config",       href: "/dashboard/qc?tab=config",           icon: ShieldCheck,   matchPrefixes: ["/dashboard/qc"] },
+    { label: "QC Config",       href: "/dashboard/qc?tab=config",           icon: FlaskConical,  matchPrefixes: ["/dashboard/qc"] },
     { label: "Data Entry",      href: "/dashboard/qc?tab=data",             icon: ClipboardList, matchPrefixes: ["/dashboard/qc"] },
     { label: "Visualization",   href: "/dashboard/qc?tab=visual",           icon: BarChart3,     matchPrefixes: ["/dashboard/qc"] },
     { label: "QC Calculator",   href: "/dashboard/qc?tab=calc",             icon: Calculator,    matchPrefixes: ["/dashboard/qc"] },
@@ -71,7 +72,7 @@ const QUALITY_MGMT: AppConfig = {
     { label: "Qual. Config",    href: "/dashboard/qc?tab=qual-config",      icon: FlaskConical,  matchPrefixes: ["/dashboard/qc"] },
     { label: "Qual. Entry",     href: "/dashboard/qc?tab=qual-entry",       icon: TestTube,      matchPrefixes: ["/dashboard/qc"] },
     { label: "Qual. Log",       href: "/dashboard/qc?tab=qual-log",         icon: Activity,      matchPrefixes: ["/dashboard/qc"] },
-    { label: "Sample Dashboard",href: "/dashboard/samples?tab=dashboard",   icon: Layers,        matchPrefixes: ["/dashboard/samples"] },
+    { label: "Sample Dashboard",href: "/dashboard/samples?tab=dashboard",   icon: TestTubes,     matchPrefixes: ["/dashboard/samples"] },
   ],
 };
 
@@ -81,9 +82,9 @@ const ASSET_MGMT: AppConfig = {
   tabs: [
     { label: "Workspace",  href: "/dashboard/assets",       icon: Layers,          matchPrefixes: ["/dashboard/assets"] },
     { label: "Overview",   href: "/dashboard",              icon: LayoutDashboard, matchPrefixes: ["/dashboard$"] },
-    { label: "Scan",       href: "/dashboard/scan",         icon: ScanSearch,      matchPrefixes: ["/dashboard/scan"] },
-    { label: "Equipment",  href: "/dashboard/equipment",    icon: ScanLine,        matchPrefixes: ["/dashboard/equipment"] },
-    { label: "Maintenance",href: "/dashboard/maintenance",  icon: Wrench,          matchPrefixes: ["/dashboard/maintenance"] },
+    { label: "Scan",       href: "/dashboard/scan",         icon: QrCode,          matchPrefixes: ["/dashboard/scan"] },
+    { label: "Equipment",  href: "/dashboard/equipment",    icon: Wrench,          matchPrefixes: ["/dashboard/equipment"] },
+    { label: "Maintenance",href: "/dashboard/maintenance",  icon: CalendarClock,   matchPrefixes: ["/dashboard/maintenance"] },
     { label: "Refrigerator",href:"/dashboard/refrigerator", icon: Thermometer,     matchPrefixes: ["/dashboard/refrigerator"] },
     { label: "Analytics",  href: "/dashboard/analytics",   icon: BarChart3,       matchPrefixes: ["/dashboard/analytics"] },
     { label: "Reports",    href: "/dashboard/reports",      icon: FileText,        matchPrefixes: ["/dashboard/reports"] },
@@ -137,6 +138,9 @@ export default function AppTabBar() {
   // Don't show on homepage or other system pages
   if (
     pathname === "/dashboard/home" ||
+    pathname.startsWith("/dashboard/qc") ||
+    pathname.startsWith("/dashboard/samples") ||
+    pathname.startsWith("/dashboard/quality-samples") ||
     pathname.startsWith("/dashboard/admin") ||
     pathname.startsWith("/dashboard/settings") ||
     pathname.startsWith("/dashboard/departments") ||
@@ -207,7 +211,7 @@ export default function AppTabBar() {
                   ...(active ? { backgroundColor: "var(--module-primary)" } : {}),
                 }}
               >
-                <Icon size={13} />
+                <Icon size={16} />
                 {tab.label}
               </Link>
             );
