@@ -64,14 +64,14 @@ export function getPermissions(
       };
     case "lab_technician":
       return {
-        canAccessAdmin: false,
+        canAccessAdmin: true,
         canViewRevenue: false,
         canManageUsers: false,
         canWrite: true,
       };
     case "viewer":
       return {
-        canAccessAdmin: false,
+        canAccessAdmin: true,
         canViewRevenue: false,
         canManageUsers: false,
         canWrite: false,
@@ -90,6 +90,8 @@ export function getPermissions(
 export const ADMIN_USER_MANAGER_ROLES: FacilityRole[] = [
   "facility_admin",
   "lab_manager",
+  "lab_technician",
+  "viewer",
 ];
 
 /** Roles allowed to view revenue / financial analytics */

@@ -102,6 +102,35 @@ export async function getAuthContext(
     row = rows.find((m) => m.is_active !== false);
   }
 
+  // Auto-provision facility membership for Supabase users created outside this app.
+  // If the user has no rows in `facility_users`, treat them as an active `viewer` in the
+  // default facility so the UI can load `/api/me` instead of returning 403.
+  if (!isSuperAdmin && rows.length === 0) {
+    try {
+      await db.from("facility_users").upsert(
+        {
+          facility_id: preferred,
+          user_id: user.id,
+          role: "viewer",
+          is_active: true,
+        },
+        { onConflict: "facility_id,user_id" }
+      );
+      const { data: membershipsAfter } = await db
+        .from("facility_users")
+        .select("facility_id, role, is_active")
+        .eq("user_id", user.id);
+
+      const rowsAfter = membershipsAfter ?? [];
+      row =
+        rowsAfter.find(
+          (m) => m.facility_id === preferred && m.is_active !== false
+        ) ?? rowsAfter.find((m) => m.is_active !== false);
+    } catch {
+      // If auto-provision fails (bad facility id, db error, etc) fall back to restricted.
+    }
+  }
+
   const role = normalizeFacilityRole(row?.role);
 
   if (isSuperAdmin) {
