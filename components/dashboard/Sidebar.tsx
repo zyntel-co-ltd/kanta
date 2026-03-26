@@ -275,7 +275,7 @@ function readModuleFromLayout(): ModuleKey {
   if (typeof document === "undefined") return "labMetrics";
   const el = document.querySelector("[data-module]");
   const raw = el?.getAttribute("data-module") || "labMetrics";
-  if (raw === "labMetrics" || raw === "qualityManagement" || raw === "assetManagement") return raw;
+  if (raw === "neutral" || raw === "labMetrics" || raw === "qualityManagement" || raw === "assetManagement") return raw;
   return "labMetrics";
 }
 

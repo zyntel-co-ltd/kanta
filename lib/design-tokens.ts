@@ -31,6 +31,15 @@ export const STRUCTURE = {
 } as const;
 
 export const MODULE_THEMES = {
+  neutral: {
+    primary: "#475569",
+    primaryDark: "#334155",
+    primaryLight: "#e2e8f0",
+    sidebarBg: "#334155",
+    sidebarActiveBg: "#475569",
+    sidebarActiveText: "#f8fafc",
+    sidebarHoverBg: "#3f4d63",
+  },
   labMetrics: {
     primary: BRAND.DEFAULT,
     primaryDark: BRAND.DARK,

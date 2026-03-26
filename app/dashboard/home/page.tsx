@@ -45,6 +45,11 @@ type AppCard = {
   icon: React.ComponentType<IconProps>;
   ctaLabel: string;
   tabs: SubTab[];
+  theme: {
+    primary: string;
+    soft: string;
+    ring: string;
+  };
 };
 
 /* ─────────────────────────── data — single brand + slate structure ─────────────────────────── */
@@ -58,6 +63,7 @@ const apps: AppCard[] = [
     href: "/dashboard/tat",
     icon: FlaskConical,
     ctaLabel: "View metrics",
+    theme: { primary: "#059669", soft: "#d1fae5", ring: "#059669" },
     tabs: [
       { label: "TAT", href: "/dashboard/tat", icon: Timer },
       { label: "Tests", href: "/dashboard/tests", icon: Microscope },
@@ -75,6 +81,7 @@ const apps: AppCard[] = [
     href: "/dashboard/quality-samples",
     icon: ShieldCheck,
     ctaLabel: "Open workspace",
+    theme: { primary: "#2563eb", soft: "#dbeafe", ring: "#2563eb" },
     tabs: [
       { label: "QC", href: "/dashboard/qc", icon: ShieldCheck },
       { label: "Samples", href: "/dashboard/samples", icon: Package },
@@ -86,9 +93,10 @@ const apps: AppCard[] = [
     title: "Asset Management",
     description:
       "Track every piece of equipment, schedule maintenance, monitor cold-chain temperatures and review fleet analytics.",
-    href: "/dashboard",
+    href: "/dashboard/assets",
     icon: Layers,
     ctaLabel: "View assets",
+    theme: { primary: "#dc2626", soft: "#fee2e2", ring: "#dc2626" },
     tabs: [
       { label: "Assets Overview", href: "/dashboard", icon: LayoutDashboard },
       { label: "Scan", href: "/dashboard/scan", icon: ScanSearch },
@@ -166,12 +174,11 @@ export default function DashboardHomePage() {
             <Link
               key={app.title}
               href={app.href}
-              className={clsx(
-                "flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-600"
-              )}
+              className={clsx("flex flex-col rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2")}
+              style={{ ["--card-accent" as string]: app.theme.primary, ["--card-soft" as string]: app.theme.soft, boxShadow: "var(--tw-ring-shadow), var(--tw-shadow)" }}
             >
               <div className="px-6 py-5 flex items-center gap-4 bg-slate-50 border-b border-slate-200">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ backgroundColor: app.theme.primary }}>
                   <AppIcon size={20} className="text-white" strokeWidth={1.5} />
                 </div>
                 <div>
@@ -187,14 +194,15 @@ export default function DashboardHomePage() {
                   {app.tabs.map((tab) => (
                     <span
                       key={tab.href + tab.label}
-                      className="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium"
+                      className="text-xs px-2.5 py-1 rounded-full font-medium"
+                      style={{ backgroundColor: app.theme.soft, color: app.theme.primary }}
                     >
                       {tab.label}
                     </span>
                   ))}
                 </div>
 
-                <div className="flex items-center gap-1 text-slate-700 group-hover:text-emerald-700 text-sm font-semibold mt-auto pt-2">
+                <div className="flex items-center gap-1 text-sm font-semibold mt-auto pt-2" style={{ color: app.theme.primary }}>
                   {app.ctaLabel}
                   <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-150" />
                 </div>

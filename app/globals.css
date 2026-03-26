@@ -245,6 +245,19 @@ html {
 }
 
 /* Quality Management (hospital blue) */
+[data-module="neutral"] {
+  --sidebar-bg: #334155;
+  --sidebar-active-bg: #475569;
+  --sidebar-active-text: #f8fafc;
+  --sidebar-hover-bg: #3f4d63;
+  --module-primary: #475569;
+  --module-primary-dark: #334155;
+  --module-primary-light: #e2e8f0;
+  --module-primary-soft-text: #cbd5e1;
+  --module-primary-on: #ffffff;
+}
+
+/* Quality Management (hospital blue) */
 [data-module="qualityManagement"] {
   --sidebar-bg: #1e3a5f;
   --sidebar-active-bg: #2563eb;

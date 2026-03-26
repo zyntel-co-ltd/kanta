@@ -7,10 +7,11 @@ import RecentVisitsTracker from "@/components/dashboard/RecentVisitsTracker";
 import DashboardChrome from "@/components/dashboard/DashboardChrome";
 import { usePathname } from "next/navigation";
 
-type ModuleKey = "labMetrics" | "qualityManagement" | "assetManagement";
+type ModuleKey = "neutral" | "labMetrics" | "qualityManagement" | "assetManagement";
 
 function detectModule(pathname: string): ModuleKey {
   const p = (pathname || "").replace(/\/$/, "") || "/";
+  if (p === "/dashboard/home") return "neutral";
 
   const labMetrics = [
     "/dashboard/tat",
