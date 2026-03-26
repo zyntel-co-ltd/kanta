@@ -1,0 +1,255 @@
+name: Daily Backup — DB (Kanta)
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # daily 02:00 UTC
+  workflow_dispatch: # allow manual trigger from GitHub Actions UI
+
+jobs:
+  backup:
+    name: Database dump → gzip → R2
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client + AWS CLI dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client ca-certificates gzip python3
+
+      - name: Create and upload backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          BACKUP_REPO_PREFIX: ${{ secrets.BACKUP_REPO_PREFIX }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_REGION: auto
+          PGSSLMODE: require
+        run: |
+          set -euo pipefail
+
+          DATE_UTC="$(date -u +%F)"
+          FILE="kanta_backup_${DATE_UTC}.sql.gz"
+          LOCAL_PATH="/tmp/${FILE}"
+          BACKUP_REPO_PREFIX="${BACKUP_REPO_PREFIX:-backups/kanta}"
+          BACKUP_PREFIX="${BACKUP_REPO_PREFIX%/}/daily"
+          DEST_KEY="${BACKUP_PREFIX}/${FILE}"
+          ENDPOINT_URL="${R2_ENDPOINT_URL:-}"
+          if [ -z "${ENDPOINT_URL}" ]; then
+            ENDPOINT_URL="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          fi
+
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "DATABASE_URL secret is missing"
+            exit 1
+          fi
+
+          echo "Creating dump ${FILE}"
+          pg_dump "${DATABASE_URL}" \
+            --format=plain \
+            --no-owner \
+            --no-acl \
+            --verbose \
+          | gzip -9 > "${LOCAL_PATH}"
+
+          echo "Uploading to R2 s3://${R2_BUCKET_NAME}/${DEST_KEY}"
+          aws s3 cp "${LOCAL_PATH}" "s3://${R2_BUCKET_NAME}/${DEST_KEY}" \
+            --endpoint-url "${ENDPOINT_URL}"
+
+      - name: Verify dump uploaded (exists, non-zero size)
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          BACKUP_REPO_PREFIX: ${{ secrets.BACKUP_REPO_PREFIX }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_REGION: auto
+        run: |
+          set -euo pipefail
+
+          DATE_UTC="$(date -u +%F)"
+          FILE="kanta_backup_${DATE_UTC}.sql.gz"
+
+          BACKUP_REPO_PREFIX="${BACKUP_REPO_PREFIX:-backups/kanta}"
+          BACKUP_PREFIX="${BACKUP_REPO_PREFIX%/}/daily"
+          DEST_KEY="${BACKUP_PREFIX}/${FILE}"
+
+          ENDPOINT_URL="${R2_ENDPOINT_URL:-}"
+          if [ -z "${ENDPOINT_URL}" ]; then
+            ENDPOINT_URL="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          fi
+
+          LINE="$(aws s3 ls "s3://${R2_BUCKET_NAME}/${DEST_KEY}" --endpoint-url "${ENDPOINT_URL}" || true)"
+          if [ -z "${LINE}" ]; then
+            echo "Uploaded dump not found: s3://${R2_BUCKET_NAME}/${DEST_KEY}"
+            exit 1
+          fi
+
+          SIZE="$(echo "${LINE}" | tr -s ' ' | cut -d' ' -f3)"
+          if [ -z "${SIZE}" ] || [ "${SIZE}" -le 0 ] 2>/dev/null; then
+            echo "Uploaded dump size is zero/invalid. aws output: ${LINE}"
+            exit 1
+          fi
+
+          echo "Verified dump exists with size ${SIZE} bytes."
+
+      - name: Export CSV snapshots (equipment, facilities, users, ops)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          BACKUP_REPO_PREFIX: ${{ secrets.BACKUP_REPO_PREFIX }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_REGION: auto
+          PGSSLMODE: require
+        run: |
+          set -euo pipefail
+
+          DATE_UTC="$(date -u +%F)"
+          OUT_DIR="/tmp/kanta_csv_${DATE_UTC}"
+          mkdir -p "${OUT_DIR}"
+
+          BACKUP_REPO_PREFIX="${BACKUP_REPO_PREFIX:-backups/kanta}"
+          CSV_PREFIX="${BACKUP_REPO_PREFIX%/}/csv/${DATE_UTC}"
+
+          ENDPOINT_URL="${R2_ENDPOINT_URL:-}"
+          if [ -z "${ENDPOINT_URL}" ]; then
+            ENDPOINT_URL="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          fi
+
+          TABLES=(
+            equipment
+            facilities
+            facility_users
+            departments
+            maintenance_schedule
+            operational_alerts
+          )
+
+          for table in "${TABLES[@]}"; do
+            echo "Exporting ${table}.csv"
+            psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 \
+              -c "\copy ${table} to STDOUT with (format csv, header true)" \
+              > "${OUT_DIR}/${table}.csv"
+
+            echo "Uploading ${table}.csv to s3://${R2_BUCKET_NAME}/${CSV_PREFIX}/${table}.csv"
+            aws s3 cp "${OUT_DIR}/${table}.csv" "s3://${R2_BUCKET_NAME}/${CSV_PREFIX}/${table}.csv" \
+              --endpoint-url "${ENDPOINT_URL}"
+          done
+
+      - name: Enforce retention (7 daily + 4 Sunday snapshots)
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          BACKUP_REPO_PREFIX: ${{ secrets.BACKUP_REPO_PREFIX }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_REGION: auto
+        run: |
+          set -euo pipefail
+
+          ENDPOINT_URL="${R2_ENDPOINT_URL:-}"
+          if [ -z "${ENDPOINT_URL}" ]; then
+            ENDPOINT_URL="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          fi
+          export ENDPOINT_URL
+          
+          BACKUP_REPO_PREFIX="${BACKUP_REPO_PREFIX:-backups/kanta}"
+          BACKUP_PREFIX="${BACKUP_REPO_PREFIX%/}/daily"
+          PREFIX="${BACKUP_PREFIX%/}/"
+          export PREFIX
+
+          python3 <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          from datetime import datetime
+          
+          bucket = os.environ["R2_BUCKET_NAME"]
+          endpoint = os.environ["ENDPOINT_URL"]
+          prefix = os.environ["PREFIX"]
+          
+          pattern = re.compile(rf"^{re.escape(prefix)}kanta_backup_(\d{{4}}-\d{{2}}-\d{{2}})\.sql\.gz$")
+          
+          def aws_json(args):
+              out = subprocess.check_output(["aws", *args], text=True)
+              return json.loads(out or "{}")
+          
+          def list_all_keys():
+              keys = []
+              token = None
+              while True:
+                  args = [
+                      "s3api", "list-objects-v2",
+                      "--bucket", bucket,
+                      "--prefix", prefix,
+                      "--endpoint-url", endpoint,
+                      "--output", "json",
+                  ]
+                  if token:
+                      args += ["--continuation-token", token]
+                  data = aws_json(args)
+                  for obj in data.get("Contents", []) or []:
+                      k = obj.get("Key")
+                      if k:
+                          keys.append(k)
+                  if data.get("IsTruncated"):
+                      token = data.get("NextContinuationToken")
+                  else:
+                      return keys
+          
+          entries = []
+          for k in list_all_keys():
+              m = pattern.match(k)
+              if not m:
+                  continue
+              d = datetime.strptime(m.group(1), "%Y-%m-%d").date()
+              entries.append((d, k))
+          
+          entries.sort(reverse=True, key=lambda t: t[0])
+          
+          keep = set()
+          # Keep 7 most recent daily backups
+          for d, k in entries[:7]:
+              keep.add(k)
+          
+          # Keep 4 most recent Sunday snapshots
+          sundays = [(d, k) for d, k in entries if d.weekday() == 6]
+          for d, k in sundays[:4]:
+              keep.add(k)
+          
+          to_delete = [k for _, k in entries if k not in keep]
+          
+          print(f"Found {len(entries)} backups; keeping {len(keep)}; deleting {len(to_delete)}.")
+          if not to_delete:
+              raise SystemExit(0)
+          
+          for k in to_delete:
+              subprocess.check_call([
+                  "aws", "s3", "rm",
+                  f"s3://{bucket}/{k}",
+                  "--endpoint-url", endpoint,
+              ])
+          PY
+
