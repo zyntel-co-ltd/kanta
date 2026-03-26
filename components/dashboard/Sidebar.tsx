@@ -368,7 +368,10 @@ export default function Sidebar() {
           {!collapsed && (
             <div>
               <p className={clsx("font-bold text-sm leading-tight tracking-tight", isNeutralHome ? "text-slate-900" : "text-white")}>
-                {hospitalName}
+                Kanta
+              </p>
+              <p className={clsx("text-[10px] mt-1 font-normal", isNeutralHome ? "text-slate-500" : "text-white/60")}>
+                Operational Intelligence
               </p>
             </div>
           )}
@@ -665,8 +668,10 @@ export default function Sidebar() {
         onClick={() => setCollapsed(!collapsed)}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center z-50 shadow-lg border border-white/30 transition-all duration-200 hover:brightness-110 focus:outline-none"
-        style={{ backgroundColor: "var(--sidebar-active-bg)" }}
+        className={clsx(
+          "absolute -right-4 top-6 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center z-50 transition-all duration-200 focus:outline-none",
+          isNeutralHome ? "text-slate-400 hover:text-slate-700 hover:bg-white/80" : "text-white/70 hover:text-white hover:bg-white/10"
+        )}
       >
         <span
           className={clsx(
@@ -675,9 +680,9 @@ export default function Sidebar() {
           )}
         >
           {collapsed ? (
-            <PanelLeftOpen size={16} strokeWidth={2.1} className="text-white" />
+            <PanelLeftOpen size={16} strokeWidth={2.1} />
           ) : (
-            <PanelLeftClose size={16} strokeWidth={2.1} className="text-white" />
+            <PanelLeftClose size={16} strokeWidth={2.1} />
           )}
         </span>
       </button>

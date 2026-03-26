@@ -53,20 +53,87 @@ export async function GET(req: NextRequest) {
     const emailById = new Map<string, string>();
     const usernameById = new Map<string, string>();
     const avatarById = new Map<string, string>();
+    const missingUserIds = new Set<string>();
+    const resolveDisplayName = (meta?: {
+      username?: string;
+      display_name?: string;
+      full_name?: string;
+      name?: string;
+    }) =>
+      meta?.display_name ||
+      meta?.full_name ||
+      meta?.name ||
+      meta?.username ||
+      "";
     try {
-      const listUsers = (db.auth as { admin?: { listUsers: (o: { page?: number; perPage?: number }) => Promise<{ data?: { users?: Array<{ id: string; email?: string; user_metadata?: { username?: string; display_name?: string; full_name?: string; name?: string; avatar_url?: string } }> } }> } }).admin?.listUsers;
-      if (listUsers) {
-        const { data: listData } = await listUsers({ page: 1, perPage: 1000 });
+      const listUsers = (db.auth as {
+        admin?: {
+          listUsers: (o: { page?: number; perPage?: number }) => Promise<{
+            data?: {
+              users?: Array<{
+                id: string;
+                email?: string;
+                user_metadata?: {
+                  username?: string;
+                  display_name?: string;
+                  full_name?: string;
+                  name?: string;
+                  avatar_url?: string;
+                };
+              }>;
+            };
+          }>;
+          getUserById?: (id: string) => Promise<{
+            data?: {
+              user?: {
+                id: string;
+                email?: string;
+                user_metadata?: {
+                  username?: string;
+                  display_name?: string;
+                  full_name?: string;
+                  name?: string;
+                  avatar_url?: string;
+                };
+              };
+            };
+          }>;
+        };
+      }).admin;
+      const getUserById = listUsers?.getUserById;
+      const listUsersFn = listUsers?.listUsers;
+      if (listUsersFn) {
+        const { data: listData } = await listUsersFn({ page: 1, perPage: 1000 });
         for (const au of listData?.users ?? []) {
           emailById.set(au.id, au.email ?? "");
-          const un =
-            au.user_metadata?.display_name ||
-            au.user_metadata?.full_name ||
-            au.user_metadata?.name ||
-            au.user_metadata?.username;
-          if (un) usernameById.set(au.id, String(un));
+          const un = resolveDisplayName(au.user_metadata);
+          if (un) usernameById.set(au.id, un);
           if (au.user_metadata?.avatar_url) avatarById.set(au.id, au.user_metadata.avatar_url);
         }
+      }
+
+      // Resolve any IDs missing from listUsers (or when metadata is sparse).
+      for (const u of facilityUsers ?? []) {
+        const uid = String(u.user_id || "");
+        if (!uid) continue;
+        if (!emailById.get(uid) || !usernameById.get(uid)) missingUserIds.add(uid);
+      }
+      if (getUserById && missingUserIds.size > 0) {
+        await Promise.all(
+          Array.from(missingUserIds).map(async (uid) => {
+            try {
+              const { data } = await getUserById(uid);
+              const au = data?.user;
+              if (!au) return;
+              if (au.email) emailById.set(uid, au.email);
+              const un = resolveDisplayName(au.user_metadata);
+              if (un) usernameById.set(uid, un);
+              if (au.user_metadata?.avatar_url) avatarById.set(uid, au.user_metadata.avatar_url);
+            } catch {
+              // Keep fallback values below if lookup fails.
+            }
+          })
+        );
       }
     } catch {
       /* auth list optional */
