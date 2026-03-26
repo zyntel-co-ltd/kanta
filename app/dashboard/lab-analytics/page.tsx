@@ -1,11 +1,9 @@
 import Link from "next/link";
 import {
   Timer,
-  Microscope,
   Binary,
   TableProperties,
   CircleDollarSign,
-  ChartSpline,
   ArrowRight,
 } from "lucide-react";
 
@@ -14,49 +12,33 @@ const CARDS = [
     href: "/dashboard/tat",
     eyebrow: "Turnaround",
     title: "TAT",
-    body: "On-time, delayed, and not-uploaded tracking across shifts and lab units — aligned to your Lab Metrics workflow.",
+    body: "Turnaround time intelligence across shifts and lab units.",
     cta: "Open TAT",
     Icon: Timer,
   },
   {
-    href: "/dashboard/tests",
-    eyebrow: "Operations",
-    title: "Tests",
-    body: "Test throughput, trend monitoring, and departmental load visibility — for day-to-day operations.",
-    cta: "Open Tests",
-    Icon: Microscope,
-  },
-  {
     href: "/dashboard/numbers",
     eyebrow: "Volumes",
-    title: "Numbers",
-    body: "Aggregate request volumes and benchmark movement over time — with operational context.",
-    cta: "Open Numbers",
+    title: "Volume",
+    body: "Test and patient volume analytics for operational planning.",
+    cta: "Open Volume",
     Icon: Binary,
   },
   {
     href: "/dashboard/meta",
-    eyebrow: "Metadata",
-    title: "Meta",
-    body: "Supporting metadata and parameter management — used across the Lab Metrics module.",
-    cta: "Open Meta",
+    eyebrow: "Management",
+    title: "Tests & Lab Management",
+    body: "Test catalog and section settings for lab operations.",
+    cta: "Open Management",
     Icon: TableProperties,
   },
   {
     href: "/dashboard/revenue",
     eyebrow: "Finance",
     title: "Revenue",
-    body: "Revenue trends, performance windows, and billing-aligned indicators — mapped to test activity.",
+    body: "Revenue metrics aligned to laboratory testing activity.",
     cta: "Open Revenue",
     Icon: CircleDollarSign,
-  },
-  {
-    href: "/dashboard/performance",
-    eyebrow: "Insights",
-    title: "Performance",
-    body: "KPI comparison and performance pattern analysis — for continuous lab optimization.",
-    cta: "Open Performance",
-    Icon: ChartSpline,
   },
 ];
 
@@ -70,15 +52,15 @@ export default function LabAnalyticsWorkspacePage() {
         <div className="px-7 py-8">
           <p className="text-[11px] font-semibold uppercase tracking-widest module-accent-soft-text mb-2">Workspace</p>
           <h1 className="text-white font-extrabold tracking-tight" style={{ fontSize: "clamp(1.35rem, 2.2vw, 1.75rem)", lineHeight: 1.2 }}>
-            Lab Metrics
+            Lab analytics
           </h1>
           <p className="module-accent-soft-text mt-2 max-w-xl text-[0.9375rem] leading-relaxed">
-            Track turnaround, throughput, volumes, revenue, and performance — pick where you want to work.
+            Turnaround, volume, revenue, and lab management — pick where you want to work.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {CARDS.map(({ href, eyebrow, title, body, cta, Icon }) => (
           <Link
             key={href}

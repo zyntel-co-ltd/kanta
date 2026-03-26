@@ -1,71 +1,44 @@
 import Link from "next/link";
 import {
-  LayoutDashboard,
-  ScanSearch,
-  ScanLine,
   Wrench,
+  CalendarClock,
   Thermometer,
   BarChart3,
-  FileText,
   ArrowRight,
 } from "lucide-react";
 
 const CARDS = [
   {
-    href: "/dashboard",
-    eyebrow: "Overview",
-    title: "Assets overview",
-    body: "Fleet status, scan activity, and operational KPIs — centralized for your facility.",
-    cta: "Open Overview",
-    Icon: LayoutDashboard,
-  },
-  {
-    href: "/dashboard/scan",
-    eyebrow: "Operations",
-    title: "Scan",
-    body: "Capture and validate equipment scans — feeding tracking and compliance workflows.",
-    cta: "Open Scan",
-    Icon: ScanSearch,
-  },
-  {
     href: "/dashboard/equipment",
-    eyebrow: "Inventory",
-    title: "Equipment",
-    body: "Asset records, metadata, and lifecycle visibility — managed in one equipment workspace.",
+    eyebrow: "Tracking",
+    title: "Equipment tracking",
+    body: "Track and manage hospital equipment.",
     cta: "Open Equipment",
-    Icon: ScanLine,
+    Icon: Wrench,
   },
   {
     href: "/dashboard/maintenance",
     eyebrow: "Service",
     title: "Maintenance",
-    body: "Preventive and corrective maintenance scheduling — planned and tracked per asset.",
+    body: "Schedule and log maintenance.",
     cta: "Open Maintenance",
-    Icon: Wrench,
+    Icon: CalendarClock,
   },
   {
     href: "/dashboard/refrigerator",
-    eyebrow: "Cold chain",
-    title: "Refrigerator",
-    body: "Temperature monitoring, breach alerts, and unit health signals — for cold-chain operations.",
+    eyebrow: "Monitoring",
+    title: "Refrigerator monitoring",
+    body: "Monitor cold chain temperatures.",
     cta: "Open Refrigerator",
     Icon: Thermometer,
   },
   {
     href: "/dashboard/analytics",
     eyebrow: "Insights",
-    title: "Analytics",
-    body: "Trend, utilization, and performance analysis — across core asset operations.",
+    title: "Analytics & reports",
+    body: "Equipment performance reports.",
     cta: "Open Analytics",
     Icon: BarChart3,
-  },
-  {
-    href: "/dashboard/reports",
-    eyebrow: "Reporting",
-    title: "Reports",
-    body: "Operational reporting for stakeholders and audits — generated from module activity.",
-    cta: "Open Reports",
-    Icon: FileText,
   },
 ];
 
@@ -74,20 +47,20 @@ export default function AssetWorkspacePage() {
     <div className="max-w-[1280px] mx-auto space-y-8 pb-10">
       <div
         className="rounded-2xl overflow-hidden"
-        style={{ background: "linear-gradient(145deg, var(--module-primary-dark) 0%, var(--module-primary) 100%)" }}
+        style={{ backgroundColor: "var(--module-primary-light)" }}
       >
         <div className="px-7 py-8">
-          <p className="text-[11px] font-semibold uppercase tracking-widest module-accent-soft-text mb-2">Workspace</p>
-          <h1 className="text-white font-extrabold tracking-tight" style={{ fontSize: "clamp(1.35rem, 2.2vw, 1.75rem)", lineHeight: 1.2 }}>
+          <p className="text-[11px] font-semibold uppercase tracking-widest module-accent-text mb-2">Workspace</p>
+          <h1 className="module-accent-text font-extrabold tracking-tight" style={{ fontSize: "clamp(1.35rem, 2.2vw, 1.75rem)", lineHeight: 1.2 }}>
             Asset management
           </h1>
-          <p className="module-accent-soft-text mt-2 max-w-xl text-[0.9375rem] leading-relaxed">
-            Manage scans, equipment, maintenance, cold-chain, and reporting — pick where you want to work.
+          <p className="mt-2 max-w-xl text-[0.9375rem] leading-relaxed text-slate-700">
+            Track equipment, plan maintenance, monitor cold chain, and review performance — pick where you want to work.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {CARDS.map(({ href, eyebrow, title, body, cta, Icon }) => (
           <Link
             key={href}

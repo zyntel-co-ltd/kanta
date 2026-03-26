@@ -2,11 +2,9 @@ import Link from "next/link";
 import clsx from "clsx";
 import {
   Timer,
-  Microscope,
   Binary,
   TableProperties,
   CircleDollarSign,
-  ChartSpline,
   ShieldCheck,
   LayoutDashboard,
   ScanSearch,
@@ -61,17 +59,15 @@ const apps: AppCard[] = [
     title: "Lab Metrics",
     description:
       "Monitor turnaround times, test volumes, patient numbers, test catalogue and revenue — all in one place.",
-    href: "/dashboard/tat",
+    href: "/dashboard/lab-analytics",
     icon: FlaskConical,
-    ctaLabel: "View metrics",
+    ctaLabel: "View analytics",
     theme: { primary: "#059669", soft: "#d1fae5", ring: "#059669" },
     tabs: [
       { label: "TAT", href: "/dashboard/tat", icon: Timer },
-      { label: "Tests", href: "/dashboard/tests", icon: Microscope },
-      { label: "Numbers", href: "/dashboard/numbers", icon: Binary },
-      { label: "Meta", href: "/dashboard/meta", icon: TableProperties },
+      { label: "Volume", href: "/dashboard/numbers", icon: Binary },
+      { label: "Tests & Lab Mgmt", href: "/dashboard/meta", icon: TableProperties },
       { label: "Revenue", href: "/dashboard/revenue", icon: CircleDollarSign },
-      { label: "Performance", href: "/dashboard/performance", icon: ChartSpline },
     ],
   },
   {

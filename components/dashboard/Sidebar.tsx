@@ -16,15 +16,12 @@ import {
   BarChart3,
   Binary,
   ChartColumnIncreasing,
-  ChartSpline,
   CircleDollarSign,
-  FileText,
   Settings,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   Thermometer,
-  Microscope,
   Shield,
   TableProperties,
   Timer,
@@ -32,7 +29,6 @@ import {
   Home,
   FlaskConical,
   ShieldCheck,
-  Monitor,
   TestTube,
   TrendingUp,
   Brain,
@@ -78,7 +74,6 @@ const navGroupsBase: NavGroup[] = [
       activePaths: [
         "/dashboard/lab-analytics",
         "/dashboard/tat",
-        "/dashboard/tests",
         "/dashboard/numbers",
         "/dashboard/meta",
         "/dashboard/revenue",
@@ -87,11 +82,10 @@ const navGroupsBase: NavGroup[] = [
     },
     items: [
       { label: "TAT",         icon: Timer,             href: "/dashboard/tat"         },
-      { label: "Tests",       icon: Microscope,        href: "/dashboard/tests"       },
-      { label: "Numbers",     icon: Binary,            href: "/dashboard/numbers"     },
-      { label: "Meta",        icon: TableProperties,   href: "/dashboard/meta"        },
+      { label: "Volume",      icon: Binary,            href: "/dashboard/numbers"     },
+      { label: "Tests & Lab Mgmt", icon: TableProperties,   href: "/dashboard/meta"   },
       { label: "Revenue",     icon: CircleDollarSign,  href: "/dashboard/revenue"     },
-      { label: "Performance", icon: ChartSpline,       href: "/dashboard/performance" },
+      { label: "LRIDS",       icon: TestTube,          href: "/dashboard/tat?tab=lrids" },
     ],
   },
   {
@@ -118,12 +112,6 @@ const navGroupsBase: NavGroup[] = [
     ],
   },
   {
-    title: "LRIDS",
-    items: [
-      { label: "LRIDS", icon: Monitor, href: "/dashboard/lrids" },
-    ],
-  },
-  {
     title: "Asset Management",
     collapsible: {
       parentHref: "/dashboard/assets",
@@ -132,6 +120,7 @@ const navGroupsBase: NavGroup[] = [
         "/dashboard",
         "/dashboard/assets",
         "/dashboard/scan",
+        "/dashboard/equipment",
         "/dashboard/maintenance",
         "/dashboard/refrigerator",
         "/dashboard/analytics",
@@ -145,7 +134,6 @@ const navGroupsBase: NavGroup[] = [
       { label: "Maintenance",  icon: CalendarClock,  href: "/dashboard/maintenance"  },
       { label: "Refrigerator", icon: Thermometer,     href: "/dashboard/refrigerator" },
       { label: "Analytics",    icon: BarChart3,       href: "/dashboard/analytics"    },
-      { label: "Reports",      icon: FileText,        href: "/dashboard/reports"      },
     ],
   },
   { title: "Intelligence", items: [{ label: "AI Insights", icon: Brain, href: "/dashboard/intelligence" }] },
@@ -282,9 +270,9 @@ function readModuleFromLayout(): ModuleKey {
 }
 
 function homeGroupColor(title: string): string {
-  if (title === "Lab Metrics") return "#065f46";
-  if (title === "Quality & samples") return "#1e3a5f";
-  if (title === "Asset Management") return "#7f1d1d";
+  if (title === "Lab Metrics") return "#0f6b52";
+  if (title === "Quality & samples") return "#2b4a72";
+  if (title === "Asset Management") return "#8a2b2b";
   return "#334155";
 }
 
@@ -347,7 +335,8 @@ export default function Sidebar() {
     <aside
       className={clsx(
         "kanta-sidebar relative flex flex-col h-screen flex-shrink-0 transition-all duration-300 ease-in-out overflow-visible",
-        collapsed ? "w-[72px]" : "w-[260px]"
+        collapsed ? "w-[72px]" : "w-[260px]",
+        isNeutralHome && "kanta-sidebar-neutral-glass"
       )}
       style={{
         backgroundColor: "var(--sidebar-bg)",

@@ -15,6 +15,7 @@ export type RecentVisit = {
 const PATH_LABELS: Record<string, string> = {
   "/dashboard": "Assets Overview",
   "/dashboard/tat": "TAT",
+  "/dashboard/lab-analytics": "Lab Analytics",
   "/dashboard/tests": "Tests",
   "/dashboard/numbers": "Numbers",
   "/dashboard/meta": "Meta",
@@ -24,6 +25,7 @@ const PATH_LABELS: Record<string, string> = {
   "/dashboard/quality-samples": "Quality & samples",
   "/dashboard/samples": "Samples",
   "/dashboard/lrids": "LRIDS",
+  "/dashboard/assets": "Asset Management",
   "/dashboard/scan": "Scan",
   "/dashboard/equipment": "Equipment",
   "/dashboard/maintenance": "Maintenance",

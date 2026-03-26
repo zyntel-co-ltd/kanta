@@ -1,123 +1,62 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import type { ComponentType } from "react";
+import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import {
-  Binary,
-  ChartSpline,
-  CircleDollarSign,
-  Microscope,
-  TableProperties,
-  Timer,
-  ShieldCheck,
-  Activity,
-  BarChart3,
-  ClipboardList,
-  Calculator,
-  TrendingUp,
-  TestTube,
   FlaskConical,
-  LayoutDashboard,
-  Wrench,
-  QrCode,
-  CalendarClock,
-  Thermometer,
-  FileText,
   Layers,
   Home,
-  TestTubes,
+  ShieldCheck,
+  Timer,
+  Binary,
+  CircleDollarSign,
+  TableProperties,
+  TestTube,
+  Wrench,
+  CalendarClock,
+  Thermometer,
+  ScanLine,
+  BarChart3,
 } from "lucide-react";
 
 type Tab = {
   label: string;
   href: string;
-  icon: ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
   matchPrefixes?: string[];
 };
+const LAB_TABS: Tab[] = [
+  { label: "Overview", href: "/dashboard/lab-analytics", icon: FlaskConical, matchPrefixes: ["/dashboard/lab-analytics"] },
+  { label: "TAT", href: "/dashboard/tat", icon: Timer, matchPrefixes: ["/dashboard/tat", "/dashboard/performance", "/dashboard/lrids"] },
+  { label: "Volume", href: "/dashboard/numbers", icon: Binary, matchPrefixes: ["/dashboard/numbers"] },
+  { label: "Revenue", href: "/dashboard/revenue", icon: CircleDollarSign, matchPrefixes: ["/dashboard/revenue"] },
+  { label: "Tests & Lab Mgmt", href: "/dashboard/meta", icon: TableProperties, matchPrefixes: ["/dashboard/meta", "/dashboard/tests"] },
+];
+const QUALITY_TABS: Tab[] = [
+  { label: "Overview", href: "/dashboard/quality-samples", icon: ShieldCheck, matchPrefixes: ["/dashboard/quality-samples"] },
+  { label: "Quality", href: "/dashboard/qc?tab=config", icon: FlaskConical, matchPrefixes: ["/dashboard/qc"] },
+  { label: "Samples", href: "/dashboard/samples?tab=dashboard", icon: TestTube, matchPrefixes: ["/dashboard/samples"] },
+];
+const ASSET_TABS: Tab[] = [
+  { label: "Overview", href: "/dashboard/assets", icon: Layers, matchPrefixes: ["/dashboard/assets"] },
+  { label: "Equipment", href: "/dashboard/equipment", icon: Wrench, matchPrefixes: ["/dashboard/equipment"] },
+  { label: "Maintenance", href: "/dashboard/maintenance", icon: CalendarClock, matchPrefixes: ["/dashboard/maintenance"] },
+  { label: "Refrigerator", href: "/dashboard/refrigerator", icon: Thermometer, matchPrefixes: ["/dashboard/refrigerator"] },
+  { label: "Scan", href: "/dashboard/scan", icon: ScanLine, matchPrefixes: ["/dashboard/scan"] },
+  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, matchPrefixes: ["/dashboard/analytics", "/dashboard/reports", "/dashboard"] },
+];
 
-type AppConfig = {
-  name: string;
-  AppIcon: ComponentType<{ size?: number; className?: string }>;
-  tabs: Tab[];
-};
-
-/* ─── App definitions ─── */
-
-const LAB_METRICS: AppConfig = {
-  name: "Lab Metrics",
-  AppIcon: FlaskConical,
-  tabs: [
-    { label: "Workspace",   href: "/dashboard/lab-analytics", icon: Layers,            matchPrefixes: ["/dashboard/lab-analytics"] },
-    { label: "TAT",         href: "/dashboard/tat",         icon: Timer,             matchPrefixes: ["/dashboard/tat"] },
-    { label: "Tests",       href: "/dashboard/tests",       icon: Microscope,        matchPrefixes: ["/dashboard/tests"] },
-    { label: "Numbers",     href: "/dashboard/numbers",     icon: Binary,            matchPrefixes: ["/dashboard/numbers"] },
-    { label: "Meta",        href: "/dashboard/meta",        icon: TableProperties,   matchPrefixes: ["/dashboard/meta"] },
-    { label: "Revenue",     href: "/dashboard/revenue",     icon: CircleDollarSign,  matchPrefixes: ["/dashboard/revenue"] },
-    { label: "Performance", href: "/dashboard/performance", icon: ChartSpline,       matchPrefixes: ["/dashboard/performance"] },
-  ],
-};
-
-const QUALITY_MGMT: AppConfig = {
-  name: "Quality Management",
-  AppIcon: ShieldCheck,
-  tabs: [
-    { label: "Workspace",       href: "/dashboard/quality-samples",         icon: Layers,        matchPrefixes: ["/dashboard/quality-samples"] },
-    { label: "QC Config",       href: "/dashboard/qc?tab=config",           icon: FlaskConical,  matchPrefixes: ["/dashboard/qc"] },
-    { label: "Data Entry",      href: "/dashboard/qc?tab=data",             icon: ClipboardList, matchPrefixes: ["/dashboard/qc"] },
-    { label: "Visualization",   href: "/dashboard/qc?tab=visual",           icon: BarChart3,     matchPrefixes: ["/dashboard/qc"] },
-    { label: "QC Calculator",   href: "/dashboard/qc?tab=calc",             icon: Calculator,    matchPrefixes: ["/dashboard/qc"] },
-    { label: "QC Stats",        href: "/dashboard/qc?tab=stats",            icon: TrendingUp,    matchPrefixes: ["/dashboard/qc"] },
-    { label: "Qual. Config",    href: "/dashboard/qc?tab=qual-config",      icon: FlaskConical,  matchPrefixes: ["/dashboard/qc"] },
-    { label: "Qual. Entry",     href: "/dashboard/qc?tab=qual-entry",       icon: TestTube,      matchPrefixes: ["/dashboard/qc"] },
-    { label: "Qual. Log",       href: "/dashboard/qc?tab=qual-log",         icon: Activity,      matchPrefixes: ["/dashboard/qc"] },
-    { label: "Sample Dashboard",href: "/dashboard/samples?tab=dashboard",   icon: TestTubes,     matchPrefixes: ["/dashboard/samples"] },
-  ],
-};
-
-const ASSET_MGMT: AppConfig = {
-  name: "Asset Management",
-  AppIcon: Layers,
-  tabs: [
-    { label: "Workspace",  href: "/dashboard/assets",       icon: Layers,          matchPrefixes: ["/dashboard/assets"] },
-    { label: "Overview",   href: "/dashboard",              icon: LayoutDashboard, matchPrefixes: ["/dashboard$"] },
-    { label: "Scan",       href: "/dashboard/scan",         icon: QrCode,          matchPrefixes: ["/dashboard/scan"] },
-    { label: "Equipment",  href: "/dashboard/equipment",    icon: Wrench,          matchPrefixes: ["/dashboard/equipment"] },
-    { label: "Maintenance",href: "/dashboard/maintenance",  icon: CalendarClock,   matchPrefixes: ["/dashboard/maintenance"] },
-    { label: "Refrigerator",href:"/dashboard/refrigerator", icon: Thermometer,     matchPrefixes: ["/dashboard/refrigerator"] },
-    { label: "Analytics",  href: "/dashboard/analytics",   icon: BarChart3,       matchPrefixes: ["/dashboard/analytics"] },
-    { label: "Reports",    href: "/dashboard/reports",      icon: FileText,        matchPrefixes: ["/dashboard/reports"] },
-  ],
-};
-
-/* ─── Path → App resolver ─── */
-
-function resolveApp(pathname: string): AppConfig | null {
-  const labPrefixes = [
-    "/dashboard/lab-analytics",
-    "/dashboard/tat",
-    "/dashboard/tests",
-    "/dashboard/numbers",
-    "/dashboard/meta",
-    "/dashboard/revenue",
-    "/dashboard/performance",
-  ];
-  const qcPrefixes  = ["/dashboard/qc", "/dashboard/quality-samples", "/dashboard/samples"];
-  const assetPrefixes = [
-    "/dashboard/scan",
-    "/dashboard/equipment",
-    "/dashboard/maintenance",
-    "/dashboard/refrigerator",
-    "/dashboard/analytics",
-    "/dashboard/reports",
-  ];
-
-  if (labPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"))) return LAB_METRICS;
-  if (qcPrefixes.some((p)  => pathname === p || pathname.startsWith(p + "/"))) return QUALITY_MGMT;
-  if (assetPrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"))) return ASSET_MGMT;
-  if (pathname === "/dashboard") return ASSET_MGMT;
-
+function resolveTabs(pathname: string): Tab[] | null {
+  if (["/dashboard/lab-analytics", "/dashboard/tat", "/dashboard/tests", "/dashboard/numbers", "/dashboard/meta", "/dashboard/revenue", "/dashboard/performance", "/dashboard/lrids"].some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return LAB_TABS;
+  }
+  if (["/dashboard/quality-samples", "/dashboard/qc", "/dashboard/samples"].some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return QUALITY_TABS;
+  }
+  if (["/dashboard", "/dashboard/assets", "/dashboard/scan", "/dashboard/equipment", "/dashboard/maintenance", "/dashboard/refrigerator", "/dashboard/analytics", "/dashboard/reports"].some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return ASSET_TABS;
+  }
   return null;
 }
 
@@ -133,14 +72,10 @@ function isTabActive(pathname: string, tab: Tab): boolean {
 
 export default function AppTabBar() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   // Don't show on homepage or other system pages
   if (
     pathname === "/dashboard/home" ||
-    pathname.startsWith("/dashboard/qc") ||
-    pathname.startsWith("/dashboard/samples") ||
-    pathname.startsWith("/dashboard/quality-samples") ||
     pathname.startsWith("/dashboard/admin") ||
     pathname.startsWith("/dashboard/settings") ||
     pathname.startsWith("/dashboard/departments") ||
@@ -151,11 +86,8 @@ export default function AppTabBar() {
   ) {
     return null;
   }
-
-  const app = resolveApp(pathname);
-  if (!app) return null;
-
-  const { AppIcon } = app;
+  const tabs = resolveTabs(pathname);
+  if (!tabs) return null;
 
   return (
     <div className="flex-shrink-0 border-b border-slate-100 bg-white px-6 py-0">
@@ -171,32 +103,11 @@ export default function AppTabBar() {
           <span className="hidden sm:inline">Home</span>
         </Link>
 
-        {/* App badge */}
-        <div className="flex items-center gap-2 py-3 pr-4 border-r border-slate-200 flex-shrink-0">
-          <div
-            className="w-6 h-6 rounded-lg flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, var(--module-primary-dark) 0%, var(--module-primary) 100%)" }}
-          >
-            <AppIcon size={12} className="text-white" />
-          </div>
-          <span
-            className="hidden md:block font-semibold text-slate-700"
-            style={{ fontSize: "0.8125rem", letterSpacing: "-0.01em" }}
-          >
-            {app.name}
-          </span>
-        </div>
-
         {/* Tabs */}
         <nav className="flex items-center gap-1 flex-1 overflow-x-auto scrollbar-none py-2">
-          {app.tabs.map((tab) => {
+          {tabs.map((tab) => {
             const Icon = tab.icon;
-            const [base, qs] = tab.href.split("?");
-            const expectedTab = qs ? new URLSearchParams(qs).get("tab") : null;
-            const active =
-              expectedTab !== null
-                ? pathname === base && searchParams.get("tab") === expectedTab
-                : isTabActive(pathname, tab);
+            const active = isTabActive(pathname, tab);
             return (
               <Link
                 key={tab.label + tab.href}

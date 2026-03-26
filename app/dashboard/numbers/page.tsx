@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
 import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
 import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
@@ -219,11 +218,6 @@ export default function NumbersPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* ── Lab Metrics Tab Navigation ── */}
-      <div className="bg-white border-b border-slate-100 px-6 py-3">
-        <LabMetricsTabs />
-      </div>
-
       {/* Filter Bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="flex flex-wrap items-end gap-4">

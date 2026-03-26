@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { Plus, Pencil, Trash2, Search, X, ChevronLeft, ChevronRight, Download } from "lucide-react";
-import LabMetricsTabs from "@/components/dashboard/LabMetricsTabs";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const LAB_SECTIONS = [
@@ -234,11 +233,6 @@ export default function MetaPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* ── Lab Metrics Tab Navigation ── */}
-      <div className="bg-white border-b border-slate-100 px-6 py-3">
-        <LabMetricsTabs />
-      </div>
-
       {/* ── Header / Filter Bar ──────────────────────────────────────────── */}
       <div className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="flex flex-wrap items-end gap-4">

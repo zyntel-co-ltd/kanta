@@ -1,5 +1,7 @@
 "use client";
 
+// REGRESSIVE DESIGN: This submodule is hidden for hospitals without refrigerator monitoring sensors. Feature flag: show-refrigerator-module (PostHog). Default: hidden for new facilities until sensors are configured.
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Thermometer, AlertTriangle, Clock } from "lucide-react";
