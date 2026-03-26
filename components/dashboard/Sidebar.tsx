@@ -425,6 +425,7 @@ export default function Sidebar() {
                         className={clsx(
                           "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1] flex-1",
                           collapsed ? "justify-center px-0" : "gap-3 px-4",
+                          collapsed && isNeutralHome && "bg-white/70 border border-slate-200/80 shadow-sm",
                           !isCollapsibleActive && "hover:bg-[var(--sidebar-hover-bg)]/30"
                         )}
                         style={{
@@ -576,6 +577,7 @@ export default function Sidebar() {
                           className={clsx(
                             "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1]",
                             collapsed ? "justify-center px-0" : "gap-3 px-4",
+                            collapsed && isNeutralHome && "bg-white/70 border border-slate-200/80 shadow-sm",
                             !active && "hover:bg-[var(--sidebar-hover-bg)]/30"
                           )}
                           style={{ color: active ? "var(--sidebar-active-text)" : (isNeutralHome ? homeGroupColor(group.title) : "rgba(255,255,255,0.9)") }}
