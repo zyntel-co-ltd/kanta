@@ -15,7 +15,7 @@ const CARDS = [
     href: "/dashboard",
     eyebrow: "Overview",
     title: "Assets overview",
-    body: "See fleet status, scan activity, and operational KPIs in one place.",
+    body: "Fleet status, scan activity, and operational KPIs — centralized for your facility.",
     cta: "Open overview",
     Icon: LayoutDashboard,
   },
@@ -23,7 +23,7 @@ const CARDS = [
     href: "/dashboard/scan",
     eyebrow: "Operations",
     title: "Scan",
-    body: "Capture and validate equipment scans for tracking and compliance workflows.",
+    body: "Capture and validate equipment scans — feeding tracking and compliance workflows.",
     cta: "Open scan",
     Icon: ScanSearch,
   },
@@ -31,7 +31,7 @@ const CARDS = [
     href: "/dashboard/equipment",
     eyebrow: "Inventory",
     title: "Equipment",
-    body: "Manage asset records, metadata, and lifecycle status for your facility.",
+    body: "Asset records, metadata, and lifecycle visibility — managed in one equipment workspace.",
     cta: "Open equipment",
     Icon: ScanLine,
   },
@@ -39,7 +39,7 @@ const CARDS = [
     href: "/dashboard/maintenance",
     eyebrow: "Service",
     title: "Maintenance",
-    body: "Plan and review preventive and corrective maintenance schedules.",
+    body: "Preventive and corrective maintenance scheduling — planned and tracked per asset.",
     cta: "Open maintenance",
     Icon: Wrench,
   },
@@ -47,7 +47,7 @@ const CARDS = [
     href: "/dashboard/refrigerator",
     eyebrow: "Cold chain",
     title: "Refrigerator",
-    body: "Track temperature, breach alerts, and refrigerator unit health signals.",
+    body: "Temperature monitoring, breach alerts, and unit health signals — for cold-chain operations.",
     cta: "Open refrigerator",
     Icon: Thermometer,
   },
@@ -55,7 +55,7 @@ const CARDS = [
     href: "/dashboard/analytics",
     eyebrow: "Insights",
     title: "Analytics",
-    body: "Review trends, utilization, and performance views across asset operations.",
+    body: "Trend, utilization, and performance analysis — across core asset operations.",
     cta: "Open analytics",
     Icon: BarChart3,
   },
@@ -63,7 +63,7 @@ const CARDS = [
     href: "/dashboard/reports",
     eyebrow: "Reporting",
     title: "Reports",
-    body: "Generate and review operational reports for stakeholders and audits.",
+    body: "Operational reporting for stakeholders and audits — generated from module activity.",
     cta: "Open reports",
     Icon: FileText,
   },
@@ -82,7 +82,7 @@ export default function AssetWorkspacePage() {
             Asset management
           </h1>
           <p className="module-accent-soft-text mt-2 max-w-xl text-[0.9375rem] leading-relaxed">
-            Manage scans, equipment, maintenance, cold-chain, and reporting from one module workspace.
+            Manage scans, equipment, maintenance, cold-chain, and reporting — pick where you want to work.
           </p>
         </div>
       </div>

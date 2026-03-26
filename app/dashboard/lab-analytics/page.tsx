@@ -14,7 +14,7 @@ const CARDS = [
     href: "/dashboard/tat",
     eyebrow: "Turnaround",
     title: "TAT",
-    body: "Track on-time, delayed, and not-uploaded performance across shifts and lab units.",
+    body: "On-time, delayed, and not-uploaded tracking across shifts and lab units — aligned to your Lab Metrics workflow.",
     cta: "Open TAT",
     Icon: Timer,
   },
@@ -22,7 +22,7 @@ const CARDS = [
     href: "/dashboard/tests",
     eyebrow: "Operations",
     title: "Tests",
-    body: "Monitor daily testing throughput, trends, and departmental load distribution.",
+    body: "Test throughput, trend monitoring, and departmental load visibility — for day-to-day operations.",
     cta: "Open tests",
     Icon: Microscope,
   },
@@ -30,7 +30,7 @@ const CARDS = [
     href: "/dashboard/numbers",
     eyebrow: "Volumes",
     title: "Numbers",
-    body: "View aggregate request volumes and benchmark movement over time.",
+    body: "Aggregate request volumes and benchmark movement over time — with operational context.",
     cta: "Open numbers",
     Icon: Binary,
   },
@@ -38,7 +38,7 @@ const CARDS = [
     href: "/dashboard/meta",
     eyebrow: "Metadata",
     title: "Meta",
-    body: "Inspect and manage supporting metadata used across Lab Metrics workflows.",
+    body: "Supporting metadata and parameter management — used across the Lab Metrics module.",
     cta: "Open meta",
     Icon: TableProperties,
   },
@@ -46,7 +46,7 @@ const CARDS = [
     href: "/dashboard/revenue",
     eyebrow: "Finance",
     title: "Revenue",
-    body: "Analyze test revenue trends, performance windows, and billing-aligned indicators.",
+    body: "Revenue trends, performance windows, and billing-aligned indicators — mapped to test activity.",
     cta: "Open revenue",
     Icon: CircleDollarSign,
   },
@@ -54,7 +54,7 @@ const CARDS = [
     href: "/dashboard/performance",
     eyebrow: "Insights",
     title: "Performance",
-    body: "Compare key KPIs and performance patterns for continuous lab optimization.",
+    body: "KPI comparison and performance pattern analysis — for continuous lab optimization.",
     cta: "Open performance",
     Icon: ChartSpline,
   },
@@ -73,7 +73,7 @@ export default function LabAnalyticsWorkspacePage() {
             Lab Metrics
           </h1>
           <p className="module-accent-soft-text mt-2 max-w-xl text-[0.9375rem] leading-relaxed">
-            Monitor turnaround, throughput, volume, performance, and revenue signals - choose a submodule to continue.
+            Track turnaround, throughput, volumes, revenue, and performance — pick where you want to work.
           </p>
         </div>
       </div>
