@@ -1,6 +1,6 @@
 # Kanta — Project Status
 
-**Last updated:** 26 March 2026 (Phase 28 — admin user display polish, login password toggle, default green theme scope)  
+**Last updated:** 27 March 2026 (Phase 29 — Mazra alignment hardening for data completeness)  
 **Updated by:** Cursor
 
 ---
@@ -108,6 +108,16 @@ Improved Admin users readability by normalizing legacy role labels and avoiding 
 | `app/login/LoginForm.tsx` | Added password visibility toggle icon/button |
 | `components/dashboard/Sidebar.tsx` | Panel-style collapse icon update |
 | `app/dashboard/layout.tsx` | Fixed module detection scope (`/dashboard` only for asset theme) |
+
+### Phase 29 — Mazra Alignment Hardening (27 March 2026)
+
+#### Summary
+Applied migrations-first hardening for Mazra dataset compatibility so switch-mode loads do not fail on schema drift. `equipment_telemetry_log` now tolerates legacy/new column variants and includes required telemetry fields used by Mazra inserts.
+
+#### Key files
+| File | Change |
+|------|--------|
+| `supabase/migrations/20260327100000_mazra_kanta_alignment_hardening.sql` | Added robust telemetry compatibility (`equipment_id`, `section`, `test_name`, `tat_minutes`, `z_score`, `hour_of_day`, `day_of_week`, `samples_that_day`, `days_to_failure`, `failure_type`, `recorded_at`, `record_date`), index alignment, and `mazra_generated` safeguards |
 
 ### Phase 27 — Auth Role Normalization (26 March 2026)
 
