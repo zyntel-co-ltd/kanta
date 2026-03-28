@@ -1,7 +1,36 @@
-# Kanta — Project Status
+# Kanta — Project Status & Functional Specification
 
-**Last updated:** 27 March 2026 (Phase 29 — Mazra alignment hardening for data completeness)  
-**Updated by:** Cursor
+**Last updated:** 2026-03-27 (Phase 29 — Mazra alignment hardening for data completeness)  
+**Updated by:** Cursor  
+**Product type:** SaaS — hospital lab operations & asset intelligence platform  
+**Production URL:** https://app.zyntel.net (see Environment Status below for variants)  
+**Repo:** https://github.com/zyntel-co-ltd/kanta
+
+---
+
+## Document standard (read first)
+
+This file follows **`knowledge` → `zyntel-playbook/05-infrastructure/project-status-file.md`** (13 sections). **Section 5 — Features & Functionality** must eventually contain a full **Feature** block per product capability (user story, technical path, key files, business rules, edge cases, out-of-scope). The **phase-based engineering log** in this document remains authoritative until each capability is duplicated as a Section 5 block.
+
+| # | Section | Where to find it in this file |
+|---|---------|-------------------------------|
+| 1 | What This Product Is | [What This Project Is](#what-this-project-is) |
+| 2 | Current State | [Current State](#current-state) and phase sections |
+| 3 | Stack & Infrastructure | [Stack & Infrastructure](#stack--infrastructure), [Vercel Environment Variables](#vercel-environment-variables) |
+| 4 | Data Model | `supabase/migrations/`, `prisma/schema.prisma`, and schema notes inside phases below |
+| 5 | Features & Functionality | **Migration in progress** — use phases + dashboards below; add Feature blocks per playbook standard |
+| 6 | User Roles & Permissions | Role content under Current State / auth docs |
+| 7 | Integrations | Supabase, PostHog, Redis, external APIs (see phases) |
+| 8 | API Surface | `app/api/`, documented routes in phases |
+| 9 | Active Issues | [Active Issues / Blockers](#active-issues--blockers) |
+| 10 | Key Decisions | [Key Decisions Made](#key-decisions-made) |
+| 11 | Branch State | [Branch State](#branch-state) |
+| 12 | How to Run | [How to Run This Project Locally](#how-to-run-this-project-locally) |
+| 13 | Cursor Context | [Cursor Context](#cursor-context-read-before-writing-any-code) |
+
+### Section 5 — target shape (example)
+
+When adding or editing a feature, use the **Feature** block format from `project-status-enforcement.mdc` (what it does, how it works + key files, business rules, edge cases, out-of-scope, optional PostHog flag). Example quality bar: QR Equipment Scan narrative in that rule file.
 
 ---
 
