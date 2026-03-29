@@ -29,8 +29,8 @@ export type FacilityAuthState = {
   hospitalLogoUrl: string | null;
   role: FacilityRole | null;
   isSuperAdmin: boolean;
-  canAccessAdmin: boolean;
   canAccessAdminPanel: boolean;
+  canAccessAdmin: boolean;
   canViewRevenue: boolean;
   canManageUsers: boolean;
   canWrite: boolean;
@@ -122,8 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           hospitalLogoUrl: data.hospitalLogoUrl ?? null,
           role: data.role ?? null,
           isSuperAdmin: !!data.isSuperAdmin,
-          canAccessAdmin: !!data.canAccessAdmin,
           canAccessAdminPanel: !!data.canAccessAdminPanel,
+          canAccessAdmin: !!data.canAccessAdmin,
           canViewRevenue: !!data.canViewRevenue,
           canManageUsers: !!data.canManageUsers,
           canWrite: !!data.canWrite,

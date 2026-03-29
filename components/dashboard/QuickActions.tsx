@@ -8,23 +8,19 @@ const BASE_ACTIONS = [
   { label: "Scan equipment", href: "/dashboard/scan", icon: ScanSearch },
   { label: "View TAT", href: "/dashboard/tat", icon: Timer },
   { label: "QC Data Entry", href: "/dashboard/qc?tab=data", icon: ClipboardList },
-] as const;
+];
 
-const ADMIN_ACTION = {
-  label: "Admin panel",
-  href: "/dashboard/admin",
-  icon: Shield,
-} as const;
-
-/**
- * Quick access to common tasks on the home page.
- */
 export default function QuickActions() {
   const { facilityAuth, facilityAuthLoading } = useAuth();
-  const showAdmin =
-    !facilityAuthLoading && !!facilityAuth?.canAccessAdminPanel;
 
-  const actions = showAdmin ? [...BASE_ACTIONS, ADMIN_ACTION] : [...BASE_ACTIONS];
+  const actions = facilityAuthLoading
+    ? BASE_ACTIONS
+    : [
+        ...BASE_ACTIONS,
+        ...(facilityAuth?.canAccessAdminPanel
+          ? [{ label: "Admin panel", href: "/dashboard/admin", icon: Shield }]
+          : []),
+      ];
 
   return (
     <div className="animate-slide-up stagger-2">

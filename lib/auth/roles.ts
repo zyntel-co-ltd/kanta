@@ -21,10 +21,10 @@ export function isFacilityRole(value: unknown): value is FacilityRole {
 }
 
 export type RolePermissions = {
-  /** Departments and similar — broader than the admin panel */
-  canAccessAdmin: boolean;
-  /** `/dashboard/admin/*` — facility_admin or platform super-admin only */
+  /** Gates /dashboard/admin. Only facility_admin + super admin. */
   canAccessAdminPanel: boolean;
+  /** Gates Departments + config pages. lab_manager and above. */
+  canAccessAdmin: boolean;
   canViewRevenue: boolean;
   canManageUsers: boolean;
   canWrite: boolean;
@@ -36,8 +36,8 @@ export function getPermissions(
 ): RolePermissions {
   if (isSuperAdmin) {
     return {
-      canAccessAdmin: true,
       canAccessAdminPanel: true,
+      canAccessAdmin: true,
       canViewRevenue: true,
       canManageUsers: true,
       canWrite: true,
@@ -45,8 +45,8 @@ export function getPermissions(
   }
   if (!role) {
     return {
-      canAccessAdmin: false,
       canAccessAdminPanel: false,
+      canAccessAdmin: false,
       canViewRevenue: false,
       canManageUsers: false,
       canWrite: false,
@@ -55,40 +55,40 @@ export function getPermissions(
   switch (role) {
     case "facility_admin":
       return {
-        canAccessAdmin: true,
         canAccessAdminPanel: true,
+        canAccessAdmin: true,
         canViewRevenue: true,
         canManageUsers: true,
         canWrite: true,
       };
     case "lab_manager":
       return {
-        canAccessAdmin: true,
         canAccessAdminPanel: false,
+        canAccessAdmin: true,
         canViewRevenue: true,
-        canManageUsers: true,
+        canManageUsers: false,
         canWrite: true,
       };
     case "lab_technician":
       return {
-        canAccessAdmin: true,
         canAccessAdminPanel: false,
+        canAccessAdmin: false,
         canViewRevenue: false,
         canManageUsers: false,
         canWrite: true,
       };
     case "viewer":
       return {
-        canAccessAdmin: true,
         canAccessAdminPanel: false,
+        canAccessAdmin: false,
         canViewRevenue: false,
         canManageUsers: false,
         canWrite: false,
       };
     default:
       return {
-        canAccessAdmin: false,
         canAccessAdminPanel: false,
+        canAccessAdmin: false,
         canViewRevenue: false,
         canManageUsers: false,
         canWrite: false,
@@ -96,12 +96,13 @@ export function getPermissions(
   }
 }
 
+/** Roles allowed to access the full Admin panel (/dashboard/admin) */
+export const ADMIN_PANEL_ROLES: FacilityRole[] = ["facility_admin"];
+
 /** Roles allowed to call admin user-management APIs */
 export const ADMIN_USER_MANAGER_ROLES: FacilityRole[] = [
   "facility_admin",
   "lab_manager",
-  "lab_technician",
-  "viewer",
 ];
 
 /** Roles allowed to view revenue / financial analytics */
