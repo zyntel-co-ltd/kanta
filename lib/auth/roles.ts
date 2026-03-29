@@ -21,7 +21,10 @@ export function isFacilityRole(value: unknown): value is FacilityRole {
 }
 
 export type RolePermissions = {
+  /** Departments and similar — broader than the admin panel */
   canAccessAdmin: boolean;
+  /** `/dashboard/admin/*` — facility_admin or platform super-admin only */
+  canAccessAdminPanel: boolean;
   canViewRevenue: boolean;
   canManageUsers: boolean;
   canWrite: boolean;
@@ -34,6 +37,7 @@ export function getPermissions(
   if (isSuperAdmin) {
     return {
       canAccessAdmin: true,
+      canAccessAdminPanel: true,
       canViewRevenue: true,
       canManageUsers: true,
       canWrite: true,
@@ -42,6 +46,7 @@ export function getPermissions(
   if (!role) {
     return {
       canAccessAdmin: false,
+      canAccessAdminPanel: false,
       canViewRevenue: false,
       canManageUsers: false,
       canWrite: false,
@@ -51,6 +56,7 @@ export function getPermissions(
     case "facility_admin":
       return {
         canAccessAdmin: true,
+        canAccessAdminPanel: true,
         canViewRevenue: true,
         canManageUsers: true,
         canWrite: true,
@@ -58,6 +64,7 @@ export function getPermissions(
     case "lab_manager":
       return {
         canAccessAdmin: true,
+        canAccessAdminPanel: false,
         canViewRevenue: true,
         canManageUsers: true,
         canWrite: true,
@@ -65,6 +72,7 @@ export function getPermissions(
     case "lab_technician":
       return {
         canAccessAdmin: true,
+        canAccessAdminPanel: false,
         canViewRevenue: false,
         canManageUsers: false,
         canWrite: true,
@@ -72,6 +80,7 @@ export function getPermissions(
     case "viewer":
       return {
         canAccessAdmin: true,
+        canAccessAdminPanel: false,
         canViewRevenue: false,
         canManageUsers: false,
         canWrite: false,
@@ -79,6 +88,7 @@ export function getPermissions(
     default:
       return {
         canAccessAdmin: false,
+        canAccessAdminPanel: false,
         canViewRevenue: false,
         canManageUsers: false,
         canWrite: false,

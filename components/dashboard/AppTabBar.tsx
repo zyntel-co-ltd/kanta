@@ -25,6 +25,8 @@ type Tab = {
   href: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
   matchPrefixes?: string[];
+  /** Pathname must equal one of these (after trailing-slash normalization) */
+  matchExactPaths?: string[];
 };
 const LAB_TABS: Tab[] = [
   { label: "Overview", href: "/dashboard/lab-analytics", icon: FlaskConical, matchPrefixes: ["/dashboard/lab-analytics"] },
@@ -44,7 +46,13 @@ const ASSET_TABS: Tab[] = [
   { label: "Maintenance", href: "/dashboard/maintenance", icon: CalendarClock, matchPrefixes: ["/dashboard/maintenance"] },
   { label: "Refrigerator", href: "/dashboard/refrigerator", icon: Thermometer, matchPrefixes: ["/dashboard/refrigerator"] },
   { label: "Scan", href: "/dashboard/scan", icon: ScanLine, matchPrefixes: ["/dashboard/scan"] },
-  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, matchPrefixes: ["/dashboard/analytics", "/dashboard/reports", "/dashboard"] },
+  {
+    label: "Analytics",
+    href: "/dashboard/analytics",
+    icon: BarChart3,
+    matchPrefixes: ["/dashboard/analytics", "/dashboard/reports"],
+    matchExactPaths: ["/dashboard"],
+  },
 ];
 
 function resolveTabs(pathname: string): Tab[] | null {
@@ -61,10 +69,14 @@ function resolveTabs(pathname: string): Tab[] | null {
 }
 
 function isTabActive(pathname: string, tab: Tab): boolean {
+  const norm = pathname.replace(/\/$/, "") || "/";
+  if (tab.matchExactPaths?.some((p) => norm === (p.replace(/\/$/, "") || "/"))) {
+    return true;
+  }
   if (!tab.matchPrefixes || tab.matchPrefixes.length === 0) return false;
   return tab.matchPrefixes.some((prefix) => {
-    if (prefix === "/dashboard$") return pathname === "/dashboard";
-    return pathname === prefix || pathname.startsWith(prefix + "/");
+    const pre = prefix.replace(/\/$/, "") || "/";
+    return norm === pre || norm.startsWith(pre + "/");
   });
 }
 

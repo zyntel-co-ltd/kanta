@@ -261,7 +261,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!facilityAuth?.canAccessAdmin && !facilityAuth?.isSuperAdmin) {
+  if (!facilityAuth?.canAccessAdminPanel) {
     return (
       <div className="max-w-lg mx-auto mt-16 p-8 rounded-2xl border border-slate-200 bg-white shadow-sm text-center">
         <h1 className="text-lg font-semibold text-slate-900 mb-2">Access restricted</h1>

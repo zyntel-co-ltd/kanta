@@ -162,6 +162,35 @@ export async function getAuthContext(
   };
 }
 
+/**
+ * Who may access `/dashboard/admin/*` (user management, hospital admin UI).
+ * Platform super-admins or facility_admins only — not lab_manager / technician / viewer.
+ */
+export async function userCanAccessAdminPanel(userId: string): Promise<boolean> {
+  try {
+    const db = createAdminClient();
+    const { data: pa } = await db
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (pa) return true;
+
+    const { data: memberships } = await db
+      .from("facility_users")
+      .select("role, is_active")
+      .eq("user_id", userId);
+
+    for (const m of memberships ?? []) {
+      if (m.is_active === false) continue;
+      if (normalizeFacilityRole(m.role) === "facility_admin") return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }

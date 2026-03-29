@@ -128,11 +128,11 @@ const navGroupsBase: NavGroup[] = [
       ],
     },
     items: [
-      { label: "Overview",     icon: LayoutDashboard, href: "/dashboard"              },
-      { label: "Scan",         icon: QrCode,         href: "/dashboard/scan"         },
-      { label: "Equipment",    icon: Wrench,         href: "/dashboard/equipment"    },
-      { label: "Maintenance",  icon: CalendarClock,  href: "/dashboard/maintenance"  },
+      { label: "Overview",     icon: LayoutDashboard, href: "/dashboard/assets"       },
+      { label: "Equipment",    icon: Wrench,          href: "/dashboard/equipment"    },
+      { label: "Maintenance",  icon: CalendarClock,   href: "/dashboard/maintenance"  },
       { label: "Refrigerator", icon: Thermometer,     href: "/dashboard/refrigerator" },
+      { label: "Scan",         icon: QrCode,          href: "/dashboard/scan"         },
       { label: "Analytics",    icon: BarChart3,       href: "/dashboard/analytics"    },
     ],
   },
@@ -165,6 +165,7 @@ function filterNavForFacilityAuth(
       role: null,
       isSuperAdmin: false,
       canAccessAdmin: false,
+      canAccessAdminPanel: false,
       canViewRevenue: false,
       canManageUsers: false,
       canWrite: false,
@@ -176,6 +177,7 @@ function filterNavForFacilityAuth(
 
   const canViewRevenue = effective.canViewRevenue;
   const canAccessAdmin = effective.canAccessAdmin;
+  const canAccessAdminPanel = effective.canAccessAdminPanel;
   const canWrite = effective.canWrite;
 
   return groups
@@ -183,7 +185,7 @@ function filterNavForFacilityAuth(
       if (g.collapsible) {
         const items = g.items.filter((item) => {
           if (item.href.startsWith("/dashboard/revenue") && !canViewRevenue) return false;
-          if (item.href.startsWith("/dashboard/admin") && !canAccessAdmin) return false;
+          if (item.href.startsWith("/dashboard/admin") && !canAccessAdminPanel) return false;
           if (item.href.startsWith("/dashboard/departments") && !canAccessAdmin) return false;
           if (!canWrite) {
             if (item.href.includes("tab=data")) return false;
@@ -197,7 +199,7 @@ function filterNavForFacilityAuth(
       }
       const items = g.items.filter((item) => {
         if (item.href.startsWith("/dashboard/revenue") && !canViewRevenue) return false;
-        if (item.href.startsWith("/dashboard/admin") && !canAccessAdmin) return false;
+        if (item.href.startsWith("/dashboard/admin") && !canAccessAdminPanel) return false;
         if (item.href.startsWith("/dashboard/departments") && !canAccessAdmin) return false;
         return true;
       });

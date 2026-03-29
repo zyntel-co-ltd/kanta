@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, useEffect, KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import { Sparkles, SendHorizontal, Loader2, AlertCircle, X } from "lucide-react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
@@ -31,6 +32,8 @@ export default function NLQueryBar({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const send = async (question: string) => {
     if (!question.trim() || loading) return;
@@ -46,7 +49,7 @@ export default function NLQueryBar({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, facility_id: facilityId, user_id: userId }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Request failed");
       const assistantMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -68,25 +71,14 @@ export default function NLQueryBar({
     if (e.key === "Escape") setOpen(false);
   };
 
-  return (
-    <>
-      {/* Trigger button */}
-      <button
-        onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:border-emerald-300 transition-all"
-      >
-        <Sparkles size={14} className="text-emerald-600" />
-        Ask Kanta AI
-      </button>
+  const overlay =
+    open &&
+    mounted &&
+    createPortal(
+      <div className="fixed inset-0 z-[200] flex items-stretch justify-center sm:items-center p-3 sm:p-6 pointer-events-auto">
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setOpen(false)} aria-hidden />
 
-      {/* Panel */}
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setOpen(false)} />
-
-          {/* Dialog */}
-          <div className="relative z-10 w-full max-w-xl rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col max-h-[80vh]">
+        <div className="relative z-10 mt-auto sm:mt-0 w-full max-w-xl max-h-[min(85vh,32rem)] sm:max-h-[80vh] rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
@@ -174,8 +166,24 @@ export default function NLQueryBar({
               </button>
             </div>
           </div>
-        </div>
-      )}
+      </div>,
+      document.body
+    );
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setOpen(true);
+          setTimeout(() => inputRef.current?.focus(), 50);
+        }}
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:border-emerald-300 transition-all"
+      >
+        <Sparkles size={14} className="text-emerald-600" />
+        Ask Kanta AI
+      </button>
+      {overlay}
     </>
   );
 }

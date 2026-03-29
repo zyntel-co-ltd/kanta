@@ -139,7 +139,10 @@ export async function POST(req: NextRequest) {
     const data = await anthropicRes.json();
 
     if (!anthropicRes.ok) {
-      throw new Error(data?.error?.message ?? "Anthropic API error");
+      return NextResponse.json(
+        { error: "AI is temporarily unavailable. Try again in a moment." },
+        { status: 502 }
+      );
     }
 
     const answer: string = data.content?.[0]?.text ?? "No answer generated.";
@@ -175,6 +178,10 @@ export async function POST(req: NextRequest) {
       latencyMs: Date.now() - t0,
       error: msg,
     });
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const friendly =
+      msg.includes("fetch failed") || msg.includes("network") || msg.includes("ECONNREFUSED")
+        ? "AI is temporarily unavailable. Check your connection and try again."
+        : "Something went wrong processing your question. Please try again.";
+    return NextResponse.json({ error: friendly }, { status: 503 });
   }
 }

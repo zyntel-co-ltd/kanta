@@ -48,12 +48,6 @@ function getInitials(u: {
   return part.slice(0, 2).toUpperCase();
 }
 
-function getAvatarUrl(u: {
-  user_metadata?: { avatar_url?: string; picture?: string };
-}) {
-  return u?.user_metadata?.avatar_url || u?.user_metadata?.picture || null;
-}
-
 /* ── Operational alerts (Supabase-backed) ── */
 type AlertItem = {
   id: string;
@@ -103,8 +97,10 @@ const severityIcon = {
 export default function TopBar() {
   const [secondsAgo, setSecondsAgo] = useState(0);
   const { status, pendingCount, retry } = useSyncStatus();
-  const { user, signOut, facilityAuth } = useAuth();
+  const { user, signOut, facilityAuth, facilityAuthLoading, avatarUrl } = useAuth();
   const router = useRouter();
+
+  const alertsFacilityId = facilityAuth?.facilityId ?? null;
 
   /* ── Alerts panel (Supabase-backed) ── */
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
@@ -112,8 +108,8 @@ export default function TopBar() {
   const alertsRef = useRef<HTMLDivElement>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const loadAlerts = useCallback(async () => {
-    const { alerts: fetched, unread_count } = await fetchAlerts(DEFAULT_FACILITY_ID);
+  const loadAlerts = useCallback(async (facilityId: string) => {
+    const { alerts: fetched, unread_count } = await fetchAlerts(facilityId);
     setAlerts(fetched);
     setUnreadCount(unread_count);
   }, []);
@@ -129,10 +125,11 @@ export default function TopBar() {
   }, []);
 
   useEffect(() => {
-    void loadAlerts();
-    const alertInterval = setInterval(() => void loadAlerts(), 60_000);
+    if (facilityAuthLoading || !alertsFacilityId) return;
+    void loadAlerts(alertsFacilityId);
+    const alertInterval = setInterval(() => void loadAlerts(alertsFacilityId), 60_000);
     return () => clearInterval(alertInterval);
-  }, [loadAlerts]);
+  }, [facilityAuthLoading, alertsFacilityId, loadAlerts]);
 
   /* ── Close panels on outside click ── */
   useEffect(() => {
@@ -158,10 +155,11 @@ export default function TopBar() {
   async function markAllRead() {
     setAlerts((prev) => prev.map((a) => ({ ...a, read: true })));
     setUnreadCount(0);
+    if (!alertsFacilityId) return;
     await fetch("/api/alerts", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ acknowledge_all: true, facility_id: DEFAULT_FACILITY_ID }),
+      body: JSON.stringify({ acknowledge_all: true, facility_id: alertsFacilityId }),
     });
   }
 
@@ -175,7 +173,6 @@ export default function TopBar() {
     });
   }
 
-  const avatarUrl = user ? getAvatarUrl(user as Parameters<typeof getAvatarUrl>[0]) : null;
   const hospitalName = facilityAuth?.hospitalName || HOSPITAL_NAME;
   const hospitalLogo = facilityAuth?.hospitalLogoUrl || HOSPITAL_LOGO_URL;
 
@@ -231,7 +228,10 @@ export default function TopBar() {
 
         {/* ── NL Query ── */}
         <div className="hidden lg:block">
-          <NLQueryBar />
+          <NLQueryBar
+            facilityId={alertsFacilityId ?? DEFAULT_FACILITY_ID}
+            userId={user?.id}
+          />
         </div>
 
         {/* ── Alerts bell ── */}
@@ -251,7 +251,7 @@ export default function TopBar() {
 
           {/* Alerts dropdown */}
           {alertsOpen && (
-            <div className="absolute right-0 top-full mt-2 w-[340px] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-50">
+            <div className="absolute right-0 top-full mt-2 w-[340px] bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden z-[60]">
               {/* Panel header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                 <div>
@@ -318,7 +318,7 @@ export default function TopBar() {
               className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-slate-100 transition-colors"
             >
               {/* Avatar */}
-              {avatarUrl ? (
+              {avatarUrl?.trim() ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={avatarUrl}

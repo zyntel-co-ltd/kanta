@@ -2,25 +2,37 @@
 
 import Link from "next/link";
 import { ScanSearch, Timer, ClipboardList, Shield } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 
-const ACTIONS = [
+const BASE_ACTIONS = [
   { label: "Scan equipment", href: "/dashboard/scan", icon: ScanSearch },
   { label: "View TAT", href: "/dashboard/tat", icon: Timer },
   { label: "QC Data Entry", href: "/dashboard/qc?tab=data", icon: ClipboardList },
-  { label: "Admin panel", href: "/dashboard/admin", icon: Shield },
-];
+] as const;
+
+const ADMIN_ACTION = {
+  label: "Admin panel",
+  href: "/dashboard/admin",
+  icon: Shield,
+} as const;
 
 /**
  * Quick access to common tasks on the home page.
  */
 export default function QuickActions() {
+  const { facilityAuth, facilityAuthLoading } = useAuth();
+  const showAdmin =
+    !facilityAuthLoading && !!facilityAuth?.canAccessAdminPanel;
+
+  const actions = showAdmin ? [...BASE_ACTIONS, ADMIN_ACTION] : [...BASE_ACTIONS];
+
   return (
     <div className="animate-slide-up stagger-2">
       <span className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3 block">
         Quick actions
       </span>
       <div className="flex flex-wrap gap-2">
-        {ACTIONS.map((a) => {
+        {actions.map((a) => {
           const Icon = a.icon;
           return (
             <Link

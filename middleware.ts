@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { userCanAccessAdminPanel } from "@/lib/auth/server";
 
 export async function middleware(req: NextRequest) {
   const { response: res, user } = await updateSession(req);
@@ -22,6 +23,20 @@ export async function middleware(req: NextRequest) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("redirect", req.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Admin panel — server-side gate before any page HTML (no client flash).
+  if (
+    user &&
+    req.nextUrl.pathname.startsWith("/dashboard/admin")
+  ) {
+    const u = user as { id?: string };
+    if (u.id) {
+      const allowed = await userCanAccessAdminPanel(u.id);
+      if (!allowed) {
+        return NextResponse.redirect(new URL("/dashboard/home", req.url));
+      }
+    }
   }
 
   // Rate limiting (optional — requires Upstash Redis)
