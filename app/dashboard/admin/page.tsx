@@ -9,11 +9,14 @@ import {
   ClipboardList,
   Sliders,
   Save,
+  Cog,
 } from "lucide-react";
 import Link from "next/link";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
 import AdminUsersSection from "@/components/dashboard/admin/AdminUsersSection";
+import AdminConfigurationSection from "@/components/dashboard/admin/AdminConfigurationSection";
+import { auditActionLabel } from "@/lib/auditLabels";
 
 const LAB_SECTIONS = [
   "CHEMISTRY",
@@ -26,7 +29,7 @@ const LAB_SECTIONS = [
 
 const TAT_OPTIONS = [30, 45, 60, 90, 240, 1440, 4320, 7200, 17280];
 
-type Tab = "users" | "unmatched" | "cancellations" | "audit" | "settings";
+type Tab = "users" | "configuration" | "unmatched" | "cancellations" | "audit" | "settings";
 
 type UnmatchedTest = {
   id: string;
@@ -109,7 +112,7 @@ export default function AdminPage() {
     period: "thisMonth",
     labSection: "all",
   });
-  const [auditSubTab, setAuditSubTab] = useState<"login" | "operations">("login");
+  const [auditSubTab, setAuditSubTab] = useState<"login" | "operations" | "compliance">("login");
   const [auditFilters, setAuditFilters] = useState({
     startDate: "",
     endDate: "",
@@ -118,6 +121,24 @@ export default function AdminPage() {
     action: "",
     limit: 50,
   });
+  const [compliancePage, setCompliancePage] = useState(1);
+  const [complianceTotal, setComplianceTotal] = useState(0);
+  const [complianceRows, setComplianceRows] = useState<
+    Array<{
+      id: string;
+      action: string;
+      entity_type: string | null;
+      record_id: string | null;
+      old_value: unknown;
+      new_value: unknown;
+      created_at: string;
+      actor_display: string;
+      actor_email: string;
+    }>
+  >([]);
+  const [compliancePreset, setCompliancePreset] = useState<"7" | "30" | "90" | "custom">("30");
+  const [complianceFrom, setComplianceFrom] = useState("");
+  const [complianceTo, setComplianceTo] = useState("");
 
   const [facilityList, setFacilityList] = useState<{ id: string; name: string }[]>([]);
   const [facilityOverride, setFacilityOverride] = useState<string | null>(null);
@@ -206,8 +227,42 @@ export default function AdminPage() {
     }
   }, [facilityId, auditSubTab, auditFilters]);
 
+  const fetchComplianceAudit = useCallback(async () => {
+    const params = new URLSearchParams();
+    params.set("facility_id", facilityId);
+    params.set("page", String(compliancePage));
+    params.set("limit", "50");
+    let from = complianceFrom;
+    let to = complianceTo;
+    if (compliancePreset !== "custom") {
+      const end = new Date();
+      const start = new Date();
+      const days = compliancePreset === "7" ? 7 : compliancePreset === "30" ? 30 : 90;
+      start.setDate(start.getDate() - days);
+      from = start.toISOString().slice(0, 10);
+      to = end.toISOString().slice(0, 10);
+    }
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    try {
+      const res = await fetch(`/api/admin/audit?${params}`);
+      const data = await res.json();
+      setComplianceRows(data.rows ?? []);
+      setComplianceTotal(data.total ?? 0);
+    } catch {
+      setComplianceRows([]);
+      setComplianceTotal(0);
+    }
+  }, [facilityId, compliancePage, compliancePreset, complianceFrom, complianceTo]);
+
+  useEffect(() => {
+    if (activeTab === "audit" && auditSubTab === "compliance") {
+      void fetchComplianceAudit();
+    }
+  }, [activeTab, auditSubTab, fetchComplianceAudit]);
+
   const fetchData = useCallback(async () => {
-    if (activeTab === "users") {
+    if (activeTab === "users" || activeTab === "configuration") {
       setIsLoading(false);
       return;
     }
@@ -259,6 +314,7 @@ export default function AdminPage() {
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "users", label: "User Management", icon: <Users size={16} /> },
+    { id: "configuration", label: "Configuration", icon: <Cog size={16} /> },
     { id: "cancellations", label: "Cancellations", icon: <Ban size={16} /> },
     { id: "audit", label: "Audit Trail", icon: <ClipboardList size={16} /> },
     { id: "settings", label: "Settings", icon: <Sliders size={16} /> },
@@ -438,7 +494,7 @@ export default function AdminPage() {
       )}
 
       {/* Content */}
-      {isLoading && activeTab !== "settings" && activeTab !== "users" ? (
+      {isLoading && activeTab !== "settings" && activeTab !== "users" && activeTab !== "configuration" ? (
         <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center text-slate-500">
           Loading...
         </div>
@@ -446,6 +502,13 @@ export default function AdminPage() {
         <>
           {activeTab === "users" && (
             <AdminUsersSection
+              facilityId={facilityId}
+              onToast={(message, type) => setToast({ message, type })}
+            />
+          )}
+
+          {activeTab === "configuration" && (
+            <AdminConfigurationSection
               facilityId={facilityId}
               onToast={(message, type) => setToast({ message, type })}
             />
@@ -685,7 +748,21 @@ export default function AdminPage() {
                 >
                   Operational Actions
                 </button>
+                <button
+                  onClick={() => {
+                    setAuditSubTab("compliance");
+                    setCompliancePage(1);
+                  }}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                    auditSubTab === "compliance"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-100 text-slate-700"
+                  }`}
+                >
+                  Configuration &amp; access
+                </button>
               </div>
+              {auditSubTab !== "compliance" && (
               <div className="p-4 flex flex-wrap gap-2 mb-4">
                 <input
                   type="text"
@@ -757,6 +834,138 @@ export default function AdminPage() {
                   Apply
                 </button>
               </div>
+              )}
+              {auditSubTab === "compliance" && (
+                <div className="px-4 pb-4 space-y-4">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <span className="text-xs font-medium text-slate-500">Range:</span>
+                    {(
+                      [
+                        ["7", "Last 7 days"],
+                        ["30", "Last 30 days"],
+                        ["90", "Last 90 days"],
+                        ["custom", "Custom"],
+                      ] as const
+                    ).map(([k, label]) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => {
+                          setCompliancePreset(k);
+                          setCompliancePage(1);
+                        }}
+                        className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+                          compliancePreset === k
+                            ? "bg-emerald-600 text-white"
+                            : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    {compliancePreset === "custom" && (
+                      <>
+                        <input
+                          type="date"
+                          value={complianceFrom}
+                          onChange={(e) => setComplianceFrom(e.target.value)}
+                          className="rounded border border-slate-200 px-2 py-1 text-sm"
+                        />
+                        <span className="text-slate-400">—</span>
+                        <input
+                          type="date"
+                          value={complianceTo}
+                          onChange={(e) => setComplianceTo(e.target.value)}
+                          className="rounded border border-slate-200 px-2 py-1 text-sm"
+                        />
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void fetchComplianceAudit()}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50/50">
+                          <th className="text-left px-3 py-2 font-medium text-slate-600">Time</th>
+                          <th className="text-left px-3 py-2 font-medium text-slate-600">Actor</th>
+                          <th className="text-left px-3 py-2 font-medium text-slate-600">Action</th>
+                          <th className="text-left px-3 py-2 font-medium text-slate-600">Entity</th>
+                          <th className="text-left px-3 py-2 font-medium text-slate-600">Summary</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {complianceRows.map((r) => (
+                          <tr key={r.id} className="border-b border-slate-50">
+                            <td className="px-3 py-2 whitespace-nowrap text-slate-600">
+                              {new Date(r.created_at).toLocaleString()}
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="font-medium text-slate-800">{r.actor_display}</div>
+                              {r.actor_email && (
+                                <div className="text-xs text-slate-500 truncate max-w-[180px]">
+                                  {r.actor_email}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-3 py-2">{auditActionLabel(r.action)}</td>
+                            <td className="px-3 py-2 text-xs text-slate-600">
+                              {r.entity_type ?? "—"}
+                              {r.record_id && (
+                                <div className="font-mono text-[10px] text-slate-400 truncate max-w-[120px]">
+                                  {r.record_id.slice(0, 8)}…
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 max-w-xs">
+                              <details className="text-xs text-slate-600">
+                                <summary className="cursor-pointer text-emerald-700">View change</summary>
+                                <pre className="mt-1 p-2 bg-slate-50 rounded overflow-x-auto whitespace-pre-wrap break-all">
+                                  {JSON.stringify({ before: r.old_value, after: r.new_value }, null, 0)}
+                                </pre>
+                              </details>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {complianceRows.length === 0 && (
+                      <div className="p-8 text-center text-slate-500">No configuration audit events yet.</div>
+                    )}
+                  </div>
+                  {complianceTotal > 0 && (
+                    <div className="flex items-center justify-between text-sm text-slate-600">
+                      <span>
+                        Page {compliancePage} of {Math.ceil(complianceTotal / 50) || 1} ({complianceTotal}{" "}
+                        total)
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={compliancePage <= 1}
+                          onClick={() => setCompliancePage((p) => Math.max(1, p - 1))}
+                          className="px-3 py-1 rounded border border-slate-200 disabled:opacity-50"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          type="button"
+                          disabled={compliancePage * 50 >= complianceTotal}
+                          onClick={() => setCompliancePage((p) => p + 1)}
+                          className="px-3 py-1 rounded border border-slate-200 disabled:opacity-50"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               {auditSubTab === "login" && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">

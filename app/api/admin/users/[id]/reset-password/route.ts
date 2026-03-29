@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
+import { writeAuditLog } from "@/lib/audit";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -53,6 +54,15 @@ export async function POST(
     const { error } = await (db.auth as { admin?: { updateUserById: (id: string, attrs: { password?: string }) => Promise<{ error: unknown }> } }).admin!.updateUserById(userId, { password });
 
     if (error) throw error;
+
+    await writeAuditLog({
+      facilityId: fu.facility_id as string,
+      userId: ctx.user?.id ?? null,
+      action: "user.password_reset",
+      entityType: "facility_user",
+      entityId: id,
+      newValue: { target_user_id: userId },
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

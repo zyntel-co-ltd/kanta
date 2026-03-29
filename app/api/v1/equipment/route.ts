@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import type { ApiResponse, Equipment } from "@/types";
+import { getAuthContext } from "@/lib/auth/server";
+import { writeAuditLog } from "@/lib/audit";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -80,6 +82,17 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{
       .single();
 
     if (error) throw error;
+
+    const ctx = await getAuthContext(req);
+    await writeAuditLog({
+      facilityId: hospital_id,
+      userId: ctx.user?.id ?? null,
+      action: "equipment.created",
+      entityType: "equipment",
+      entityId: data.id,
+      newValue: { name, hospital_id, department_id },
+    });
+
     return NextResponse.json({ data: { id: data.id, qr_code: data.qr_code }, error: null }, { status: 201 });
   } catch (err) {
     console.error("[POST /api/v1/equipment]", err);

@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
+import { writeAuditLog } from "@/lib/audit";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -31,7 +32,7 @@ export async function POST(
 
     const { data: row } = await db
       .from("facility_users")
-      .select("facility_id, user_id")
+      .select("facility_id, user_id, is_active")
       .eq("id", id)
       .single();
 
@@ -58,6 +59,17 @@ export async function POST(
       .eq("id", id);
 
     if (error) throw error;
+
+    const wasActive = row.is_active !== false;
+    await writeAuditLog({
+      facilityId: row.facility_id as string,
+      userId: ctx.user?.id ?? null,
+      action: is_active ? "user.reactivated" : "user.deactivated",
+      entityType: "facility_user",
+      entityId: id,
+      oldValue: { is_active: wasActive },
+      newValue: { is_active: !!is_active },
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

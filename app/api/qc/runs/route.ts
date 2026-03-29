@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { evaluateWestgard, computeZScore } from "@/lib/westgard";
+import { getAuthContext } from "@/lib/auth/server";
+import { writeAuditLog } from "@/lib/audit";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -153,6 +155,20 @@ export async function POST(req: NextRequest) {
         rule: flags.find((f) => f.level === "rejection")!.rule,
       });
     }
+
+    const ctx = await getAuthContext(req);
+    await writeAuditLog({
+      facilityId: facility_id,
+      userId: ctx.user?.id ?? null,
+      action: "qc.submitted",
+      entityType: "qc_run",
+      entityId: run.id,
+      newValue: {
+        material_id,
+        value: val,
+        z_score: zScore,
+      },
+    });
 
     return NextResponse.json({ data: run, error: null });
   } catch (err) {

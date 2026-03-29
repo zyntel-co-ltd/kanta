@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
+import { writeAuditLog } from "@/lib/audit";
 import {
   FACILITY_ROLES,
   assignableFacilityRoles,
@@ -91,6 +92,18 @@ export async function PUT(
     const { error } = await db.from("facility_users").update(updates).eq("id", id);
 
     if (error) throw error;
+
+    if (updates.role !== undefined && updates.role !== currentRole) {
+      await writeAuditLog({
+        facilityId: facilityRow.facility_id as string,
+        userId: ctx.user?.id ?? null,
+        action: "user.role_changed",
+        entityType: "facility_user",
+        entityId: id,
+        oldValue: { role: currentRole },
+        newValue: { role: updates.role },
+      });
+    }
 
     if (email !== undefined && facilityRow.user_id) {
       const authAdmin = (

@@ -4,6 +4,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import type { ApiResponse, Equipment } from "@/types";
+import { getAuthContext } from "@/lib/auth/server";
+import { writeAuditLog } from "@/lib/audit";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -37,6 +39,12 @@ export async function PATCH(
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
 
+    const { data: prev } = await db
+      .from("equipment")
+      .select("hospital_id, status")
+      .eq("id", id)
+      .maybeSingle();
+
     const { data, error } = await db
       .from("equipment")
       .update({ status })
@@ -45,6 +53,18 @@ export async function PATCH(
       .single();
 
     if (error) throw error;
+
+    const ctx = await getAuthContext(req);
+    await writeAuditLog({
+      facilityId: (prev?.hospital_id as string) ?? null,
+      userId: ctx.user?.id ?? null,
+      action: "equipment.updated",
+      entityType: "equipment",
+      entityId: id,
+      oldValue: { status: prev?.status },
+      newValue: { status },
+    });
+
     return NextResponse.json({ data: data as Equipment, error: null });
   } catch (err) {
     console.error("[PATCH /api/v1/equipment/:id]", err);

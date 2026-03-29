@@ -7,6 +7,7 @@ import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwe
 import { Doughnut, Line, Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { useAuth } from "@/lib/AuthContext";
 import { useFlag } from "@/lib/featureFlags";
 import { CHART_AXIS, CHART_TAT } from "@/lib/chart-theme";
 import { STATUS } from "@/lib/design-tokens";
@@ -26,16 +27,14 @@ const PERIODS = [
   { value: "thisYear",     label: "This Year"    },
 ];
 
-const SHIFTS = [
-  { value: "all",         label: "All Shifts"  },
-  { value: "day shift",   label: "Day Shift"   },
+const SHIFT_FALLBACK_INNER = [
+  { value: "day shift", label: "Day Shift" },
   { value: "night shift", label: "Night Shift" },
 ];
 
-const LABORATORIES = [
-  { value: "all",              label: "All Laboratories"  },
-  { value: "Main Laboratory",  label: "Main Laboratory"   },
-  { value: "Annex",            label: "Annex"             },
+const LAB_FALLBACK_INNER = [
+  { value: "Main Laboratory", label: "Main Laboratory" },
+  { value: "Annex", label: "Annex" },
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -138,6 +137,8 @@ export default function TATPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { facilityAuth } = useAuth();
+  const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
   const showReceptionTab = useFlag("show-reception-tab");
   const showLrids = useFlag("show-lrids");
   const requestedTab = (searchParams.get("tab") || "overview") as TatTab;
@@ -165,6 +166,60 @@ export default function TATPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
   const [lrids, setLrids] = useState<LRIDSItem[]>([]);
+  const [labFilterOptions, setLabFilterOptions] = useState({
+    shifts: [{ value: "all", label: "All Shifts" }, ...SHIFT_FALLBACK_INNER],
+    labs: [{ value: "all", label: "All Laboratories" }, ...LAB_FALLBACK_INNER],
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/facility/lab-config?facility_id=${facilityId}`);
+        if (!res.ok) throw new Error("lab-config");
+        const j = (await res.json()) as {
+          shifts?: Array<{
+            id: string;
+            name: string;
+            start_time: string;
+            end_time: string;
+            is_active?: boolean;
+          }>;
+          sections?: Array<{ code: string; name: string; is_active?: boolean }>;
+        };
+        if (cancelled) return;
+        const shifts = [
+          { value: "all", label: "All Shifts" },
+          ...(j.shifts ?? [])
+            .filter((s) => s.is_active !== false)
+            .map((s) => ({
+              value: s.name,
+              label: `${s.name} (${String(s.start_time).slice(0, 5)}–${String(s.end_time).slice(0, 5)})`,
+            })),
+        ];
+        const labs = [
+          { value: "all", label: "All Laboratories" },
+          ...(j.sections ?? [])
+            .filter((s) => s.is_active !== false)
+            .map((s) => ({ value: s.code, label: s.name })),
+        ];
+        setLabFilterOptions({
+          shifts: shifts.length > 1 ? shifts : [{ value: "all", label: "All Shifts" }, ...SHIFT_FALLBACK_INNER],
+          labs: labs.length > 1 ? labs : [{ value: "all", label: "All Laboratories" }, ...LAB_FALLBACK_INNER],
+        });
+      } catch {
+        if (!cancelled) {
+          setLabFilterOptions({
+            shifts: [{ value: "all", label: "All Shifts" }, ...SHIFT_FALLBACK_INNER],
+            labs: [{ value: "all", label: "All Laboratories" }, ...LAB_FALLBACK_INNER],
+          });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [facilityId]);
 
   const setTab = (tab: TatTab) => {
     const next = new URLSearchParams(searchParams.toString());
@@ -181,7 +236,7 @@ export default function TATPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({ facility_id: DEFAULT_FACILITY_ID, period: filters.period });
+      const params = new URLSearchParams({ facility_id: facilityId, period: filters.period });
       if (filters.shift && filters.shift !== "all") params.append("shift", filters.shift);
       if (filters.hospitalUnit && filters.hospitalUnit !== "all")
         params.append("laboratory", filters.hospitalUnit);
@@ -198,7 +253,7 @@ export default function TATPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, facilityId]);
 
   useEffect(() => {
     fetchData();
@@ -208,27 +263,27 @@ export default function TATPage() {
     if (activeTab !== "performance") return;
     (async () => {
       try {
-        const res = await fetch(`/api/performance?facility_id=${DEFAULT_FACILITY_ID}&period=today`);
+        const res = await fetch(`/api/performance?facility_id=${facilityId}&period=today`);
         const json = await res.json();
         setPerformanceData(json.data ?? null);
       } catch {
         setPerformanceData(null);
       }
     })();
-  }, [activeTab]);
+  }, [activeTab, facilityId]);
 
   useEffect(() => {
     if (activeTab !== "lrids") return;
     (async () => {
       try {
-        const res = await fetch(`/api/tat/lrids?facility_id=${DEFAULT_FACILITY_ID}&limit=100`);
+        const res = await fetch(`/api/tat/lrids?facility_id=${facilityId}&limit=100`);
         const json = await res.json();
         setLrids(json.data ?? []);
       } catch {
         setLrids([]);
       }
     })();
-  }, [activeTab]);
+  }, [activeTab, facilityId]);
 
   // Derived chart datasets
   const pieData = data?.pieData
@@ -497,7 +552,7 @@ export default function TATPage() {
               onChange={(e) => updateFilter("shift", e.target.value)}
               className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
-              {SHIFTS.map((s) => (
+              {labFilterOptions.shifts.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
@@ -511,7 +566,7 @@ export default function TATPage() {
               onChange={(e) => updateFilter("hospitalUnit", e.target.value)}
               className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
-              {LABORATORIES.map((l) => (
+              {labFilterOptions.labs.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
               ))}
             </select>

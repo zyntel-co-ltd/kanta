@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
+import { writeAuditLog } from "@/lib/audit";
 import {
   FACILITY_ROLES,
   assignableFacilityRoles,
@@ -279,6 +280,19 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (fuError) throw fuError;
+
+    await writeAuditLog({
+      facilityId: facility_id,
+      userId: ctx.user?.id ?? null,
+      action: "user.provisioned",
+      entityType: "facility_user",
+      entityId: fuData?.id ?? null,
+      newValue: {
+        user_id: userId,
+        email: authData.user?.email ?? loginEmail,
+        role: resolvedRole,
+      },
+    });
 
     return NextResponse.json(
       {

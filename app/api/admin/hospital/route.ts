@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
+import { writeAuditLog } from "@/lib/audit";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -77,8 +78,26 @@ export async function PATCH(req: NextRequest) {
   try {
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
+
+    const { data: prev } = await db
+      .from("hospitals")
+      .select("name, logo_url, address, phone")
+      .eq("id", facilityId)
+      .maybeSingle();
+
     const { error } = await db.from("hospitals").update(updates).eq("id", facilityId);
     if (error) throw error;
+
+    await writeAuditLog({
+      facilityId,
+      userId: ctx.user?.id ?? null,
+      action: "hospital.settings_updated",
+      entityType: "hospital",
+      entityId: facilityId,
+      oldValue: (prev ?? {}) as Record<string, unknown>,
+      newValue: updates as Record<string, unknown>,
+    });
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("[PATCH /api/admin/hospital]", error);
