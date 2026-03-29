@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Building2, Upload, Save, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/AuthContext";
@@ -16,7 +16,15 @@ type HospitalForm = {
 
 export default function HospitalSettingsPage() {
   const { facilityAuth, facilityAuthLoading } = useAuth();
+  const router = useRouter();
   const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
+
+  useEffect(() => {
+    if (facilityAuthLoading) return;
+    if (!facilityAuth?.canAccessAdminPanel) {
+      router.replace("/dashboard/home");
+    }
+  }, [facilityAuthLoading, facilityAuth, router]);
   const client = useMemo(() => createClient(), []);
   const [form, setForm] = useState<HospitalForm>({
     name: "",
@@ -46,22 +54,8 @@ export default function HospitalSettingsPage() {
       .finally(() => setLoading(false));
   }, [facilityId]);
 
-  if (facilityAuthLoading) {
-    return <div className="text-slate-500">Loading...</div>;
-  }
-
-  if (!facilityAuth?.canAccessAdminPanel) {
-    return (
-      <div className="max-w-lg mx-auto mt-16 p-8 rounded-2xl border border-slate-200 bg-white shadow-sm text-center">
-        <h1 className="text-lg font-semibold text-slate-900 mb-2">Access restricted</h1>
-        <p className="text-slate-600 text-sm">
-          You don&apos;t have permission to view Hospital Settings.
-        </p>
-        <Link href="/dashboard/home" className="inline-block mt-6 text-sm font-medium text-emerald-600 hover:text-emerald-700">
-          Back to Home
-        </Link>
-      </div>
-    );
+  if (facilityAuthLoading || !facilityAuth?.canAccessAdminPanel) {
+    return <div className="text-slate-500 min-h-[40vh] flex items-center justify-center">Loading…</div>;
   }
 
   const onUploadLogo = async (file?: File) => {

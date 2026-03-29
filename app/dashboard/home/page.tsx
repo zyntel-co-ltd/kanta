@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import clsx from "clsx";
+import { useFlag } from "@/lib/featureFlags";
 import {
   Timer,
   Binary,
@@ -107,6 +110,17 @@ const apps: AppCard[] = [
 /* ─────────────────────────── component ─────────────────────────── */
 
 export default function DashboardHomePage() {
+  const showRefrigeratorModule = useFlag("show-refrigerator-module");
+  const appsFiltered = apps.map((app) => {
+    if (app.title !== "Asset Management") return app;
+    return {
+      ...app,
+      tabs: showRefrigeratorModule
+        ? app.tabs
+        : app.tabs.filter((t) => !t.href.includes("/dashboard/refrigerator")),
+    };
+  });
+
   return (
     <div className="max-w-[1280px] mx-auto space-y-6 pb-10">
 
@@ -148,7 +162,7 @@ export default function DashboardHomePage() {
 
       {/* App cards — slate structure + brand icon only (no per-app accent hues) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-slide-up stagger-2">
-        {apps.map((app) => {
+        {appsFiltered.map((app) => {
           const AppIcon = app.icon;
           return (
             <Link

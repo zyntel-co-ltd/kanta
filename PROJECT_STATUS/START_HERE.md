@@ -28,7 +28,7 @@ Hospital staff use a unified dashboard with **three app domains**: **Lab Metrics
 | Admin & settings | ✅ Live | Users, hospital settings (ENG-80), RBAC v2 |
 | AI Intelligence | ✅ Live | NL queries, weekly summaries, anomaly / telemetry |
 | Refrigerator | ✅ Live | Telemetry (feature-flagged where applicable) |
-| PostHog feature flags | 🔨 In progress | ENG-83 |
+| PostHog feature flags | ✅ Live | `lib/featureFlags.ts`, group `branch` in AuthContext |
 | Reception / TAT tab | 🔨 In progress | ENG-77 (if still open — confirm in Linear) |
 | Multi-tenant billing | 📋 Planned | — |
 

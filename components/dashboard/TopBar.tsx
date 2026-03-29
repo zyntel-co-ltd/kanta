@@ -18,8 +18,6 @@ import { useSyncStatus } from "@/lib/SyncStatusContext";
 import { useAuth } from "@/lib/AuthContext";
 import NLQueryBar from "@/components/ai/NLQueryBar";
 import Tooltip from "@/components/ui/Tooltip";
-import { DEFAULT_FACILITY_ID } from "@/lib/constants";
-
 const HOSPITAL_NAME =
   process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Zyntel Hospital";
 const HOSPITAL_LOGO_URL = process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
@@ -238,10 +236,7 @@ export default function TopBar() {
 
         {/* ── NL Query ── */}
         <div className="hidden lg:block">
-          <NLQueryBar
-            facilityId={alertsFacilityId ?? DEFAULT_FACILITY_ID}
-            userId={user?.id}
-          />
+          <NLQueryBar facilityId={alertsFacilityId} userId={user?.id} />
         </div>
 
         {/* ── Alerts bell ── */}

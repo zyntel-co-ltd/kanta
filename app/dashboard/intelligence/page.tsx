@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Sparkles, Brain, BarChart3, Calendar, Mail, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import AnomalyPanel from "@/components/ai/AnomalyPanel";
 import NLQueryBar from "@/components/ai/NLQueryBar";
-import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { useAuth } from "@/lib/AuthContext";
 
 type WeeklySummary = {
   id: string;
@@ -89,14 +89,22 @@ function SummaryCard({ summary }: { summary: WeeklySummary }) {
 }
 
 export default function IntelligencePage() {
+  const { user, facilityAuth, facilityAuthLoading } = useAuth();
+  const facilityId = facilityAuth?.facilityId ?? null;
+
   const [summaries, setSummaries] = useState<WeeklySummary[]>([]);
   const [loadingSummaries, setLoadingSummaries] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  const fetchSummaries = async () => {
+  const fetchSummaries = useCallback(async () => {
+    if (!facilityId) {
+      setSummaries([]);
+      setLoadingSummaries(false);
+      return;
+    }
     setLoadingSummaries(true);
     try {
-      const res = await fetch(`/api/ai/weekly-summary?facility_id=${DEFAULT_FACILITY_ID}&limit=8`);
+      const res = await fetch(`/api/ai/weekly-summary?facility_id=${facilityId}&limit=8`);
       if (res.ok) {
         const data = await res.json();
         setSummaries(data.summaries ?? []);
@@ -104,23 +112,47 @@ export default function IntelligencePage() {
     } finally {
       setLoadingSummaries(false);
     }
-  };
+  }, [facilityId]);
 
-  useEffect(() => { fetchSummaries(); }, []);
+  useEffect(() => {
+    if (facilityAuthLoading) return;
+    void fetchSummaries();
+  }, [facilityAuthLoading, fetchSummaries]);
 
   const generateNow = async () => {
+    if (!facilityId) return;
     setGenerating(true);
     try {
       const res = await fetch("/api/ai/weekly-summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ facility_id: DEFAULT_FACILITY_ID }),
+        body: JSON.stringify({ facility_id: facilityId }),
       });
       if (res.ok) await fetchSummaries();
     } finally {
       setGenerating(false);
     }
   };
+
+  if (facilityAuthLoading) {
+    return (
+      <div className="min-h-[40vh] flex items-center justify-center text-slate-500 text-sm">
+        Loading…
+      </div>
+    );
+  }
+
+  if (!facilityId) {
+    return (
+      <div className="min-h-[40vh] flex flex-col items-center justify-center text-center px-6">
+        <Brain size={32} className="text-slate-300 mb-3" />
+        <p className="text-slate-700 font-medium">No facility assigned</p>
+        <p className="text-sm text-slate-500 mt-1 max-w-md">
+          Kanta Intelligence needs a hospital facility. Ask an administrator to assign you to a facility.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 space-y-5">
@@ -135,7 +167,7 @@ export default function IntelligencePage() {
           <p className="text-xs text-slate-500 ml-10">AI-powered operational insights. No patient data.</p>
         </div>
         <div className="flex items-center gap-2">
-          <NLQueryBar facilityId={DEFAULT_FACILITY_ID} />
+          <NLQueryBar facilityId={facilityId} userId={user?.id} />
         </div>
       </div>
 
@@ -163,7 +195,7 @@ export default function IntelligencePage() {
         {/* Anomaly panel — spans 3 cols */}
         <div className="lg:col-span-3">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Live Anomaly Flags</p>
-          <AnomalyPanel facilityId={DEFAULT_FACILITY_ID} days={7} />
+          <AnomalyPanel facilityId={facilityId} days={7} />
         </div>
 
         {/* Weekly summaries — spans 2 cols */}

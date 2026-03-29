@@ -10,6 +10,7 @@ import {
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { FacilityRole } from "@/lib/auth/roles";
+import posthog from "posthog-js";
 
 // Generic types — supabase-js surface can differ slightly between environments
 type UserMetadata = {
@@ -19,6 +20,8 @@ type UserMetadata = {
   display_name?: string;
   avatar_url?: string;
   picture?: string;
+  /** Google / some OAuth providers */
+  image?: string;
 };
 type User = { id: string; email?: string; user_metadata?: UserMetadata };
 type Session = { user: User };
@@ -27,6 +30,8 @@ export type FacilityAuthState = {
   facilityId: string | null;
   hospitalName: string | null;
   hospitalLogoUrl: string | null;
+  /** From `hospitals.tier` — plan ceiling for feature gating */
+  subscriptionTier: string | null;
   role: FacilityRole | null;
   isSuperAdmin: boolean;
   canAccessAdminPanel: boolean;
@@ -120,6 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           facilityId: data.facilityId ?? null,
           hospitalName: data.hospitalName ?? null,
           hospitalLogoUrl: data.hospitalLogoUrl ?? null,
+          subscriptionTier:
+            typeof data.subscriptionTier === "string" ? data.subscriptionTier : null,
           role: data.role ?? null,
           isSuperAdmin: !!data.isSuperAdmin,
           canAccessAdminPanel: !!data.canAccessAdminPanel,
@@ -140,6 +147,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [user]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
+    const fid = facilityAuth?.facilityId;
+    if (!fid) return;
+    posthog.group("branch", fid, {
+      name: facilityAuth?.hospitalName ?? undefined,
+      tier: facilityAuth?.subscriptionTier ?? undefined,
+    });
+  }, [
+    facilityAuth?.facilityId,
+    facilityAuth?.hospitalName,
+    facilityAuth?.subscriptionTier,
+  ]);
 
   const signIn = useCallback(
     async (email: string, password: string) => {
@@ -186,7 +208,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user?.user_metadata?.username ||
     user?.email?.split("@")[0] ||
     "User";
-  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
+  const meta = user?.user_metadata;
+  const avatarUrl =
+    (typeof meta?.avatar_url === "string" && meta.avatar_url.trim()) ||
+    (typeof meta?.picture === "string" && meta.picture.trim()) ||
+    (typeof meta?.image === "string" && meta.image.trim()) ||
+    null;
 
   return (
     <AuthContext.Provider

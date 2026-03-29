@@ -15,6 +15,14 @@ import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 const MODEL = "claude-3-haiku-20240307";
 
+const AUTH_USER_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function safeAuthUserId(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  return AUTH_USER_UUID.test(raw.trim()) ? raw.trim() : undefined;
+}
+
 const SYSTEM_PROMPT = `You are Kanta Intelligence, an operational analytics assistant for a hospital laboratory.
 
 STRICT RULES — violating these is not permitted under any circumstances:
@@ -28,7 +36,7 @@ STRICT RULES — violating these is not permitted under any circumstances:
 
 You are speaking to a lab manager or administrator. Use plain language — no clinical jargon.`;
 
-function logInference(
+async function logInference(
   supabase: ReturnType<typeof createClient>,
   params: {
     facility_id: string;
@@ -44,7 +52,7 @@ function logInference(
     error?: string;
   }
 ) {
-  return supabase.from("ai_inference_log").insert({
+  await supabase.from("ai_inference_log").insert({
     facility_id: params.facility_id,
     user_id: params.user_id,
     feature: params.feature,
@@ -71,6 +79,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const { question, facility_id = DEFAULT_FACILITY_ID, user_id } = body;
+  const safeUserId = safeAuthUserId(user_id);
 
   if (!question?.trim()) {
     return NextResponse.json({ error: "question is required" }, { status: 400 });
@@ -151,7 +160,7 @@ export async function POST(req: NextRequest) {
 
     await logInference(supabase, {
       facility_id,
-      user_id,
+      user_id: safeUserId,
       feature: "nl_query",
       model: MODEL,
       promptTokens: data.usage?.input_tokens ?? 0,
@@ -160,14 +169,14 @@ export async function POST(req: NextRequest) {
       dataRowCount,
       outputHash,
       latencyMs,
-    });
+    }).catch(() => {});
 
     return NextResponse.json({ answer, latency_ms: latencyMs });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     await logInference(supabase, {
       facility_id,
-      user_id,
+      user_id: safeUserId,
       feature: "nl_query",
       model: MODEL,
       promptTokens: 0,
@@ -177,7 +186,7 @@ export async function POST(req: NextRequest) {
       outputHash: "",
       latencyMs: Date.now() - t0,
       error: msg,
-    });
+    }).catch(() => {});
     const friendly =
       msg.includes("fetch failed") || msg.includes("network") || msg.includes("ECONNREFUSED")
         ? "AI is temporarily unavailable. Check your connection and try again."

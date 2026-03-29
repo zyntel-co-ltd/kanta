@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Users,
   AlertTriangle,
@@ -114,6 +115,14 @@ export default function AdminPage() {
   });
 
   const { facilityAuth, facilityAuthLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (facilityAuthLoading) return;
+    if (!facilityAuth?.canAccessAdminPanel) {
+      router.replace("/dashboard/home");
+    }
+  }, [facilityAuthLoading, facilityAuth, router]);
 
   const [resetPasswordModal, setResetPasswordModal] = useState<{ id: string; username: string } | null>(null);
   const [resetPasswordValue, setResetPasswordValue] = useState("");
@@ -254,27 +263,10 @@ export default function AdminPage() {
     if (activeTab === "settings") fetchTargets();
   }, [activeTab, fetchTargets]);
 
-  if (facilityAuthLoading) {
+  if (facilityAuthLoading || !facilityAuth?.canAccessAdminPanel) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center text-slate-500">
         Loading…
-      </div>
-    );
-  }
-
-  if (!facilityAuth?.canAccessAdminPanel) {
-    return (
-      <div className="max-w-lg mx-auto mt-16 p-8 rounded-2xl border border-slate-200 bg-white shadow-sm text-center">
-        <h1 className="text-lg font-semibold text-slate-900 mb-2">Access restricted</h1>
-        <p className="text-slate-600 text-sm">
-          You don&apos;t have permission to view Admin. Contact a facility administrator if you need access.
-        </p>
-        <Link
-          href="/dashboard/home"
-          className="inline-block mt-6 text-sm font-medium text-emerald-600 hover:text-emerald-700"
-        >
-          Back to Home
-        </Link>
       </div>
     );
   }

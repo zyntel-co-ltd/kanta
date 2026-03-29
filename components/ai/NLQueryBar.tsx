@@ -3,8 +3,6 @@
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { Sparkles, SendHorizontal, Loader2, AlertCircle, X } from "lucide-react";
-import { DEFAULT_FACILITY_ID } from "@/lib/constants";
-
 type Message = {
   id: string;
   role: "user" | "assistant";
@@ -20,10 +18,11 @@ const SUGGESTIONS = [
 ];
 
 export default function NLQueryBar({
-  facilityId = DEFAULT_FACILITY_ID,
+  facilityId,
   userId,
 }: {
-  facilityId?: string;
+  /** Required for correct multi-tenant queries; omit or pass null to disable */
+  facilityId: string | null | undefined;
   userId?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -36,7 +35,7 @@ export default function NLQueryBar({
   useEffect(() => setMounted(true), []);
 
   const send = async (question: string) => {
-    if (!question.trim() || loading) return;
+    if (!facilityId || !question.trim() || loading) return;
     setError(null);
     const userMsg: Message = { id: Date.now().toString(), role: "user", text: question };
     setMessages((m) => [...m, userMsg]);
@@ -169,6 +168,18 @@ export default function NLQueryBar({
       </div>,
       document.body
     );
+
+  if (!facilityId) {
+    return (
+      <span
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed"
+        title="Select a facility to use AI queries"
+      >
+        <Sparkles size={14} />
+        Ask Kanta AI
+      </span>
+    );
+  }
 
   return (
     <>

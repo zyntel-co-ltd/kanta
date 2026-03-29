@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMemo } from "react";
 import clsx from "clsx";
+import { useFlag } from "@/lib/featureFlags";
 import {
   FlaskConical,
   Layers,
@@ -55,7 +57,7 @@ const ASSET_TABS: Tab[] = [
   },
 ];
 
-function resolveTabs(pathname: string): Tab[] | null {
+function resolveTabs(pathname: string, assetTabs: Tab[]): Tab[] | null {
   if (["/dashboard/lab-analytics", "/dashboard/tat", "/dashboard/tests", "/dashboard/numbers", "/dashboard/meta", "/dashboard/revenue", "/dashboard/performance", "/dashboard/lrids"].some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return LAB_TABS;
   }
@@ -63,7 +65,7 @@ function resolveTabs(pathname: string): Tab[] | null {
     return QUALITY_TABS;
   }
   if (["/dashboard", "/dashboard/assets", "/dashboard/scan", "/dashboard/equipment", "/dashboard/maintenance", "/dashboard/refrigerator", "/dashboard/analytics", "/dashboard/reports"].some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    return ASSET_TABS;
+    return assetTabs;
   }
   return null;
 }
@@ -84,6 +86,14 @@ function isTabActive(pathname: string, tab: Tab): boolean {
 
 export default function AppTabBar() {
   const pathname = usePathname();
+  const showRefrigeratorModule = useFlag("show-refrigerator-module");
+  const assetTabs = useMemo(
+    () =>
+      showRefrigeratorModule
+        ? ASSET_TABS
+        : ASSET_TABS.filter((t) => t.href !== "/dashboard/refrigerator"),
+    [showRefrigeratorModule]
+  );
 
   // Don't show on homepage or other system pages
   if (
@@ -98,7 +108,7 @@ export default function AppTabBar() {
   ) {
     return null;
   }
-  const tabs = resolveTabs(pathname);
+  const tabs = resolveTabs(pathname, assetTabs);
   if (!tabs) return null;
 
   return (

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import type { ComponentType } from "react";
 import { useAuth, type FacilityAuthState } from "@/lib/AuthContext";
+import { useFlag } from "@/lib/featureFlags";
 import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
 import Tooltip from "@/components/ui/Tooltip";
 import {
@@ -149,13 +150,27 @@ const navGroupsBase: NavGroup[] = [
   },
 ];
 
+export type NavFeatureFlags = {
+  showRefrigeratorModule: boolean;
+  showLrids: boolean;
+  showAiIntelligence: boolean;
+};
+
 function filterNavForFacilityAuth(
   groups: NavGroup[],
   fa: FacilityAuthState | null,
-  opts: { loading: boolean; hasUser: boolean }
+  opts: { loading: boolean; hasUser: boolean; flags: NavFeatureFlags }
 ): NavGroup[] {
-  if (!opts.hasUser || opts.loading) {
+  if (!opts.hasUser) {
     return groups;
+  }
+
+  if (opts.loading) {
+    return filterNavForFacilityAuth(groups, null, {
+      hasUser: true,
+      loading: false,
+      flags: opts.flags,
+    });
   }
 
   const effective: FacilityAuthState =
@@ -163,6 +178,7 @@ function filterNavForFacilityAuth(
       facilityId: null,
       hospitalName: null,
       hospitalLogoUrl: null,
+      subscriptionTier: null,
       role: null,
       isSuperAdmin: false,
       canAccessAdminPanel: false,
@@ -180,30 +196,36 @@ function filterNavForFacilityAuth(
   const canAccessAdmin = effective.canAccessAdmin;
   const canAccessAdminPanel = effective.canAccessAdminPanel;
   const canWrite = effective.canWrite;
+  const { flags } = opts;
+
+  const allowItem = (href: string) => {
+    if (href.startsWith("/dashboard/revenue") && !canViewRevenue) return false;
+    if (href.startsWith("/dashboard/admin") && !canAccessAdminPanel) return false;
+    if (href.startsWith("/dashboard/departments") && !canAccessAdmin) return false;
+    if (href.includes("/dashboard/refrigerator") && !flags.showRefrigeratorModule) return false;
+    if (
+      (href.includes("tab=lrids") || href.startsWith("/dashboard/lrids")) &&
+      !flags.showLrids
+    ) {
+      return false;
+    }
+    if (href.startsWith("/dashboard/intelligence") && !flags.showAiIntelligence) return false;
+    if (!canWrite) {
+      if (href.includes("tab=data")) return false;
+      if (href.includes("tab=qual-entry")) return false;
+      if (href.includes("tab=pending")) return false;
+    }
+    return true;
+  };
 
   return groups
     .map((g) => {
       if (g.collapsible) {
-        const items = g.items.filter((item) => {
-          if (item.href.startsWith("/dashboard/revenue") && !canViewRevenue) return false;
-          if (item.href.startsWith("/dashboard/admin") && !canAccessAdminPanel) return false;
-          if (item.href.startsWith("/dashboard/departments") && !canAccessAdmin) return false;
-          if (!canWrite) {
-            if (item.href.includes("tab=data")) return false;
-            if (item.href.includes("tab=qual-entry")) return false;
-            if (item.href.includes("tab=pending")) return false;
-          }
-          return true;
-        });
+        const items = g.items.filter((item) => allowItem(item.href));
         if (items.length === 0) return null;
         return { ...g, items };
       }
-      const items = g.items.filter((item) => {
-        if (item.href.startsWith("/dashboard/revenue") && !canViewRevenue) return false;
-        if (item.href.startsWith("/dashboard/admin") && !canAccessAdminPanel) return false;
-        if (item.href.startsWith("/dashboard/departments") && !canAccessAdmin) return false;
-        return true;
-      });
+      const items = g.items.filter((item) => allowItem(item.href));
       if (items.length === 0) return null;
       return { ...g, items };
     })
@@ -319,12 +341,20 @@ export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user, signOut, facilityAuth, facilityAuthLoading } = useAuth();
+  const showRefrigeratorModule = useFlag("show-refrigerator-module");
+  const showLrids = useFlag("show-lrids");
+  const showAiIntelligence = useFlag("show-ai-intelligence");
   const hospitalName = facilityAuth?.hospitalName || process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Zyntel Hospital";
   const hospitalLogoUrl = facilityAuth?.hospitalLogoUrl || process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
 
   const navGroups = filterNavForFacilityAuth(navGroupsBase, facilityAuth, {
     loading: facilityAuthLoading,
     hasUser: !!user,
+    flags: {
+      showRefrigeratorModule,
+      showLrids,
+      showAiIntelligence,
+    },
   });
   const { collapsed, setCollapsed } = useSidebarLayout();
   const [moduleAttr, setModuleAttr] = useState<string>(() => readModuleAttr());

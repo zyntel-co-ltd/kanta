@@ -7,6 +7,7 @@ import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwe
 import { Doughnut, Line, Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { useFlag } from "@/lib/featureFlags";
 import { CHART_AXIS, CHART_TAT } from "@/lib/chart-theme";
 import { STATUS } from "@/lib/design-tokens";
 import { CircleDot, TrendingUp, Clock3 } from "lucide-react";
@@ -137,12 +138,21 @@ export default function TATPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const showReceptionTab = useFlag("show-reception-tab");
+  const showLrids = useFlag("show-lrids");
   const requestedTab = (searchParams.get("tab") || "overview") as TatTab;
-  const showReceptionTab = process.env.NEXT_PUBLIC_SHOW_RECEPTION_TAB === "true";
-  const activeTab: TatTab =
-    requestedTab === "reception" && !showReceptionTab
-      ? "overview"
-      : (["overview", "performance", "tests-level", "patient-level", "progress", "lrids", "reception"].includes(requestedTab) ? requestedTab : "overview") as TatTab;
+
+  const allowedTabs = new Set<TatTab>([
+    "overview",
+    "performance",
+    "tests-level",
+    "patient-level",
+    "progress",
+  ]);
+  if (showLrids) allowedTabs.add("lrids");
+  if (showReceptionTab) allowedTabs.add("reception");
+
+  const activeTab: TatTab = allowedTabs.has(requestedTab) ? requestedTab : "overview";
 
   const [filters, setFilters] = useState({
     period: "thisMonth",
@@ -396,7 +406,7 @@ export default function TATPage() {
     { id: "tests-level", label: "Tests Level" },
     { id: "patient-level", label: "Patient Level" },
     { id: "progress", label: "Progress" },
-    { id: "lrids", label: "LRIDS" },
+    ...(showLrids ? [{ id: "lrids" as TatTab, label: "LRIDS" }] : []),
     ...(showReceptionTab ? [{ id: "reception" as TatTab, label: "Reception" }] : []),
   ];
 
