@@ -12,3 +12,10 @@ Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/
 |----------------|------|--------|
 | 2026-03-29 | `supabase/migrations/20260329120000_post_mazra_cleanup.sql` | Post-Mazra pivot: drop `mazra_generated` columns, hospital `classification` / `subscription_status`, facility-scoped RLS, canonical Mazra hospital names — idempotent |
 | 2026-03-29 | `supabase/migrations/20260329140000_lab_sections_shifts_audit_app.sql` | ENG-85: `lab_sections`, `lab_shifts`, `tat_targets.section_id`; ENG-64: relax `audit_log.action` CHECK, add `user_id` / `entity_type`; seed sections/shifts per hospital |
+| 2026-03-29 | In-place edits to older migration files (same filenames) | **`supabase db push` hardening** for Mazra / partial prod: `20250321000001` — backfill `facility_id` from `hospital_id` only if that column exists; `20250321000003` — create `facility_role` only if missing; `20250321000006` — `tat_targets` uniqueness via expression index (not invalid inline `UNIQUE`); `20260322000001` — `ALTER lab_racks ADD COLUMN status` when table pre-exists without it |
+
+## App / ops (2026-03-29)
+
+- **ENG-86:** Lab Metrics filters/charts use `useFacilityConfig` + `/api/facility/lab-config`; admin config GETs opened to facility members; `LabMetricsConfigEmpty` when no sections.
+- **ENG-84:** PostHog flags inventory in `lib/featureFlags.ts` + `zyntel-playbook/12-projects/kanta/feature-flags.md`; page gates for refrigerator, intelligence, LRIDS display; Settings copy clarifies Zyntel-managed flags.
+- **API v1 / prod DB:** `lib/db.ts` and v1 routes scope asset queries by **`facility_id`** (query param name `hospital_id` unchanged for clients).

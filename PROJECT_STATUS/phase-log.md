@@ -5,6 +5,15 @@
 Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 
 ---
+
+### 2026-03-29 — ENG-86 lab config, ENG-84 flags, prod Supabase push hardening
+
+- [x] **Lab Metrics facility config (ENG-86)** — `lib/hooks/useFacilityConfig.ts`, `GET /api/facility/lab-config`, sections/shifts/TAT targets on TAT, Tests, Numbers, Revenue, Meta; chart/table labels via `resolveSectionLabel`; relaxed GET on `/api/admin/config/{sections,shifts,tat-targets}` for authenticated facility users; `LabMetricsConfigEmpty`; performance breach KPI uses per-section targets.
+- [x] **PostHog feature flags (ENG-84)** — `KANTA_FEATURE_FLAG_NAMES`, playbook doc under repo `zyntel-playbook/12-projects/kanta/feature-flags.md`, `.env.example` flag overrides; gates on refrigerator pages, intelligence, public LRIDS board; Settings note that module access is Zyntel-managed.
+- [x] **Asset API vs prod schema** — `lib/db.ts` + `/api/v1/*` use DB column **`facility_id`** while keeping **`hospital_id`** as the external query/body parameter name.
+- [x] **Migrations idempotent for `supabase db push`** — Edits to existing filenames (no renames): `20250321000001_add_facility_id.sql` (conditional backfill from `hospital_id`); `20250321000003_facility_users_rbac.sql` (skip `CREATE TYPE facility_role` if exists); `20250321000006_tat_module.sql` (unique index on `COALESCE(test_name,'')`); `20260322000001_samples_module.sql` (`ADD COLUMN status` on pre-existing `lab_racks`). See root `PROJECT_STATUS.md` migration table row.
+
+---
 # Kanta — Project Status & Functional Specification
 
 **Last updated:** 2026-03-27 (Phase 29 — Mazra alignment hardening for data completeness)  

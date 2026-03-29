@@ -1,9 +1,9 @@
 # Kanta — Start Here
 
-**Last updated:** 2026-03-28  
+**Last updated:** 2026-03-29  
 **Updated by:** Cursor  
 **Product type:** SaaS — hospital lab operations & asset intelligence  
-**Status:** Active development — MVP, Phase 29 complete  
+**Status:** Active development — MVP; Phase 29 + 2026-03-29 ops (lab config, flags, migration push fixes)  
 **Production URL:** https://app.zyntel.net  
 **Repo:** github.com/zyntel-co-ltd/kanta  
 
@@ -23,12 +23,12 @@ Hospital staff use a unified dashboard with **three app domains**: **Lab Metrics
 |--------|-------|-------|
 | Auth & sessions | ✅ Live | Supabase SSR, middleware, password reset |
 | Asset Management | ✅ Live | Equipment CRUD, QR scan, maintenance, analytics |
-| Lab Metrics | ✅ Live | TAT, tests, revenue, performance, LRIDS |
+| Lab Metrics | ✅ Live | TAT, tests, revenue, performance, LRIDS; facility **sections / shifts / TAT targets** from config (`useFacilityConfig`, `/api/facility/lab-config`, ENG-86) |
 | Quality & samples | ✅ Live | QC, Westgard/L-J, samples, hub pages |
 | Admin & settings | ✅ Live | Users, hospital settings (ENG-80), RBAC v2 |
 | AI Intelligence | ✅ Live | NL queries, weekly summaries, anomaly / telemetry |
 | Refrigerator | ✅ Live | Telemetry (feature-flagged where applicable) |
-| PostHog feature flags | ✅ Live | `lib/featureFlags.ts`, group `branch` in AuthContext |
+| PostHog feature flags | ✅ Live | `lib/featureFlags.ts`, `KANTA_FEATURE_FLAG_NAMES`, inventory `zyntel-playbook/12-projects/kanta/feature-flags.md` (ENG-84); group `branch` in AuthContext |
 | Reception / TAT tab | 🔨 In progress | ENG-77 (if still open — confirm in Linear) |
 | Multi-tenant billing | 📋 Planned | — |
 
@@ -56,7 +56,7 @@ Hospital staff use a unified dashboard with **three app domains**: **Lab Metrics
 - **Base branch:** `development` for features — do not commit directly to `main` without policy.
 - **Linear team:** Engineering (ENG).
 - **Before touching a feature:** read `features/[module].md` for that area (or write the blocks first if missing).
-- **After any change:** update this file’s build table + the relevant `features/*.md`; `data-model.md` if schema changed; `issues.md` / `decisions.md` as needed.
+- **After any change:** update this file’s build table + the relevant `features/*.md`; `data-model.md` if schema changed; `issues.md` / `decisions.md` as needed; root **`PROJECT_STATUS.md`** migration / ops bullets when migrations or cross-cutting behaviour changes.
 - **Key files:** `components/dashboard/Sidebar.tsx` (navigation), `lib/AuthContext.tsx`, `lib/supabase.ts`, `lib/redis.ts`, `supabase/migrations/`.
 - **Do not touch:** Supabase schema without a migration file.
 
