@@ -1,13 +1,15 @@
 "use client";
 
 import "@/components/charts/registry";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
 import { Doughnut, Line, Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
+import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
+import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
 import { useFlag } from "@/lib/featureFlags";
 import { CHART_AXIS, CHART_TAT } from "@/lib/chart-theme";
 import { STATUS } from "@/lib/design-tokens";
@@ -25,16 +27,6 @@ const PERIODS = [
   { value: "lastMonth",    label: "Last Month"   },
   { value: "thisQuarter",  label: "This Quarter" },
   { value: "thisYear",     label: "This Year"    },
-];
-
-const SHIFT_FALLBACK_INNER = [
-  { value: "day shift", label: "Day Shift" },
-  { value: "night shift", label: "Night Shift" },
-];
-
-const LAB_FALLBACK_INNER = [
-  { value: "Main Laboratory", label: "Main Laboratory" },
-  { value: "Annex", label: "Annex" },
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -139,6 +131,12 @@ export default function TATPage() {
   const searchParams = useSearchParams();
   const { facilityAuth } = useAuth();
   const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
+  const {
+    shiftFilterOptions,
+    laboratoryFilterOptions,
+    resolveSectionLabel,
+    hasConfiguredSections,
+  } = useFacilityConfig(facilityId);
   const showReceptionTab = useFlag("show-reception-tab");
   const showLrids = useFlag("show-lrids");
   const requestedTab = (searchParams.get("tab") || "overview") as TatTab;
@@ -166,60 +164,6 @@ export default function TATPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
   const [lrids, setLrids] = useState<LRIDSItem[]>([]);
-  const [labFilterOptions, setLabFilterOptions] = useState({
-    shifts: [{ value: "all", label: "All Shifts" }, ...SHIFT_FALLBACK_INNER],
-    labs: [{ value: "all", label: "All Laboratories" }, ...LAB_FALLBACK_INNER],
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`/api/facility/lab-config?facility_id=${facilityId}`);
-        if (!res.ok) throw new Error("lab-config");
-        const j = (await res.json()) as {
-          shifts?: Array<{
-            id: string;
-            name: string;
-            start_time: string;
-            end_time: string;
-            is_active?: boolean;
-          }>;
-          sections?: Array<{ code: string; name: string; is_active?: boolean }>;
-        };
-        if (cancelled) return;
-        const shifts = [
-          { value: "all", label: "All Shifts" },
-          ...(j.shifts ?? [])
-            .filter((s) => s.is_active !== false)
-            .map((s) => ({
-              value: s.name,
-              label: `${s.name} (${String(s.start_time).slice(0, 5)}–${String(s.end_time).slice(0, 5)})`,
-            })),
-        ];
-        const labs = [
-          { value: "all", label: "All Laboratories" },
-          ...(j.sections ?? [])
-            .filter((s) => s.is_active !== false)
-            .map((s) => ({ value: s.code, label: s.name })),
-        ];
-        setLabFilterOptions({
-          shifts: shifts.length > 1 ? shifts : [{ value: "all", label: "All Shifts" }, ...SHIFT_FALLBACK_INNER],
-          labs: labs.length > 1 ? labs : [{ value: "all", label: "All Laboratories" }, ...LAB_FALLBACK_INNER],
-        });
-      } catch {
-        if (!cancelled) {
-          setLabFilterOptions({
-            shifts: [{ value: "all", label: "All Shifts" }, ...SHIFT_FALLBACK_INNER],
-            labs: [{ value: "all", label: "All Laboratories" }, ...LAB_FALLBACK_INNER],
-          });
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [facilityId]);
 
   const setTab = (tab: TatTab) => {
     const next = new URLSearchParams(searchParams.toString());
@@ -437,15 +381,34 @@ export default function TATPage() {
     },
   };
 
-  const perfSections = performanceData?.bySection ?? [];
-  const perfLabels = perfSections.map((s) => s.section);
+  const perfBySection = performanceData?.bySection;
+  const perfSectionDisplayLabels = useMemo(
+    () => (perfBySection ?? []).map((s) => resolveSectionLabel(s.section)),
+    [perfBySection, resolveSectionLabel]
+  );
   const perfCountData: ChartData<"bar"> = {
-    labels: perfLabels,
-    datasets: [{ label: "Tests", data: perfSections.map((s) => s.count), backgroundColor: "#21336a", borderRadius: 4, barThickness: 14 }],
+    labels: perfSectionDisplayLabels,
+    datasets: [
+      {
+        label: "Tests",
+        data: (perfBySection ?? []).map((s) => s.count),
+        backgroundColor: "#21336a",
+        borderRadius: 4,
+        barThickness: 14,
+      },
+    ],
   };
   const perfTatData: ChartData<"bar"> = {
-    labels: perfLabels,
-    datasets: [{ label: "Avg TAT (min)", data: perfSections.map((s) => s.avgTat), backgroundColor: "#2d3f6e", borderRadius: 4, barThickness: 14 }],
+    labels: perfSectionDisplayLabels,
+    datasets: [
+      {
+        label: "Avg TAT (min)",
+        data: (perfBySection ?? []).map((s) => s.avgTat),
+        backgroundColor: "#2d3f6e",
+        borderRadius: 4,
+        barThickness: 14,
+      },
+    ],
   };
   const perfBarOpts: ChartOptions<"bar"> = {
     indexAxis: "y",
@@ -476,6 +439,11 @@ export default function TATPage() {
           ))}
         </div>
         <div className="p-6">
+          {!hasConfiguredSections && (
+            <LabMetricsConfigEmpty
+              canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel}
+            />
+          )}
           {activeTab === "performance" && (
             <div className="space-y-6">
               <div>
@@ -501,7 +469,7 @@ export default function TATPage() {
               <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50"><tr><th className="px-4 py-3 text-left font-semibold text-slate-600">Lab #</th><th className="px-4 py-3 text-left font-semibold text-slate-600">Test</th><th className="px-4 py-3 text-left font-semibold text-slate-600">Section</th><th className="px-4 py-3 text-left font-semibold text-slate-600">Status</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100">{lrids.map((r) => <tr key={r.id}><td className="px-4 py-3">{r.lab_number ?? "—"}</td><td className="px-4 py-3">{r.test_name}</td><td className="px-4 py-3">{r.section}</td><td className="px-4 py-3">{r.status}</td></tr>)}</tbody>
+                  <tbody className="divide-y divide-slate-100">{lrids.map((r) => <tr key={r.id}><td className="px-4 py-3">{r.lab_number ?? "—"}</td><td className="px-4 py-3">{r.test_name}</td><td className="px-4 py-3">{resolveSectionLabel(r.section)}</td><td className="px-4 py-3">{r.status}</td></tr>)}</tbody>
                 </table>
               </div>
             </div>
@@ -552,7 +520,7 @@ export default function TATPage() {
               onChange={(e) => updateFilter("shift", e.target.value)}
               className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
-              {labFilterOptions.shifts.map((s) => (
+              {shiftFilterOptions.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
@@ -566,7 +534,7 @@ export default function TATPage() {
               onChange={(e) => updateFilter("hospitalUnit", e.target.value)}
               className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
-              {labFilterOptions.labs.map((l) => (
+              {laboratoryFilterOptions.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
               ))}
             </select>
@@ -601,6 +569,10 @@ export default function TATPage() {
           </button>
         </div>
       </div>
+
+      {!hasConfiguredSections && (
+        <LabMetricsConfigEmpty canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel} />
+      )}
 
       {/* ── Loading ───────────────────────────────────────────────────── */}
       {isLoading && (

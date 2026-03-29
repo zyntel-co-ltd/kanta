@@ -6,6 +6,9 @@ import "@/components/charts/registry";
 import { Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { useAuth } from "@/lib/AuthContext";
+import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
+import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
 import { BarChart3, Clock3 } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -18,18 +21,6 @@ const PERIODS = [
   { value: "lastMonth",   label: "Last Month"   },
   { value: "thisQuarter", label: "This Quarter" },
   { value: "thisYear",    label: "This Year"    },
-];
-
-const SHIFTS = [
-  { value: "all",         label: "All Shifts"  },
-  { value: "day shift",   label: "Day Shift"   },
-  { value: "night shift", label: "Night Shift" },
-];
-
-const LABORATORIES = [
-  { value: "all",             label: "All Laboratories" },
-  { value: "Main Laboratory", label: "Main Laboratory"  },
-  { value: "Annex",           label: "Annex"            },
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -108,6 +99,11 @@ function KPICard({
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function NumbersPage() {
+  const { facilityAuth } = useAuth();
+  const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
+  const { shiftFilterOptions, laboratoryFilterOptions, hasConfiguredSections } =
+    useFacilityConfig(facilityId);
+
   const [filters, setFilters] = useState({
     period: "thisMonth",
     shift: "all",
@@ -127,7 +123,7 @@ export default function NumbersPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({ facility_id: DEFAULT_FACILITY_ID, period: filters.period });
+      const params = new URLSearchParams({ facility_id: facilityId, period: filters.period });
       if (filters.shift && filters.shift !== "all") params.append("shift", filters.shift);
       if (filters.hospitalUnit && filters.hospitalUnit !== "all")
         params.append("laboratory", filters.hospitalUnit);
@@ -144,7 +140,7 @@ export default function NumbersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, facilityId]);
 
   useEffect(() => {
     fetchData();
@@ -218,6 +214,9 @@ export default function NumbersPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {!hasConfiguredSections && (
+        <LabMetricsConfigEmpty canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel} />
+      )}
       {/* Filter Bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="flex flex-wrap items-end gap-4">
@@ -243,7 +242,7 @@ export default function NumbersPage() {
               onChange={(e) => updateFilter("shift", e.target.value)}
               className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
-              {SHIFTS.map((s) => (
+              {shiftFilterOptions.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
@@ -256,7 +255,7 @@ export default function NumbersPage() {
               onChange={(e) => updateFilter("hospitalUnit", e.target.value)}
               className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
-              {LABORATORIES.map((l) => (
+              {laboratoryFilterOptions.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
               ))}
             </select>

@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { useAuth } from "@/lib/AuthContext";
+import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
+import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
 import { Plus, Pencil, Trash2, Search, X, ChevronLeft, ChevronRight, Download } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
-const LAB_SECTIONS = [
-  "CHEMISTRY", "HEAMATOLOGY", "MICROBIOLOGY", "SEROLOGY", "REFERRAL", "N/A",
-] as const;
-
 const TAT_OPTIONS = [30, 60, 90, 120, 180, 240, 360, 480] as const;
 
 const ROWS_PER_PAGE = 50;
@@ -111,6 +110,21 @@ function Modal({
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function MetaPage() {
+  const { facilityAuth } = useAuth();
+  const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
+  const {
+    activeSections,
+    sectionFilterOptions,
+    resolveSectionLabel,
+    targetMinutesBySectionCode,
+    hasConfiguredSections,
+  } = useFacilityConfig(facilityId);
+
+  const sectionCodes = useMemo(
+    () => new Set(activeSections.map((s) => s.code.trim().toUpperCase())),
+    [activeSections]
+  );
+
   const [filters, setFilters] = useState({ labSection: "all", search: "" });
   const [currentPage, setCurrentPage] = useState(1);
   const [data, setData] = useState<MetaRecord[]>([]);
@@ -121,7 +135,7 @@ export default function MetaPage() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [formData, setFormData] = useState<FormData>({
     testName: "",
-    section: "CHEMISTRY",
+    section: "",
     price: "0",
     tatMinutes: "60",
   });
@@ -129,7 +143,7 @@ export default function MetaPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({ facility_id: DEFAULT_FACILITY_ID });
+      const params = new URLSearchParams({ facility_id: facilityId });
       if (filters.labSection && filters.labSection !== "all") params.append("section", filters.labSection);
       if (filters.search) params.append("search", filters.search);
 
@@ -142,7 +156,7 @@ export default function MetaPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, facilityId]);
 
   useEffect(() => {
     fetchData();
@@ -165,7 +179,15 @@ export default function MetaPage() {
 
   const handleAdd = () => {
     setEditingRecord(null);
-    setFormData({ testName: "", section: "CHEMISTRY", price: "0", tatMinutes: "60" });
+    const firstCode = activeSections[0]?.code ?? "";
+    const defaultTat =
+      (firstCode && targetMinutesBySectionCode.get(firstCode.trim().toUpperCase())) ?? 60;
+    setFormData({
+      testName: "",
+      section: firstCode,
+      price: "0",
+      tatMinutes: String(defaultTat),
+    });
     setIsModalOpen(true);
   };
 
@@ -176,7 +198,7 @@ export default function MetaPage() {
       const payload = editingRecord
         ? { section: formData.section, price: parseFloat(formData.price) || 0, tatMinutes: parseInt(formData.tatMinutes, 10) || 60 }
         : {
-            facility_id: DEFAULT_FACILITY_ID,
+            facility_id: facilityId,
             testName: formData.testName.trim(),
             section: formData.section,
             price: parseFloat(formData.price) || 0,
@@ -224,15 +246,25 @@ export default function MetaPage() {
 
   const handleExportCSV = () => {
     const headers = ["Test Name", "Section", "Price (UGX)", "Expected TAT (min)"];
-    const rows = data.map((r) => [r.testName, r.section, r.price, r.tatMinutes]);
+    const rows = data.map((r) => [
+      r.testName,
+      resolveSectionLabel(r.section),
+      r.price,
+      r.tatMinutes,
+    ]);
     downloadCSV([headers, ...rows], `Meta-${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
-  const isCustomSection = !LAB_SECTIONS.includes(formData.section as (typeof LAB_SECTIONS)[number]);
+  const isCustomSection =
+    formData.section.trim() === "" ||
+    !sectionCodes.has(formData.section.trim().toUpperCase());
   const isCustomTAT = !TAT_OPTIONS.includes(parseInt(formData.tatMinutes, 10) as (typeof TAT_OPTIONS)[number]);
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {!hasConfiguredSections && (
+        <LabMetricsConfigEmpty canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel} />
+      )}
       {/* ── Header / Filter Bar ──────────────────────────────────────────── */}
       <div className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="flex flex-wrap items-end gap-4">
@@ -249,9 +281,8 @@ export default function MetaPage() {
               }}
               className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="all">All Sections</option>
-              {LAB_SECTIONS.map((s) => (
-                <option key={s} value={s}>{s}</option>
+              {sectionFilterOptions.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
           </div>
@@ -351,7 +382,7 @@ export default function MetaPage() {
                       <td className="px-5 py-3 font-medium text-slate-800">{row.testName}</td>
                       <td className="px-5 py-3">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                          {row.section}
+                          {resolveSectionLabel(row.section)}
                         </span>
                       </td>
                       <td className="px-5 py-3 text-right text-slate-700">
@@ -447,14 +478,27 @@ export default function MetaPage() {
               value={isCustomSection ? "_custom" : formData.section}
               onChange={(e) => {
                 const v = e.target.value;
-                setFormData((p) => ({ ...p, section: v === "_custom" ? "" : v }));
+                if (v === "_custom") {
+                  setFormData((p) => ({ ...p, section: "" }));
+                  return;
+                }
+                const target = v.trim().toUpperCase();
+                const fromConfig = targetMinutesBySectionCode.get(target);
+                setFormData((p) => ({
+                  ...p,
+                  section: v,
+                  tatMinutes:
+                    fromConfig != null ? String(fromConfig) : p.tatMinutes,
+                }));
               }}
               className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              {LAB_SECTIONS.map((s) => (
-                <option key={s} value={s}>{s}</option>
+              {activeSections.map((s) => (
+                <option key={s.code} value={s.code}>{s.name}</option>
               ))}
-              {isCustomSection && <option value="_custom">{formData.section}</option>}
+              {isCustomSection && formData.section.trim() !== "" && (
+                <option value="_custom">{formData.section}</option>
+              )}
               <option value="_custom">+ Add new section…</option>
             </select>
             {isCustomSection && (

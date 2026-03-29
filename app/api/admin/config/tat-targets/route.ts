@@ -3,7 +3,12 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
+import {
+  getAuthContext,
+  requireAdminPanel,
+  requireAuth,
+  requireFacilityAccess,
+} from "@/lib/auth/server";
 import { writeAuditLog } from "@/lib/audit";
 
 const supabaseConfigured =
@@ -20,8 +25,10 @@ export async function GET(req: NextRequest) {
   }
 
   const ctx = await getAuthContext(req, { facilityIdHint: facilityId });
-  const denied = requireAdminPanel(ctx, facilityId);
-  if (denied) return denied;
+  const authErr = requireAuth(ctx);
+  if (authErr) return authErr;
+  const accessErr = requireFacilityAccess(ctx, facilityId);
+  if (accessErr) return accessErr;
 
   try {
     const { createAdminClient } = await import("@/lib/supabase");

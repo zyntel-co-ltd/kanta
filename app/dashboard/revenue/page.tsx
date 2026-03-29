@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
 import "@/components/charts/registry";
 import { Doughnut, Line, Bar } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { useAuth } from "@/lib/AuthContext";
+import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
+import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
 import { CircleDot, TrendingUp, TestTube } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -18,22 +21,6 @@ const PERIODS = [
   { value: "lastMonth",   label: "Last Month"   },
   { value: "thisQuarter", label: "This Quarter" },
   { value: "thisYear",    label: "This Year"    },
-];
-
-const LAB_SECTIONS = [
-  { value: "all",          label: "All Sections" },
-  { value: "CHEMISTRY",    label: "Chemistry"    },
-  { value: "HEAMATOLOGY",  label: "Haematology"  },
-  { value: "MICROBIOLOGY", label: "Microbiology" },
-  { value: "SEROLOGY",     label: "Serology"     },
-  { value: "REFERRAL",     label: "Referral"     },
-  { value: "N/A",          label: "N/A"          },
-];
-
-const SHIFTS = [
-  { value: "all",         label: "All Shifts"  },
-  { value: "day shift",   label: "Day Shift"   },
-  { value: "night shift", label: "Night Shift" },
 ];
 
 const SECTION_COLORS = [
@@ -84,6 +71,15 @@ function KPICard({
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function RevenuePage() {
+  const { facilityAuth } = useAuth();
+  const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
+  const {
+    sectionFilterOptions,
+    shiftFilterOptions,
+    resolveSectionLabel,
+    hasConfiguredSections,
+  } = useFacilityConfig(facilityId);
+
   const [filters, setFilters] = useState({
     period: "thisMonth",
     labSection: "all",
@@ -104,7 +100,7 @@ export default function RevenuePage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({ facility_id: DEFAULT_FACILITY_ID, period: filters.period });
+      const params = new URLSearchParams({ facility_id: facilityId, period: filters.period });
       if (filters.labSection && filters.labSection !== "all") params.append("labSection", filters.labSection);
       if (filters.shift && filters.shift !== "all") params.append("shift", filters.shift);
       if (filters.testName?.trim()) params.append("testName", filters.testName.trim());
@@ -121,7 +117,7 @@ export default function RevenuePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, facilityId]);
 
   useEffect(() => {
     fetchData();
@@ -140,8 +136,12 @@ export default function RevenuePage() {
       )
     : (data?.testRevenue ?? []).slice(0, 30);
 
-  const sectionLabels = (data?.sectionRevenue ?? []).map((d) => d.section);
-  const sectionValues = (data?.sectionRevenue ?? []).map((d) => d.revenue);
+  const sectionRevenue = data?.sectionRevenue;
+  const sectionLabels = useMemo(
+    () => (sectionRevenue ?? []).map((d) => resolveSectionLabel(d.section)),
+    [sectionRevenue, resolveSectionLabel]
+  );
+  const sectionValues = (sectionRevenue ?? []).map((d) => d.revenue);
   const sectionColors = sectionLabels.map((_, idx) => SECTION_COLORS[idx % SECTION_COLORS.length]);
   const sectionChartData: ChartData<"doughnut"> = {
     labels: sectionLabels,
@@ -265,6 +265,9 @@ export default function RevenuePage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {!hasConfiguredSections && (
+        <LabMetricsConfigEmpty canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel} />
+      )}
       {/* Filter Bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="flex flex-wrap items-end gap-4">
@@ -290,7 +293,7 @@ export default function RevenuePage() {
               onChange={(e) => updateFilter("labSection", e.target.value)}
               className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
-              {LAB_SECTIONS.map((s) => (
+              {sectionFilterOptions.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
@@ -303,7 +306,7 @@ export default function RevenuePage() {
               onChange={(e) => updateFilter("shift", e.target.value)}
               className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
             >
-              {SHIFTS.map((s) => (
+              {shiftFilterOptions.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>

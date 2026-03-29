@@ -50,11 +50,23 @@ export async function GET(req: NextRequest) {
     }
     const startStr = start.toISOString();
 
-    const { data: requests } = await db
-      .from("test_requests")
-      .select("id, section, status, requested_at, received_at, resulted_at")
-      .eq("facility_id", facilityId)
-      .gte("requested_at", startStr);
+    const [{ data: requests }, { data: targets }] = await Promise.all([
+      db
+        .from("test_requests")
+        .select("id, section, test_name, status, requested_at, received_at, resulted_at")
+        .eq("facility_id", facilityId)
+        .gte("requested_at", startStr),
+      db
+        .from("tat_targets")
+        .select("section, test_name, target_minutes")
+        .eq("facility_id", facilityId),
+    ]);
+
+    const targetMap = new Map<string, number>();
+    for (const t of targets ?? []) {
+      const key = t.test_name ? `${t.section}:${t.test_name}` : t.section;
+      targetMap.set(key, t.target_minutes);
+    }
 
     const resulted = (requests ?? []).filter((r) => r.status === "resulted");
     const received = (requests ?? []).filter((r) =>
@@ -65,6 +77,7 @@ export async function GET(req: NextRequest) {
     let tatCount = 0;
     const bySection: Record<string, { count: number; tatSum: number; tatCount: number }> = {};
 
+    let breachCount = 0;
     for (const r of resulted) {
       const rec = r.received_at ? new Date(r.received_at) : null;
       const res = r.resulted_at ? new Date(r.resulted_at) : null;
@@ -77,14 +90,19 @@ export async function GET(req: NextRequest) {
         bySection[sec].count++;
         bySection[sec].tatSum += tat;
         bySection[sec].tatCount++;
+
+        const tn = (r as { test_name?: string | null }).test_name;
+        const target =
+          (tn
+            ? targetMap.get(`${sec}:${tn}`)
+            : undefined) ??
+          targetMap.get(sec) ??
+          targetMap.get(String(sec).toUpperCase());
+        if (target != null && Number.isFinite(target) && tat > target) {
+          breachCount++;
+        }
       }
     }
-
-    const { count: breachCount } = await db
-      .from("tat_breaches")
-      .select("id", { count: "exact", head: true })
-      .eq("facility_id", facilityId)
-      .gte("detected_at", startStr);
 
     const bySectionArr = Object.entries(bySection).map(([section, v]) => ({
       section,
@@ -97,7 +115,7 @@ export async function GET(req: NextRequest) {
         totalResulted: resulted.length,
         totalReceived: received.length,
         avgTatMinutes: tatCount > 0 ? Math.round(totalTat / tatCount) : 0,
-        breachCount: breachCount ?? 0,
+        breachCount,
         bySection: bySectionArr,
       },
     });
