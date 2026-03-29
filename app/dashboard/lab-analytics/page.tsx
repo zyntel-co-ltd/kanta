@@ -46,15 +46,15 @@ export default function LabAnalyticsWorkspacePage() {
   return (
     <div className="max-w-[1280px] mx-auto space-y-8 pb-10">
       <div
-        className="rounded-2xl overflow-hidden"
-        style={{ background: "linear-gradient(145deg, var(--module-primary-dark) 0%, var(--module-primary) 100%)" }}
+        className="rounded-2xl overflow-hidden border border-slate-100/80"
+        style={{ backgroundColor: "var(--module-primary-light)" }}
       >
         <div className="px-7 py-8">
-          <p className="text-[11px] font-semibold uppercase tracking-widest module-accent-soft-text mb-2">Workspace</p>
-          <h1 className="text-white font-extrabold tracking-tight" style={{ fontSize: "clamp(1.35rem, 2.2vw, 1.75rem)", lineHeight: 1.2 }}>
+          <p className="text-[11px] font-semibold uppercase tracking-widest module-accent-text mb-2">Workspace</p>
+          <h1 className="module-accent-text font-extrabold tracking-tight" style={{ fontSize: "var(--workspace-banner-title)", lineHeight: 1.2 }}>
             Lab analytics
           </h1>
-          <p className="module-accent-soft-text mt-2 max-w-xl text-[0.9375rem] leading-relaxed">
+          <p className="mt-2 max-w-xl text-[0.9375rem] leading-relaxed text-slate-700/95">
             Turnaround, volume, revenue, and lab management — pick where you want to work.
           </p>
         </div>

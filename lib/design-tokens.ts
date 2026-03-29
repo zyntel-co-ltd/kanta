@@ -2,8 +2,8 @@
  * Kanta design system — mirrors CSS variables in app/globals.css
  * (Plan §1 Foundations + §9 status semantics)
  *
- * ENG-131: Canonical module accent colors (CEO-approved). Brand emerald stays for
- * Kanta identity, AI Insights, Admin/Settings — not for Lab Metrics module chrome.
+ * ENG-131: Canonical module accent colors (CEO-approved). Lab Metrics uses the same
+ * emerald family as brand; Quality uses blue; assets use sky.
  */
 
 export const BRAND = {
@@ -39,10 +39,10 @@ export const STRUCTURE = {
  */
 export const MODULE_COLORS = {
   labMetrics: {
-    bg: "bg-teal-700",
-    text: "text-teal-700",
-    border: "border-teal-700",
-    hex: "#0f766e",
+    bg: "bg-emerald-600",
+    text: "text-emerald-600",
+    border: "border-emerald-600",
+    hex: "#059669",
   },
   assetManagement: {
     bg: "bg-sky-600",
@@ -51,10 +51,10 @@ export const MODULE_COLORS = {
     hex: "#0284c7",
   },
   qualitySamples: {
-    bg: "bg-indigo-500",
-    text: "text-indigo-500",
-    border: "border-indigo-500",
-    hex: "#6366f1",
+    bg: "bg-blue-600",
+    text: "text-blue-600",
+    border: "border-blue-600",
+    hex: "#2563eb",
   },
   aiInsights: {
     bg: "bg-emerald-600",
@@ -83,17 +83,27 @@ export const MODULE_THEMES = {
   },
   labMetrics: {
     primary: MODULE_COLORS.labMetrics.hex,
-    primaryDark: "#0d9488",
-    primaryLight: "#ccfbf1",
+    primaryDark: "#047857",
+    primaryLight: "#d1fae5",
     sidebarBg: "#ffffff",
     sidebarActiveBg: MODULE_COLORS.labMetrics.hex,
     sidebarActiveText: "#ffffff",
     sidebarHoverBg: "#f1f5f9",
   },
+  /** QC routes only — mirrors `neutral` / `[data-module="qualityQc"]` */
+  qualityQc: {
+    primary: "#64748b",
+    primaryDark: "#475569",
+    primaryLight: "#e2e8f0",
+    sidebarBg: "#ffffff",
+    sidebarActiveBg: "#64748b",
+    sidebarActiveText: "#ffffff",
+    sidebarHoverBg: "#f1f5f9",
+  },
   qualityManagement: {
     primary: MODULE_COLORS.qualitySamples.hex,
-    primaryDark: "#4f46e5",
-    primaryLight: "#e0e7ff",
+    primaryDark: "#1d4ed8",
+    primaryLight: "#dbeafe",
     sidebarBg: "#ffffff",
     sidebarActiveBg: MODULE_COLORS.qualitySamples.hex,
     sidebarActiveText: "#ffffff",

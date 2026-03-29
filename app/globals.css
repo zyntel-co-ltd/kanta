@@ -30,6 +30,9 @@
   --status-warn:  #d97706;
   --status-bad:   #dc2626;
   --status-info:  #2563eb;
+
+  /** Workspace hero strips (lab / quality / assets hubs) — smaller than prior clamp */
+  --workspace-banner-title: clamp(1.05rem, 1.55vw, 1.3rem);
 }
 
 /* ── Base ── */
@@ -231,17 +234,17 @@ html {
    - --module-* drives tab bars, banners, and module-accent-* helpers.
    ============================================================================= */
 
-/* Fallback before attribute match (Lab Metrics / teal) */
+/* Fallback before attribute match (Lab Metrics / emerald) */
 [data-module] {
   --sidebar-bg: #ffffff;
-  --sidebar-active-bg: #0f766e;
+  --sidebar-active-bg: #059669;
   --sidebar-active-text: #ffffff;
   --sidebar-hover-bg: #f1f5f9;
-  --module-accent: #0f766e;
-  --module-primary: #0f766e;
-  --module-primary-dark: #0d9488;
-  --module-primary-light: #ccfbf1;
-  --module-primary-soft-text: #0d9488;
+  --module-accent: #059669;
+  --module-primary: #059669;
+  --module-primary-dark: #047857;
+  --module-primary-light: #d1fae5;
+  --module-primary-soft-text: #047857;
   --module-primary-on: #ffffff;
 }
 
@@ -260,27 +263,41 @@ html {
 
 [data-module="labMetrics"] {
   --sidebar-bg: #ffffff;
-  --sidebar-active-bg: #0f766e;
+  --sidebar-active-bg: #059669;
   --sidebar-active-text: #ffffff;
   --sidebar-hover-bg: #f1f5f9;
-  --module-accent: #0f766e;
-  --module-primary: #0f766e;
-  --module-primary-dark: #0d9488;
-  --module-primary-light: #ccfbf1;
-  --module-primary-soft-text: #0f766e;
+  --module-accent: #059669;
+  --module-primary: #059669;
+  --module-primary-dark: #047857;
+  --module-primary-light: #d1fae5;
+  --module-primary-soft-text: #047857;
+  --module-primary-on: #ffffff;
+}
+
+/* QC only (/dashboard/qc) — neutral slate, same token set as home */
+[data-module="qualityQc"] {
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: #64748b;
+  --sidebar-active-text: #ffffff;
+  --sidebar-hover-bg: #f1f5f9;
+  --module-accent: #64748b;
+  --module-primary: #64748b;
+  --module-primary-dark: #475569;
+  --module-primary-light: #e2e8f0;
+  --module-primary-soft-text: #64748b;
   --module-primary-on: #ffffff;
 }
 
 [data-module="qualityManagement"] {
   --sidebar-bg: #ffffff;
-  --sidebar-active-bg: #6366f1;
+  --sidebar-active-bg: #2563eb;
   --sidebar-active-text: #ffffff;
   --sidebar-hover-bg: #f1f5f9;
-  --module-accent: #6366f1;
-  --module-primary: #6366f1;
-  --module-primary-dark: #4f46e5;
-  --module-primary-light: #e0e7ff;
-  --module-primary-soft-text: #6366f1;
+  --module-accent: #2563eb;
+  --module-primary: #2563eb;
+  --module-primary-dark: #1d4ed8;
+  --module-primary-light: #dbeafe;
+  --module-primary-soft-text: #1d4ed8;
   --module-primary-on: #ffffff;
 }
 
@@ -317,15 +334,15 @@ html {
   transition: border-color 200ms ease;
 }
 
-/* Home: subtle teal / indigo / sky tint (canonical module hues), not red */
+/* Home: subtle emerald / blue / sky tint — optional; sidebar defaults to solid white */
 .kanta-sidebar-neutral-glass {
   background:
     linear-gradient(
       180deg,
-      rgba(15, 118, 110, 0.08) 5%,
-      rgba(15, 118, 110, 0) 28%,
-      rgba(99, 102, 241, 0.08) 42%,
-      rgba(99, 102, 241, 0) 65%,
+      rgba(5, 150, 105, 0.07) 5%,
+      rgba(5, 150, 105, 0) 28%,
+      rgba(37, 99, 235, 0.07) 42%,
+      rgba(37, 99, 235, 0) 65%,
       rgba(2, 132, 199, 0.08) 78%,
       rgba(2, 132, 199, 0) 96%
     ),

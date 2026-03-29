@@ -46,12 +46,12 @@ export default function AssetWorkspacePage() {
   return (
     <div className="max-w-[1280px] mx-auto space-y-8 pb-10">
       <div
-        className="rounded-2xl overflow-hidden"
+        className="rounded-2xl overflow-hidden border border-slate-100/80"
         style={{ backgroundColor: "var(--module-primary-light)" }}
       >
         <div className="px-7 py-8">
           <p className="text-[11px] font-semibold uppercase tracking-widest module-accent-text mb-2">Workspace</p>
-          <h1 className="module-accent-text font-extrabold tracking-tight" style={{ fontSize: "clamp(1.35rem, 2.2vw, 1.75rem)", lineHeight: 1.2 }}>
+          <h1 className="module-accent-text font-extrabold tracking-tight" style={{ fontSize: "var(--workspace-banner-title)", lineHeight: 1.2 }}>
             Asset management
           </h1>
           <p className="mt-2 max-w-xl text-[0.9375rem] leading-relaxed text-slate-700">

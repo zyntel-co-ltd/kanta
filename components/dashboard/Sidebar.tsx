@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import type { ComponentType } from "react";
 import { useAuth, type FacilityAuthState } from "@/lib/AuthContext";
 import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
@@ -271,8 +271,8 @@ function readModuleAttr(): string {
 }
 
 function homeGroupColor(title: string): string {
-  if (title === "Lab Metrics") return "#0f766e";
-  if (title === "Quality & samples") return "#6366f1";
+  if (title === "Lab Metrics") return "#059669";
+  if (title === "Quality & samples") return "#64748b";
   if (title === "Asset Management") return "#0284c7";
   return "#334155";
 }
@@ -330,15 +330,13 @@ export default function Sidebar() {
   const [moduleAttr, setModuleAttr] = useState<string>(() => readModuleAttr());
   const isNeutralHome = moduleAttr === "neutral";
   const [openGroup, setOpenGroup] = useState<string | null>(null);
-  const accordionInit = useRef(false);
 
   useEffect(() => {
     setModuleAttr(readModuleAttr());
   }, [pathname]);
 
+  /** Keep exactly one collapsible group open — the one that matches the current route. */
   useEffect(() => {
-    if (accordionInit.current) return;
-    accordionInit.current = true;
     setOpenGroup(accordionGroupForPath(pathname));
   }, [pathname]);
 
@@ -346,8 +344,7 @@ export default function Sidebar() {
     <aside
       className={clsx(
         "kanta-sidebar relative flex flex-col h-screen flex-shrink-0 transition-all duration-300 ease-in-out overflow-visible border-r border-slate-200 bg-white",
-        collapsed ? "w-[72px]" : "w-[260px]",
-        isNeutralHome && "kanta-sidebar-neutral-glass"
+        collapsed ? "w-[72px]" : "w-[260px]"
       )}
       style={{ borderRadius: "0 28px 28px 0" }}
     >
@@ -651,8 +648,13 @@ export default function Sidebar() {
         onClick={() => setCollapsed(!collapsed)}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="absolute -right-4 top-6 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center z-50 transition-all duration-200 focus:outline-none text-white shadow-md hover:opacity-90 border border-white/20"
-        style={{ backgroundColor: "var(--sidebar-active-bg)" }}
+        className={clsx(
+          "absolute -right-3.5 top-6 -translate-y-1/2 z-50 flex h-9 w-9 items-center justify-center rounded-full",
+          "border border-slate-200/90 bg-white text-[var(--sidebar-active-bg)] shadow-[0_4px_16px_rgba(15,23,42,0.1)]",
+          "ring-1 ring-white/80 transition-all duration-200",
+          "hover:border-[color-mix(in_srgb,var(--sidebar-active-bg)_28%,white)] hover:shadow-[0_6px_22px_rgba(15,23,42,0.14)] hover:-translate-y-px",
+          "active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-active-bg)]/35 focus-visible:ring-offset-2"
+        )}
       >
         <span
           className={clsx(
@@ -661,9 +663,9 @@ export default function Sidebar() {
           )}
         >
           {collapsed ? (
-            <PanelLeftOpen size={16} strokeWidth={2.1} />
+            <PanelLeftOpen size={17} strokeWidth={2.25} />
           ) : (
-            <PanelLeftClose size={16} strokeWidth={2.1} />
+            <PanelLeftClose size={17} strokeWidth={2.25} />
           )}
         </span>
       </button>

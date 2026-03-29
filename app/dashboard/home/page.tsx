@@ -62,7 +62,7 @@ const apps: AppCard[] = [
     href: "/dashboard/lab-analytics",
     icon: FlaskConical,
     ctaLabel: "View analytics",
-    theme: { primary: "#0f766e", soft: "#ccfbf1", ring: "#0f766e" },
+    theme: { primary: "#059669", soft: "#d1fae5", ring: "#059669" },
     tabs: [
       { label: "TAT", href: "/dashboard/tat", icon: Timer },
       { label: "Volume", href: "/dashboard/numbers", icon: Binary },
@@ -78,7 +78,7 @@ const apps: AppCard[] = [
     href: "/dashboard/quality-samples",
     icon: ShieldCheck,
     ctaLabel: "Open workspace",
-    theme: { primary: "#6366f1", soft: "#e0e7ff", ring: "#6366f1" },
+    theme: { primary: "#64748b", soft: "#e2e8f0", ring: "#64748b" },
     tabs: [
       { label: "QC", href: "/dashboard/qc", icon: FlaskConical },
       { label: "Samples", href: "/dashboard/samples", icon: TestTubes },
@@ -127,7 +127,7 @@ export default function DashboardHomePage() {
               </span>
             </div>
             <h1
-              className="text-white text-xl sm:text-2xl font-extrabold tracking-tight leading-tight"
+              className="text-white text-lg sm:text-xl font-extrabold tracking-tight leading-tight"
               style={{ letterSpacing: "-0.03em" }}
             >
               Welcome back

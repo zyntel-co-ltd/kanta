@@ -479,31 +479,31 @@ function QCConfigTab() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">QC Name <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">QC Name <span className="text-red-500">*</span></label>
               <input type="text" value={form.qcName} onChange={(e) => setForm({ ...form, qcName: e.target.value })} className={inputCls} required />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Level <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Level <span className="text-red-500">*</span></label>
               <input type="number" min={1} value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })} className={inputCls} required />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Lot Number</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Lot Number</label>
               <input type="text" value={form.lotNumber} onChange={(e) => setForm({ ...form, lotNumber: e.target.value })} className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Expiry Date</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Expiry Date</label>
               <input type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Mean <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Mean <span className="text-red-500">*</span></label>
               <input type="number" step="any" value={form.mean} onChange={(e) => setForm({ ...form, mean: e.target.value })} className={inputCls} required />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Standard Deviation (SD) <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Standard Deviation (SD) <span className="text-red-500">*</span></label>
               <input type="number" step="any" value={form.sd} onChange={(e) => setForm({ ...form, sd: e.target.value })} className={inputCls} required />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Units of Measure</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Units of Measure</label>
               <select value={form.units} onChange={(e) => setForm({ ...form, units: e.target.value })} className={selectCls}>
                 <option value="μmol/L">μmol/L</option>
                 <option value="IU/mL">IU/mL</option>
@@ -651,24 +651,24 @@ function QCDataEntryTab() {
         <form onSubmit={handleSaveDraft} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Select QC Config</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Select QC Config</label>
               <select value={selectedConfigId} onChange={(e) => setSelectedConfigId(e.target.value)} className={selectCls} required>
                 <option value="">-- Choose QC --</option>
                 {qcConfigs.map((qc) => <option key={qc.id} value={qc.id}>{qc.qcName} (Level {qc.level}){qc.lotNumber ? ` - Lot: ${qc.lotNumber}` : ""}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Units of Measure</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Units of Measure</label>
               <div className="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-100 font-semibold text-slate-700 text-sm min-h-[42px] flex items-center">
                 {selectedConfigId ? (qcConfigs.find((c) => c.id === selectedConfigId)?.units || "μmol/L") : "—"}
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Date</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Date</label>
               <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className={inputCls} required />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">QC Value</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">QC Value</label>
               <input type="number" step="any" value={qcValue} onChange={(e) => setQcValue(e.target.value)} className={inputCls} required />
             </div>
           </div>
@@ -868,16 +868,16 @@ function QCVisualizationTab() {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <SectionHead icon={BarChart3} title="Visualization" />
         <div className="flex flex-wrap gap-3">
-          <select value={selectedConfigId} onChange={(e) => setSelectedConfigId(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400">
+          <select value={selectedConfigId} onChange={(e) => setSelectedConfigId(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400">
             <option value="">Select QC Config 1</option>
             {qcConfigs.map((qc) => <option key={qc.id} value={qc.id}>{qc.qcName} (Level {qc.level}){qc.lotNumber ? ` - Lot: ${qc.lotNumber}` : ""}</option>)}
           </select>
-          <select value={selectedConfigId2} onChange={(e) => setSelectedConfigId2(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400">
+          <select value={selectedConfigId2} onChange={(e) => setSelectedConfigId2(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400">
             <option value="">+ Add 2nd graph (optional)</option>
             {qcConfigs.filter((qc) => qc.id !== selectedConfigId).map((qc) => <option key={qc.id} value={qc.id}>{qc.qcName} (Level {qc.level}){qc.lotNumber ? ` - Lot: ${qc.lotNumber}` : ""}</option>)}
           </select>
-          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400" />
-          <input type="date" value={toDate}   onChange={(e) => setToDate(e.target.value)}   className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400" />
+          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400" />
+          <input type="date" value={toDate}   onChange={(e) => setToDate(e.target.value)}   className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400" />
         </div>
       </div>
 
@@ -950,7 +950,7 @@ function QCCalculatorTab() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {inputs.map((val, idx) => (
               <input key={idx} type="number" step="any" value={val} onChange={(e) => handleChange(idx, e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400 transition-all"
                 placeholder={`Value ${idx + 1}`} required />
             ))}
           </div>
@@ -1068,18 +1068,18 @@ function QCStatsTab() {
         <SectionHead icon={TrendingUp} title="Filter Options" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Select QC Configuration</label>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Select QC Configuration</label>
             <select value={selectedConfig} onChange={(e) => setSelectedConfig(e.target.value)} className={selectCls}>
               <option value="">-- Select Configuration --</option>
               {qcConfigs.map((config) => <option key={config.id} value={config.id}>{config.qcName} - Level {config.level}{config.lotNumber ? ` - Lot: ${config.lotNumber}` : ""}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Start Date</label>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Start Date</label>
             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">End Date</label>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">End Date</label>
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputCls} />
           </div>
         </div>
@@ -1244,31 +1244,31 @@ function QualConfigTab() {
           <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-3 flex items-center gap-2">Test Information <span className="flex-1 h-px bg-emerald-200 ml-2" /></h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Test Name <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Test Name <span className="text-red-500">*</span></label>
               <input type="text" value={form.testName} onChange={(e) => setForm({ ...form, testName: e.target.value })} placeholder="e.g. HIV Rapid Test" className={inputCls} required />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Result Type <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Result Type <span className="text-red-500">*</span></label>
               <select value={form.resultType} onChange={(e) => setForm({ ...form, resultType: e.target.value })} className={selectCls}>
                 {RESULT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Frequency</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Frequency</label>
               <select value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value })} className={selectCls}>
                 {FREQUENCIES.map((f) => <option key={f} value={f}>{f}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Manufacturer / Kit Name</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Manufacturer / Kit Name</label>
               <input type="text" value={form.manufacturer} onChange={(e) => setForm({ ...form, manufacturer: e.target.value })} placeholder="e.g. Determine™ HIV 1/2" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Lot Number</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Lot Number</label>
               <input type="text" value={form.lotNumber} onChange={(e) => setForm({ ...form, lotNumber: e.target.value })} placeholder="e.g. LOT-2025-HIV-04" className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Expiry Date</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Expiry Date</label>
               <input type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} className={inputCls} />
             </div>
           </div>
@@ -1470,7 +1470,7 @@ function QualEntryTab() {
         <SectionHead icon={TestTube} title={`Qualitative QC Data Entry${editingId ? " — Editing Draft" : ""}`} />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
           <div>
-            <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Select Test <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Select Test <span className="text-red-500">*</span></label>
             <select value={selectedConfigId} onChange={(e) => { setSelectedConfigId(e.target.value); if (!editingId) setControlResults([]); }} className={selectCls} required>
               <option value="">-- Choose Test --</option>
               {qualConfigs.map((cfg) => <option key={cfg.id} value={cfg.id}>{cfg.testName}</option>)}
@@ -1478,15 +1478,15 @@ function QualEntryTab() {
             {qualConfigs.length === 0 && <p className="text-xs text-amber-600 mt-1">No tests configured. Add one in Qual. Config first.</p>}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Lot Number</label>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Lot Number</label>
             <div className="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-100 font-mono font-semibold text-slate-700 text-sm min-h-[42px] flex items-center">{selectedConfig?.lotNumber || "—"}</div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Date <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Date <span className="text-red-500">*</span></label>
             <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className={inputCls} required />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Result Type</label>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Result Type</label>
             <div className="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-100 text-slate-700 text-sm min-h-[42px] flex items-center">{selectedConfig?.resultType || "—"}</div>
           </div>
         </div>
@@ -1697,18 +1697,18 @@ function QualLogTab() {
         <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-3">Filter Options</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Test Name</label>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Test Name</label>
             <select value={filterTest} onChange={(e) => setFilterTest(e.target.value)} className={selectCls}>
               <option value="">All Tests</option>
               {testNames.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">Start Date</label>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Start Date</label>
             <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1.5">End Date</label>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">End Date</label>
             <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className={inputCls} />
           </div>
         </div>

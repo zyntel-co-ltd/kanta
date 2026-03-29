@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation";
 export type DashboardModuleKey =
   | "neutral"
   | "labMetrics"
+  | "qualityQc"
   | "qualityManagement"
   | "assetManagement"
   | "aiInsights"
@@ -44,8 +45,11 @@ function detectModule(pathname: string): DashboardModuleKey {
   ];
   if (labMetrics.some((x) => p === x || p.startsWith(x + "/"))) return "labMetrics";
 
-  const quality = ["/dashboard/qc", "/dashboard/samples", "/dashboard/quality-samples"];
-  if (quality.some((x) => p === x || p.startsWith(x + "/"))) return "qualityManagement";
+  /** QC workspace — neutral slate chrome (distinct from Samples hub blue). */
+  if (p === "/dashboard/qc" || p.startsWith("/dashboard/qc/")) return "qualityQc";
+
+  const qualitySamples = ["/dashboard/samples", "/dashboard/quality-samples"];
+  if (qualitySamples.some((x) => p === x || p.startsWith(x + "/"))) return "qualityManagement";
 
   const asset = [
     "/dashboard/equipment",

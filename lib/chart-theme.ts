@@ -1,13 +1,13 @@
 /**
  * Chart.js — neutral structure + semantic status series (Plan §6 Charts)
- * ENG-131: Lab module accents use teal; asset equipment stacks use sky/cyan.
+ * ENG-131: Lab module accents use brand emerald; asset equipment stacks use sky/cyan.
  */
 
 import { STATUS, STRUCTURE, MODULE_COLORS } from "@/lib/design-tokens";
 
-/** Lab Metrics — TAT / operational trend accent (teal, not brand emerald) */
-const LAB_TEAL = MODULE_COLORS.labMetrics.hex;
-const LAB_TEAL_FILL = "rgba(15, 118, 110, 0.12)";
+/** Lab Metrics — TAT / operational trend accent (module emerald) */
+const LAB_ACCENT = MODULE_COLORS.labMetrics.hex;
+const LAB_ACCENT_FILL = "rgba(5, 150, 105, 0.12)";
 const SKY = MODULE_COLORS.assetManagement.hex;
 
 /** Default series for non-semantic trends (volume, counts) */
@@ -28,13 +28,13 @@ export const CHART_AXIS = {
   grid: "#f1f5f9",
 } as const;
 
-/** TAT / lab metrics — pie, line, bar (module teal + semantic status) */
+/** TAT / lab metrics — pie, line, bar (module emerald + semantic status) */
 export const CHART_TAT = {
-  pie: [LAB_TEAL, STATUS.WARN, STATUS.BAD, CHART_NEUTRAL.border] as const,
-  lineOnTime: { border: LAB_TEAL, fill: LAB_TEAL_FILL },
+  pie: [LAB_ACCENT, STATUS.WARN, STATUS.BAD, CHART_NEUTRAL.border] as const,
+  lineOnTime: { border: LAB_ACCENT, fill: LAB_ACCENT_FILL },
   lineDelayed: { border: STATUS.BAD, fill: CHART_STATUS.bad.background },
   lineNotUploaded: { border: CHART_NEUTRAL.border, fill: CHART_NEUTRAL.background },
-  barOnTime: LAB_TEAL,
+  barOnTime: LAB_ACCENT,
   barDelayed: STATUS.BAD,
   barNotUploaded: CHART_NEUTRAL.border,
 } as const;
@@ -47,8 +47,8 @@ export const CHART_EQUIPMENT_STACK = {
 } as const;
 
 export const CHART_BRAND_SECONDARY = {
-  border: "#2dd4bf",
-  background: LAB_TEAL_FILL,
+  border: "#34d399",
+  background: LAB_ACCENT_FILL,
 } as const;
 
 export const kantaChartTooltipPlugin = {
