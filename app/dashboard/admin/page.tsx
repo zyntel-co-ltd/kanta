@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
+import Tooltip from "@/components/ui/Tooltip";
 
 const LAB_SECTIONS = [
   "CHEMISTRY",
@@ -596,36 +597,42 @@ export default function AdminPage() {
                           )}
                         </td>
                         <td className="px-4 py-3 flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setEditingUser(u);
-                              setUserForm({
-                                username: u.username,
-                                email: u.email || "",
-                                password: "",
-                                role: u.role,
-                              });
-                              setUserModalOpen(true);
-                            }}
-                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50"
-                            title="Edit"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            onClick={() => setResetPasswordModal({ id: u.id, username: u.username })}
-                            className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50"
-                            title="Reset password"
-                          >
-                            <Key size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleToggleActive(u.id, u.is_active)}
-                            className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100"
-                            title={u.is_active ? "Deactivate" : "Activate"}
-                          >
-                            {u.is_active ? <X size={14} /> : <Check size={14} />}
-                          </button>
+                          <Tooltip label="Edit user">
+                            <button
+                              onClick={() => {
+                                setEditingUser(u);
+                                setUserForm({
+                                  username: u.username,
+                                  email: u.email || "",
+                                  password: "",
+                                  role: u.role,
+                                });
+                                setUserModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50"
+                              aria-label="Edit user"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label="Reset password">
+                            <button
+                              onClick={() => setResetPasswordModal({ id: u.id, username: u.username })}
+                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50"
+                              aria-label="Reset password"
+                            >
+                              <Key size={14} />
+                            </button>
+                          </Tooltip>
+                          <Tooltip label={u.is_active ? "Deactivate user" : "Activate user"}>
+                            <button
+                              onClick={() => handleToggleActive(u.id, u.is_active)}
+                              className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100"
+                              aria-label={u.is_active ? "Deactivate user" : "Activate user"}
+                            >
+                              {u.is_active ? <X size={14} /> : <Check size={14} />}
+                            </button>
+                          </Tooltip>
                         </td>
                       </tr>
                     ))}

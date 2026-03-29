@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import Tooltip from "@/components/ui/Tooltip";
 
 export type StatusBadgeVariant = "ok" | "warn" | "bad" | "info" | "neutral";
 
@@ -25,9 +26,8 @@ export default function StatusBadge({
   /** Native + hover hint (ENG-111); keep under ~8 words by convention */
   title?: string;
 }) {
-  return (
+  const badge = (
     <span
-      title={title}
       className={clsx(
         "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold",
         variantClass[variant],
@@ -36,5 +36,17 @@ export default function StatusBadge({
     >
       {children}
     </span>
+  );
+
+  const inferredTitle =
+    title ??
+    (typeof children === "string" || typeof children === "number"
+      ? String(children)
+      : undefined);
+  if (!inferredTitle) return badge;
+  return (
+    <Tooltip label={inferredTitle}>
+      {badge}
+    </Tooltip>
   );
 }

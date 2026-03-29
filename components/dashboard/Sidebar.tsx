@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import type { ComponentType } from "react";
 import { useAuth, type FacilityAuthState } from "@/lib/AuthContext";
 import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
+import Tooltip from "@/components/ui/Tooltip";
 import {
   LayoutDashboard,
   ScanLine,
@@ -326,7 +327,6 @@ export default function Sidebar() {
     hasUser: !!user,
   });
   const { collapsed, setCollapsed } = useSidebarLayout();
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [moduleAttr, setModuleAttr] = useState<string>(() => readModuleAttr());
   const isHomeHub = moduleAttr === "home";
   const [openGroup, setOpenGroup] = useState<string | null>(null);
@@ -403,8 +403,6 @@ export default function Sidebar() {
                   : pathname === p || pathname.startsWith(p + "/")
               );
               const isOpen = openGroup === group.title;
-              const parentKey  = parentHref + group.title;
-              const showTooltip = collapsed && (isCollapsibleActive || hoveredItem === parentKey);
               const sectionTint = isHomeHub ? homeGroupColor(group.title) : "#64748b";
 
               return (
@@ -419,11 +417,7 @@ export default function Sidebar() {
                   )}
 
                   {/* Parent row: icon + label + chevron toggle */}
-                  <div
-                    className="relative"
-                    onMouseEnter={() => setHoveredItem(parentKey)}
-                    onMouseLeave={() => setHoveredItem(null)}
-                  >
+                  <div className="relative">
                     {/* Active module indicator (left edge) */}
                     {isCollapsibleActive && (
                       <span
@@ -432,30 +426,31 @@ export default function Sidebar() {
                     )}
 
                     <div className="flex items-center">
-                      <Link
-                        href={parentHref}
-                        title={collapsed ? group.title : undefined}
-                        onClick={() => {
-                          if (!collapsed) {
-                            setOpenGroup((prev) => (prev === group.title ? null : group.title));
-                          }
-                        }}
-                        className={clsx(
-                          "relative z-[1] flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none flex-1",
-                          collapsed ? "justify-center px-0" : "gap-3 px-4",
-                          isCollapsibleActive
-                            ? clsx(
-                                "bg-[var(--sidebar-active-bg)] text-white shadow-sm",
-                                collapsed && "ring-2 ring-offset-2 ring-offset-white ring-[var(--sidebar-active-bg)]/40"
-                              )
-                            : "text-slate-700 hover:bg-slate-100"
-                        )}
-                      >
-                        <ParentIcon size={16} strokeWidth={1.8} className="flex-shrink-0" />
-                        {!collapsed && (
-                          <span className="truncate text-sm font-medium">{group.title}</span>
-                        )}
-                      </Link>
+                      <Tooltip label={group.title} side="right" className={clsx(!collapsed && "contents")}>
+                        <Link
+                          href={parentHref}
+                          onClick={() => {
+                            if (!collapsed) {
+                              setOpenGroup((prev) => (prev === group.title ? null : group.title));
+                            }
+                          }}
+                          className={clsx(
+                            "relative z-[1] flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none flex-1",
+                            collapsed ? "justify-center px-0" : "gap-3 px-4",
+                            isCollapsibleActive
+                              ? clsx(
+                                  "bg-[var(--sidebar-active-bg)] text-white shadow-sm",
+                                  collapsed && "ring-2 ring-offset-2 ring-offset-white ring-[var(--sidebar-active-bg)]/40"
+                                )
+                              : "text-slate-700 hover:bg-slate-100"
+                          )}
+                        >
+                          <ParentIcon size={16} strokeWidth={1.8} className="flex-shrink-0" />
+                          {!collapsed && (
+                            <span className="truncate text-sm font-medium">{group.title}</span>
+                          )}
+                        </Link>
+                      </Tooltip>
 
                       {!collapsed && (
                         <button
@@ -481,20 +476,6 @@ export default function Sidebar() {
                       )}
                     </div>
 
-                    {/* Collapsed tooltip */}
-                    {showTooltip && (
-                      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[100] flex items-center">
-                        <div
-                          className="absolute -left-2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-white"
-                        />
-                        <div
-                          className="px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-xl border border-slate-200 text-white"
-                          style={{ backgroundColor: "var(--sidebar-active-bg)" }}
-                        >
-                          {group.title}
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   {/* Sub-items — only shown when sidebar is expanded AND accordion is open */}
@@ -516,11 +497,7 @@ export default function Sidebar() {
                                 {section}
                               </p>
                             )}
-                            <div
-                              className="relative"
-                              onMouseEnter={() => setHoveredItem(key)}
-                              onMouseLeave={() => setHoveredItem(null)}
-                            >
+                            <div className="relative">
                               <Link
                                 href={href}
                                 className={clsx(
@@ -558,44 +535,27 @@ export default function Sidebar() {
                   {group.items.map(({ label, icon: Icon, href }) => {
                     const active      = isNavActive(pathname, href);
                     const itemKey     = href + label;
-                    const showTooltip = collapsed && (active || hoveredItem === itemKey);
 
                     return (
-                      <div
-                        key={itemKey}
-                        className="relative"
-                        onMouseEnter={() => setHoveredItem(itemKey)}
-                        onMouseLeave={() => setHoveredItem(null)}
-                      >
+                      <div key={itemKey} className="relative">
                         {active && (
                           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]" />
                         )}
-                        <Link
-                          href={href}
-                          title={collapsed ? label : undefined}
-                          className={clsx(
-                            "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1]",
-                            collapsed ? "justify-center px-0" : "gap-3 px-4",
-                            active
-                              ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
-                              : "text-slate-700 hover:bg-slate-100"
-                          )}
-                        >
-                          <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
-                          {!collapsed && <span className="truncate text-sm font-medium">{label}</span>}
-                        </Link>
-
-                        {showTooltip && (
-                          <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[100] flex items-center">
-                            <div className="absolute -left-2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-white" />
-                            <div
-                              className="px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-xl border border-slate-200 text-white"
-                              style={{ backgroundColor: "var(--sidebar-active-bg)" }}
-                            >
-                              {label}
-                            </div>
-                          </div>
-                        )}
+                        <Tooltip label={label} side="right" className={clsx(!collapsed && "contents")}>
+                          <Link
+                            href={href}
+                            className={clsx(
+                              "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1]",
+                              collapsed ? "justify-center px-0" : "gap-3 px-4",
+                              active
+                                ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
+                                : "text-slate-700 hover:bg-slate-100"
+                            )}
+                          >
+                            <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
+                            {!collapsed && <span className="truncate text-sm font-medium">{label}</span>}
+                          </Link>
+                        </Tooltip>
                       </div>
                     );
                   })}
@@ -615,60 +575,65 @@ export default function Sidebar() {
               {!collapsed && (
                 <div className="flex-1 min-w-0 flex items-center justify-between">
                   <p className="text-sm font-medium truncate text-slate-700">{getFirstName(user)}</p>
-                  <button
-                    type="button"
-                    onClick={() => signOut()}
-                    aria-label="Log out"
-                    className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
-                  >
-                    <LogOut size={16} strokeWidth={1.5} />
-                  </button>
+                  <Tooltip label="Log out">
+                    <button
+                      type="button"
+                      onClick={() => signOut()}
+                      aria-label="Log out"
+                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      <LogOut size={16} strokeWidth={1.5} />
+                    </button>
+                  </Tooltip>
                 </div>
               )}
             </div>
           )}
           {user && collapsed && (
             <div className="flex justify-center">
-              <button
-                type="button"
-                onClick={() => signOut()}
-                aria-label="Log out"
-                className="p-2.5 rounded-xl hover:bg-red-500/20 text-red-300 transition-colors"
-              >
-                <LogOut size={20} strokeWidth={1.5} />
-              </button>
+              <Tooltip label="Log out" side="right">
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  aria-label="Log out"
+                  className="p-2.5 rounded-xl hover:bg-red-500/20 text-red-300 transition-colors"
+                >
+                  <LogOut size={20} strokeWidth={1.5} />
+                </button>
+              </Tooltip>
             </div>
           )}
         </div>
       </nav>
 
       {/* ── Collapse toggle ── */}
-      <button
-        type="button"
-        onClick={() => setCollapsed(!collapsed)}
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className={clsx(
-          "absolute -right-3.5 top-6 -translate-y-1/2 z-50 flex h-9 w-9 items-center justify-center rounded-full",
-          "border border-slate-200/90 bg-white text-[var(--sidebar-active-bg)] shadow-[0_4px_16px_rgba(15,23,42,0.1)]",
-          "ring-1 ring-white/80 transition-all duration-200",
-          "hover:border-[color-mix(in_srgb,var(--sidebar-active-bg)_28%,white)] hover:shadow-[0_6px_22px_rgba(15,23,42,0.14)] hover:-translate-y-px",
-          "active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-active-bg)]/35 focus-visible:ring-offset-2"
-        )}
-      >
-        <span
+      <Tooltip label={collapsed ? "Expand sidebar" : "Collapse sidebar"} side="right">
+        <button
+          type="button"
+          onClick={() => setCollapsed(!collapsed)}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={clsx(
-            "inline-flex items-center justify-center transition-transform duration-200",
-            collapsed ? "rotate-0" : "rotate-180"
+            "absolute -right-3.5 top-6 -translate-y-1/2 z-50 flex h-9 w-9 items-center justify-center rounded-full",
+            "border border-slate-200/90 bg-white text-[var(--sidebar-active-bg)] shadow-[0_4px_16px_rgba(15,23,42,0.1)]",
+            "ring-1 ring-white/80 transition-all duration-200",
+            "hover:border-[color-mix(in_srgb,var(--sidebar-active-bg)_28%,white)] hover:shadow-[0_6px_22px_rgba(15,23,42,0.14)] hover:-translate-y-px",
+            "active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-active-bg)]/35 focus-visible:ring-offset-2"
           )}
         >
-          {collapsed ? (
-            <PanelLeftOpen size={17} strokeWidth={2.25} />
-          ) : (
-            <PanelLeftClose size={17} strokeWidth={2.25} />
-          )}
-        </span>
-      </button>
+          <span
+            className={clsx(
+              "inline-flex items-center justify-center transition-transform duration-200",
+              collapsed ? "rotate-0" : "rotate-180"
+            )}
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={17} strokeWidth={2.25} />
+            ) : (
+              <PanelLeftClose size={17} strokeWidth={2.25} />
+            )}
+          </span>
+        </button>
+      </Tooltip>
     </aside>
   );
 }

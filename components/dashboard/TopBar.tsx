@@ -282,9 +282,15 @@ export default function TopBar() {
                       Mark all read
                     </button>
                   )}
-                  <button onClick={() => setAlertsOpen(false)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
-                    <X size={14} />
-                  </button>
+                  <Tooltip label="Close alerts">
+                    <button
+                      onClick={() => setAlertsOpen(false)}
+                      className="p-1 rounded-lg hover:bg-slate-100 text-slate-400"
+                      aria-label="Close alerts"
+                    >
+                      <X size={14} />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
 
@@ -308,12 +314,15 @@ export default function TopBar() {
                         <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{alert.message}</p>
                         <p className="text-[10px] text-slate-400 mt-1">{timeAgo(alert.created_at)}</p>
                       </div>
-                      <button
-                        onClick={() => dismissAlert(alert.id)}
-                        className="p-0.5 rounded hover:bg-slate-200 text-slate-300 hover:text-slate-500 flex-shrink-0"
-                      >
-                        <X size={12} />
-                      </button>
+                      <Tooltip label="Dismiss alert">
+                        <button
+                          onClick={() => dismissAlert(alert.id)}
+                          className="p-0.5 rounded hover:bg-slate-200 text-slate-300 hover:text-slate-500 flex-shrink-0"
+                          aria-label="Dismiss alert"
+                        >
+                          <X size={12} />
+                        </button>
+                      </Tooltip>
                     </div>
                   ))
                 )}
