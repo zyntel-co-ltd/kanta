@@ -1,4 +1,4 @@
-﻿# Kanta — Engineering Phase Log
+# Kanta — Engineering Phase Log
 
 **Append-only. Do not attach to Claude Project.**
 
@@ -154,6 +154,16 @@ Applied migrations-first hardening for Mazra dataset compatibility so switch-mod
 | File | Change |
 |------|--------|
 | `supabase/migrations/20260327100000_mazra_kanta_alignment_hardening.sql` | Added robust telemetry compatibility (`equipment_id`, `section`, `test_name`, `tat_minutes`, `z_score`, `hour_of_day`, `day_of_week`, `samples_that_day`, `days_to_failure`, `failure_type`, `recorded_at`, `record_date`), index alignment, and `mazra_generated` safeguards |
+
+### Phase 30 — Post-Mazra cleanup migration (29 March 2026)
+
+#### Summary
+Single idempotent migration capturing SQL applied in the Supabase SQL editor during the Mazra → Mazra Hospital pivot: drop all `mazra_generated` columns, add `hospitals.classification` / `subscription_status`, replace permissive RLS on lab/telemetry/anomaly/weekly tables with facility-scoped policies, deny authenticated access to `ai_inference_log`, upsert canonical Mazra demo hospital names.
+
+#### Key files
+| File | Change |
+|------|--------|
+| `supabase/migrations/20260329120000_post_mazra_cleanup.sql` | Post-Mazra cleanup — synthetic columns removed, RLS tightened, hospital classification, seed hospital names |
 
 ### Phase 27 — Auth Role Normalization (26 March 2026)
 
