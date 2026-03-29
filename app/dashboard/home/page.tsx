@@ -24,9 +24,8 @@ import {
 } from "lucide-react";
 import RecentlyVisited from "@/components/dashboard/RecentlyVisited";
 import QuickActions from "@/components/dashboard/QuickActions";
-
-const HOSPITAL_DISPLAY_NAME =
-  process.env.NEXT_PUBLIC_HOSPITAL_NAME?.trim() || "Zyntel Hospital";
+import { useAuth } from "@/lib/AuthContext";
+import { hospitalDisplayName } from "@/lib/hospitalDisplayName";
 
 /* ─────────────────────────── types ─────────────────────────── */
 
@@ -110,6 +109,8 @@ const apps: AppCard[] = [
 /* ─────────────────────────── component ─────────────────────────── */
 
 export default function DashboardHomePage() {
+  const { facilityAuth } = useAuth();
+  const displayHospital = hospitalDisplayName(facilityAuth?.hospitalName);
   const showRefrigeratorModule = useFlag("show-refrigerator-module");
   const appsFiltered = apps.map((app) => {
     if (app.title !== "Asset Management") return app;
@@ -149,7 +150,7 @@ export default function DashboardHomePage() {
               Choose a workspace below — data, charts and controls in one focused view.
             </p>
             <p className="text-emerald-200/90 text-xs mt-1.5 font-medium">
-              {HOSPITAL_DISPLAY_NAME}
+              {displayHospital}
             </p>
           </div>
         </div>

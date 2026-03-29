@@ -16,10 +16,10 @@ import {
 } from "lucide-react";
 import { useSyncStatus } from "@/lib/SyncStatusContext";
 import { useAuth } from "@/lib/AuthContext";
+import { hospitalDisplayName } from "@/lib/hospitalDisplayName";
 import NLQueryBar from "@/components/ai/NLQueryBar";
 import Tooltip from "@/components/ui/Tooltip";
-const HOSPITAL_NAME =
-  process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Zyntel Hospital";
+
 const HOSPITAL_LOGO_URL = process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
 
 /* ── Helpers ── */
@@ -176,7 +176,7 @@ export default function TopBar() {
     });
   }
 
-  const hospitalName = facilityAuth?.hospitalName || HOSPITAL_NAME;
+  const hospitalName = hospitalDisplayName(facilityAuth?.hospitalName);
   const hospitalLogo = facilityAuth?.hospitalLogoUrl || HOSPITAL_LOGO_URL;
 
   return (

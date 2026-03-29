@@ -6,10 +6,10 @@ import { Building2 } from "lucide-react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useFlag } from "@/lib/featureFlags";
 import { LoadingBars } from "@/components/ui/PageLoader";
+import { hospitalDisplayName } from "@/lib/hospitalDisplayName";
 
 const REFRESH_MS = 30_000;
-const HOSPITAL_NAME = process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Zyntel Hospital";
-const HOSPITAL_LOGO_URL = process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
+const FALLBACK_LOGO = process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
 
 type LRIDSItem = {
   id: string;
@@ -48,6 +48,8 @@ export default function LRIDSDisplayPage() {
 
   const [data, setData] = useState<LRIDSItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hospitalName, setHospitalName] = useState(() => hospitalDisplayName(null));
+  const [hospitalLogoUrl, setHospitalLogoUrl] = useState(FALLBACK_LOGO);
 
   useEffect(() => {
     if (!showLrids) {
@@ -60,6 +62,10 @@ export default function LRIDSDisplayPage() {
           `/api/tat/lrids?facility_id=${facilityId}&limit=100`
         );
         const json = await res.json();
+        setHospitalName(hospitalDisplayName(json.hospital_name as string | null));
+        setHospitalLogoUrl(
+          (typeof json.hospital_logo_url === "string" && json.hospital_logo_url) || FALLBACK_LOGO
+        );
         /* Sort: resulted first, then by resulted_at desc (most recent up) */
         const items: LRIDSItem[] = json.data ?? [];
         items.sort((a, b) => {
@@ -107,11 +113,11 @@ export default function LRIDSDisplayPage() {
       >
         {/* Hospital branding */}
         <div className="flex items-center gap-5">
-          {HOSPITAL_LOGO_URL ? (
+          {hospitalLogoUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
-              src={HOSPITAL_LOGO_URL}
-              alt={HOSPITAL_NAME}
+              src={hospitalLogoUrl}
+              alt={hospitalName}
               className="h-14 w-auto object-contain"
             />
           ) : (
@@ -124,7 +130,7 @@ export default function LRIDSDisplayPage() {
           )}
           <div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight leading-none">
-              {HOSPITAL_NAME}
+              {hospitalName}
             </h1>
             <p className="text-emerald-300 text-base mt-1.5 font-medium">
               Laboratory Results Information Display
@@ -218,7 +224,7 @@ export default function LRIDSDisplayPage() {
         style={{ borderColor: "rgba(255,255,255,0.08)" }}
       >
         <p className="text-sm text-white/30">
-          {HOSPITAL_NAME} · Laboratory Information System · Powered by Kanta
+          {hospitalName} · Laboratory Information System · Powered by Kanta
         </p>
         <p className="text-sm text-white/20 tabular-nums">
           Auto-refreshes every 30 seconds

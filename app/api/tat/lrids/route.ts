@@ -28,17 +28,25 @@ export async function GET(req: NextRequest) {
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
 
-    const { data, error } = await db
-      .from("test_requests")
-      .select("*")
-      .eq("facility_id", facilityId)
-      .eq("status", "resulted")
-      .order("resulted_at", { ascending: false })
-      .limit(limit);
+    const [runsRes, hospRes] = await Promise.all([
+      db
+        .from("test_requests")
+        .select("*")
+        .eq("facility_id", facilityId)
+        .eq("status", "resulted")
+        .order("resulted_at", { ascending: false })
+        .limit(limit),
+      db.from("hospitals").select("name, logo_url").eq("id", facilityId).maybeSingle(),
+    ]);
 
-    if (error) throw error;
+    if (runsRes.error) throw runsRes.error;
 
-    return NextResponse.json({ data: data ?? [], error: null });
+    return NextResponse.json({
+      data: runsRes.data ?? [],
+      error: null,
+      hospital_name: hospRes.data?.name ?? null,
+      hospital_logo_url: hospRes.data?.logo_url ?? null,
+    });
   } catch (err) {
     console.error("[GET /api/tat/lrids]", err);
     return NextResponse.json(

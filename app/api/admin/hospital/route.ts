@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   if (!supabaseConfigured) {
     return NextResponse.json({
       id: facilityId,
-      name: "Zyntel Hospital",
+      name: process.env.NEXT_PUBLIC_HOSPITAL_NAME?.trim() || "Hospital",
       logo_url: null,
       address: null,
       phone: null,

@@ -27,3 +27,11 @@ Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/
 - **Samples → Racks:** rack grid uses CSS grid + column `minmax` + gaps so cells use horizontal space in the card.
 - **Sidebar:** collapse control at `top-[72px]` (below header band); `DashboardChrome` wraps the sidebar in an `overflow-visible` column so the `-right-3.5` toggle is not clipped.
 - **QC Management:** quantitative and qualitative tabs in `app/dashboard/qc/page.tsx` plus `components/qc/QuantitativeQCTab.tsx` use **qualityQc** module tokens (`module-accent-text`, `module-accent-soft-text`, `var(--module-primary*)`) instead of hardcoded emerald/green.
+
+## App / ops (2026-03-29 — hospital branding & sidebar nav)
+
+- **`lib/hospitalDisplayName.ts`** — UI hospital label: `facilityAuth.hospitalName` (from `/api/me` / `hospitals.name`) → `NEXT_PUBLIC_HOSPITAL_NAME` → fallback `"Hospital"` (no hardcoded tenant name in components).
+- **Chrome:** `Sidebar`, `TopBar`, `dashboard/home` hero use `hospitalDisplayName`; QC **Visualization** L-J chart title uses the same name (uppercase) instead of a fixed “IOM UGANDA” string.
+- **Public LRIDS:** `GET /api/tat/lrids` returns `hospital_name` / `hospital_logo_url` from `hospitals` for the requested `facility_id`; `app/kanta/[facility]/lrids/page.tsx` shows header/footer branding from that payload (env logo fallback).
+- **`GET /api/admin/hospital`** (Supabase off): mock `name` uses env or `"Hospital"`, not a fixed Zyntel string.
+- **Sidebar active state:** `isNavActive` treats `/dashboard/admin` separately so **`/dashboard/admin/hospital` does not highlight “Admin”** — only Hospital Settings is active there.

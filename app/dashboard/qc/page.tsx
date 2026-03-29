@@ -11,6 +11,8 @@ import {
 import { Line } from "react-chartjs-2";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { useAuth } from "@/lib/AuthContext";
+import { hospitalDisplayName } from "@/lib/hospitalDisplayName";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { STATUS, STRUCTURE } from "@/lib/design-tokens";
 import { CHART_AXIS } from "@/lib/chart-theme";
@@ -718,6 +720,8 @@ function QCDataEntryTab() {
 /*  QC VISUALIZATION TAB                                      */
 /* ═══════════════════════════════════════════════════════════ */
 function QCVisualizationTab() {
+  const { facilityAuth } = useAuth();
+  const graphHospitalTitle = hospitalDisplayName(facilityAuth?.hospitalName).toUpperCase();
   const api = useMemo(() => makeKantaApi(), []);
   const [qcConfigs, setQcConfigs]                 = useState<QcItem[]>([]);
   const [runs1, setRuns1]                         = useState<QcItem[]>([]);
@@ -841,7 +845,7 @@ function QCVisualizationTab() {
     return (
       <div key={config.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <div className="text-center border-b border-slate-100 pb-4 mb-4">
-          <h3 className={`font-bold text-slate-800 uppercase tracking-wide ${compact ? "text-sm" : "text-base"}`}>IOM UGANDA QUALITY CONTROL GRAPH</h3>
+          <h3 className={`font-bold text-slate-800 uppercase tracking-wide ${compact ? "text-sm" : "text-base"}`}>{graphHospitalTitle} QUALITY CONTROL GRAPH</h3>
           <h4 className={`font-bold text-slate-900 mt-1 ${compact ? "text-lg" : "text-2xl"}`}>{config.qcName} Level {config.level}</h4>
           {config.lotNumber && <p className="text-slate-500 text-xs mt-0.5">Control Lot: {config.lotNumber}</p>}
           {(fromDate || toDate) && (
@@ -854,7 +858,7 @@ function QCVisualizationTab() {
           <Line data={chartData} options={options} />
         </div>
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500 justify-center">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[var(--module-primary-light)]0 inline-block" /> Normal</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[var(--module-primary)] inline-block" /> Normal</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> 1₂s Warning</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> Westgard Violation</span>
         </div>

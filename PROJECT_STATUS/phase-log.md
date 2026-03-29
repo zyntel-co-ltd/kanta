@@ -21,6 +21,14 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 - [x] **Sidebar collapse** — Toggle `top-[72px]`; `DashboardChrome` sidebar column wrapper `overflow-visible` for protruding control.
 - [x] **QC UI vs module theme** — `app/dashboard/qc/page.tsx` (quant + qual tabs) and `components/qc/QuantitativeQCTab.tsx` use `qualityQc` CSS variables / `module-accent-*` instead of emerald utilities; L-J chart line color aligned to `#0284c7`.
 
+### 2026-03-29 — Hospital display name + LRIDS branding + Admin vs Hospital Settings nav
+
+- [x] **`lib/hospitalDisplayName.ts`** — Central resolver: facility name from auth → `NEXT_PUBLIC_HOSPITAL_NAME` → `"Hospital"`.
+- [x] **UI wiring** — `Sidebar`, `TopBar`, `app/dashboard/home/page.tsx`, QC visualization graph title (`QCVisualizationTab`) use facility/settings-backed name; removed hardcoded “IOM UGANDA” L-J title and default “Zyntel Hospital” strings in those surfaces.
+- [x] **`GET /api/tat/lrids`** — Also returns `hospital_name` / `hospital_logo_url` from `hospitals` for the `facility_id`; public `app/kanta/[facility]/lrids/page.tsx` consumes them for header/footer.
+- [x] **`GET /api/admin/hospital` stub** — Unconfigured Supabase mock uses env or `"Hospital"`.
+- [x] **`isNavActive` in `Sidebar.tsx`** — `/dashboard/admin/hospital` no longer marks **Admin** as active.
+
 ---
 # Kanta — Project Status & Functional Specification
 

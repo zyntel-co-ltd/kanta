@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import type { ComponentType } from "react";
 import { useAuth, type FacilityAuthState } from "@/lib/AuthContext";
+import { hospitalDisplayName } from "@/lib/hospitalDisplayName";
 import { useFlag } from "@/lib/featureFlags";
 import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
 import Tooltip from "@/components/ui/Tooltip";
@@ -263,6 +264,12 @@ function isNavActive(pathname: string, href: string) {
   const norm = pathname.replace(/\/$/, "") || "/";
   const h = base.replace(/\/$/, "") || "/";
   if (h === "/dashboard") return norm === "/dashboard";
+  /* Admin panel vs Hospital Settings: /dashboard/admin/hospital must not highlight "Admin" */
+  if (h === "/dashboard/admin") {
+    if (norm === "/dashboard/admin") return true;
+    if (norm.startsWith("/dashboard/admin/hospital")) return false;
+    return norm.startsWith(h + "/");
+  }
   if (norm === h) return true;
   return norm.startsWith(h + "/");
 }
@@ -369,7 +376,7 @@ export default function Sidebar() {
   const showRefrigeratorModule = useFlag("show-refrigerator-module");
   const showLrids = useFlag("show-lrids");
   const showAiIntelligence = useFlag("show-ai-intelligence");
-  const hospitalName = facilityAuth?.hospitalName || process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Zyntel Hospital";
+  const hospitalName = hospitalDisplayName(facilityAuth?.hospitalName);
   const hospitalLogoUrl = facilityAuth?.hospitalLogoUrl || process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
 
   const navGroups = filterNavForFacilityAuth(navGroupsBase, facilityAuth, {
