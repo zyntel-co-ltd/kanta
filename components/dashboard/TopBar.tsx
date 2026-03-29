@@ -16,6 +16,7 @@ import {
 import { useSyncStatus } from "@/lib/SyncStatusContext";
 import { useAuth } from "@/lib/AuthContext";
 import NLQueryBar from "@/components/ai/NLQueryBar";
+import Tooltip from "@/components/ui/Tooltip";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 
 const HOSPITAL_NAME =
@@ -236,10 +237,11 @@ export default function TopBar() {
 
         {/* ── Alerts bell ── */}
         <div className="relative" ref={alertsRef}>
+          <Tooltip label="View operational alerts">
           <button
+            type="button"
             onClick={() => { setAlertsOpen((o) => !o); setUserMenuOpen(false); }}
             className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-            title="Alerts"
           >
             <Bell size={17} />
             {unreadCount > 0 && (
@@ -248,6 +250,7 @@ export default function TopBar() {
               </span>
             )}
           </button>
+          </Tooltip>
 
           {/* Alerts dropdown */}
           {alertsOpen && (

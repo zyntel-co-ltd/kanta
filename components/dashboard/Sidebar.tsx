@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import clsx from "clsx";
-import { useState, useEffect } from "react";
+import Image from "next/image";
+import { useState, useEffect, useRef } from "react";
 import type { ComponentType } from "react";
 import { useAuth, type FacilityAuthState } from "@/lib/AuthContext";
 import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
-import { MODULE_THEMES } from "@/lib/design-tokens";
 import {
   LayoutDashboard,
   ScanLine,
@@ -264,21 +264,54 @@ function getInitials(user: { email?: string; user_metadata?: { full_name?: strin
   return part.slice(0, 2).toUpperCase();
 }
 
-type ModuleKey = keyof typeof MODULE_THEMES;
-
-function readModuleFromLayout(): ModuleKey {
+function readModuleAttr(): string {
   if (typeof document === "undefined") return "labMetrics";
   const el = document.querySelector("[data-module]");
-  const raw = el?.getAttribute("data-module") || "labMetrics";
-  if (raw === "neutral" || raw === "labMetrics" || raw === "qualityManagement" || raw === "assetManagement") return raw;
-  return "labMetrics";
+  return el?.getAttribute("data-module") || "labMetrics";
 }
 
 function homeGroupColor(title: string): string {
-  if (title === "Lab Metrics") return "#0f6b52";
-  if (title === "Quality & samples") return "#2b4a72";
-  if (title === "Asset Management") return "#8a2b2b";
+  if (title === "Lab Metrics") return "#0f766e";
+  if (title === "Quality & samples") return "#6366f1";
+  if (title === "Asset Management") return "#0284c7";
   return "#334155";
+}
+
+/** One-time accordion open for direct URL loads (ENG-127). */
+function accordionGroupForPath(pathname: string): string | null {
+  if (
+    pathname.startsWith("/dashboard/qc") ||
+    pathname.startsWith("/dashboard/samples") ||
+    pathname.startsWith("/dashboard/quality-samples")
+  ) {
+    return "Quality & samples";
+  }
+  const labPaths = [
+    "/dashboard/lab-analytics",
+    "/dashboard/tat",
+    "/dashboard/tests",
+    "/dashboard/numbers",
+    "/dashboard/meta",
+    "/dashboard/revenue",
+    "/dashboard/performance",
+  ];
+  if (labPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return "Lab Metrics";
+  }
+  const assetPaths = [
+    "/dashboard",
+    "/dashboard/assets",
+    "/dashboard/equipment",
+    "/dashboard/scan",
+    "/dashboard/maintenance",
+    "/dashboard/refrigerator",
+    "/dashboard/analytics",
+    "/dashboard/reports",
+  ];
+  if (assetPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return "Asset Management";
+  }
+  return null;
 }
 
 export default function Sidebar() {
@@ -294,88 +327,67 @@ export default function Sidebar() {
   });
   const { collapsed, setCollapsed } = useSidebarLayout();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const [moduleKey, setModuleKey] = useState<ModuleKey>(() => readModuleFromLayout());
-  const isNeutralHome = moduleKey === "neutral";
-
-  /* Groups that are currently expanded (accordion) */
-  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
+  const [moduleAttr, setModuleAttr] = useState<string>(() => readModuleAttr());
+  const isNeutralHome = moduleAttr === "neutral";
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const accordionInit = useRef(false);
 
   useEffect(() => {
-    setModuleKey(readModuleFromLayout());
+    setModuleAttr(readModuleAttr());
   }, [pathname]);
 
-  /* Auto-expand the relevant accordion group based on current page */
   useEffect(() => {
-    const toOpen: string[] = [];
-    if (
-      pathname.startsWith("/dashboard/qc") ||
-      pathname.startsWith("/dashboard/samples") ||
-      pathname.startsWith("/dashboard/quality-samples")
-    ) {
-      toOpen.push("Quality & samples");
-    }
-
-    const labMetricsPaths = ["/dashboard/tat", "/dashboard/tests", "/dashboard/numbers", "/dashboard/meta", "/dashboard/revenue", "/dashboard/performance"];
-    if (pathname === "/dashboard/lab-analytics") toOpen.push("Lab Metrics");
-    if (labMetricsPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) toOpen.push("Lab Metrics");
-
-    const assetPaths = ["/dashboard/assets", "/dashboard/equipment", "/dashboard/scan", "/dashboard/maintenance", "/dashboard/refrigerator", "/dashboard/analytics", "/dashboard/reports"];
-    if (pathname === "/dashboard" || assetPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) toOpen.push("Asset Management");
-
-    if (toOpen.length === 0) return;
-    setOpenGroups((prev) => {
-      const next = new Set(prev);
-      toOpen.forEach((g) => next.add(g));
-      return next.size === prev.size ? prev : next;
-    });
+    if (accordionInit.current) return;
+    accordionInit.current = true;
+    setOpenGroup(accordionGroupForPath(pathname));
   }, [pathname]);
-
-  const toggleGroup = (title: string) =>
-    setOpenGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(title)) next.delete(title);
-      else next.add(title);
-      return next;
-    });
 
   return (
     <aside
       className={clsx(
-        "kanta-sidebar relative flex flex-col h-screen flex-shrink-0 transition-all duration-300 ease-in-out overflow-visible",
+        "kanta-sidebar relative flex flex-col h-screen flex-shrink-0 transition-all duration-300 ease-in-out overflow-visible border-r border-slate-200 bg-white",
         collapsed ? "w-[72px]" : "w-[260px]",
         isNeutralHome && "kanta-sidebar-neutral-glass"
       )}
-      style={{
-        backgroundColor: "var(--sidebar-bg)",
-        borderRadius: "0 28px 28px 0",
-      }}
+      style={{ borderRadius: "0 28px 28px 0" }}
     >
       {/* ── Header ── */}
       <div
         className={clsx(
-          "flex-shrink-0 flex items-center py-4 border-b",
-          collapsed ? "justify-center px-0" : "px-5 gap-3",
-          isNeutralHome ? "border-slate-200" : "border-white/10"
+          "flex-shrink-0 flex items-center py-3 border-b border-slate-200",
+          collapsed ? "justify-center px-0" : "px-5 gap-3"
         )}
       >
         <Link href="/dashboard/home" className={clsx("flex items-center focus:outline-none", collapsed ? "justify-center" : "gap-3")}>
           {hospitalLogoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={hospitalLogoUrl} alt={hospitalName} className="flex-shrink-0 w-10 h-10 rounded-xl object-cover bg-white shadow-sm" />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={hospitalLogoUrl} alt={hospitalName} className="flex-shrink-0 w-10 h-10 rounded-xl object-cover bg-white shadow-sm" />
+              {!collapsed && (
+                <div className="min-w-0">
+                  <p className="font-bold text-sm leading-tight tracking-tight text-slate-900 truncate">{hospitalName}</p>
+                  <p className="text-[10px] mt-1 font-normal text-slate-500">Operational Intelligence</p>
+                </div>
+              )}
+            </>
+          ) : collapsed ? (
+            <Image
+              src="/kanta-mark.svg"
+              alt="Kanta"
+              width={32}
+              height={32}
+              className="flex-shrink-0 rounded-xl"
+              priority
+            />
           ) : (
-            <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-white shadow-sm">
-              <FlaskConical size={20} strokeWidth={1.5} style={{ color: MODULE_THEMES[moduleKey].primaryDark }} />
-            </div>
-          )}
-          {!collapsed && (
-            <div>
-              <p className={clsx("font-bold text-sm leading-tight tracking-tight", isNeutralHome ? "text-slate-900" : "text-white")}>
-                Kanta
-              </p>
-              <p className={clsx("text-[10px] mt-1 font-normal", isNeutralHome ? "text-slate-500" : "text-white/60")}>
-                Operational Intelligence
-              </p>
-            </div>
+            <Image
+              src="/kanta-logo.svg"
+              alt="Kanta"
+              width={120}
+              height={32}
+              className="flex-shrink-0 h-8 w-auto object-contain object-left"
+              priority
+            />
           )}
         </Link>
       </div>
@@ -393,18 +405,17 @@ export default function Sidebar() {
                   ? pathname === "/dashboard"
                   : pathname === p || pathname.startsWith(p + "/")
               );
-              const isOpen     = openGroups.has(group.title);
+              const isOpen = openGroup === group.title;
               const parentKey  = parentHref + group.title;
               const showTooltip = collapsed && (isCollapsibleActive || hoveredItem === parentKey);
-              const neutralGroup = isNeutralHome ? homeGroupColor(group.title) : undefined;
+              const sectionTint = isNeutralHome ? homeGroupColor(group.title) : "#64748b";
 
               return (
                 <div key={group.title} className="mb-2">
-                  {/* Group label (expanded sidebar only) */}
                   {!collapsed && (
                     <p
                       className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest"
-                      style={{ color: isNeutralHome ? (neutralGroup ?? "#64748b") : "rgba(255,255,255,0.6)" }}
+                      style={{ color: sectionTint }}
                     >
                       {group.title}
                     </p>
@@ -416,38 +427,32 @@ export default function Sidebar() {
                     onMouseEnter={() => setHoveredItem(parentKey)}
                     onMouseLeave={() => setHoveredItem(null)}
                   >
-                    {/* Active bar (left edge) */}
+                    {/* Active module indicator (left edge) */}
                     {isCollapsibleActive && (
                       <span
-                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10"
-                        style={{ backgroundColor: "var(--sidebar-active-bg)" }}
-                      />
-                    )}
-                    {/* Active pill background */}
-                    {isCollapsibleActive && !collapsed && (
-                      <span
-                        className="absolute inset-y-0 left-1 right-1 rounded-xl"
-                        style={{ backgroundColor: "color-mix(in srgb, var(--sidebar-active-bg) 22%, transparent)", zIndex: 0 }}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]"
                       />
                     )}
 
                     <div className="flex items-center">
-                      {/* Clicking the link area navigates AND opens accordion */}
                       <Link
                         href={parentHref}
-                        onClick={() => { if (!collapsed) setOpenGroups((prev) => new Set([...prev, group.title])); }}
                         title={collapsed ? group.title : undefined}
-                        className={clsx(
-                          "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1] flex-1",
-                          collapsed ? "justify-center px-0" : "gap-3 px-4",
-                          collapsed && isNeutralHome && "bg-white/70 border border-slate-200/80 shadow-sm",
-                          !isCollapsibleActive && "hover:bg-[var(--sidebar-hover-bg)]/30"
-                        )}
-                        style={{
-                          color: isCollapsibleActive
-                            ? "var(--sidebar-active-text)"
-                            : (isNeutralHome ? (neutralGroup ?? "#334155") : "rgba(255,255,255,0.9)"),
+                        onClick={() => {
+                          if (!collapsed) {
+                            setOpenGroup((prev) => (prev === group.title ? null : group.title));
+                          }
                         }}
+                        className={clsx(
+                          "relative z-[1] flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none flex-1",
+                          collapsed ? "justify-center px-0" : "gap-3 px-4",
+                          isCollapsibleActive
+                            ? clsx(
+                                "bg-[var(--sidebar-active-bg)] text-white shadow-sm",
+                                collapsed && "ring-2 ring-offset-2 ring-offset-white ring-[var(--sidebar-active-bg)]/40"
+                              )
+                            : "text-slate-700 hover:bg-slate-100"
+                        )}
                       >
                         <ParentIcon size={16} strokeWidth={1.8} className="flex-shrink-0" />
                         {!collapsed && (
@@ -455,14 +460,20 @@ export default function Sidebar() {
                         )}
                       </Link>
 
-                      {/* Chevron toggle (expanded sidebar only) */}
                       {!collapsed && (
                         <button
                           type="button"
-                          onClick={() => toggleGroup(group.title)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setOpenGroup((prev) => (prev === group.title ? null : group.title));
+                          }}
                           aria-label={isOpen ? `Collapse ${group.title}` : `Expand ${group.title}`}
-                          className="relative z-[1] flex-shrink-0 p-2 rounded-lg hover:bg-white/10 transition-all duration-150 mr-1"
-                          style={{ color: isCollapsibleActive ? "var(--sidebar-active-text)" : (isNeutralHome ? (neutralGroup ?? "#64748b") : "rgba(255,255,255,0.6)") }}
+                          className={clsx(
+                            "relative z-[1] flex-shrink-0 p-2 rounded-lg mr-1 transition-colors",
+                            isCollapsibleActive
+                              ? "text-white/90 hover:bg-white/10"
+                              : "text-slate-500 hover:bg-slate-100"
+                          )}
                         >
                           <ChevronDown
                             size={13}
@@ -477,14 +488,10 @@ export default function Sidebar() {
                     {showTooltip && (
                       <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[100] flex items-center">
                         <div
-                          className="absolute -left-2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px]"
-                          style={{ borderRightColor: "var(--sidebar-bg)" }}
+                          className="absolute -left-2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-white"
                         />
                         <div
-                          className={clsx(
-                            "px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-xl",
-                            isNeutralHome ? "text-slate-800 border border-slate-200" : "text-white"
-                          )}
+                          className="px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-xl border border-slate-200 text-white"
                           style={{ backgroundColor: "var(--sidebar-active-bg)" }}
                         >
                           {group.title}
@@ -495,7 +502,7 @@ export default function Sidebar() {
 
                   {/* Sub-items — only shown when sidebar is expanded AND accordion is open */}
                   {!collapsed && isOpen && (
-                    <div className="mt-1 ml-3 pl-3 border-l border-white/15 flex flex-col gap-0.5">
+                    <div className="mt-1 ml-3 pl-3 border-l border-slate-200 flex flex-col gap-0.5">
                       {group.items.map(({ label, icon: Icon, href, section }, idx) => {
                         const key = href + label;
                         const subActive = isSubLinkActive(pathname, searchParams, href);
@@ -504,10 +511,10 @@ export default function Sidebar() {
                             {section && (
                               <p
                                 className={clsx(
-                                  "pb-1 text-[10px] font-semibold uppercase tracking-widest pl-1",
+                                  "pb-1 text-[10px] font-semibold uppercase tracking-widest pl-1 text-slate-500",
                                   idx === 0 ? "pt-0" : "pt-2"
                                 )}
-                                style={{ color: isNeutralHome ? (neutralGroup ?? "#64748b") : "rgba(255,255,255,0.6)" }}
+                                style={isNeutralHome ? { color: sectionTint } : undefined}
                               >
                                 {section}
                               </p>
@@ -517,25 +524,14 @@ export default function Sidebar() {
                               onMouseEnter={() => setHoveredItem(key)}
                               onMouseLeave={() => setHoveredItem(null)}
                             >
-                              {subActive && (
-                                <span
-                                  className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full z-10"
-                                  style={{ backgroundColor: "var(--sidebar-active-bg)" }}
-                                />
-                              )}
-                              {subActive && (
-                                <span
-                                  className="absolute inset-y-0 left-0 right-0 rounded-lg"
-                                  style={{ backgroundColor: "color-mix(in srgb, var(--sidebar-active-bg) 22%, transparent)", zIndex: 0 }}
-                                />
-                              )}
                               <Link
                                 href={href}
                                 className={clsx(
                                   "relative z-[1] flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none",
-                                  subActive ? "" : "hover:bg-[var(--sidebar-hover-bg)]/30"
+                                  subActive
+                                    ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
+                                    : "text-slate-700 hover:bg-slate-100"
                                 )}
-                                style={{ color: subActive ? "var(--sidebar-active-text)" : (isNeutralHome ? (neutralGroup ?? "#334155") : "rgba(255,255,255,0.9)") }}
                               >
                                 <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
                                 <span className="truncate text-xs font-medium">{label}</span>
@@ -555,8 +551,8 @@ export default function Sidebar() {
               <div key={group.title} className="mb-2">
                 {!collapsed && (
                   <p
-                    className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest"
-                    style={{ color: isNeutralHome ? homeGroupColor(group.title) : "rgba(255,255,255,0.6)" }}
+                    className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500"
+                    style={isNeutralHome ? { color: homeGroupColor(group.title) } : undefined}
                   >
                     {group.title}
                   </p>
@@ -575,16 +571,7 @@ export default function Sidebar() {
                         onMouseLeave={() => setHoveredItem(null)}
                       >
                         {active && (
-                          <span
-                            className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10"
-                            style={{ backgroundColor: "var(--sidebar-active-bg)" }}
-                          />
-                        )}
-                        {active && !collapsed && (
-                          <span
-                            className="absolute inset-y-0 left-1 right-1 rounded-xl"
-                            style={{ backgroundColor: "color-mix(in srgb, var(--sidebar-active-bg) 22%, transparent)", zIndex: 0 }}
-                          />
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]" />
                         )}
                         <Link
                           href={href}
@@ -592,10 +579,10 @@ export default function Sidebar() {
                           className={clsx(
                             "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1]",
                             collapsed ? "justify-center px-0" : "gap-3 px-4",
-                            collapsed && isNeutralHome && "bg-white/70 border border-slate-200/80 shadow-sm",
-                            !active && "hover:bg-[var(--sidebar-hover-bg)]/30"
+                            active
+                              ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
+                              : "text-slate-700 hover:bg-slate-100"
                           )}
-                          style={{ color: active ? "var(--sidebar-active-text)" : (isNeutralHome ? homeGroupColor(group.title) : "rgba(255,255,255,0.9)") }}
                         >
                           <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
                           {!collapsed && <span className="truncate text-sm font-medium">{label}</span>}
@@ -603,15 +590,9 @@ export default function Sidebar() {
 
                         {showTooltip && (
                           <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[100] flex items-center">
+                            <div className="absolute -left-2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-white" />
                             <div
-                              className="absolute -left-2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px]"
-                              style={{ borderRightColor: "var(--sidebar-bg)" }}
-                            />
-                            <div
-                              className={clsx(
-                                "px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-xl",
-                                isNeutralHome ? "text-slate-800 border border-slate-200" : "text-white"
-                              )}
+                              className="px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap shadow-xl border border-slate-200 text-white"
                               style={{ backgroundColor: "var(--sidebar-active-bg)" }}
                             >
                               {label}
@@ -628,15 +609,15 @@ export default function Sidebar() {
         </div>
 
         {/* ── Footer ── */}
-        <div className={clsx("flex-shrink-0 border-t pt-3 pb-4 px-3", isNeutralHome ? "border-slate-200" : "border-white/10")}>
+        <div className="flex-shrink-0 border-t border-slate-200 pt-3 pb-4 px-3">
           {user && (
             <div className={clsx("flex items-center gap-3", collapsed ? "justify-center mb-3" : "mb-3")}>
-              <div className={clsx("flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border", isNeutralHome ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-white/20 text-white border-white/25")}>
+              <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border bg-slate-100 text-slate-700 border-slate-200">
                 {getInitials(user)}
               </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0 flex items-center justify-between">
-                  <p className={clsx("text-sm font-medium truncate", isNeutralHome ? "text-slate-700" : "text-white/90")}>{getFirstName(user)}</p>
+                  <p className="text-sm font-medium truncate text-slate-700">{getFirstName(user)}</p>
                   <button
                     type="button"
                     onClick={() => signOut()}
@@ -670,10 +651,8 @@ export default function Sidebar() {
         onClick={() => setCollapsed(!collapsed)}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className={clsx(
-          "absolute -right-4 top-6 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center z-50 transition-all duration-200 focus:outline-none",
-          isNeutralHome ? "text-slate-400 hover:text-slate-700 hover:bg-white/80" : "text-white/70 hover:text-white hover:bg-white/10"
-        )}
+        className="absolute -right-4 top-6 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center z-50 transition-all duration-200 focus:outline-none text-white shadow-md hover:opacity-90 border border-white/20"
+        style={{ backgroundColor: "var(--sidebar-active-bg)" }}
       >
         <span
           className={clsx(

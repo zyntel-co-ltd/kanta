@@ -17,13 +17,17 @@ export default function StatusBadge({
   children,
   variant = "neutral",
   className,
+  title,
 }: {
   children: React.ReactNode;
   variant?: StatusBadgeVariant;
   className?: string;
+  /** Native + hover hint (ENG-111); keep under ~8 words by convention */
+  title?: string;
 }) {
   return (
     <span
+      title={title}
       className={clsx(
         "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold",
         variantClass[variant],

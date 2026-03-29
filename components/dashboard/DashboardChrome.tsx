@@ -28,8 +28,8 @@ export default function DashboardChrome({ children }: { children: React.ReactNod
       <Suspense
         fallback={
           <aside
-            className="relative flex flex-col h-screen flex-shrink-0 w-[260px] overflow-visible"
-            style={{ backgroundColor: "var(--brand-sidebar, #065f46)", borderRadius: "0 28px 28px 0" }}
+            className="relative flex flex-col h-screen flex-shrink-0 w-[260px] overflow-visible border-r border-slate-200 bg-white"
+            style={{ borderRadius: "0 28px 28px 0" }}
             aria-hidden
           />
         }

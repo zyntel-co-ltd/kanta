@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none">
+  <rect x="0" y="8" width="32" height="32" rx="8" fill="#fff" fill-opacity="0.95"/>
+  <path d="M10 32V20h2.2v5.2L18.4 20h2.8l-5.2 5.4L22 32h-2.7l-3.8-5.2-2.3 2.4V32H10z" fill="#059669"/>
+  <text x="44" y="34" fill="#fff" font-family="ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.02em">Kanta</text>
+  <text x="44" y="46" fill="#a7f3d0" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" font-weight="500" letter-spacing="0.08em">OPERATIONAL INTELLIGENCE</text>
+</svg>

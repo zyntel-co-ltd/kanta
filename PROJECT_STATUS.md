@@ -2,6 +2,10 @@
 
 See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any code.
 
+## Module color map (ENG-131)
+
+Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/globals.css` under `[data-module="…"]` (`--module-primary`, `--sidebar-active-bg`). **Lab Metrics** → teal `#0f766e`; **Asset Management** → sky `#0284c7`; **Quality & samples** → indigo `#6366f1`; **AI Insights** and **Admin/Settings** → emerald `#059669`. Sidebar shell stays white; only the active pill (and collapse toggle) use `--sidebar-active-bg`.
+
 ## Database migrations (log)
 
 | Applied (repo) | File | Notes |

@@ -123,17 +123,16 @@ export default function IntelligencePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="min-h-screen bg-slate-50/50 p-6 space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-              <Brain size={18} className="text-emerald-600" />
+          <div className="flex items-center gap-2 mb-0.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+              <Brain size={16} className="text-emerald-600" />
             </div>
-            <h1 className="text-xl font-bold text-slate-900">Kanta Intelligence</h1>
+            <h1 className="text-lg font-bold text-slate-900">Kanta Intelligence</h1>
           </div>
-          <p className="text-sm text-slate-500 ml-11">AI-powered operational insights. No patient data.</p>
+          <p className="text-xs text-slate-500 ml-10">AI-powered operational insights. No patient data.</p>
         </div>
         <div className="flex items-center gap-2">
           <NLQueryBar facilityId={DEFAULT_FACILITY_ID} />
@@ -142,17 +141,21 @@ export default function IntelligencePage() {
 
       {/* Feature cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { icon: BarChart3, color: "amber", label: "TAT Anomaly Detection", desc: "Z-score flagging against 90-day rolling baseline" },
-          { icon: Sparkles, color: "emerald", label: "Natural Language Queries", desc: "Ask questions in plain English about your data" },
-          { icon: Calendar, color: "emerald", label: "Weekly Summaries", desc: "Auto-generated every Monday, delivered by email" },
-        ].map(({ icon: Icon, color, label, desc }) => (
-          <div key={label} className={`rounded-2xl border border-${color}-100 bg-${color}-50/50 p-4`}>
-            <Icon size={16} className={`text-${color}-600 mb-2`} />
-            <p className="text-sm font-semibold text-slate-800">{label}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
-          </div>
-        ))}
+        <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
+          <BarChart3 size={16} className="mb-2 text-amber-600" />
+          <p className="text-sm font-semibold text-slate-800">TAT Anomaly Detection</p>
+          <p className="text-xs text-slate-500 mt-0.5">Z-score flagging against 90-day rolling baseline</p>
+        </div>
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+          <Sparkles size={16} className="mb-2 text-emerald-600" />
+          <p className="text-sm font-semibold text-slate-800">Natural Language Queries</p>
+          <p className="text-xs text-slate-500 mt-0.5">Ask questions in plain English about your data</p>
+        </div>
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+          <Calendar size={16} className="mb-2 text-emerald-600" />
+          <p className="text-sm font-semibold text-slate-800">Weekly Summaries</p>
+          <p className="text-xs text-slate-500 mt-0.5">Auto-generated every Monday, delivered by email</p>
+        </div>
       </div>
 
       {/* Main grid */}

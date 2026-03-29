@@ -44,25 +44,25 @@ export default function DashboardPage() {
         {/* ── Medicare-style hero header ── */}
         <div
           className="rounded-2xl overflow-hidden animate-slide-up"
-          style={{ background: "linear-gradient(145deg, #042f2e 0%, #065f46 55%, #047857 100%)" }}
+          style={{ background: "linear-gradient(135deg, #0369a1 0%, #0284c7 45%, #06b6d4 100%)" }}
         >
-          <div className="px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="inline-block text-[11px] font-semibold uppercase tracking-widest text-emerald-200 mb-1">
+              <span className="inline-block text-[10px] font-semibold uppercase tracking-widest text-sky-100 mb-0.5">
                 Asset Management
               </span>
-              <h1 className="text-2xl font-bold text-white tracking-tight" style={{ letterSpacing: "-0.025em" }}>
+              <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight" style={{ letterSpacing: "-0.025em" }}>
                 Assets Overview
               </h1>
-              <p className="text-sm text-emerald-100 mt-0.5">
+              <p className="text-xs sm:text-sm text-sky-100/95 mt-0.5">
                 Real-time equipment intelligence across your facility.
               </p>
             </div>
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <AssetsSearchBar variant="light" />
               <Link
                 href="/dashboard/reports"
-                className="flex items-center gap-2 px-4 py-2 bg-white text-emerald-800 text-sm font-semibold rounded-xl transition-all hover:bg-emerald-50 shadow-sm"
+                className="flex items-center gap-2 h-8 px-3 bg-white text-sky-800 text-sm font-semibold rounded-lg transition-all hover:bg-sky-50 shadow-sm"
               >
                 <span className="text-base leading-none">+</span>
                 New Report

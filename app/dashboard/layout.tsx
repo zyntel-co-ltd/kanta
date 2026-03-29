@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import DashboardProviders from "@/components/dashboard/DashboardProviders";
 import AuthGuard from "@/components/AuthGuard";
@@ -7,11 +7,30 @@ import RecentVisitsTracker from "@/components/dashboard/RecentVisitsTracker";
 import DashboardChrome from "@/components/dashboard/DashboardChrome";
 import { usePathname } from "next/navigation";
 
-type ModuleKey = "neutral" | "labMetrics" | "qualityManagement" | "assetManagement";
+/** Matches [data-module] selectors in app/globals.css (ENG-131). */
+export type DashboardModuleKey =
+  | "neutral"
+  | "labMetrics"
+  | "qualityManagement"
+  | "assetManagement"
+  | "aiInsights"
+  | "adminSettings";
 
-function detectModule(pathname: string): ModuleKey {
+function detectModule(pathname: string): DashboardModuleKey {
   const p = (pathname || "").replace(/\/$/, "") || "/";
+
   if (p === "/dashboard/home") return "neutral";
+
+  if (p.startsWith("/dashboard/intelligence")) return "aiInsights";
+
+  if (
+    p.startsWith("/dashboard/admin") ||
+    p.startsWith("/dashboard/settings") ||
+    p.startsWith("/dashboard/departments")
+  ) {
+    return "adminSettings";
+  }
+
   if (p === "/dashboard") return "assetManagement";
 
   const labMetrics = [
@@ -51,14 +70,14 @@ export default function DashboardLayout({
   const moduleKey = detectModule(pathname);
   return (
     <AuthGuard>
-    <DashboardProviders>
-    <SidebarLayoutProvider>
-      <RecentVisitsTracker />
-      <div className="flex h-screen overflow-hidden bg-slate-50" data-module={moduleKey}>
-        <DashboardChrome>{children}</DashboardChrome>
-      </div>
-    </SidebarLayoutProvider>
-    </DashboardProviders>
+      <DashboardProviders>
+        <SidebarLayoutProvider>
+          <RecentVisitsTracker />
+          <div className="flex h-screen overflow-hidden bg-slate-50" data-module={moduleKey}>
+            <DashboardChrome>{children}</DashboardChrome>
+          </div>
+        </SidebarLayoutProvider>
+      </DashboardProviders>
     </AuthGuard>
   );
 }

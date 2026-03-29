@@ -223,107 +223,128 @@ html {
    ============================================================================= */
 
 /* =============================================================================
-   §13 Module themes — dynamic sidebar theming
+   §13 Module themes — ENG-131 canonical palette + ENG-126 neutral sidebar shell
 
    - `app/dashboard/layout.tsx` sets `data-module` on the dashboard wrapper.
-   - Sidebar chrome reads CSS custom properties:
-     --sidebar-bg, --sidebar-active-bg, --sidebar-active-text, --sidebar-hover-bg
-   - Only the sidebar changes theme (TopBar remains slate).
+   - Sidebar background is always white; --sidebar-active-bg tints the active pill
+     and the collapse toggle only.
+   - --module-* drives tab bars, banners, and module-accent-* helpers.
    ============================================================================= */
 
-/* Defaults (Lab Metrics / Analytics — existing emerald, no visual change) */
+/* Fallback before attribute match (Lab Metrics / teal) */
 [data-module] {
-  --sidebar-bg: #065f46;
-  --sidebar-active-bg: #059669;
-  --sidebar-active-text: #ecfdf5;
-  --sidebar-hover-bg: #0f766e;
-  --module-primary: #065f46;
-  --module-primary-dark: #065f46;
-  --module-primary-light: #d1fae5;
-  --module-primary-soft-text: #d1fae5;
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: #0f766e;
+  --sidebar-active-text: #ffffff;
+  --sidebar-hover-bg: #f1f5f9;
+  --module-accent: #0f766e;
+  --module-primary: #0f766e;
+  --module-primary-dark: #0d9488;
+  --module-primary-light: #ccfbf1;
+  --module-primary-soft-text: #0d9488;
   --module-primary-on: #ffffff;
 }
 
-/* Quality Management (hospital blue) */
 [data-module="neutral"] {
   --sidebar-bg: #ffffff;
-  --sidebar-active-bg: #e2e8f0;
-  --sidebar-active-text: #0f172a;
+  --sidebar-active-bg: #64748b;
+  --sidebar-active-text: #ffffff;
   --sidebar-hover-bg: #f1f5f9;
-  --module-primary: #475569;
-  --module-primary-dark: #334155;
+  --module-accent: #64748b;
+  --module-primary: #64748b;
+  --module-primary-dark: #475569;
   --module-primary-light: #e2e8f0;
-  --module-primary-soft-text: #cbd5e1;
-  --module-primary-on: #0f172a;
+  --module-primary-soft-text: #64748b;
+  --module-primary-on: #ffffff;
 }
 
-/* Quality Management (hospital blue) */
+[data-module="labMetrics"] {
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: #0f766e;
+  --sidebar-active-text: #ffffff;
+  --sidebar-hover-bg: #f1f5f9;
+  --module-accent: #0f766e;
+  --module-primary: #0f766e;
+  --module-primary-dark: #0d9488;
+  --module-primary-light: #ccfbf1;
+  --module-primary-soft-text: #0f766e;
+  --module-primary-on: #ffffff;
+}
+
 [data-module="qualityManagement"] {
-  --sidebar-bg: #1e3a5f;
-  --sidebar-active-bg: #2563eb;
-  --sidebar-active-text: #eff6ff;
-  --sidebar-hover-bg: #274c7a;
-  --module-primary: #1e3a5f;
-  --module-primary-dark: #1e3a5f;
-  --module-primary-light: #dbeafe;
-  --module-primary-soft-text: #dbeafe;
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: #6366f1;
+  --sidebar-active-text: #ffffff;
+  --sidebar-hover-bg: #f1f5f9;
+  --module-accent: #6366f1;
+  --module-primary: #6366f1;
+  --module-primary-dark: #4f46e5;
+  --module-primary-light: #e0e7ff;
+  --module-primary-soft-text: #6366f1;
   --module-primary-on: #ffffff;
 }
 
-/* Asset Management (gentle red) */
 [data-module="assetManagement"] {
-  --sidebar-bg: #7f1d1d;
-  --sidebar-active-bg: #dc2626;
-  --sidebar-active-text: #fef2f2;
-  --sidebar-hover-bg: #8b2323;
-  --module-primary: #7f1d1d;
-  --module-primary-dark: #7f1d1d;
-  --module-primary-light: #fee2e2;
-  --module-primary-soft-text: #fee2e2;
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: #0284c7;
+  --sidebar-active-text: #ffffff;
+  --sidebar-hover-bg: #f1f5f9;
+  --module-accent: #0284c7;
+  --module-primary: #0284c7;
+  --module-primary-dark: #0369a1;
+  --module-primary-light: #e0f2fe;
+  --module-primary-soft-text: #0284c7;
   --module-primary-on: #ffffff;
 }
 
-.kanta-sidebar {
-  background-color: var(--sidebar-bg);
-  transition: background-color 200ms ease;
+[data-module="aiInsights"],
+[data-module="adminSettings"] {
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: #059669;
+  --sidebar-active-text: #ffffff;
+  --sidebar-hover-bg: #f1f5f9;
+  --module-accent: #059669;
+  --module-primary: #059669;
+  --module-primary-dark: #047857;
+  --module-primary-light: #d1fae5;
+  --module-primary-soft-text: #059669;
+  --module-primary-on: #ffffff;
 }
 
-/* Home/neutral sidebar: translucent glass with subtle multi-module tint */
+/* ENG-126: sidebar chrome is neutral; no full-bleed module background */
+.kanta-sidebar {
+  background-color: #ffffff;
+  transition: border-color 200ms ease;
+}
+
+/* Home: subtle teal / indigo / sky tint (canonical module hues), not red */
 .kanta-sidebar-neutral-glass {
   background:
     linear-gradient(
       180deg,
-      rgba(6, 95, 70, 0.1) 6%,
-      rgba(6, 95, 70, 0) 26%,
-      rgba(30, 58, 95, 0.1) 40%,
-      rgba(30, 58, 95, 0) 62%,
-      rgba(127, 29, 29, 0.1) 76%,
-      rgba(127, 29, 29, 0) 96%
+      rgba(15, 118, 110, 0.08) 5%,
+      rgba(15, 118, 110, 0) 28%,
+      rgba(99, 102, 241, 0.08) 42%,
+      rgba(99, 102, 241, 0) 65%,
+      rgba(2, 132, 199, 0.08) 78%,
+      rgba(2, 132, 199, 0) 96%
     ),
-    rgba(255, 255, 255, 0.76) !important;
+    rgba(255, 255, 255, 0.92) !important;
   border: 1px solid rgba(148, 163, 184, 0.35);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 12px 30px rgba(15, 23, 42, 0.08);
+    0 12px 30px rgba(15, 23, 42, 0.06);
   backdrop-filter: blur(14px) saturate(135%);
   -webkit-backdrop-filter: blur(14px) saturate(135%);
 }
 
-/* §14 Module accent helpers beyond sidebar */
+/* §14 Module accent helpers (tabs, banners, CTAs) */
 .module-accent-bg { background-color: var(--module-primary); color: var(--module-primary-on); }
 .module-accent-text { color: var(--module-primary); }
 .module-accent-soft-text { color: var(--module-primary-soft-text); }
 .module-accent-ring:focus-visible { outline: 2px solid var(--module-primary); outline-offset: 2px; }
 .module-accent-hover:hover { color: var(--module-primary); }
 .group:hover .module-cta { color: var(--module-primary); }
-
-/* Re-map common emerald utility accents to active module accent */
-[data-module="qualityManagement"] :is(.text-emerald-600, .text-emerald-700) { color: var(--module-primary) !important; }
-[data-module="qualityManagement"] :is(.bg-emerald-600, .bg-emerald-700) { background-color: var(--module-primary) !important; }
-[data-module="qualityManagement"] :is(.border-emerald-200, .border-emerald-400, .border-emerald-600) { border-color: var(--module-primary) !important; }
-[data-module="assetManagement"] :is(.text-emerald-600, .text-emerald-700) { color: var(--module-primary) !important; }
-[data-module="assetManagement"] :is(.bg-emerald-600, .bg-emerald-700) { background-color: var(--module-primary) !important; }
-[data-module="assetManagement"] :is(.border-emerald-200, .border-emerald-400, .border-emerald-600) { border-color: var(--module-primary) !important; }
 
 /* Structural helpers */
 .kanta-card {

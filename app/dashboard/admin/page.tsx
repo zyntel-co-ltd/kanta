@@ -455,10 +455,10 @@ export default function AdminPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-lg font-bold text-slate-900 tracking-tight">
             Admin Panel
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             User management, cancellations, audit, and settings.
           </p>
         </div>

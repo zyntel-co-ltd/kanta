@@ -47,10 +47,10 @@ const cardThemes = {
     iconBg: "bg-white/20",
     pulse: false,
   },
-  emerald: {
-    gradient: "from-emerald-400 to-emerald-500",
-    glow: "shadow-emerald-200",
-    sparkColor: "#6ee7b7",
+  sky: {
+    gradient: "from-sky-500 to-cyan-600",
+    glow: "shadow-sky-200",
+    sparkColor: "#7dd3fc",
     badge: "bg-white/20 text-white",
     iconBg: "bg-white/20",
     pulse: false,
@@ -137,7 +137,7 @@ const cardConfig = [
   { id: "critical_alerts" as const, label: "Critical Alerts", unit: "", color: "red" as const, iconKey: "alerts" as const, changeKey: "critical_alerts_change" as const },
   { id: "equipment_scanned_this_week" as const, label: "Equipment Scanned", unit: "", color: "slate" as const, iconKey: "scanned" as const, changeKey: "scanned_change" as const },
   { id: "maintenance_due" as const, label: "Maintenance Compliance", unit: "%", color: "amber" as const, iconKey: "maintenance" as const, changeKey: "maintenance_change" as const },
-  { id: "fleet_health_score" as const, label: "Fleet Health Score", unit: "%", color: "emerald" as const, iconKey: "health" as const, changeKey: "health_change" as const },
+  { id: "fleet_health_score" as const, label: "Fleet Health Score", unit: "%", color: "sky" as const, iconKey: "health" as const, changeKey: "health_change" as const },
 ] as const;
 
 export default function KpiCards() {

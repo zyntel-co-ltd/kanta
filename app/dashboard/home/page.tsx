@@ -62,7 +62,7 @@ const apps: AppCard[] = [
     href: "/dashboard/lab-analytics",
     icon: FlaskConical,
     ctaLabel: "View analytics",
-    theme: { primary: "#059669", soft: "#d1fae5", ring: "#059669" },
+    theme: { primary: "#0f766e", soft: "#ccfbf1", ring: "#0f766e" },
     tabs: [
       { label: "TAT", href: "/dashboard/tat", icon: Timer },
       { label: "Volume", href: "/dashboard/numbers", icon: Binary },
@@ -78,7 +78,7 @@ const apps: AppCard[] = [
     href: "/dashboard/quality-samples",
     icon: ShieldCheck,
     ctaLabel: "Open workspace",
-    theme: { primary: "#2563eb", soft: "#dbeafe", ring: "#2563eb" },
+    theme: { primary: "#6366f1", soft: "#e0e7ff", ring: "#6366f1" },
     tabs: [
       { label: "QC", href: "/dashboard/qc", icon: FlaskConical },
       { label: "Samples", href: "/dashboard/samples", icon: TestTubes },
@@ -93,7 +93,7 @@ const apps: AppCard[] = [
     href: "/dashboard/assets",
     icon: Layers,
     ctaLabel: "View assets",
-    theme: { primary: "#dc2626", soft: "#fee2e2", ring: "#dc2626" },
+    theme: { primary: "#0284c7", soft: "#e0f2fe", ring: "#0284c7" },
     tabs: [
       { label: "Assets Overview", href: "/dashboard", icon: LayoutDashboard },
       { label: "Scan", href: "/dashboard/scan", icon: QrCode },
@@ -116,43 +116,43 @@ export default function DashboardHomePage() {
         className="rounded-2xl overflow-hidden animate-slide-up stagger-1"
         style={{ background: "linear-gradient(145deg, #042f2e 0%, #065f46 55%, #047857 100%)" }}
       >
-        <div className="px-7 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                <Zap size={17} className="text-white" />
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                <Zap size={15} className="text-white" />
               </div>
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-emerald-200">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-200">
                 Kanta · Operational Intelligence
               </span>
             </div>
             <h1
-              className="text-white"
-              style={{ fontSize: "clamp(1.5rem, 2.5vw, 2rem)", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.2 }}
+              className="text-white text-xl sm:text-2xl font-extrabold tracking-tight leading-tight"
+              style={{ letterSpacing: "-0.03em" }}
             >
               Welcome back
             </h1>
-            <p className="text-emerald-100 mt-1.5" style={{ fontSize: "0.9375rem", lineHeight: 1.6 }}>
+            <p className="text-emerald-100/95 mt-1 text-sm leading-snug max-w-md">
               Choose a workspace below — data, charts and controls in one focused view.
             </p>
-            <p className="text-emerald-200/90 text-sm mt-2 font-medium">
+            <p className="text-emerald-200/90 text-xs mt-1.5 font-medium">
               {HOSPITAL_DISPLAY_NAME}
             </p>
             <Link
               href="/dashboard/scan"
-              className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-white text-emerald-800 text-sm font-semibold rounded-xl hover:bg-emerald-50 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 mt-3 px-4 py-2 h-8 bg-white text-emerald-800 text-sm font-semibold rounded-lg hover:bg-emerald-50 transition-colors shadow-sm"
             >
               <ScanSearch size={18} strokeWidth={2} />
               Scan equipment
             </Link>
           </div>
-          <div className="flex sm:flex-col gap-3 sm:gap-1.5 flex-shrink-0">
-            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-4 py-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
-              <span className="text-sm font-semibold text-white">System Online</span>
+          <div className="flex sm:flex-col gap-2 sm:gap-1.5 flex-shrink-0">
+            <div className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+              <span className="text-xs font-semibold text-white">System Online</span>
             </div>
-            <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2">
-              <span className="text-xs text-emerald-200">Lab Metrics · QC · Assets</span>
+            <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5">
+              <span className="text-[11px] text-emerald-200">Lab · QC · Assets</span>
             </div>
           </div>
         </div>

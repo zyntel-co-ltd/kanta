@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -85,18 +86,15 @@ export default function LoginForm() {
           style={{ background: "radial-gradient(circle, #6ee7b7, transparent 70%)", transform: "translate(-30%, 30%)" }}
         />
 
-        {/* Brand */}
         <div className="relative z-10 flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)" }}
-          >
-            <FlaskConical size={18} className="text-white" />
-          </div>
-          <div>
-            <p className="text-white font-bold text-lg leading-none tracking-tight">Kanta</p>
-            <p className="text-emerald-300 text-xs mt-0.5">Operational Intelligence</p>
-          </div>
+          <Image
+            src="/kanta-logo-white.svg"
+            alt="Kanta"
+            width={200}
+            height={48}
+            className="h-10 sm:h-12 w-auto max-w-[min(100%,220px)] object-contain object-left"
+            priority
+          />
         </div>
 
         {/* Hero text */}

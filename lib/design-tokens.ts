@@ -1,6 +1,9 @@
 /**
  * Kanta design system — mirrors CSS variables in app/globals.css
  * (Plan §1 Foundations + §9 status semantics)
+ *
+ * ENG-131: Canonical module accent colors (CEO-approved). Brand emerald stays for
+ * Kanta identity, AI Insights, Admin/Settings — not for Lab Metrics module chrome.
  */
 
 export const BRAND = {
@@ -30,41 +33,97 @@ export const STRUCTURE = {
   SURFACE_MUTED: "#f8fafc",
 } as const;
 
-export const MODULE_THEMES = {
-  neutral: {
-    primary: "#475569",
-    primaryDark: "#334155",
-    primaryLight: "#e2e8f0",
-    sidebarBg: "#334155",
-    sidebarActiveBg: "#475569",
-    sidebarActiveText: "#f8fafc",
-    sidebarHoverBg: "#3f4d63",
-  },
+/**
+ * Canonical module map — Tailwind class tokens are static strings for Tailwind JIT.
+ * @see globals.css [data-module="…"] for matching CSS variables.
+ */
+export const MODULE_COLORS = {
   labMetrics: {
-    primary: BRAND.DEFAULT,
-    primaryDark: BRAND.DARK,
-    primaryLight: BRAND.LIGHT,
-    sidebarBg: BRAND.DARKER,
-    sidebarActiveBg: BRAND.DEFAULT,
-    sidebarActiveText: "#ecfdf5",
-    sidebarHoverBg: "#0f766e",
-  },
-  qualityManagement: {
-    primary: "#2563eb",
-    primaryDark: "#1e3a5f",
-    primaryLight: "#dbeafe",
-    sidebarBg: "#1e3a5f",
-    sidebarActiveBg: "#2563eb",
-    sidebarActiveText: "#eff6ff",
-    sidebarHoverBg: "#274c7a",
+    bg: "bg-teal-700",
+    text: "text-teal-700",
+    border: "border-teal-700",
+    hex: "#0f766e",
   },
   assetManagement: {
-    primary: "#dc2626",
-    primaryDark: "#7f1d1d",
-    primaryLight: "#fee2e2",
-    sidebarBg: "#7f1d1d",
-    sidebarActiveBg: "#dc2626",
-    sidebarActiveText: "#fef2f2",
-    sidebarHoverBg: "#8b2323",
+    bg: "bg-sky-600",
+    text: "text-sky-600",
+    border: "border-sky-600",
+    hex: "#0284c7",
+  },
+  qualitySamples: {
+    bg: "bg-indigo-500",
+    text: "text-indigo-500",
+    border: "border-indigo-500",
+    hex: "#6366f1",
+  },
+  aiInsights: {
+    bg: "bg-emerald-600",
+    text: "text-emerald-600",
+    border: "border-emerald-600",
+    hex: "#059669",
+  },
+  adminSettings: {
+    bg: "bg-emerald-600",
+    text: "text-emerald-600",
+    border: "border-emerald-600",
+    hex: "#059669",
+  },
+} as const;
+
+/** @deprecated Prefer MODULE_COLORS + CSS variables; kept for gradual migration */
+export const MODULE_THEMES = {
+  neutral: {
+    primary: "#64748b",
+    primaryDark: "#475569",
+    primaryLight: "#e2e8f0",
+    sidebarBg: "#ffffff",
+    sidebarActiveBg: "#e2e8f0",
+    sidebarActiveText: "#0f172a",
+    sidebarHoverBg: "#f1f5f9",
+  },
+  labMetrics: {
+    primary: MODULE_COLORS.labMetrics.hex,
+    primaryDark: "#0d9488",
+    primaryLight: "#ccfbf1",
+    sidebarBg: "#ffffff",
+    sidebarActiveBg: MODULE_COLORS.labMetrics.hex,
+    sidebarActiveText: "#ffffff",
+    sidebarHoverBg: "#f1f5f9",
+  },
+  qualityManagement: {
+    primary: MODULE_COLORS.qualitySamples.hex,
+    primaryDark: "#4f46e5",
+    primaryLight: "#e0e7ff",
+    sidebarBg: "#ffffff",
+    sidebarActiveBg: MODULE_COLORS.qualitySamples.hex,
+    sidebarActiveText: "#ffffff",
+    sidebarHoverBg: "#f1f5f9",
+  },
+  assetManagement: {
+    primary: MODULE_COLORS.assetManagement.hex,
+    primaryDark: "#0369a1",
+    primaryLight: "#e0f2fe",
+    sidebarBg: "#ffffff",
+    sidebarActiveBg: MODULE_COLORS.assetManagement.hex,
+    sidebarActiveText: "#ffffff",
+    sidebarHoverBg: "#f1f5f9",
+  },
+  aiInsights: {
+    primary: MODULE_COLORS.aiInsights.hex,
+    primaryDark: BRAND.DARK,
+    primaryLight: BRAND.LIGHT,
+    sidebarBg: "#ffffff",
+    sidebarActiveBg: MODULE_COLORS.aiInsights.hex,
+    sidebarActiveText: "#ffffff",
+    sidebarHoverBg: "#f1f5f9",
+  },
+  adminSettings: {
+    primary: MODULE_COLORS.adminSettings.hex,
+    primaryDark: BRAND.DARK,
+    primaryLight: BRAND.LIGHT,
+    sidebarBg: "#ffffff",
+    sidebarActiveBg: MODULE_COLORS.adminSettings.hex,
+    sidebarActiveText: "#ffffff",
+    sidebarHoverBg: "#f1f5f9",
   },
 } as const;

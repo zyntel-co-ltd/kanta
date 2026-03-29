@@ -1,9 +1,14 @@
 /**
  * Chart.js — neutral structure + semantic status series (Plan §6 Charts)
- * Import defaults in components/charts/registry.ts
+ * ENG-131: Lab module accents use teal; asset equipment stacks use sky/cyan.
  */
 
-import { STATUS, STRUCTURE, BRAND } from "@/lib/design-tokens";
+import { STATUS, STRUCTURE, MODULE_COLORS } from "@/lib/design-tokens";
+
+/** Lab Metrics — TAT / operational trend accent (teal, not brand emerald) */
+const LAB_TEAL = MODULE_COLORS.labMetrics.hex;
+const LAB_TEAL_FILL = "rgba(15, 118, 110, 0.12)";
+const SKY = MODULE_COLORS.assetManagement.hex;
 
 /** Default series for non-semantic trends (volume, counts) */
 export const CHART_NEUTRAL = {
@@ -18,37 +23,34 @@ export const CHART_STATUS = {
   info: { border: STATUS.INFO, background: "rgba(37, 99, 235, 0.1)" },
 } as const;
 
-/** Shared axis styling for Chart.js scales */
 export const CHART_AXIS = {
   tick: STRUCTURE.TEXT_HINT,
   grid: "#f1f5f9",
 } as const;
 
-/** TAT / lab metrics — semantic pie, line, and stacked bar colors */
+/** TAT / lab metrics — pie, line, bar (module teal + semantic status) */
 export const CHART_TAT = {
-  pie: [STATUS.OK, STATUS.WARN, STATUS.BAD, CHART_NEUTRAL.border] as const,
-  lineOnTime: { border: STATUS.OK, fill: CHART_STATUS.ok.background },
+  pie: [LAB_TEAL, STATUS.WARN, STATUS.BAD, CHART_NEUTRAL.border] as const,
+  lineOnTime: { border: LAB_TEAL, fill: LAB_TEAL_FILL },
   lineDelayed: { border: STATUS.BAD, fill: CHART_STATUS.bad.background },
   lineNotUploaded: { border: CHART_NEUTRAL.border, fill: CHART_NEUTRAL.background },
-  barOnTime: STATUS.OK,
+  barOnTime: LAB_TEAL,
   barDelayed: STATUS.BAD,
   barNotUploaded: CHART_NEUTRAL.border,
 } as const;
 
-/** Equipment stacked bars — operational (ok), maintenance (warn), retired (neutral) */
+/** Equipment stacked bars — operational (sky), maintenance (warn), retired (neutral) */
 export const CHART_EQUIPMENT_STACK = {
-  operational: STATUS.OK,
+  operational: SKY,
   maintenance: STATUS.WARN,
   retired: STRUCTURE.BORDER,
 } as const;
 
-/** Second series on dual-line charts (e.g. maintenance vs operational) */
 export const CHART_BRAND_SECONDARY = {
-  border: BRAND.MUTED,
-  background: "rgba(110, 231, 183, 0.1)",
+  border: "#2dd4bf",
+  background: LAB_TEAL_FILL,
 } as const;
 
-/** Optional merge for per-chart options.plugins */
 export const kantaChartTooltipPlugin = {
   tooltip: {
     backgroundColor: STRUCTURE.TEXT,

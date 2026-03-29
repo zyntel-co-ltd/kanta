@@ -12,17 +12,14 @@ export default function QualitySamplesHubPage() {
         className="rounded-2xl overflow-hidden"
         style={{ background: "linear-gradient(145deg, var(--module-primary-dark) 0%, var(--module-primary) 100%)" }}
       >
-        <div className="px-7 py-8">
-          <p className="text-[11px] font-semibold uppercase tracking-widest module-accent-soft-text mb-2">
+        <div className="px-5 py-3.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest module-accent-soft-text mb-1">
             Workspace
           </p>
-          <h1
-            className="text-white font-extrabold tracking-tight"
-            style={{ fontSize: "clamp(1.35rem, 2.2vw, 1.75rem)", lineHeight: 1.2 }}
-          >
+          <h1 className="text-white font-extrabold tracking-tight text-lg sm:text-xl leading-tight">
             Quality & samples
           </h1>
-          <p className="module-accent-soft-text mt-2 max-w-xl text-[0.9375rem] leading-relaxed">
+          <p className="module-accent-soft-text mt-1 max-w-xl text-sm leading-snug">
             Configure QC, enter results, and track racks and specimen flow — pick where you want to work.
           </p>
         </div>
