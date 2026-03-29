@@ -381,17 +381,20 @@ export default function TATPage() {
     },
   };
 
-  const perfBySection = performanceData?.bySection;
+  const perfSectionRows = useMemo(
+    () => performanceData?.bySection ?? [],
+    [performanceData?.bySection]
+  );
   const perfSectionDisplayLabels = useMemo(
-    () => (perfBySection ?? []).map((s) => resolveSectionLabel(s.section)),
-    [perfBySection, resolveSectionLabel]
+    () => perfSectionRows.map((s) => resolveSectionLabel(s.section)),
+    [perfSectionRows, resolveSectionLabel]
   );
   const perfCountData: ChartData<"bar"> = {
     labels: perfSectionDisplayLabels,
     datasets: [
       {
         label: "Tests",
-        data: (perfBySection ?? []).map((s) => s.count),
+        data: perfSectionRows.map((s) => s.count),
         backgroundColor: "#21336a",
         borderRadius: 4,
         barThickness: 14,
@@ -403,7 +406,7 @@ export default function TATPage() {
     datasets: [
       {
         label: "Avg TAT (min)",
-        data: (perfBySection ?? []).map((s) => s.avgTat),
+        data: perfSectionRows.map((s) => s.avgTat),
         backgroundColor: "#2d3f6e",
         borderRadius: 4,
         barThickness: 14,
@@ -457,8 +460,8 @@ export default function TATPage() {
                 <KPICard title="TAT Breaches" value={(performanceData?.breachCount ?? 0).toLocaleString()} iconId="breaches" />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Tests Resulted by Section</h3><div className="h-[260px]">{(perfBySection ?? []).length ? <Bar data={perfCountData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Avg. TAT by Section</h3><div className="h-[260px]">{(perfBySection ?? []).length ? <Bar data={perfTatData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Tests Resulted by Section</h3><div className="h-[260px]">{perfSectionRows.length ? <Bar data={perfCountData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Avg. TAT by Section</h3><div className="h-[260px]">{perfSectionRows.length ? <Bar data={perfTatData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
               </div>
             </div>
           )}

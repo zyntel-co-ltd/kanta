@@ -59,7 +59,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{
 
     const { data, error } = await db
       .from("departments")
-      .insert({ name, hospital_id })
+      .insert({ name, facility_id: hospital_id })
       .select("id")
       .single();
 

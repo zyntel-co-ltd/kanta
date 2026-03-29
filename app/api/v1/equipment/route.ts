@@ -71,7 +71,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{
         model: model ?? null,
         serial_number: serial_number ?? null,
         department_id,
-        hospital_id,
+        facility_id: hospital_id,
         category: category ?? "Other",
         location: location ?? null,
         qr_code: qrCode,

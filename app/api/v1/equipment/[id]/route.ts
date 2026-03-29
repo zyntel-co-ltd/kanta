@@ -41,7 +41,7 @@ export async function PATCH(
 
     const { data: prev } = await db
       .from("equipment")
-      .select("hospital_id, status")
+      .select("facility_id, status")
       .eq("id", id)
       .maybeSingle();
 
@@ -56,7 +56,7 @@ export async function PATCH(
 
     const ctx = await getAuthContext(req);
     await writeAuditLog({
-      facilityId: (prev?.hospital_id as string) ?? null,
+      facilityId: (prev?.facility_id as string) ?? null,
       userId: ctx.user?.id ?? null,
       action: "equipment.updated",
       entityType: "equipment",

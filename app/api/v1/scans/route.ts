@@ -83,7 +83,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{
       .from("scan_events")
       .insert({
         equipment_id,
-        hospital_id,
+        facility_id: hospital_id,
         scanned_by,
         status_at_scan,
         location: location ?? null,

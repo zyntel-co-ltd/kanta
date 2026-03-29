@@ -1,6 +1,9 @@
 /**
  * Database query helpers — all server-side only.
  * These are called by API routes. They return typed data or throw.
+ *
+ * Facility scope uses the `facility_id` column on equipment, departments, scan_events,
+ * and equipment_snapshots (API query param remains `hospital_id` for compatibility).
  */
 
 import { createAdminClient } from "./supabase";
@@ -55,33 +58,33 @@ export async function getDashboardKpi(hospitalId: string): Promise<DashboardKpi>
     maintOverdueRes,
   ] = await Promise.all([
     // Offline equipment (critical)
-    db.from("equipment").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).eq("status", "offline"),
+    db.from("equipment").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).eq("status", "offline"),
     // Overdue maintenance (next_maintenance_at < now) — warning
-    db.from("equipment").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).lt("next_maintenance_at", now.toISOString()).not("next_maintenance_at", "is", null),
+    db.from("equipment").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).lt("next_maintenance_at", now.toISOString()).not("next_maintenance_at", "is", null),
     // Maintenance due soon (next 7 days) — info
-    db.from("equipment").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).gte("next_maintenance_at", now.toISOString()).lte("next_maintenance_at", sevenDaysFromNow.toISOString()),
+    db.from("equipment").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).gte("next_maintenance_at", now.toISOString()).lte("next_maintenance_at", sevenDaysFromNow.toISOString()),
     // Critical alerts total: offline OR overdue
-    db.from("equipment").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).or("status.eq.offline,next_maintenance_at.lt.now()"),
+    db.from("equipment").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).or("status.eq.offline,next_maintenance_at.lt.now()"),
     // Alerts change: offline scans today vs yesterday (proxy when no point-in-time equipment)
-    db.from("scan_events").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).eq("status_at_scan", "offline").gte("created_at", new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()),
-    db.from("scan_events").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).eq("status_at_scan", "offline").gte("created_at", yesterdayStart.toISOString()).lte("created_at", yesterdayEnd.toISOString()),
+    db.from("scan_events").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).eq("status_at_scan", "offline").gte("created_at", new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()),
+    db.from("scan_events").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).eq("status_at_scan", "offline").gte("created_at", yesterdayStart.toISOString()).lte("created_at", yesterdayEnd.toISOString()),
     // Scans this week
-    db.from("scan_events").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).gte("created_at", weekAgo.toISOString()),
+    db.from("scan_events").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).gte("created_at", weekAgo.toISOString()),
     // Scans previous week
-    db.from("scan_events").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).gte("created_at", twoWeeksAgo.toISOString()).lt("created_at", weekAgo.toISOString()),
+    db.from("scan_events").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).gte("created_at", twoWeeksAgo.toISOString()).lt("created_at", weekAgo.toISOString()),
     // Maintenance due (status = maintenance)
-    db.from("equipment").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).eq("status", "maintenance"),
-    db.from("equipment").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).eq("status", "maintenance").lt("updated_at", weekAgo.toISOString()),
+    db.from("equipment").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).eq("status", "maintenance"),
+    db.from("equipment").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).eq("status", "maintenance").lt("updated_at", weekAgo.toISOString()),
     // Total equipment (non-retired)
-    db.from("equipment").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).neq("status", "retired"),
+    db.from("equipment").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).neq("status", "retired"),
     // Operational
-    db.from("equipment").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).eq("status", "operational"),
+    db.from("equipment").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).eq("status", "operational"),
     // Health previous period (from snapshots if available)
-    db.from("equipment_snapshots").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).eq("status", "operational").gte("snapshot_date", twoDaysAgo.toISOString()).lte("snapshot_date", yesterdayEnd.toISOString()),
+    db.from("equipment_snapshots").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).eq("status", "operational").gte("snapshot_date", twoDaysAgo.toISOString()).lte("snapshot_date", yesterdayEnd.toISOString()),
     // Maintenance compliance: total = had maintenance due (next_maintenance < now), completed = now operational, overdue = still in maintenance
-    db.from("equipment").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).lt("next_maintenance_at", now.toISOString()).neq("status", "retired").not("next_maintenance_at", "is", null),
-    db.from("equipment").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).lt("next_maintenance_at", now.toISOString()).eq("status", "operational"),
-    db.from("equipment").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).lt("next_maintenance_at", now.toISOString()).eq("status", "maintenance"),
+    db.from("equipment").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).lt("next_maintenance_at", now.toISOString()).neq("status", "retired").not("next_maintenance_at", "is", null),
+    db.from("equipment").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).lt("next_maintenance_at", now.toISOString()).eq("status", "operational"),
+    db.from("equipment").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).lt("next_maintenance_at", now.toISOString()).eq("status", "maintenance"),
   ]);
 
   const total = totalRes.count ?? 0;
@@ -141,7 +144,7 @@ export async function getKpiSparklines(hospitalId: string): Promise<KpiSparkline
   const { data } = await db
     .from("scan_events")
     .select("created_at, status_at_scan")
-    .eq("hospital_id", hospitalId)
+    .eq("facility_id", hospitalId)
     .gte("created_at", sevenDaysAgo.toISOString());
 
   const alerts: number[] = [];
@@ -183,7 +186,7 @@ export async function getEquipmentByCategory(hospitalId: string) {
   const { data, error } = await db
     .from("equipment")
     .select("category")
-    .eq("hospital_id", hospitalId)
+    .eq("facility_id", hospitalId)
     .neq("status", "retired");
 
   if (error) throw error;
@@ -224,7 +227,7 @@ export async function getDailyScans(hospitalId: string) {
     return db
       .from("scan_events")
       .select("id", { count: "exact", head: true })
-      .eq("hospital_id", hospitalId)
+      .eq("facility_id", hospitalId)
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString())
       .then((r) => ({ day: days[start.getDay()], scans: r.count ?? 0 }));
@@ -247,9 +250,9 @@ export async function getEquipmentStatusMonthly(hospitalId: string) {
     const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
     return Promise.all([
-      db.from("equipment_snapshots").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).eq("status", "operational").gte("snapshot_date", start).lte("snapshot_date", end),
-      db.from("equipment_snapshots").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).eq("status", "maintenance").gte("snapshot_date", start).lte("snapshot_date", end),
-      db.from("equipment_snapshots").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId).eq("status", "retired").gte("snapshot_date", start).lte("snapshot_date", end),
+      db.from("equipment_snapshots").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).eq("status", "operational").gte("snapshot_date", start).lte("snapshot_date", end),
+      db.from("equipment_snapshots").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).eq("status", "maintenance").gte("snapshot_date", start).lte("snapshot_date", end),
+      db.from("equipment_snapshots").select("id", { count: "exact", head: true }).eq("facility_id", hospitalId).eq("status", "retired").gte("snapshot_date", start).lte("snapshot_date", end),
     ]).then(([opRes, maintRes, retiredRes]) => ({
       month: monthLabel,
       operational: opRes.count ?? 0,
@@ -274,7 +277,7 @@ export async function getAssetValueByPeriod(
   const { data } = await db
     .from("scan_events")
     .select("created_at, status_at_scan")
-    .eq("hospital_id", hospitalId)
+    .eq("facility_id", hospitalId)
     .gte("created_at", sevenDaysAgo.toISOString());
 
   const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
@@ -302,7 +305,7 @@ export async function getAssetValueByPeriod(
   const { data: data90 } = await db
     .from("scan_events")
     .select("created_at, status_at_scan")
-    .eq("hospital_id", hospitalId)
+    .eq("facility_id", hospitalId)
     .gte("created_at", ninetyDaysAgo.toISOString());
 
   const weekLabels: string[] = [];
@@ -356,7 +359,7 @@ export async function getInventoryFromEquipment(hospitalId: string) {
   const { data: equipment } = await db
     .from("equipment")
     .select("id, last_scanned_at")
-    .eq("hospital_id", hospitalId)
+    .eq("facility_id", hospitalId)
     .neq("status", "retired");
 
   const total = equipment?.length ?? 0;
@@ -400,7 +403,7 @@ export async function getRecentScans(hospitalId: string, limit = 10): Promise<Sc
         department:departments ( id, name )
       )
     `)
-    .eq("hospital_id", hospitalId)
+    .eq("facility_id", hospitalId)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -420,7 +423,7 @@ export async function getDepartmentsWithTechnicians(hospitalId: string): Promise
       equipment ( id, status ),
       technicians ( id, name, avatar_initials, on_duty, shift_start )
     `)
-    .eq("hospital_id", hospitalId)
+    .eq("facility_id", hospitalId)
     .order("name");
 
   if (error) throw error;
@@ -438,7 +441,7 @@ export async function getEquipment(
   let query = db
     .from("equipment")
     .select(`*, department:departments(id, name)`)
-    .eq("hospital_id", hospitalId)
+    .eq("facility_id", hospitalId)
     .order("name");
 
   if (filters?.status) query = query.eq("status", filters.status);
