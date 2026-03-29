@@ -3,7 +3,7 @@
 **Last updated:** 2026-03-29  
 **Updated by:** Cursor  
 **Product type:** SaaS — hospital lab operations & asset intelligence  
-**Status:** Active development — MVP; Phase 29 + 2026-03-29 ops (lab config, flags, migration push fixes)  
+**Status:** Active development — MVP; Phase 29 + 2026-03-29 ops (lab config, flags, migrations, unified loaders, QC theme, sidebar/samples UX)  
 **Production URL:** https://app.zyntel.net  
 **Repo:** github.com/zyntel-co-ltd/kanta  
 
@@ -24,7 +24,7 @@ Hospital staff use a unified dashboard with **three app domains**: **Lab Metrics
 | Auth & sessions | ✅ Live | Supabase SSR, middleware, password reset |
 | Asset Management | ✅ Live | Equipment CRUD, QR scan, maintenance, analytics |
 | Lab Metrics | ✅ Live | TAT, tests, revenue, performance, LRIDS; facility **sections / shifts / TAT targets** from config (`useFacilityConfig`, `/api/facility/lab-config`, ENG-86) |
-| Quality & samples | ✅ Live | QC, Westgard/L-J, samples, hub pages |
+| Quality & samples | ✅ Live | QC (quant + qual), Westgard/L-J, samples, hub pages; QC chrome uses **qualityQc** module colors (sky `#0284c7`), not legacy emerald |
 | Admin & settings | ✅ Live | Users, hospital settings (ENG-80), RBAC v2 |
 | AI Intelligence | ✅ Live | NL queries, weekly summaries, anomaly / telemetry |
 | Refrigerator | ✅ Live | Telemetry (feature-flagged where applicable) |

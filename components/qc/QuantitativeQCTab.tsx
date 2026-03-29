@@ -9,6 +9,7 @@ import {
   TrendingUp, FlaskConical, ChevronDown,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 /* ───── Types ───── */
 type Material = { id: string; name: string; analyte: string; level: string };
@@ -69,7 +70,7 @@ function westgardViolations(value: number, mean: number, sd: number, recent: num
 
 function StatusBadge({ violations }: { violations: string[] }) {
   if (violations.length === 0)
-    return <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full"><CheckCircle2 size={11} /> Pass</span>;
+    return <span className="inline-flex items-center gap-1 text-xs font-medium module-accent-soft-text bg-[var(--module-primary-light)] px-2 py-0.5 rounded-full"><CheckCircle2 size={11} /> Pass</span>;
   if (violations.includes("1-3S") || violations.includes("2-2S"))
     return <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded-full"><XCircle size={11} /> Reject ({violations.join(", ")})</span>;
   return <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full"><AlertTriangle size={11} /> Warning ({violations.join(", ")})</span>;
@@ -87,8 +88,8 @@ function QCLineChart({ runs, stats }: { runs: QCRun[]; stats: RunStats }) {
       {
         label: "QC Value",
         data: values,
-        borderColor: "#059669",
-        backgroundColor: "rgba(5,150,105,0.08)",
+        borderColor: "#0284c7",
+        backgroundColor: "rgba(2,132,199,0.08)",
         pointRadius: 4,
         pointHoverRadius: 6,
         tension: 0.2,
@@ -99,7 +100,7 @@ function QCLineChart({ runs, stats }: { runs: QCRun[]; stats: RunStats }) {
             ? "#ef4444"
             : r.rule_violations.length > 0
             ? "#f59e0b"
-            : "#059669"
+            : "#0284c7"
         ),
       },
       { label: "Mean",   data: Array(values.length).fill(mean), borderColor: "#64748b",   borderDash: [4, 4], pointRadius: 0, borderWidth: 1.5 },
@@ -231,7 +232,7 @@ export default function QuantitativeQCTab({
           <select
             value={selectedMaterial}
             onChange={(e) => setSelectedMaterial(e.target.value)}
-            className="appearance-none bg-white border border-slate-200 rounded-xl px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+            className="appearance-none bg-white border border-slate-200 rounded-xl px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]/30 focus:border-[var(--module-primary)]"
           >
             {materials.map((m) => (
               <option key={m.id} value={m.id}>{m.name} — {m.analyte} ({m.level})</option>
@@ -241,7 +242,7 @@ export default function QuantitativeQCTab({
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--module-primary)] text-[var(--module-primary-on)] text-sm font-medium hover:opacity-90"
         >
           <Plus size={14} />
           Add Run
@@ -250,8 +251,8 @@ export default function QuantitativeQCTab({
 
       {/* Entry form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 space-y-4">
-          <p className="text-sm font-semibold text-emerald-900 flex items-center gap-2">
+        <form onSubmit={handleSubmit} className="rounded-2xl border border-[var(--module-primary)]/35 bg-[var(--module-primary-light)]/50 p-4 space-y-4">
+          <p className="text-sm font-semibold text-[var(--module-primary-dark)] flex items-center gap-2">
             <FlaskConical size={14} />
             New QC Run — {material?.name} ({material?.analyte}, {material?.level})
           </p>
@@ -262,7 +263,7 @@ export default function QuantitativeQCTab({
                 type="date"
                 value={form.run_date}
                 onChange={(e) => setForm({ ...form, run_date: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]/30"
                 required
               />
             </div>
@@ -276,7 +277,7 @@ export default function QuantitativeQCTab({
                 value={form.value}
                 onChange={(e) => setForm({ ...form, value: e.target.value })}
                 placeholder="Enter result value"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]/30"
                 required
               />
               {/* Preview z-score inline */}
@@ -296,7 +297,7 @@ export default function QuantitativeQCTab({
                 value={form.operator}
                 onChange={(e) => setForm({ ...form, operator: e.target.value })}
                 placeholder="Name or initials"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]/30"
               />
             </div>
             <div>
@@ -306,7 +307,7 @@ export default function QuantitativeQCTab({
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 placeholder="Optional"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]/30"
               />
             </div>
           </div>
@@ -314,7 +315,7 @@ export default function QuantitativeQCTab({
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--module-primary)] text-[var(--module-primary-on)] text-sm font-medium hover:opacity-90 disabled:opacity-50"
             >
               {submitting ? <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={13} />}
               Save Run
@@ -352,7 +353,7 @@ export default function QuantitativeQCTab({
       {/* Chart */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-          <TrendingUp size={15} className="text-emerald-600" />
+          <TrendingUp size={15} className="module-accent-text" />
           <span className="text-sm font-semibold text-slate-800">
             Levey-Jennings — {material?.name} {material?.analyte} ({material?.level})
           </span>
@@ -361,7 +362,7 @@ export default function QuantitativeQCTab({
         <div className="p-4" style={{ height: 340 }}>
           {loading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              <LoadingBars size="sm" />
             </div>
           ) : runs.length < 2 ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-400">

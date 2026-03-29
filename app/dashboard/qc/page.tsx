@@ -14,6 +14,7 @@ import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { STATUS, STRUCTURE } from "@/lib/design-tokens";
 import { CHART_AXIS } from "@/lib/chart-theme";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 /* ─────────────────── Theme constants ─────────────────── */
 const inputCls =
@@ -470,9 +471,9 @@ function QCConfigTab() {
 
   return (
     <div className="space-y-6">
-      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading…</div>}
+      {isLoading && <div className="flex items-center gap-2 module-accent-text text-sm"><LoadingBars size="sm" /> Loading…</div>}
       {error   && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm font-medium">{error}</div>}
-      {success && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm font-medium">{success}</div>}
+      {success && <div className="p-3 bg-[var(--module-primary-light)] border border-slate-200 module-accent-soft-text rounded-xl text-sm font-medium">{success}</div>}
 
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
         <SectionHead icon={ShieldCheck} title="QC Configuration Manager" />
@@ -547,7 +548,7 @@ function QCConfigTab() {
                   </td>
                   <td className={tblCell}>
                     <div className="flex items-center gap-3">
-                      <button onClick={() => handleEdit(config)} className="text-emerald-600 hover:text-emerald-800 font-semibold text-xs">Edit</button>
+                      <button onClick={() => handleEdit(config)} className="module-accent-text hover:text-[var(--module-primary-dark)] font-semibold text-xs">Edit</button>
                       <button onClick={() => handleToggleEnabled(config)} className="text-amber-600 hover:text-amber-800 font-semibold text-xs">{config.enabled ? "Disable" : "Enable"}</button>
                       <button onClick={() => handleDelete(config)} className="text-red-600 hover:text-red-800 font-semibold text-xs">Delete</button>
                     </div>
@@ -642,9 +643,9 @@ function QCDataEntryTab() {
 
   return (
     <div className="space-y-6">
-      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Submitting…</div>}
+      {isLoading && <div className="flex items-center gap-2 module-accent-text text-sm"><LoadingBars size="sm" /> Submitting…</div>}
       {error   && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
-      {success && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm">{success}</div>}
+      {success && <div className="p-3 bg-[var(--module-primary-light)] border border-slate-200 module-accent-soft-text rounded-xl text-sm">{success}</div>}
 
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
         <SectionHead icon={ClipboardList} title="QC Data Entry" />
@@ -696,9 +697,9 @@ function QCDataEntryTab() {
                     <td className={tblCell}>{draft.value}</td>
                     <td className={tblCell}>
                       <div className="flex gap-3">
-                        <button onClick={() => { setEditingDraftId(draft.id); setSelectedConfigId(draft.qcConfigId); setSelectedDate(draft.date); setQcValue(String(draft.value)); }} className="text-emerald-600 hover:text-emerald-800 font-semibold text-xs">Edit</button>
+                        <button onClick={() => { setEditingDraftId(draft.id); setSelectedConfigId(draft.qcConfigId); setSelectedDate(draft.date); setQcValue(String(draft.value)); }} className="module-accent-text hover:text-[var(--module-primary-dark)] font-semibold text-xs">Edit</button>
                         <button onClick={() => handleDeleteDraft(draft)} className="text-red-600 hover:text-red-800 font-semibold text-xs">Delete</button>
-                        <button onClick={() => handleSubmitDraft(draft)} disabled={isLoading} className="text-emerald-700 hover:text-emerald-900 font-semibold text-xs disabled:opacity-50">Submit</button>
+                        <button onClick={() => handleSubmitDraft(draft)} disabled={isLoading} className="module-accent-soft-text hover:text-[var(--module-primary-dark)] font-semibold text-xs disabled:opacity-50">Submit</button>
                       </div>
                     </td>
                   </tr>
@@ -853,7 +854,7 @@ function QCVisualizationTab() {
           <Line data={chartData} options={options} />
         </div>
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500 justify-center">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" /> Normal</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[var(--module-primary-light)]0 inline-block" /> Normal</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> 1₂s Warning</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> Westgard Violation</span>
         </div>
@@ -966,19 +967,19 @@ function QCCalculatorTab() {
       </div>
 
       {mean != null && sd != null && (
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6">
-          <h3 className="font-semibold text-emerald-800 mb-4">Results</h3>
+        <div className="bg-[var(--module-primary-light)] border border-slate-200 rounded-2xl p-6">
+          <h3 className="font-semibold text-[var(--module-primary-dark)] mb-4">Results</h3>
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-emerald-100">
-              <p className="text-xs font-semibold uppercase tracking-widest text-emerald-500 mb-1">Mean</p>
-              <p className="text-2xl font-bold text-emerald-700" style={{ letterSpacing: "-0.03em" }}>{mean.toFixed(4)}</p>
+            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-slate-200">
+              <p className="text-xs font-semibold uppercase tracking-widest module-accent-text mb-1">Mean</p>
+              <p className="text-2xl font-bold module-accent-soft-text" style={{ letterSpacing: "-0.03em" }}>{mean.toFixed(4)}</p>
             </div>
-            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-emerald-100">
-              <p className="text-xs font-semibold uppercase tracking-widest text-emerald-500 mb-1">Std Deviation</p>
-              <p className="text-2xl font-bold text-emerald-700" style={{ letterSpacing: "-0.03em" }}>{sd.toFixed(4)}</p>
+            <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-slate-200">
+              <p className="text-xs font-semibold uppercase tracking-widest module-accent-text mb-1">Std Deviation</p>
+              <p className="text-2xl font-bold module-accent-soft-text" style={{ letterSpacing: "-0.03em" }}>{sd.toFixed(4)}</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-sm text-emerald-700">
+          <div className="grid grid-cols-2 gap-3 text-sm module-accent-soft-text">
             <p>±1 SD: <strong>{(mean - sd).toFixed(3)}</strong> – <strong>{(mean + sd).toFixed(3)}</strong></p>
             <p>±2 SD: <strong>{(mean - 2 * sd).toFixed(3)}</strong> – <strong>{(mean + 2 * sd).toFixed(3)}</strong></p>
             <p>±3 SD: <strong>{(mean - 3 * sd).toFixed(3)}</strong> – <strong>{(mean + 3 * sd).toFixed(3)}</strong></p>
@@ -1085,11 +1086,11 @@ function QCStatsTab() {
         </div>
       </div>
 
-      {loadingRuns && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading runs…</div>}
+      {loadingRuns && <div className="flex items-center gap-2 module-accent-text text-sm"><LoadingBars size="sm" /> Loading runs…</div>}
 
       {statistics && (
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-emerald-800 mb-4 uppercase tracking-wider">Statistics Summary</h3>
+        <div className="bg-[var(--module-primary-light)] border border-slate-200 rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-[var(--module-primary-dark)] mb-4 uppercase tracking-wider">Statistics Summary</h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {[
               { label: "Total Values", value: statistics.count },
@@ -1099,8 +1100,8 @@ function QCStatsTab() {
               { label: "Maximum",      value: statistics.max   },
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
-                <div className="text-2xl font-bold text-emerald-700">{value}</div>
-                <div className="text-xs text-emerald-600 mt-0.5">{label}</div>
+                <div className="text-2xl font-bold module-accent-soft-text">{value}</div>
+                <div className="text-xs module-accent-text mt-0.5">{label}</div>
               </div>
             ))}
           </div>
@@ -1130,7 +1131,7 @@ function QCStatsTab() {
                   return (
                     <tr key={item.id ?? idx} className="hover:bg-slate-50 transition-colors">
                       <td className={tblCell}>{fmtDate(item.date)}</td>
-                      <td className={tblCell + " font-mono font-bold text-emerald-700"}>{item.value}</td>
+                      <td className={tblCell + " font-mono font-bold module-accent-soft-text"}>{item.value}</td>
                       <td className={tblCell + " font-mono text-slate-500"}>{item.zScore != null ? Number(item.zScore).toFixed(2) : "—"}</td>
                       <td className={tblCell}>
                         {isFailure
@@ -1234,14 +1235,14 @@ function QualConfigTab() {
 
   return (
     <div className="space-y-6">
-      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading…</div>}
+      {isLoading && <div className="flex items-center gap-2 module-accent-text text-sm"><LoadingBars size="sm" /> Loading…</div>}
       {error   && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
-      {success && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm">{success}</div>}
+      {success && <div className="p-3 bg-[var(--module-primary-light)] border border-slate-200 module-accent-soft-text rounded-xl text-sm">{success}</div>}
 
       <form onSubmit={handleSubmit} className="bg-slate-50 rounded-2xl border border-slate-200 p-6 space-y-6">
         <SectionHead icon={FlaskConical} title={`${editingId ? "Edit" : ""} Qualitative QC Configuration`} />
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-3 flex items-center gap-2">Test Information <span className="flex-1 h-px bg-emerald-200 ml-2" /></h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider module-accent-text mb-3 flex items-center gap-2">Test Information <span className="flex-1 h-px bg-[var(--module-primary)]/25 ml-2" /></h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Test Name <span className="text-red-500">*</span></label>
@@ -1275,7 +1276,7 @@ function QualConfigTab() {
         </div>
 
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-3 flex items-center gap-2">Control Levels &amp; Expected Results <span className="flex-1 h-px bg-emerald-200 ml-2" /></h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider module-accent-text mb-3 flex items-center gap-2">Control Levels &amp; Expected Results <span className="flex-1 h-px bg-[var(--module-primary)]/25 ml-2" /></h3>
           <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
@@ -1300,7 +1301,7 @@ function QualConfigTab() {
             </table>
           </div>
           <button type="button" onClick={() => setForm({ ...form, controls: [...form.controls, { name: "", level: LEVEL_OPTIONS[0], expectedResult: "", notes: "" }] })}
-            className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-emerald-200 rounded-xl text-emerald-600 font-semibold text-sm hover:bg-emerald-50 transition">
+            className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-[var(--module-primary)]/35 rounded-xl module-accent-text font-semibold text-sm hover:bg-[var(--module-primary-light)] transition">
             <Plus size={14} /> Add Control Level
           </button>
         </div>
@@ -1338,7 +1339,7 @@ function QualConfigTab() {
                     <td className={tblCell}>{cfg.frequency}</td>
                     <td className={tblCell}>
                       <div className="flex gap-2">
-                        <button onClick={() => { setForm({ testName: cfg.testName || "", resultType: cfg.resultType || RESULT_TYPES[0], lotNumber: cfg.lotNumber || "", manufacturer: cfg.manufacturer || "", expiryDate: cfg.expiryDate || "", frequency: cfg.frequency || "Daily", controls: cfg.controls?.length ? cfg.controls : [{ name: "", level: LEVEL_OPTIONS[0], expectedResult: "", notes: "" }] }); setEditingId(String(cfg.id)); }} className="px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold">Edit</button>
+                        <button onClick={() => { setForm({ testName: cfg.testName || "", resultType: cfg.resultType || RESULT_TYPES[0], lotNumber: cfg.lotNumber || "", manufacturer: cfg.manufacturer || "", expiryDate: cfg.expiryDate || "", frequency: cfg.frequency || "Daily", controls: cfg.controls?.length ? cfg.controls : [{ name: "", level: LEVEL_OPTIONS[0], expectedResult: "", notes: "" }] }); setEditingId(String(cfg.id)); }} className="px-2 py-1 rounded-lg bg-[var(--module-primary-light)] hover:brightness-[0.96] module-accent-soft-text text-xs font-semibold">Edit</button>
                         <button onClick={() => handleDelete(cfg)} className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold">Delete</button>
                       </div>
                     </td>
@@ -1361,8 +1362,8 @@ const LEVEL_COLORS: Record<string, string> = {
   "High Positive":    "bg-pink-100 text-pink-800",
   "Low Positive":     "bg-slate-100 text-slate-700",
   "Positive Control": "bg-pink-100 text-pink-800",
-  "Negative Control": "bg-emerald-100 text-emerald-700",
-  "Negative":         "bg-emerald-100 text-emerald-700",
+  "Negative Control": "bg-[var(--module-primary-light)] module-accent-soft-text",
+  "Negative":         "bg-[var(--module-primary-light)] module-accent-soft-text",
   "External Control": "bg-amber-100 text-amber-700",
 };
 
@@ -1462,9 +1463,9 @@ function QualEntryTab() {
 
   return (
     <div className="space-y-6">
-      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading…</div>}
+      {isLoading && <div className="flex items-center gap-2 module-accent-text text-sm"><LoadingBars size="sm" /> Loading…</div>}
       {error   && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
-      {success && <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm">{success}</div>}
+      {success && <div className="p-3 bg-[var(--module-primary-light)] border border-slate-200 module-accent-soft-text rounded-xl text-sm">{success}</div>}
 
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
         <SectionHead icon={TestTube} title={`Qualitative QC Data Entry${editingId ? " — Editing Draft" : ""}`} />
@@ -1493,7 +1494,7 @@ function QualEntryTab() {
 
         {controlResults.length > 0 && (
           <div className="bg-white rounded-xl border border-slate-100 p-4 mb-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-3 flex items-center gap-2">Record Control Results <span className="flex-1 h-px bg-emerald-200 ml-2" /></h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider module-accent-text mb-3 flex items-center gap-2">Record Control Results <span className="flex-1 h-px bg-[var(--module-primary)]/25 ml-2" /></h3>
             <div className="overflow-x-auto rounded-xl border border-slate-100">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 border-b border-slate-100">
@@ -1503,18 +1504,18 @@ function QualEntryTab() {
                   {controlResults.map((result, idx) => {
                     const status = getStatus(result);
                     return (
-                      <tr key={idx} className={status === "fail" ? "bg-red-50" : status === "pass" ? "bg-emerald-50/30" : "hover:bg-slate-50"}>
+                      <tr key={idx} className={status === "fail" ? "bg-red-50" : status === "pass" ? "bg-[var(--module-primary-light)]/40" : "hover:bg-slate-50"}>
                         <td className={tblCell + " font-semibold text-slate-800"}>{result.controlName}</td>
                         <td className={tblCell}><span className={`px-2 py-0.5 rounded-full text-xs font-bold ${LEVEL_COLORS[result.level] || "bg-slate-100 text-slate-700"}`}>{result.level}</span></td>
-                        <td className={tblCell}><span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">{result.expectedResult}</span></td>
+                        <td className={tblCell}><span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--module-primary-light)] text-[var(--module-primary-dark)]">{result.expectedResult}</span></td>
                         <td className={tblCell}>
                           <div className="flex gap-2">
                             {resultOptions.map((opt: string) => (
                               <button key={opt} type="button" onClick={() => setControlResults((prev) => prev.map((r, i) => i === idx ? { ...r, observedResult: opt } : r))}
                                 className={`flex-1 px-3 py-2 rounded-xl border-2 text-sm font-bold transition ${
                                   result.observedResult === opt
-                                    ? opt === result.expectedResult ? "bg-emerald-100 border-emerald-500 text-emerald-700" : "bg-red-100 border-red-500 text-red-700"
-                                    : "bg-white border-slate-200 text-slate-500 hover:border-emerald-300"
+                                    ? opt === result.expectedResult ? "bg-[var(--module-primary-light)] border-[var(--module-primary)] module-accent-soft-text" : "bg-red-100 border-red-500 text-red-700"
+                                    : "bg-white border-slate-200 text-slate-500 hover:border-[var(--module-primary)]/45"
                                 }`}
                               >{opt}</button>
                             ))}
@@ -1532,7 +1533,7 @@ function QualEntryTab() {
               </table>
             </div>
             {allFilled && (
-              <div className={`mt-4 p-4 rounded-xl border-2 flex items-center gap-3 font-bold text-base ${overallPass ? "bg-emerald-50 border-emerald-500 text-emerald-700" : "bg-red-50 border-red-500 text-red-700"}`}>
+              <div className={`mt-4 p-4 rounded-xl border-2 flex items-center gap-3 font-bold text-base ${overallPass ? "bg-[var(--module-primary-light)] border-[var(--module-primary)] module-accent-soft-text" : "bg-red-50 border-red-500 text-red-700"}`}>
                 <span className="text-2xl">{overallPass ? "✓" : "✗"}</span>
                 <div>
                   <div>Overall QC Run: <strong>{overallPass ? "PASS" : "FAIL"}</strong>{" — "}{controlResults.filter((r) => getStatus(r) === "pass").length} of {controlResults.length} controls concordant</div>
@@ -1581,13 +1582,13 @@ function QualEntryTab() {
                       <td className={tblCell}>{entry.date}</td>
                       <td className={tblCell + " text-center"}>{controls.length}</td>
                       <td className={tblCell + " text-center"}>
-                        <span className={`font-semibold ${filled === controls.length ? "text-emerald-600" : "text-amber-600"}`}>{filled}/{controls.length}</span>
+                        <span className={`font-semibold ${filled === controls.length ? "module-accent-text" : "text-amber-600"}`}>{filled}/{controls.length}</span>
                       </td>
                       <td className={tblCell}>{entry.enteredBy || "—"}</td>
                       <td className={tblCell}>
                         <div className="flex gap-2 flex-wrap">
-                          <button onClick={() => { setEditingId(String(entry.id)); setSelectedConfigId(entry.qcConfigId); setSelectedDate(entry.date); setControlResults(entry.controlResults || []); setCorrectiveAction(entry.correctiveAction || ""); }} className="px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold">Edit</button>
-                          <button onClick={() => handleSubmitDraft(entry)} className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">Submit</button>
+                          <button onClick={() => { setEditingId(String(entry.id)); setSelectedConfigId(entry.qcConfigId); setSelectedDate(entry.date); setControlResults(entry.controlResults || []); setCorrectiveAction(entry.correctiveAction || ""); }} className="px-2 py-1 rounded-lg bg-[var(--module-primary-light)] hover:brightness-[0.96] module-accent-soft-text text-xs font-semibold">Edit</button>
+                          <button onClick={() => handleSubmitDraft(entry)} className="px-2 py-1 rounded-lg bg-[var(--module-primary)] hover:opacity-90 text-[var(--module-primary-on)] text-xs font-semibold">Submit</button>
                           <button onClick={() => handleDelete(entry)} className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold">Delete</button>
                         </div>
                       </td>
@@ -1674,17 +1675,17 @@ function QualLogTab() {
 
   return (
     <div className="space-y-5">
-      {isLoading && <div className="flex items-center gap-2 text-emerald-600 text-sm"><div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Loading…</div>}
+      {isLoading && <div className="flex items-center gap-2 module-accent-text text-sm"><LoadingBars size="sm" /> Loading…</div>}
       {error && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Runs", value: totalRuns,  border: "border-slate-100",   color: "text-emerald-600" },
-          { label: "Passed",     value: passedRuns, border: "border-emerald-100", color: "text-emerald-600" },
+          { label: "Total Runs", value: totalRuns,  border: "border-slate-100",   color: "module-accent-text" },
+          { label: "Passed",     value: passedRuns, border: "border-slate-200", color: "module-accent-text" },
           { label: "Failed",     value: failedRuns, border: "border-red-100",     color: "text-red-600"     },
           { label: "Pass Rate",  value: passRate !== "—" ? `${passRate}%` : "—",
             border: "border-slate-100",
-            color: passRate === "—" ? "text-slate-600" : parseFloat(passRate) >= 90 ? "text-emerald-600" : parseFloat(passRate) >= 75 ? "text-amber-600" : "text-red-600" },
+            color: passRate === "—" ? "text-slate-600" : parseFloat(passRate) >= 90 ? "module-accent-text" : parseFloat(passRate) >= 75 ? "text-amber-600" : "text-red-600" },
         ].map(({ label, value, border, color }) => (
           <div key={label} className={`bg-white ${border} border rounded-2xl p-5 text-center shadow-sm`}>
             <div className={`text-3xl font-bold ${color}`}>{value}</div>
@@ -1694,7 +1695,7 @@ function QualLogTab() {
       </div>
 
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-3">Filter Options</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider module-accent-text mb-3">Filter Options</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Test Name</label>
@@ -1743,12 +1744,12 @@ function QualLogTab() {
                       <td className={tblCell}>{fmtDate(run.date)}</td>
                       <td className={tblCell + " font-semibold text-slate-800"}>{run.testName}</td>
                       <td className={tblCell + " text-center"}>{controls.length}</td>
-                      <td className={tblCell + " font-bold text-emerald-600 text-center"}>{passed}</td>
+                      <td className={tblCell + " font-bold module-accent-text text-center"}>{passed}</td>
                       <td className={tblCell + " font-bold text-center"}><span className={failed > 0 ? "text-red-600" : "text-slate-400"}>{failed}</span></td>
                       <td className={tblCell}><PassBadge pass={run.overallPass} /></td>
                       <td className={tblCell + " text-slate-500"}>{run.createdAt ? new Date(run.createdAt).toLocaleString() : "—"}</td>
                       <td className={tblCell}>
-                        <button onClick={() => setExpandedRow(isExpanded ? null : String(run.id))} className="text-emerald-600 hover:text-emerald-800 text-xs font-semibold underline flex items-center gap-1">
+                        <button onClick={() => setExpandedRow(isExpanded ? null : String(run.id))} className="module-accent-text hover:text-[var(--module-primary-dark)] text-xs font-semibold underline flex items-center gap-1">
                           {isExpanded ? <><ChevronUp size={12} /> Hide</> : <><ChevronDown size={12} /> View</>}
                         </button>
                       </td>
@@ -1764,10 +1765,10 @@ function QualLogTab() {
                     <tr key={`${run.id}-detail`} className="bg-slate-50">
                       <td colSpan={9} className="px-6 py-4">
                         <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-                          <h4 className="font-bold text-emerald-700 mb-3 text-sm">Control Results Detail</h4>
+                          <h4 className="font-bold module-accent-soft-text mb-3 text-sm">Control Results Detail</h4>
                           <table className="w-full text-sm">
                             <thead>
-                              <tr className="text-xs text-emerald-600 font-bold uppercase">
+                              <tr className="text-xs module-accent-text font-bold uppercase">
                                 <th className="text-left pb-2 pr-4">Control</th>
                                 <th className="text-left pb-2 pr-4">Level</th>
                                 <th className="text-left pb-2 pr-4">Expected</th>
@@ -1781,13 +1782,13 @@ function QualLogTab() {
                                   <tr className="border-t border-slate-100">
                                     <td className="py-2 pr-4 font-medium text-slate-800">{ctrl.controlName}</td>
                                     <td className="py-2 pr-4 text-slate-500">{ctrl.level}</td>
-                                    <td className="py-2 pr-4"><span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">{ctrl.expectedResult}</span></td>
+                                    <td className="py-2 pr-4"><span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--module-primary-light)] module-accent-soft-text">{ctrl.expectedResult}</span></td>
                                     <td className="py-2 pr-4">
-                                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${ctrl.observedResult === ctrl.expectedResult ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>{ctrl.observedResult}</span>
+                                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${ctrl.observedResult === ctrl.expectedResult ? "bg-[var(--module-primary-light)] module-accent-soft-text" : "bg-red-100 text-red-700"}`}>{ctrl.observedResult}</span>
                                     </td>
                                     <td className="py-2">
                                       {ctrl.observedResult === ctrl.expectedResult
-                                        ? <span className="text-emerald-600 font-bold text-xs">Concordant</span>
+                                        ? <span className="module-accent-text font-bold text-xs">Concordant</span>
                                         : <span className="text-red-600 font-bold text-xs">Discordant</span>}
                                     </td>
                                   </tr>

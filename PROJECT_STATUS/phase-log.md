@@ -13,6 +13,14 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 - [x] **Asset API vs prod schema** — `lib/db.ts` + `/api/v1/*` use DB column **`facility_id`** while keeping **`hospital_id`** as the external query/body parameter name.
 - [x] **Migrations idempotent for `supabase db push`** — Edits to existing filenames (no renames): `20250321000001_add_facility_id.sql` (conditional backfill from `hospital_id`); `20250321000003_facility_users_rbac.sql` (skip `CREATE TYPE facility_role` if exists); `20250321000006_tat_module.sql` (unique index on `COALESCE(test_name,'')`); `20260322000001_samples_module.sql` (`ADD COLUMN status` on pre-existing `lab_racks`). See root `PROJECT_STATUS.md` migration table row.
 
+### 2026-03-29 — Unified loaders, lab-metrics empty state, samples grid, sidebar, QC theme
+
+- [x] **PageLoader / LoadingBars** — Lab-metrics bar animation centralized in `components/ui/PageLoader.tsx`; dashboard route `loading.tsx` files drop per-color spinners; auth (`AuthGuard`, login/confirm, `HomeGate`, `ConfirmClient`), equipment/maintenance/refrigerator/admin/intelligence, samples lists, tracker/reception/progress, QC inline rows, meta summary, public LRIDS, `AdminUsersSection` use the same pattern (`onDark` where needed).
+- [x] **Lab Metrics config gate** — `labConfigLoading` prevents `LabMetricsConfigEmpty` until `/api/facility/lab-config` resolves (TAT, Tests, Numbers, Revenue, Meta).
+- [x] **Samples rack grid** — `RackGridView` fluid CSS grid + gaps for wider cells in `app/dashboard/samples/page.tsx`.
+- [x] **Sidebar collapse** — Toggle `top-[72px]`; `DashboardChrome` sidebar column wrapper `overflow-visible` for protruding control.
+- [x] **QC UI vs module theme** — `app/dashboard/qc/page.tsx` (quant + qual tabs) and `components/qc/QuantitativeQCTab.tsx` use `qualityQc` CSS variables / `module-accent-*` instead of emerald utilities; L-J chart line color aligned to `#0284c7`.
+
 ---
 # Kanta — Project Status & Functional Specification
 

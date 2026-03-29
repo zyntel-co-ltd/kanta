@@ -10,6 +10,7 @@ import {
 } from "@/lib/auth/roles";
 import Tooltip from "@/components/ui/Tooltip";
 import { useAuth } from "@/lib/AuthContext";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 export type FacilityUserRow = {
   id: string;
@@ -421,8 +422,10 @@ export default function AdminUsersSection({
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
-                    Loading…
+                  <td colSpan={6} className="px-4 py-10">
+                    <div className="flex justify-center">
+                      <LoadingBars />
+                    </div>
                   </td>
                 </tr>
               ) : (

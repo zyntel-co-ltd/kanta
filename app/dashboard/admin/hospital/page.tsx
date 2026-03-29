@@ -6,6 +6,7 @@ import { Building2, Upload, Save, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/AuthContext";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 type HospitalForm = {
   name: string;
@@ -55,7 +56,11 @@ export default function HospitalSettingsPage() {
   }, [facilityId]);
 
   if (facilityAuthLoading || !facilityAuth?.canAccessAdminPanel) {
-    return <div className="text-slate-500 min-h-[40vh] flex items-center justify-center">Loading…</div>;
+    return (
+      <div className="min-h-[40vh] flex items-center justify-center">
+        <LoadingBars />
+      </div>
+    );
   }
 
   const onUploadLogo = async (file?: File) => {

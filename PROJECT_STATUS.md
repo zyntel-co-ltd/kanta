@@ -19,3 +19,11 @@ Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/
 - **ENG-86:** Lab Metrics filters/charts use `useFacilityConfig` + `/api/facility/lab-config`; admin config GETs opened to facility members; `LabMetricsConfigEmpty` when no sections.
 - **ENG-84:** PostHog flags inventory in `lib/featureFlags.ts` + `zyntel-playbook/12-projects/kanta/feature-flags.md`; page gates for refrigerator, intelligence, LRIDS display; Settings copy clarifies Zyntel-managed flags.
 - **API v1 / prod DB:** `lib/db.ts` and v1 routes scope asset queries by **`facility_id`** (query param name `hospital_id` unchanged for clients).
+
+## App / ops (2026-03-29 — UX & QC polish)
+
+- **Loading UI:** `components/ui/PageLoader.tsx` exports staggered **LoadingBars** (lab-metrics style) using `var(--module-primary)`; route `loading.tsx` files and in-page waits (auth, samples, refrigerator, maintenance, equipment, admin, tracker/reception/progress, QC, meta, etc.) use the same pattern.
+- **Lab Metrics:** `LabMetricsConfigEmpty` shows only after facility lab config fetch completes (`!labConfigLoading && !hasConfiguredSections`) on TAT, Tests, Numbers, Revenue, Meta — avoids a false “no sections” flash.
+- **Samples → Racks:** rack grid uses CSS grid + column `minmax` + gaps so cells use horizontal space in the card.
+- **Sidebar:** collapse control at `top-[72px]` (below header band); `DashboardChrome` wraps the sidebar in an `overflow-visible` column so the `-right-3.5` toggle is not clipped.
+- **QC Management:** quantitative and qualitative tabs in `app/dashboard/qc/page.tsx` plus `components/qc/QuantitativeQCTab.tsx` use **qualityQc** module tokens (`module-accent-text`, `module-accent-soft-text`, `var(--module-primary*)`) instead of hardcoded emerald/green.

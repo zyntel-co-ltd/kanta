@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/AuthContext";
 import AdminUsersSection from "@/components/dashboard/admin/AdminUsersSection";
 import AdminConfigurationSection from "@/components/dashboard/admin/AdminConfigurationSection";
 import { auditActionLabel } from "@/lib/auditLabels";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 const LAB_SECTIONS = [
   "CHEMISTRY",
@@ -306,8 +307,8 @@ export default function AdminPage() {
 
   if (facilityAuthLoading || !facilityAuth?.canAccessAdminPanel) {
     return (
-      <div className="min-h-[40vh] flex items-center justify-center text-slate-500">
-        Loading…
+      <div className="min-h-[40vh] flex items-center justify-center">
+        <LoadingBars />
       </div>
     );
   }
@@ -495,8 +496,8 @@ export default function AdminPage() {
 
       {/* Content */}
       {isLoading && activeTab !== "settings" && activeTab !== "users" && activeTab !== "configuration" ? (
-        <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center text-slate-500">
-          Loading...
+        <div className="bg-white rounded-2xl border border-slate-100 p-12 flex items-center justify-center min-h-[16rem]">
+          <LoadingBars />
         </div>
       ) : (
         <>

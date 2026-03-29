@@ -7,6 +7,7 @@ import { ArrowLeft, Thermometer } from "lucide-react";
 
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useFlag } from "@/lib/featureFlags";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 type Reading = { temp: number; at: string };
 
@@ -65,8 +66,8 @@ export default function RefrigeratorUnitPage() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-500">
-        Loading...
+      <div className="bg-white rounded-2xl border border-slate-100 p-8 flex items-center justify-center min-h-[14rem]">
+        <LoadingBars />
       </div>
     );
   }

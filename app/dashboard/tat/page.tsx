@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
 import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
 import { useFlag } from "@/lib/featureFlags";
+import PageLoader from "@/components/ui/PageLoader";
 import { CHART_AXIS, CHART_TAT } from "@/lib/chart-theme";
 import { STATUS } from "@/lib/design-tokens";
 import { CircleDot, TrendingUp, Clock3 } from "lucide-react";
@@ -132,6 +133,7 @@ export default function TATPage() {
   const { facilityAuth } = useAuth();
   const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
   const {
+    loading: labConfigLoading,
     shiftFilterOptions,
     laboratoryFilterOptions,
     resolveSectionLabel,
@@ -442,7 +444,7 @@ export default function TATPage() {
           ))}
         </div>
         <div className="p-6">
-          {!hasConfiguredSections && (
+          {!labConfigLoading && !hasConfiguredSections && (
             <LabMetricsConfigEmpty
               canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel}
             />
@@ -573,24 +575,12 @@ export default function TATPage() {
         </div>
       </div>
 
-      {!hasConfiguredSections && (
+      {!labConfigLoading && !hasConfiguredSections && (
         <LabMetricsConfigEmpty canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel} />
       )}
 
       {/* ── Loading ───────────────────────────────────────────────────── */}
-      {isLoading && (
-        <div className="flex items-center justify-center h-64">
-          <div className="flex gap-1">
-            {[0, 1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="w-2 h-8 rounded animate-bounce"
-                style={{ backgroundColor: "var(--module-primary)", animationDelay: `${i * 0.1}s` }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {isLoading && <PageLoader variant="inline" />}
 
       {/* ── Main Layout ───────────────────────────────────────────────── */}
       {!isLoading && (

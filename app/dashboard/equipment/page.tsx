@@ -8,6 +8,7 @@ import type { EquipmentStatus } from "@/types";
 import EquipmentStatusSelect from "@/components/dashboard/EquipmentStatusSelect";
 
 import { DEFAULT_HOSPITAL_ID } from "@/lib/constants";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 export default function EquipmentPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -74,8 +75,8 @@ export default function EquipmentPage() {
       )}
 
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 text-center text-slate-500">
-          Loading equipment...
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 flex items-center justify-center min-h-[14rem]">
+          <LoadingBars />
         </div>
       ) : equipment.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center">

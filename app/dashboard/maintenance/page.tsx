@@ -7,6 +7,7 @@ import type { Equipment } from "@/types";
 import { Wrench, AlertTriangle, Clock, CheckCircle2, Check } from "lucide-react";
 
 import { DEFAULT_HOSPITAL_ID } from "@/lib/constants";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 type Tab = "overdue" | "upcoming" | "in-progress";
 
@@ -172,8 +173,8 @@ export default function MaintenancePage() {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 text-center text-slate-500">
-          Loading...
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-10 flex items-center justify-center min-h-[14rem]">
+          <LoadingBars />
         </div>
       ) : displayList.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center">

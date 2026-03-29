@@ -5,6 +5,7 @@ import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
 import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
 import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
+import { LoadingBars } from "@/components/ui/PageLoader";
 import { Plus, Pencil, Trash2, Search, X, ChevronLeft, ChevronRight, Download } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -113,6 +114,7 @@ export default function MetaPage() {
   const { facilityAuth } = useAuth();
   const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
   const {
+    loading: labConfigLoading,
     activeSections,
     sectionFilterOptions,
     resolveSectionLabel,
@@ -262,7 +264,7 @@ export default function MetaPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {!hasConfiguredSections && (
+      {!labConfigLoading && !hasConfiguredSections && (
         <LabMetricsConfigEmpty canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel} />
       )}
       {/* ── Header / Filter Bar ──────────────────────────────────────────── */}
@@ -336,8 +338,15 @@ export default function MetaPage() {
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
           {/* Summary row */}
           <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between text-sm text-slate-500">
-            <span>
-              {isLoading ? "Loading…" : `${data.length.toLocaleString()} record${data.length !== 1 ? "s" : ""}`}
+            <span className="inline-flex items-center gap-2 min-h-[1.25rem]">
+              {isLoading ? (
+                <>
+                  <LoadingBars size="sm" />
+                  <span className="text-slate-500">Loading…</span>
+                </>
+              ) : (
+                `${data.length.toLocaleString()} record${data.length !== 1 ? "s" : ""}`
+              )}
             </span>
             {totalPages > 1 && (
               <span>

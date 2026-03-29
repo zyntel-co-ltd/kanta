@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ListTodo, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 type TrackerRow = {
   id: string;
@@ -84,7 +85,9 @@ export default function TrackerPage() {
           <span className="font-semibold text-slate-800">Tracker Table</span>
         </div>
         {loading ? (
-          <div className="p-8 text-center text-slate-500">Loading...</div>
+          <div className="p-10 flex items-center justify-center min-h-[12rem]">
+            <LoadingBars />
+          </div>
         ) : data.length === 0 ? (
           <div className="p-8 text-center text-slate-500">
             No tracker data.

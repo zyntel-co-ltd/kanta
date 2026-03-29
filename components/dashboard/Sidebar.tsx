@@ -670,7 +670,7 @@ export default function Sidebar() {
           onClick={() => setCollapsed(!collapsed)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={clsx(
-            "absolute -right-3.5 top-6 -translate-y-1/2 z-50 flex items-center justify-center rounded-[12px] p-0",
+            "absolute -right-3.5 top-[72px] -translate-y-1/2 z-50 flex items-center justify-center rounded-[12px] p-0",
             "border-0 bg-transparent shadow-none",
             "transition-transform duration-200 hover:scale-[1.06] active:scale-[0.96]",
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-active-bg)] focus-visible:ring-offset-2"

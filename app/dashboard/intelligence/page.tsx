@@ -6,6 +6,7 @@ import AnomalyPanel from "@/components/ai/AnomalyPanel";
 import NLQueryBar from "@/components/ai/NLQueryBar";
 import { useAuth } from "@/lib/AuthContext";
 import { useFlag } from "@/lib/featureFlags";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 type WeeklySummary = {
   id: string;
@@ -138,8 +139,8 @@ export default function IntelligencePage() {
 
   if (facilityAuthLoading) {
     return (
-      <div className="min-h-[40vh] flex items-center justify-center text-slate-500 text-sm">
-        Loading…
+      <div className="min-h-[40vh] flex items-center justify-center">
+        <LoadingBars />
       </div>
     );
   }

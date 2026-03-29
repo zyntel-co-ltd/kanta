@@ -2,6 +2,7 @@
 
 import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 /**
  * Root `/` must not server-redirect before the browser can read the hash.
@@ -39,7 +40,7 @@ function HomeGateInner() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950">
-      <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      <LoadingBars onDark />
     </div>
   );
 }
@@ -49,7 +50,7 @@ export default function HomeGate() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-slate-950">
-          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <LoadingBars onDark />
         </div>
       }
     >

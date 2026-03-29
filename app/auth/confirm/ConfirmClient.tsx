@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 /** Supabase-js typings lag behind runtime API in some builds */
 type AuthWithConfirm = {
@@ -123,8 +124,8 @@ export default function ConfirmClient() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-4">
+        <LoadingBars onDark />
         <p className="text-sm text-slate-400">{status}</p>
       </div>
     </div>

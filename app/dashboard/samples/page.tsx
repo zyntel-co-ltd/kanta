@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Fragment, useEffect, useState, useCallback } from "react";
 import {
   Package,
   Grid3X3,
@@ -19,6 +19,7 @@ import {
   Info,
 } from "lucide-react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import PageLoader from "@/components/ui/PageLoader";
 
 /* ═══════════════════════════════ TYPES ═══════════════════════════════ */
 type RackType   = "normal" | "igra";
@@ -274,7 +275,7 @@ function RackGridView({
   };
 
   if (loading) {
-    return <div className="py-20 text-center text-sm text-slate-400">Loading rack…</div>;
+    return <PageLoader variant="inline" className="!h-auto min-h-[40vh] py-12" />;
   }
   if (!rack) {
     return <div className="py-20 text-center text-sm text-red-500">{error || "Rack not found"}</div>;
@@ -323,43 +324,49 @@ function RackGridView({
           <p className="text-xs text-slate-500 mb-3 flex items-center gap-1.5">
             <Info size={12} /> Click an empty cell to add a sample, or a filled cell to view details
           </p>
-          {/* Column headers */}
-          <div className="flex">
-            <div className="w-8 flex-shrink-0" />
+          {/* Fluid grid: row-label column + 10 equal columns that grow with available width */}
+          <div
+            className="grid w-full gap-x-3 gap-y-2 [grid-template-columns:2.75rem_repeat(10,minmax(2.25rem,1fr))]"
+          >
+            <div aria-hidden className="min-w-0" />
             {[...Array(10)].map((_, c) => (
-              <div key={c} className="w-9 text-center text-[11px] font-semibold text-slate-400 pb-1">{c + 1}</div>
+              <div
+                key={`col-h-${c}`}
+                className="min-w-0 text-center text-[11px] font-semibold text-slate-400 pb-1 flex items-end justify-center"
+              >
+                {c + 1}
+              </div>
+            ))}
+            {[...Array(gridRows)].map((_, row) => (
+              <Fragment key={row}>
+                <div className="min-w-0 flex items-center justify-center text-[11px] font-semibold text-slate-400">
+                  {String.fromCharCode(65 + row)}
+                </div>
+                {[...Array(10)].map((_, col) => {
+                  const pos   = row * 10 + col;
+                  const samp  = samples[pos];
+                  const isSel = selected === pos;
+                  return (
+                    <button
+                      key={pos}
+                      type="button"
+                      title={samp ? samp.barcode : "Empty"}
+                      onClick={() => handleCellClick(pos)}
+                      className={`aspect-square w-full min-h-0 rounded-lg border text-xs font-bold transition-all flex items-center justify-center ${
+                        isSel
+                          ? "border-sky-500 bg-sky-500 text-white shadow-md scale-105 z-10"
+                          : samp
+                          ? "border-sky-300 bg-sky-100 text-sky-700 hover:border-sky-500 hover:bg-sky-200"
+                          : "border-slate-200 bg-slate-50 text-slate-300 hover:border-sky-300 hover:bg-sky-50"
+                      }`}
+                    >
+                      {samp ? "●" : ""}
+                    </button>
+                  );
+                })}
+              </Fragment>
             ))}
           </div>
-          {/* Rows */}
-          {[...Array(gridRows)].map((_, row) => (
-            <div key={row} className="flex mb-0.5">
-              <div className="w-8 flex items-center justify-center text-[11px] font-semibold text-slate-400 flex-shrink-0">
-                {String.fromCharCode(65 + row)}
-              </div>
-              {[...Array(10)].map((_, col) => {
-                const pos   = row * 10 + col;
-                const samp  = samples[pos];
-                const isSel = selected === pos;
-                return (
-                  <button
-                    key={pos}
-                    type="button"
-                    title={samp ? samp.barcode : "Empty"}
-                    onClick={() => handleCellClick(pos)}
-                    className={`w-9 h-9 rounded-lg border text-xs font-bold transition-all flex items-center justify-center ${
-                      isSel
-                        ? "border-sky-500 bg-sky-500 text-white shadow-md scale-110"
-                        : samp
-                        ? "border-sky-300 bg-sky-100 text-sky-700 hover:border-sky-500 hover:bg-sky-200"
-                        : "border-slate-200 bg-slate-50 text-slate-300 hover:border-sky-300 hover:bg-sky-50"
-                    }`}
-                  >
-                    {samp ? "●" : ""}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
           {/* Legend */}
           <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100">
             <span className="flex items-center gap-1.5 text-xs text-slate-500">
@@ -851,7 +858,7 @@ export default function SamplesPage() {
 
               {/* Rack cards grid */}
               {racksLoading ? (
-                <div className="py-16 text-center text-sm text-slate-400">Loading racks…</div>
+                <PageLoader variant="inline" className="!h-auto min-h-[14rem] py-10" />
               ) : racks.length === 0 ? (
                 <div className="py-16 text-center text-sm text-slate-400">No racks found.</div>
               ) : (
@@ -923,7 +930,7 @@ export default function SamplesPage() {
             )}
 
             {pendingLoading ? (
-              <div className="py-16 text-center text-sm text-slate-400">Loading…</div>
+              <PageLoader variant="inline" className="!h-auto min-h-[14rem] py-10" />
             ) : pendingRacks.length === 0 ? (
               <div className="py-16 text-center">
                 <AlertTriangle size={40} className="text-slate-300 mx-auto mb-3" />
@@ -977,7 +984,7 @@ export default function SamplesPage() {
             </div>
 
             {discardedLoading ? (
-              <div className="py-16 text-center text-sm text-slate-400">Loading…</div>
+              <PageLoader variant="inline" className="!h-auto min-h-[14rem] py-10" />
             ) : discarded.length === 0 ? (
               <div className="py-16 text-center">
                 <Archive size={40} className="text-slate-300 mx-auto mb-3" />

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Building2 } from "lucide-react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useFlag } from "@/lib/featureFlags";
+import { LoadingBars } from "@/components/ui/PageLoader";
 
 const REFRESH_MS = 30_000;
 const HOSPITAL_NAME = process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Zyntel Hospital";
@@ -138,11 +139,8 @@ export default function LRIDSDisplayPage() {
       {/* ── Results table ── */}
       <main className="flex-1 px-10 py-6 overflow-auto">
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div
-              className="w-12 h-12 rounded-full border-4 border-t-emerald-400 animate-spin"
-              style={{ borderColor: "rgba(255,255,255,0.1)", borderTopColor: "#34d399" }}
-            />
+          <div className="flex items-center justify-center h-full min-h-[12rem]">
+            <LoadingBars onDark />
           </div>
         ) : data.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-4">
