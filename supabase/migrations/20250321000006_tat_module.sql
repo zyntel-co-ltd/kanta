@@ -35,6 +35,7 @@ CREATE INDEX IF NOT EXISTS idx_test_requests_received ON test_requests(received_
 CREATE INDEX IF NOT EXISTS idx_test_requests_section ON test_requests(section);
 
 -- tat_targets: target minutes per section/test
+-- Uniqueness on NULL test_name uses COALESCE via expression index (not valid as inline UNIQUE).
 CREATE TABLE IF NOT EXISTS tat_targets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   facility_id uuid NOT NULL REFERENCES hospitals(id) ON DELETE CASCADE,
@@ -42,11 +43,12 @@ CREATE TABLE IF NOT EXISTS tat_targets (
   test_name text,
   target_minutes int NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(facility_id, section, COALESCE(test_name, ''))
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_tat_targets_facility ON tat_targets(facility_id);
+CREATE UNIQUE INDEX IF NOT EXISTS tat_targets_facility_section_test_unique
+  ON tat_targets (facility_id, section, (COALESCE(test_name, '')));
 
 -- tat_breaches: detected TAT breaches
 CREATE TABLE IF NOT EXISTS tat_breaches (

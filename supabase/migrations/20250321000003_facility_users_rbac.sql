@@ -1,7 +1,24 @@
 -- Phase 1: RBAC — facility_users links users to facilities with roles
 -- Uses Supabase auth.users; user_id = auth.uid() when auth is enabled
 
-CREATE TYPE facility_role AS ENUM ('admin', 'manager', 'technician', 'viewer', 'reception');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'facility_role'
+      AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.facility_role AS ENUM (
+      'admin',
+      'manager',
+      'technician',
+      'viewer',
+      'reception'
+    );
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS facility_users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

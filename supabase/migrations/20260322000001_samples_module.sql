@@ -14,6 +14,10 @@ CREATE TABLE IF NOT EXISTS lab_racks (
   updated_at  timestamptz NOT NULL DEFAULT now()
 );
 
+-- Pre-existing lab_racks (e.g. Mazra) may omit `status`; CREATE TABLE IF NOT EXISTS skips the full DDL.
+ALTER TABLE public.lab_racks
+  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'empty';
+
 CREATE INDEX IF NOT EXISTS idx_lab_racks_facility   ON lab_racks(facility_id);
 CREATE INDEX IF NOT EXISTS idx_lab_racks_rack_date  ON lab_racks(rack_date DESC);
 CREATE INDEX IF NOT EXISTS idx_lab_racks_status     ON lab_racks(status);
