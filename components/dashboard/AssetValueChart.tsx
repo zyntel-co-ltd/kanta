@@ -103,7 +103,7 @@ export default function AssetValueChart() {
               onClick={() => setPeriod(key)}
               className={`text-xs px-2 py-1 rounded-md font-medium transition-all ${
                 period === key
-                  ? "bg-white text-emerald-600 shadow-sm border border-slate-200"
+                  ? "bg-white text-slate-700 shadow-sm border border-slate-200"
                   : "text-slate-400 hover:text-slate-600"
               }`}
             >

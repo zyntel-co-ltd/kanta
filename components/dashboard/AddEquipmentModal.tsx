@@ -196,7 +196,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
 
         {successData ? (
           <div className="p-5 space-y-4 flex-1 overflow-y-auto">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 text-slate-700 text-sm">
               <CheckCircle2 size={18} />
               Equipment added successfully.
             </div>
@@ -220,7 +220,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
             <button
               type="button"
               onClick={handleClose}
-              className="w-full px-4 py-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-medium"
+              className="w-full px-4 py-2.5 rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 text-white font-medium"
             >
               Done
             </button>
@@ -238,7 +238,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                 placeholder="e.g. Philips Ultrasound X7"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400"
                 required
               />
             </div>
@@ -248,7 +248,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
               <select
                 value={form.department_id}
                 onChange={(e) => setForm((p) => ({ ...p, department_id: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400"
                 required
                 disabled={loadingDepts}
               >
@@ -268,7 +268,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
                 value={form.model}
                 onChange={(e) => setForm((p) => ({ ...p, model: e.target.value }))}
                 placeholder="e.g. MV50"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400"
               />
             </div>
 
@@ -279,7 +279,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
                 value={form.serial_number}
                 onChange={(e) => setForm((p) => ({ ...p, serial_number: e.target.value }))}
                 placeholder="e.g. SN-2024-001"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400"
               />
             </div>
 
@@ -288,7 +288,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
               <select
                 value={form.category}
                 onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
@@ -305,7 +305,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
                 value={form.location}
                 onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
                 placeholder="e.g. Ward A, Room 12"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400"
               />
             </div>
 
@@ -317,7 +317,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
                 type="date"
                 value={form.next_maintenance_at}
                 onChange={(e) => setForm((p) => ({ ...p, next_maintenance_at: e.target.value }))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400"
               />
             </div>
 
@@ -353,7 +353,7 @@ export default function AddEquipmentModal({ open, onClose, onSuccess }: Props) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-medium shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/40 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 text-white font-medium shadow-lg shadow-slate-500/30 hover:shadow-slate-500/40 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <>

@@ -62,7 +62,7 @@ const apps: AppCard[] = [
     href: "/dashboard/lab-analytics",
     icon: FlaskConical,
     ctaLabel: "View analytics",
-    theme: { primary: "#059669", soft: "#d1fae5", ring: "#059669" },
+    theme: { primary: "#21336a", soft: "#e8ebf4", ring: "#21336a" },
     tabs: [
       { label: "TAT", href: "/dashboard/tat", icon: Timer },
       { label: "Volume", href: "/dashboard/numbers", icon: Binary },
@@ -78,7 +78,7 @@ const apps: AppCard[] = [
     href: "/dashboard/quality-samples",
     icon: ShieldCheck,
     ctaLabel: "Open workspace",
-    theme: { primary: "#64748b", soft: "#e2e8f0", ring: "#64748b" },
+    theme: { primary: "#0284c7", soft: "#e0f2fe", ring: "#0284c7" },
     tabs: [
       { label: "QC", href: "/dashboard/qc", icon: FlaskConical },
       { label: "Samples", href: "/dashboard/samples", icon: TestTubes },
@@ -93,7 +93,7 @@ const apps: AppCard[] = [
     href: "/dashboard/assets",
     icon: Layers,
     ctaLabel: "View assets",
-    theme: { primary: "#0284c7", soft: "#e0f2fe", ring: "#0284c7" },
+    theme: { primary: "#475569", soft: "#f1f5f9", ring: "#475569" },
     tabs: [
       { label: "Assets Overview", href: "/dashboard", icon: LayoutDashboard },
       { label: "Scan", href: "/dashboard/scan", icon: QrCode },

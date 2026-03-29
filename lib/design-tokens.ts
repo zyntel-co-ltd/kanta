@@ -2,8 +2,7 @@
  * Kanta design system — mirrors CSS variables in app/globals.css
  * (Plan §1 Foundations + §9 status semantics)
  *
- * ENG-131: Canonical module accent colors (CEO-approved). Lab Metrics uses the same
- * emerald family as brand; Quality uses blue; assets use sky.
+ * ENG-131: Module accents — Lab navy #21336a, Quality sky #0284c7, Assets slate, Home brand emerald.
  */
 
 export const BRAND = {
@@ -39,22 +38,22 @@ export const STRUCTURE = {
  */
 export const MODULE_COLORS = {
   labMetrics: {
-    bg: "bg-emerald-600",
-    text: "text-emerald-600",
-    border: "border-emerald-600",
-    hex: "#059669",
+    bg: "bg-[#21336a]",
+    text: "text-[#21336a]",
+    border: "border-[#21336a]",
+    hex: "#21336a",
   },
   assetManagement: {
+    bg: "bg-slate-600",
+    text: "text-slate-600",
+    border: "border-slate-600",
+    hex: "#475569",
+  },
+  qualitySamples: {
     bg: "bg-sky-600",
     text: "text-sky-600",
     border: "border-sky-600",
     hex: "#0284c7",
-  },
-  qualitySamples: {
-    bg: "bg-blue-600",
-    text: "text-blue-600",
-    border: "border-blue-600",
-    hex: "#2563eb",
   },
   aiInsights: {
     bg: "bg-emerald-600",
@@ -83,27 +82,27 @@ export const MODULE_THEMES = {
   },
   labMetrics: {
     primary: MODULE_COLORS.labMetrics.hex,
-    primaryDark: "#047857",
-    primaryLight: "#d1fae5",
+    primaryDark: "#1a284f",
+    primaryLight: "#e8ebf4",
     sidebarBg: "#ffffff",
     sidebarActiveBg: MODULE_COLORS.labMetrics.hex,
     sidebarActiveText: "#ffffff",
     sidebarHoverBg: "#f1f5f9",
   },
-  /** QC routes only — mirrors `neutral` / `[data-module="qualityQc"]` */
+  /** QC + samples — sky (see `[data-module="qualityQc"]`) */
   qualityQc: {
-    primary: "#64748b",
-    primaryDark: "#475569",
-    primaryLight: "#e2e8f0",
+    primary: MODULE_COLORS.qualitySamples.hex,
+    primaryDark: "#0369a1",
+    primaryLight: "#e0f2fe",
     sidebarBg: "#ffffff",
-    sidebarActiveBg: "#64748b",
+    sidebarActiveBg: MODULE_COLORS.qualitySamples.hex,
     sidebarActiveText: "#ffffff",
     sidebarHoverBg: "#f1f5f9",
   },
   qualityManagement: {
     primary: MODULE_COLORS.qualitySamples.hex,
-    primaryDark: "#1d4ed8",
-    primaryLight: "#dbeafe",
+    primaryDark: "#0369a1",
+    primaryLight: "#e0f2fe",
     sidebarBg: "#ffffff",
     sidebarActiveBg: MODULE_COLORS.qualitySamples.hex,
     sidebarActiveText: "#ffffff",
@@ -111,8 +110,8 @@ export const MODULE_THEMES = {
   },
   assetManagement: {
     primary: MODULE_COLORS.assetManagement.hex,
-    primaryDark: "#0369a1",
-    primaryLight: "#e0f2fe",
+    primaryDark: "#334155",
+    primaryLight: "#f1f5f9",
     sidebarBg: "#ffffff",
     sidebarActiveBg: MODULE_COLORS.assetManagement.hex,
     sidebarActiveText: "#ffffff",

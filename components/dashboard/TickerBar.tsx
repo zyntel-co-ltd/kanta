@@ -34,7 +34,7 @@ export default function TickerBar() {
   return (
     <div className="w-full bg-slate-900 border-b border-slate-800 overflow-hidden flex items-center h-8 select-none">
       {/* Label */}
-      <div className="flex-shrink-0 flex items-center gap-2 px-4 border-r border-slate-700 h-full bg-emerald-600">
+      <div className="flex-shrink-0 flex items-center gap-2 px-4 border-r border-slate-700 h-full bg-slate-600">
         <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
         <span className="text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">
           Live Feed

@@ -10,6 +10,7 @@ import { usePathname } from "next/navigation";
 /** Matches [data-module] selectors in app/globals.css (ENG-131). */
 export type DashboardModuleKey =
   | "neutral"
+  | "home"
   | "labMetrics"
   | "qualityQc"
   | "qualityManagement"
@@ -20,7 +21,8 @@ export type DashboardModuleKey =
 function detectModule(pathname: string): DashboardModuleKey {
   const p = (pathname || "").replace(/\/$/, "") || "/";
 
-  if (p === "/dashboard/home") return "neutral";
+  /** Start hub — emerald active nav + brand-aligned chrome */
+  if (p === "/dashboard/home") return "home";
 
   if (p.startsWith("/dashboard/intelligence")) return "aiInsights";
 

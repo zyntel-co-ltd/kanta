@@ -271,9 +271,9 @@ function readModuleAttr(): string {
 }
 
 function homeGroupColor(title: string): string {
-  if (title === "Lab Metrics") return "#059669";
-  if (title === "Quality & samples") return "#64748b";
-  if (title === "Asset Management") return "#0284c7";
+  if (title === "Lab Metrics") return "#21336a";
+  if (title === "Quality & samples") return "#0284c7";
+  if (title === "Asset Management") return "#475569";
   return "#334155";
 }
 
@@ -328,7 +328,7 @@ export default function Sidebar() {
   const { collapsed, setCollapsed } = useSidebarLayout();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [moduleAttr, setModuleAttr] = useState<string>(() => readModuleAttr());
-  const isNeutralHome = moduleAttr === "neutral";
+  const isHomeHub = moduleAttr === "home";
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   useEffect(() => {
@@ -405,7 +405,7 @@ export default function Sidebar() {
               const isOpen = openGroup === group.title;
               const parentKey  = parentHref + group.title;
               const showTooltip = collapsed && (isCollapsibleActive || hoveredItem === parentKey);
-              const sectionTint = isNeutralHome ? homeGroupColor(group.title) : "#64748b";
+              const sectionTint = isHomeHub ? homeGroupColor(group.title) : "#64748b";
 
               return (
                 <div key={group.title} className="mb-2">
@@ -511,7 +511,7 @@ export default function Sidebar() {
                                   "pb-1 text-[10px] font-semibold uppercase tracking-widest pl-1 text-slate-500",
                                   idx === 0 ? "pt-0" : "pt-2"
                                 )}
-                                style={isNeutralHome ? { color: sectionTint } : undefined}
+                                style={isHomeHub ? { color: sectionTint } : undefined}
                               >
                                 {section}
                               </p>
@@ -549,7 +549,7 @@ export default function Sidebar() {
                 {!collapsed && (
                   <p
                     className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500"
-                    style={isNeutralHome ? { color: homeGroupColor(group.title) } : undefined}
+                    style={isHomeHub ? { color: homeGroupColor(group.title) } : undefined}
                   >
                     {group.title}
                   </p>

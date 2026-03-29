@@ -81,7 +81,7 @@ export default function DailyScanChart() {
             peak scans
           </span>
         </p>
-        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1">
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full mt-1">
           +41% avg admissions
         </span>
       </div>

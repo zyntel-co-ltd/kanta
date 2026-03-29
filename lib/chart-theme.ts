@@ -1,14 +1,14 @@
 /**
  * Chart.js — neutral structure + semantic status series (Plan §6 Charts)
- * ENG-131: Lab module accents use brand emerald; asset equipment stacks use sky/cyan.
+ * Lab module accent #21336a; asset stacks use slate module color.
  */
 
 import { STATUS, STRUCTURE, MODULE_COLORS } from "@/lib/design-tokens";
 
-/** Lab Metrics — TAT / operational trend accent (module emerald) */
+/** Lab Metrics — TAT / operational trend accent (module navy) */
 const LAB_ACCENT = MODULE_COLORS.labMetrics.hex;
-const LAB_ACCENT_FILL = "rgba(5, 150, 105, 0.12)";
-const SKY = MODULE_COLORS.assetManagement.hex;
+const LAB_ACCENT_FILL = "rgba(33, 51, 106, 0.12)";
+const ASSET_SLATE = MODULE_COLORS.assetManagement.hex;
 
 /** Default series for non-semantic trends (volume, counts) */
 export const CHART_NEUTRAL = {
@@ -28,7 +28,7 @@ export const CHART_AXIS = {
   grid: "#f1f5f9",
 } as const;
 
-/** TAT / lab metrics — pie, line, bar (module emerald + semantic status) */
+/** TAT / lab metrics — pie, line, bar (module navy + semantic status) */
 export const CHART_TAT = {
   pie: [LAB_ACCENT, STATUS.WARN, STATUS.BAD, CHART_NEUTRAL.border] as const,
   lineOnTime: { border: LAB_ACCENT, fill: LAB_ACCENT_FILL },
@@ -39,15 +39,15 @@ export const CHART_TAT = {
   barNotUploaded: CHART_NEUTRAL.border,
 } as const;
 
-/** Equipment stacked bars — operational (sky), maintenance (warn), retired (neutral) */
+/** Equipment stacked bars — operational (slate), maintenance (warn), retired (neutral) */
 export const CHART_EQUIPMENT_STACK = {
-  operational: SKY,
+  operational: ASSET_SLATE,
   maintenance: STATUS.WARN,
   retired: STRUCTURE.BORDER,
 } as const;
 
 export const CHART_BRAND_SECONDARY = {
-  border: "#34d399",
+  border: "#5a6fa8",
   background: LAB_ACCENT_FILL,
 } as const;
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import clsx from "clsx";
 import {
   Bell,
   ChevronDown,
@@ -100,6 +101,9 @@ export default function TopBar() {
   const { status, pendingCount, retry } = useSyncStatus();
   const { user, signOut, facilityAuth, facilityAuthLoading, avatarUrl } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isDashboardHome =
+    pathname === "/dashboard/home" || pathname?.replace(/\/$/, "") === "/dashboard/home";
 
   const alertsFacilityId = facilityAuth?.facilityId ?? null;
 
@@ -178,16 +182,21 @@ export default function TopBar() {
   const hospitalLogo = facilityAuth?.hospitalLogoUrl || HOSPITAL_LOGO_URL;
 
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between px-5 py-2.5 bg-white/90 backdrop-blur-sm border-b border-slate-100 shadow-sm">
+    <header
+      className={clsx(
+        "sticky top-0 z-20 flex items-center justify-between px-5 bg-white/90 backdrop-blur-sm border-b border-slate-100 shadow-sm",
+        isDashboardHome ? "py-1.5 min-h-[44px]" : "py-2.5"
+      )}
+    >
 
       {/* ── Left: Hospital branding ── */}
-      <div className="flex items-center gap-3">
+      <div className={clsx("flex items-center", isDashboardHome ? "gap-2" : "gap-3")}>
         {hospitalLogo ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={hospitalLogo}
             alt={hospitalName}
-            className="h-8 w-auto object-contain rounded-lg"
+            className={clsx("w-auto object-contain rounded-lg", isDashboardHome ? "h-7" : "h-8")}
           />
         ) : (
           <div

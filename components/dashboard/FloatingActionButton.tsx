@@ -34,7 +34,7 @@ export default function FloatingActionButton() {
     <>
       <button
         onClick={() => setModalOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white text-sm font-semibold rounded-2xl shadow-xl shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 active:scale-95 transition-all duration-200"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 bg-slate-600 text-white text-sm font-semibold rounded-2xl shadow-xl shadow-slate-600/35 hover:bg-slate-700 hover:scale-105 active:scale-95 transition-all duration-200"
         aria-label="Add Equipment"
       >
         <Plus size={18} strokeWidth={2.5} />

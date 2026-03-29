@@ -44,17 +44,17 @@ export default function DashboardPage() {
         {/* ── Medicare-style hero header ── */}
         <div
           className="rounded-2xl overflow-hidden animate-slide-up"
-          style={{ background: "linear-gradient(135deg, #0369a1 0%, #0284c7 45%, #06b6d4 100%)" }}
+          style={{ background: "linear-gradient(135deg, #334155 0%, #475569 45%, #64748b 100%)" }}
         >
           <div className="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="inline-block text-[10px] font-semibold uppercase tracking-widest text-sky-100 mb-0.5">
+              <span className="inline-block text-[10px] font-semibold uppercase tracking-widest text-slate-200 mb-0.5">
                 Asset Management
               </span>
               <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight" style={{ letterSpacing: "-0.025em" }}>
                 Assets Overview
               </h1>
-              <p className="text-xs sm:text-sm text-sky-100/95 mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-200/95 mt-0.5">
                 Real-time equipment intelligence across your facility.
               </p>
             </div>
@@ -62,7 +62,7 @@ export default function DashboardPage() {
               <AssetsSearchBar variant="light" />
               <Link
                 href="/dashboard/reports"
-                className="flex items-center gap-2 h-8 px-3 bg-white text-sky-800 text-sm font-semibold rounded-lg transition-all hover:bg-sky-50 shadow-sm"
+                className="flex items-center gap-2 h-8 px-3 bg-white text-slate-800 text-sm font-semibold rounded-lg transition-all hover:bg-slate-100 shadow-sm"
               >
                 <span className="text-base leading-none">+</span>
                 New Report

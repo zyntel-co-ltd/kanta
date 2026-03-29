@@ -155,9 +155,9 @@ html {
 }
 
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.35); }
-  70%  { box-shadow: 0 0 0 8px rgba(5, 150, 105, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+  0%   { box-shadow: 0 0 0 0 var(--module-ring-pulse, rgba(5, 150, 105, 0.35)); }
+  70%  { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 @keyframes shimmer {
@@ -234,18 +234,19 @@ html {
    - --module-* drives tab bars, banners, and module-accent-* helpers.
    ============================================================================= */
 
-/* Fallback before attribute match (Lab Metrics / emerald) */
+/* Fallback before attribute match (defaults to Lab Metrics navy) */
 [data-module] {
   --sidebar-bg: #ffffff;
-  --sidebar-active-bg: #059669;
+  --sidebar-active-bg: #21336a;
   --sidebar-active-text: #ffffff;
   --sidebar-hover-bg: #f1f5f9;
-  --module-accent: #059669;
-  --module-primary: #059669;
-  --module-primary-dark: #047857;
-  --module-primary-light: #d1fae5;
-  --module-primary-soft-text: #047857;
+  --module-accent: #21336a;
+  --module-primary: #21336a;
+  --module-primary-dark: #1a284f;
+  --module-primary-light: #e8ebf4;
+  --module-primary-soft-text: #2d3f6e;
   --module-primary-on: #ffffff;
+  --module-ring-pulse: rgba(33, 51, 106, 0.35);
 }
 
 [data-module="neutral"] {
@@ -259,9 +260,11 @@ html {
   --module-primary-light: #e2e8f0;
   --module-primary-soft-text: #64748b;
   --module-primary-on: #ffffff;
+  --module-ring-pulse: rgba(100, 116, 139, 0.35);
 }
 
-[data-module="labMetrics"] {
+/* /dashboard/home — emerald active pill (brand) */
+[data-module="home"] {
   --sidebar-bg: #ffffff;
   --sidebar-active-bg: #059669;
   --sidebar-active-text: #ffffff;
@@ -272,36 +275,26 @@ html {
   --module-primary-light: #d1fae5;
   --module-primary-soft-text: #047857;
   --module-primary-on: #ffffff;
+  --module-ring-pulse: rgba(5, 150, 105, 0.35);
 }
 
-/* QC only (/dashboard/qc) — neutral slate, same token set as home */
-[data-module="qualityQc"] {
+[data-module="labMetrics"] {
   --sidebar-bg: #ffffff;
-  --sidebar-active-bg: #64748b;
+  --sidebar-active-bg: #21336a;
   --sidebar-active-text: #ffffff;
   --sidebar-hover-bg: #f1f5f9;
-  --module-accent: #64748b;
-  --module-primary: #64748b;
-  --module-primary-dark: #475569;
-  --module-primary-light: #e2e8f0;
-  --module-primary-soft-text: #64748b;
+  --module-accent: #21336a;
+  --module-primary: #21336a;
+  --module-primary-dark: #1a284f;
+  --module-primary-light: #e8ebf4;
+  --module-primary-soft-text: #2d3f6e;
   --module-primary-on: #ffffff;
+  --module-ring-pulse: rgba(33, 51, 106, 0.35);
 }
 
+/* Quality — QC + Samples hubs (sky #0284c7) */
+[data-module="qualityQc"],
 [data-module="qualityManagement"] {
-  --sidebar-bg: #ffffff;
-  --sidebar-active-bg: #2563eb;
-  --sidebar-active-text: #ffffff;
-  --sidebar-hover-bg: #f1f5f9;
-  --module-accent: #2563eb;
-  --module-primary: #2563eb;
-  --module-primary-dark: #1d4ed8;
-  --module-primary-light: #dbeafe;
-  --module-primary-soft-text: #1d4ed8;
-  --module-primary-on: #ffffff;
-}
-
-[data-module="assetManagement"] {
   --sidebar-bg: #ffffff;
   --sidebar-active-bg: #0284c7;
   --sidebar-active-text: #ffffff;
@@ -310,8 +303,23 @@ html {
   --module-primary: #0284c7;
   --module-primary-dark: #0369a1;
   --module-primary-light: #e0f2fe;
-  --module-primary-soft-text: #0284c7;
+  --module-primary-soft-text: #0369a1;
   --module-primary-on: #ffffff;
+  --module-ring-pulse: rgba(2, 132, 199, 0.35);
+}
+
+[data-module="assetManagement"] {
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: #475569;
+  --sidebar-active-text: #ffffff;
+  --sidebar-hover-bg: #f1f5f9;
+  --module-accent: #475569;
+  --module-primary: #475569;
+  --module-primary-dark: #334155;
+  --module-primary-light: #f1f5f9;
+  --module-primary-soft-text: #334155;
+  --module-primary-on: #ffffff;
+  --module-ring-pulse: rgba(71, 85, 105, 0.35);
 }
 
 [data-module="aiInsights"],
@@ -326,6 +334,7 @@ html {
   --module-primary-light: #d1fae5;
   --module-primary-soft-text: #059669;
   --module-primary-on: #ffffff;
+  --module-ring-pulse: rgba(5, 150, 105, 0.35);
 }
 
 /* ENG-126: sidebar chrome is neutral; no full-bleed module background */
