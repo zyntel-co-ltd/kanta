@@ -124,12 +124,12 @@ export default function DashboardHomePage() {
   return (
     <div className="max-w-[1280px] mx-auto space-y-6 pb-10">
 
-      {/* Brand hero — identity only */}
+      {/* Brand hero — full content width (matches workspace banners e.g. Lab analytics) */}
       <div
-        className="max-w-[780px] rounded-2xl overflow-hidden animate-slide-up stagger-1"
+        className="w-full rounded-2xl overflow-hidden animate-slide-up stagger-1"
         style={{ background: "linear-gradient(145deg, #042f2e 0%, #065f46 55%, #047857 100%)" }}
       >
-        <div className="px-6 py-3.5">
+        <div className="px-7 py-7 sm:px-8 sm:py-8">
           <div>
             <div className="flex items-center gap-2.5 mb-2">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
@@ -145,7 +145,7 @@ export default function DashboardHomePage() {
             >
               Welcome back
             </h1>
-            <p className="text-emerald-100/95 mt-1 text-sm leading-snug max-w-md">
+            <p className="text-emerald-100/95 mt-2 text-sm sm:text-[0.9375rem] leading-relaxed max-w-2xl">
               Choose a workspace below — data, charts and controls in one focused view.
             </p>
             <p className="text-emerald-200/90 text-xs mt-1.5 font-medium">

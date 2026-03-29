@@ -42,8 +42,7 @@ import {
   TestTubes,
   QrCode,
   CalendarClock,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
 } from "lucide-react";
 
 type NavItem = {
@@ -65,6 +64,29 @@ type NavGroup = {
     activePaths?: string[];
   };
 };
+
+/** Solid sky control: main pane + arrow, divider, narrow sidebar strip with dots (design ref ENG). */
+function SidebarCollapseGlyph({ sidebarExpanded }: { sidebarExpanded: boolean }) {
+  return (
+    <span
+      className={clsx(
+        "flex h-[22px] w-[22px] items-stretch overflow-hidden rounded-md bg-sky-600 shadow-inner",
+        !sidebarExpanded && "scale-x-[-1]"
+      )}
+      aria-hidden
+    >
+      <span className="flex min-w-0 flex-1 items-center justify-center">
+        <ChevronLeft className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />
+      </span>
+      <span className="w-px shrink-0 bg-white/95" />
+      <span className="flex w-[6px] flex-col items-center justify-center gap-[3px] py-1">
+        <span className="h-[3px] w-[3px] rounded-full bg-white" />
+        <span className="h-[3px] w-[3px] rounded-full bg-white" />
+        <span className="h-[3px] w-[3px] rounded-full bg-white" />
+      </span>
+    </span>
+  );
+}
 
 const navGroupsBase: NavGroup[] = [
   { title: "Home", items: [{ label: "Home", icon: Home, href: "/dashboard/home" }] },
@@ -643,25 +665,14 @@ export default function Sidebar() {
           onClick={() => setCollapsed(!collapsed)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={clsx(
-            "absolute -right-3.5 top-6 -translate-y-1/2 z-50 flex h-9 w-9 items-center justify-center rounded-full",
-            "border border-slate-200/90 bg-white text-[var(--sidebar-active-bg)] shadow-[0_4px_16px_rgba(15,23,42,0.1)]",
-            "ring-1 ring-white/80 transition-all duration-200",
-            "hover:border-[color-mix(in_srgb,var(--sidebar-active-bg)_28%,white)] hover:shadow-[0_6px_22px_rgba(15,23,42,0.14)] hover:-translate-y-px",
-            "active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-active-bg)]/35 focus-visible:ring-offset-2"
+            "absolute -right-3.5 top-6 -translate-y-1/2 z-50 flex h-9 w-9 items-center justify-center rounded-xl",
+            "border border-sky-700/25 bg-sky-600 text-white shadow-[0_4px_16px_rgba(2,132,199,0.35)]",
+            "transition-all duration-200",
+            "hover:bg-sky-700 hover:shadow-[0_6px_20px_rgba(2,132,199,0.45)] hover:-translate-y-px",
+            "active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 focus-visible:ring-offset-2"
           )}
         >
-          <span
-            className={clsx(
-              "inline-flex items-center justify-center transition-transform duration-200",
-              collapsed ? "rotate-0" : "rotate-180"
-            )}
-          >
-            {collapsed ? (
-              <PanelLeftOpen size={17} strokeWidth={2.25} />
-            ) : (
-              <PanelLeftClose size={17} strokeWidth={2.25} />
-            )}
-          </span>
+          <SidebarCollapseGlyph sidebarExpanded={!collapsed} />
         </button>
       </Tooltip>
     </aside>
