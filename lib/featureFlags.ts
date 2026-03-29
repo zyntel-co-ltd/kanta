@@ -3,6 +3,20 @@
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
 
+/**
+ * Canonical PostHog feature flag keys (kebab-case, per-facility via PostHog).
+ * Source of truth for product gating — hospitals do not toggle these in-app (ENG-84).
+ * Inventory: `zyntel-playbook/12-projects/kanta/feature-flags.md`
+ */
+export const KANTA_FEATURE_FLAG_NAMES = [
+  "show-ai-intelligence",
+  "show-lrids",
+  "show-reception-tab",
+  "show-refrigerator-module",
+] as const;
+
+export type KantaFeatureFlagName = (typeof KANTA_FEATURE_FLAG_NAMES)[number];
+
 /** Maps PostHog kebab-case flag names to NEXT_PUBLIC_FLAG_* env keys */
 export function flagNameToDevEnvKey(flagName: string): string {
   return `NEXT_PUBLIC_FLAG_${flagName.replace(/-/g, "_").toUpperCase()}`;

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Thermometer, AlertTriangle, Clock } from "lucide-react";
 
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { useFlag } from "@/lib/featureFlags";
 
 type Unit = {
   id: string;
@@ -28,11 +29,16 @@ type Breach = {
 };
 
 export default function RefrigeratorPage() {
+  const showRefrigeratorModule = useFlag("show-refrigerator-module");
   const [units, setUnits] = useState<Unit[]>([]);
   const [breaches, setBreaches] = useState<Breach[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!showRefrigeratorModule) {
+      setLoading(false);
+      return;
+    }
     const fetchData = async () => {
       try {
         const [uRes, bRes] = await Promise.all([
@@ -53,7 +59,19 @@ export default function RefrigeratorPage() {
     fetchData();
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [showRefrigeratorModule]);
+
+  if (!showRefrigeratorModule) {
+    return (
+      <div className="max-w-lg mx-auto mt-16 rounded-2xl border border-slate-200 bg-white p-8 text-center">
+        <Thermometer size={40} className="text-slate-300 mx-auto mb-3" />
+        <h1 className="text-lg font-semibold text-slate-800">Refrigerator monitoring is not enabled</h1>
+        <p className="mt-2 text-sm text-slate-500">
+          This module is controlled for your facility by Zyntel. Contact your administrator if you need refrigerator telemetry.
+        </p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

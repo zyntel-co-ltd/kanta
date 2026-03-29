@@ -6,18 +6,24 @@ import Link from "next/link";
 import { ArrowLeft, Thermometer } from "lucide-react";
 
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { useFlag } from "@/lib/featureFlags";
 
 type Reading = { temp: number; at: string };
 
 export default function RefrigeratorUnitPage() {
   const params = useParams();
   const unitId = params.id as string;
+  const showRefrigeratorModule = useFlag("show-refrigerator-module");
   const [unit, setUnit] = useState<{ name: string; min_temp_celsius: number; max_temp_celsius: number } | null>(null);
   const [readings, setReadings] = useState<Reading[]>([]);
   const [range, setRange] = useState<"24h" | "7d" | "30d">("24h");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!showRefrigeratorModule) {
+      setLoading(false);
+      return;
+    }
     const fetchData = async () => {
       try {
         const [uRes, rRes] = await Promise.all([
@@ -40,7 +46,22 @@ export default function RefrigeratorUnitPage() {
     fetchData();
     const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
-  }, [unitId, range]);
+  }, [unitId, range, showRefrigeratorModule]);
+
+  if (!showRefrigeratorModule) {
+    return (
+      <div className="max-w-lg mx-auto mt-16 rounded-2xl border border-slate-200 bg-white p-8 text-center">
+        <Thermometer size={40} className="text-slate-300 mx-auto mb-3" />
+        <h1 className="text-lg font-semibold text-slate-800">Refrigerator monitoring is not enabled</h1>
+        <p className="mt-2 text-sm text-slate-500">
+          This module is controlled for your facility by Zyntel.
+        </p>
+        <Link href="/dashboard/home" className="mt-4 inline-block text-sm text-emerald-700 font-medium hover:underline">
+          Back to home
+        </Link>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

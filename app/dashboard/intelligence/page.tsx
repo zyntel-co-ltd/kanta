@@ -5,6 +5,7 @@ import { Sparkles, Brain, BarChart3, Calendar, Mail, RefreshCw, ChevronDown, Che
 import AnomalyPanel from "@/components/ai/AnomalyPanel";
 import NLQueryBar from "@/components/ai/NLQueryBar";
 import { useAuth } from "@/lib/AuthContext";
+import { useFlag } from "@/lib/featureFlags";
 
 type WeeklySummary = {
   id: string;
@@ -91,6 +92,7 @@ function SummaryCard({ summary }: { summary: WeeklySummary }) {
 export default function IntelligencePage() {
   const { user, facilityAuth, facilityAuthLoading } = useAuth();
   const facilityId = facilityAuth?.facilityId ?? null;
+  const showAiIntelligence = useFlag("show-ai-intelligence");
 
   const [summaries, setSummaries] = useState<WeeklySummary[]>([]);
   const [loadingSummaries, setLoadingSummaries] = useState(true);
@@ -149,6 +151,18 @@ export default function IntelligencePage() {
         <p className="text-slate-700 font-medium">No facility assigned</p>
         <p className="text-sm text-slate-500 mt-1 max-w-md">
           Kanta Intelligence needs a hospital facility. Ask an administrator to assign you to a facility.
+        </p>
+      </div>
+    );
+  }
+
+  if (!showAiIntelligence) {
+    return (
+      <div className="min-h-[40vh] flex flex-col items-center justify-center text-center px-6 max-w-lg mx-auto">
+        <Brain size={32} className="text-slate-300 mb-3" />
+        <p className="text-slate-700 font-medium">AI Intelligence is not enabled</p>
+        <p className="text-sm text-slate-500 mt-1">
+          Feature access for your hospital is managed by Zyntel. Contact your administrator if you need this module.
         </p>
       </div>
     );

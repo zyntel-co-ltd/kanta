@@ -141,6 +141,10 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Account Settings</h1>
         <p className="text-sm text-slate-500 mt-0.5">Manage your profile, avatar, and security settings.</p>
+        <p className="text-xs text-slate-400 mt-2 max-w-xl">
+          Lab and module features for your hospital are turned on or off by Zyntel via product configuration (not on this page).
+          Hospital name and logo are managed under Admin → Hospital settings.
+        </p>
       </div>
 
       <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">

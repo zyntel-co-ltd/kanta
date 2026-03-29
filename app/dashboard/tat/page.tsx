@@ -457,8 +457,8 @@ export default function TATPage() {
                 <KPICard title="TAT Breaches" value={(performanceData?.breachCount ?? 0).toLocaleString()} iconId="breaches" />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Tests Resulted by Section</h3><div className="h-[260px]">{perfSections.length ? <Bar data={perfCountData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Avg. TAT by Section</h3><div className="h-[260px]">{perfSections.length ? <Bar data={perfTatData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Tests Resulted by Section</h3><div className="h-[260px]">{(perfBySection ?? []).length ? <Bar data={perfCountData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Avg. TAT by Section</h3><div className="h-[260px]">{(perfBySection ?? []).length ? <Bar data={perfTatData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
               </div>
             </div>
           )}

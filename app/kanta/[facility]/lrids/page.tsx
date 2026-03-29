@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Building2 } from "lucide-react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
+import { useFlag } from "@/lib/featureFlags";
 
 const REFRESH_MS = 30_000;
 const HOSPITAL_NAME = process.env.NEXT_PUBLIC_HOSPITAL_NAME || "Zyntel Hospital";
@@ -42,11 +43,16 @@ function LiveClock() {
 export default function LRIDSDisplayPage() {
   const params = useParams();
   const facilityId = (params.facility as string) ?? DEFAULT_FACILITY_ID;
+  const showLrids = useFlag("show-lrids");
 
   const [data, setData] = useState<LRIDSItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!showLrids) {
+      setLoading(false);
+      return;
+    }
     const fetchData = async () => {
       try {
         const res = await fetch(
@@ -71,7 +77,22 @@ export default function LRIDSDisplayPage() {
     fetchData();
     const dataInterval = setInterval(fetchData, REFRESH_MS);
     return () => clearInterval(dataInterval);
-  }, [facilityId]);
+  }, [facilityId, showLrids]);
+
+  if (!showLrids) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-8 text-center text-white"
+        style={{ background: "linear-gradient(160deg, #042f2e 0%, #065f46 50%, #0f172a 100%)" }}
+      >
+        <Building2 size={40} className="text-emerald-300/80 mb-4" />
+        <h1 className="text-xl font-semibold">LRIDS display is not enabled</h1>
+        <p className="mt-2 text-sm text-emerald-100/80 max-w-md">
+          This board is controlled for your facility by Zyntel. Contact your administrator if you need the live results display.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div
