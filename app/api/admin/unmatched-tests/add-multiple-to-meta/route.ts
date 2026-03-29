@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
+import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const ctx = await getAuthContext(req, {
       facilityIdHint: firstRow.facility_id as string,
     });
-    const denied = requireAdminUserManagement(ctx, firstRow.facility_id as string);
+    const denied = requireAdminPanel(ctx, firstRow.facility_id as string);
     if (denied) return denied;
 
     const results: Array<{ id: string; success: boolean; error?: string }> = [];

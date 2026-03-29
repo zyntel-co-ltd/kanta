@@ -1,12 +1,18 @@
 /**
- * POST /api/invites — Create a pending invite (facility_admin / lab_manager)
+ * GET /api/invites — Pending invites for a facility (admin panel)
+ * POST /api/invites — Create a pending invite
  */
 
 import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
-import { FACILITY_ROLES, isFacilityRole, type FacilityRole } from "@/lib/auth/roles";
+import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
+import {
+  FACILITY_ROLES,
+  assignableFacilityRoles,
+  isFacilityRole,
+  type FacilityRole,
+} from "@/lib/auth/roles";
 import { sendFacilityInviteEmail } from "@/lib/email/send-facility-invite";
 
 const supabaseConfigured =
@@ -20,6 +26,38 @@ function appOrigin(req: NextRequest): string {
     (typeof req.nextUrl?.origin === "string" ? req.nextUrl.origin : "") ||
     "http://localhost:3000"
   );
+}
+
+export async function GET(req: NextRequest) {
+  if (!supabaseConfigured) {
+    return NextResponse.json([]);
+  }
+
+  const { searchParams } = new URL(req.url);
+  const facility_id = searchParams.get("facility_id");
+  if (!facility_id) {
+    return NextResponse.json({ error: "facility_id required" }, { status: 400 });
+  }
+
+  const ctx = await getAuthContext(req, { facilityIdHint: facility_id });
+  const denied = requireAdminPanel(ctx, facility_id);
+  if (denied) return denied;
+
+  try {
+    const db = createAdminClient();
+    const { data, error } = await db
+      .from("facility_invites")
+      .select("id, email, role, token, expires_at, created_at, accepted_at")
+      .eq("facility_id", facility_id)
+      .is("accepted_at", null)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return NextResponse.json(data ?? []);
+  } catch (e) {
+    console.error("[GET /api/invites]", e);
+    return NextResponse.json({ error: "Failed to list invites" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -42,8 +80,13 @@ export async function POST(req: NextRequest) {
   }
 
   const ctx = await getAuthContext(req, { facilityIdHint: facility_id });
-  const denied = requireAdminUserManagement(ctx, facility_id);
+  const denied = requireAdminPanel(ctx, facility_id);
   if (denied) return denied;
+
+  const allowed = assignableFacilityRoles(ctx.role, ctx.isSuperAdmin);
+  if (!allowed.includes(role)) {
+    return NextResponse.json({ error: "You cannot assign this role" }, { status: 403 });
+  }
 
   const db = createAdminClient();
 

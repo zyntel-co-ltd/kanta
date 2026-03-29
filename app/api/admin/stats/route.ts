@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
+import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   }
 
   const ctx = await getAuthContext(req);
-  const denied = requireAdminUserManagement(ctx, facilityId);
+  const denied = requireAdminPanel(ctx, facilityId);
   if (denied) return denied;
 
   try {

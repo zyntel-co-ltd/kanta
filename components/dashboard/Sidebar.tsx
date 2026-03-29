@@ -42,7 +42,7 @@ import {
   TestTubes,
   QrCode,
   CalendarClock,
-  ChevronLeft,
+  ArrowLeft,
 } from "lucide-react";
 
 type NavItem = {
@@ -65,24 +65,27 @@ type NavGroup = {
   };
 };
 
-/** Solid sky control: main pane + arrow, divider, narrow sidebar strip with dots (design ref ENG). */
+/**
+ * Collapse control matching the reference “sidebar rail” glyph: rounded square, wide pane with
+ * left arrow, narrow white gutter with three dots (solid + gutter style — e.g. 4th icon in ref).
+ * Flips horizontally when collapsed so the arrow reads as “expand”.
+ */
 function SidebarCollapseGlyph({ sidebarExpanded }: { sidebarExpanded: boolean }) {
   return (
     <span
       className={clsx(
-        "flex h-[22px] w-[22px] items-stretch overflow-hidden rounded-md bg-sky-600 shadow-inner",
+        "flex h-8 w-8 items-stretch overflow-hidden rounded-[10px] shadow-sm ring-1 ring-slate-900/12",
         !sidebarExpanded && "scale-x-[-1]"
       )}
       aria-hidden
     >
-      <span className="flex min-w-0 flex-1 items-center justify-center">
-        <ChevronLeft className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.75} />
+      <span className="flex min-w-0 flex-1 items-center justify-center bg-[var(--sidebar-active-bg)]">
+        <ArrowLeft className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.5} />
       </span>
-      <span className="w-px shrink-0 bg-white/95" />
-      <span className="flex w-[6px] flex-col items-center justify-center gap-[3px] py-1">
-        <span className="h-[3px] w-[3px] rounded-full bg-white" />
-        <span className="h-[3px] w-[3px] rounded-full bg-white" />
-        <span className="h-[3px] w-[3px] rounded-full bg-white" />
+      <span className="flex w-[8px] shrink-0 flex-col items-center justify-center gap-[3px] bg-white py-1">
+        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
+        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
+        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
       </span>
     </span>
   );
@@ -395,7 +398,9 @@ export default function Sidebar() {
   return (
     <aside
       className={clsx(
-        "kanta-sidebar relative flex flex-col h-screen flex-shrink-0 transition-all duration-300 ease-in-out overflow-visible border-r border-slate-200 bg-white",
+        // Stack above main column so the edge collapse control (-right-3.5) stays clickable;
+        // TopBar is z-20 and would otherwise capture hits on the overlap strip.
+        "kanta-sidebar relative z-30 flex flex-col h-screen flex-shrink-0 transition-all duration-300 ease-in-out overflow-visible border-r border-slate-200 bg-white",
         collapsed ? "w-[72px]" : "w-[260px]"
       )}
       style={{ borderRadius: "0 28px 28px 0" }}
@@ -665,11 +670,10 @@ export default function Sidebar() {
           onClick={() => setCollapsed(!collapsed)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={clsx(
-            "absolute -right-3.5 top-6 -translate-y-1/2 z-50 flex h-9 w-9 items-center justify-center rounded-xl",
-            "border border-sky-700/25 bg-sky-600 text-white shadow-[0_4px_16px_rgba(2,132,199,0.35)]",
-            "transition-all duration-200",
-            "hover:bg-sky-700 hover:shadow-[0_6px_20px_rgba(2,132,199,0.45)] hover:-translate-y-px",
-            "active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 focus-visible:ring-offset-2"
+            "absolute -right-3.5 top-6 -translate-y-1/2 z-50 flex items-center justify-center rounded-[12px] p-0",
+            "border-0 bg-transparent shadow-none",
+            "transition-transform duration-200 hover:scale-[1.06] active:scale-[0.96]",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-active-bg)] focus-visible:ring-offset-2"
           )}
         >
           <SidebarCollapseGlyph sidebarExpanded={!collapsed} />

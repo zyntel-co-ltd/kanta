@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Users,
@@ -8,17 +8,12 @@ import {
   Ban,
   ClipboardList,
   Sliders,
-  Plus,
-  Pencil,
-  Key,
-  Check,
-  X,
   Save,
 } from "lucide-react";
 import Link from "next/link";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
-import Tooltip from "@/components/ui/Tooltip";
+import AdminUsersSection from "@/components/dashboard/admin/AdminUsersSection";
 
 const LAB_SECTIONS = [
   "CHEMISTRY",
@@ -32,16 +27,6 @@ const LAB_SECTIONS = [
 const TAT_OPTIONS = [30, 45, 60, 90, 240, 1440, 4320, 7200, 17280];
 
 type Tab = "users" | "unmatched" | "cancellations" | "audit" | "settings";
-
-type User = {
-  id: string;
-  username: string;
-  email: string;
-  avatar_url?: string | null;
-  role: string;
-  is_active: boolean;
-  last_login: string | null;
-};
 
 type UnmatchedTest = {
   id: string;
@@ -61,23 +46,7 @@ type Stats = {
 const UNMATCHED_PAGE_SIZE = 15;
 
 export default function AdminPage() {
-  const formatRole = (role: string) => {
-    const r = role?.trim().toLowerCase();
-    if (r === "facility_admin" || r === "admin") return "Facility admin";
-    if (r === "lab_manager" || r === "manager") return "Lab manager";
-    if (r === "lab_technician" || r === "technician" || r === "reception") return "Lab technician";
-    return "Viewer";
-  };
-
-  const getInitials = (u: User) => {
-    const base = u.username?.trim() || u.email?.split("@")[0] || "U";
-    const parts = base.split(/\s+/);
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return base.slice(0, 2).toUpperCase();
-  };
-
   const [activeTab, setActiveTab] = useState<Tab>("users");
-  const [users, setUsers] = useState<User[]>([]);
   const [unmatchedTests, setUnmatchedTests] = useState<UnmatchedTest[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [cancellationAnalytics, setCancellationAnalytics] = useState<
@@ -105,15 +74,6 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
-  const [userModalOpen, setUserModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [userForm, setUserForm] = useState({
-    username: "",
-    email: "",
-    password: "",
-    role: "lab_technician" as string,
-  });
-
   const { facilityAuth, facilityAuthLoading } = useAuth();
   const router = useRouter();
 
@@ -123,9 +83,6 @@ export default function AdminPage() {
       router.replace("/dashboard/home");
     }
   }, [facilityAuthLoading, facilityAuth, router]);
-
-  const [resetPasswordModal, setResetPasswordModal] = useState<{ id: string; username: string } | null>(null);
-  const [resetPasswordValue, setResetPasswordValue] = useState("");
 
   const [monthlyTarget, setMonthlyTarget] = useState({
     month: new Date().getMonth() + 1,
@@ -162,7 +119,36 @@ export default function AdminPage() {
     limit: 50,
   });
 
-  const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
+  const [facilityList, setFacilityList] = useState<{ id: string; name: string }[]>([]);
+  const [facilityOverride, setFacilityOverride] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!facilityAuth?.isSuperAdmin) return;
+    fetch("/api/admin/facilities")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: unknown) => {
+        if (Array.isArray(rows)) setFacilityList(rows as { id: string; name: string }[]);
+      });
+  }, [facilityAuth?.isSuperAdmin]);
+
+  useEffect(() => {
+    if (!facilityAuth?.isSuperAdmin || facilityList.length === 0) return;
+    if (facilityOverride === null) {
+      const preferred =
+        facilityAuth.facilityId &&
+        facilityList.some((f) => f.id === facilityAuth.facilityId)
+          ? facilityAuth.facilityId
+          : facilityList[0].id;
+      setFacilityOverride(preferred);
+    }
+  }, [facilityAuth?.isSuperAdmin, facilityAuth?.facilityId, facilityList, facilityOverride]);
+
+  const facilityId = useMemo(() => {
+    if (facilityAuth?.isSuperAdmin) {
+      return facilityOverride ?? facilityAuth.facilityId ?? DEFAULT_FACILITY_ID;
+    }
+    return facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
+  }, [facilityAuth, facilityOverride]);
 
   const fetchTargets = useCallback(async () => {
     try {
@@ -221,13 +207,13 @@ export default function AdminPage() {
   }, [facilityId, auditSubTab, auditFilters]);
 
   const fetchData = useCallback(async () => {
+    if (activeTab === "users") {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
-      if (activeTab === "users") {
-        const res = await fetch(`/api/admin/users?facility_id=${facilityId}`);
-        const data = await res.json();
-        setUsers(Array.isArray(data) ? data : []);
-      } else if (activeTab === "unmatched") {
+      if (activeTab === "unmatched") {
         const [statsRes, unmatchedRes] = await Promise.all([
           fetch(`/api/admin/stats?facility_id=${facilityId}`),
           fetch(`/api/admin/unmatched-tests?facility_id=${facilityId}`),
@@ -277,74 +263,6 @@ export default function AdminPage() {
     { id: "audit", label: "Audit Trail", icon: <ClipboardList size={16} /> },
     { id: "settings", label: "Settings", icon: <Sliders size={16} /> },
   ];
-
-  const handleUserSubmit = async () => {
-    try {
-      if (editingUser) {
-        const res = await fetch(`/api/admin/users/${editingUser.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            role: userForm.role,
-            email: userForm.email,
-          }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data?.error || "Failed to update");
-        setToast({ message: "User updated", type: "success" });
-      } else {
-        const res = await fetch("/api/admin/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            facility_id: facilityId,
-            username: userForm.username.trim(),
-            email: userForm.email?.trim() || "",
-            password: userForm.password,
-            role: userForm.role,
-          }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data?.error || "Failed to create");
-        setToast({ message: "User created", type: "success" });
-      }
-      setUserModalOpen(false);
-      fetchData();
-    } catch (e) {
-      setToast({ message: (e as Error).message || "Error", type: "error" });
-    }
-  };
-
-  const handleToggleActive = async (id: string, isActive: boolean) => {
-    try {
-      const res = await fetch(`/api/admin/users/${id}/toggle-active`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: !isActive }),
-      });
-      if (!res.ok) throw new Error("Failed");
-      setToast({ message: isActive ? "Deactivated" : "Activated", type: "success" });
-      fetchData();
-    } catch {
-      setToast({ message: "Failed to toggle", type: "error" });
-    }
-  };
-
-  const handleResetPassword = async () => {
-    if (!resetPasswordModal || !resetPasswordValue.trim()) return;
-    try {
-      const res = await fetch(`/api/admin/users/${resetPasswordModal.id}/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: resetPasswordValue }),
-      });
-      if (!res.ok) throw new Error("Failed");
-      setToast({ message: "Password reset", type: "success" });
-      setResetPasswordModal(null);
-    } catch {
-      setToast({ message: "Failed to reset password", type: "error" });
-    }
-  };
 
   const getUnmatchedEdit = (t: UnmatchedTest) =>
     unmatchedEdits[t.id] ?? { labSection: "CHEMISTRY", tat: 60, price: 0 };
@@ -446,7 +364,7 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-bold text-slate-900 tracking-tight">
             Admin Panel
@@ -455,12 +373,30 @@ export default function AdminPage() {
             User management, cancellations, audit, and settings.
           </p>
         </div>
-        <Link
-          href="/dashboard/home"
-          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
-        >
-          ← Home
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          {facilityAuth?.isSuperAdmin && facilityList.length > 0 && (
+            <label className="flex items-center gap-2 text-sm">
+              <span className="text-slate-500 shrink-0">Facility</span>
+              <select
+                value={facilityId}
+                onChange={(e) => setFacilityOverride(e.target.value)}
+                className="min-w-[12rem] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900"
+              >
+                {facilityList.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <Link
+            href="/dashboard/home"
+            className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+          >
+            ← Home
+          </Link>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -502,140 +438,17 @@ export default function AdminPage() {
       )}
 
       {/* Content */}
-      {isLoading && activeTab !== "settings" ? (
+      {isLoading && activeTab !== "settings" && activeTab !== "users" ? (
         <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center text-slate-500">
           Loading...
         </div>
       ) : (
         <>
           {activeTab === "users" && (
-            <div className="space-y-4">
-              <div className="rounded-xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-950">
-                <p className="font-semibold text-emerald-900 mb-1">How users work</p>
-                <ul className="list-disc list-inside space-y-1 text-emerald-900/90">
-                  <li>
-                    <strong>Admins add staff here</strong> — creates the Supabase Auth account and links them to
-                    this facility with a role.
-                  </li>
-                  <li>
-                    If you only created a user in the Supabase Dashboard, add a matching row in{" "}
-                    <code className="text-xs bg-white/60 px-1 rounded">facility_users</code> or use{" "}
-                    <strong>Add User</strong> below so they can sign in to Kanta.
-                  </li>
-                  <li>New users need a <strong>real email</strong> (they sign in with email + password).</li>
-                </ul>
-              </div>
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                <span className="font-semibold text-slate-800">User Management</span>
-                <button
-                  onClick={() => {
-                    setEditingUser(null);
-                    setUserForm({ username: "", email: "", password: "", role: "lab_technician" });
-                    setUserModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
-                >
-                  <Plus size={14} />
-                  Add User
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50/50">
-                      <th className="text-left px-4 py-3 font-medium text-slate-600">User</th>
-                      <th className="text-left px-4 py-3 font-medium text-slate-600">Display name</th>
-                      <th className="text-left px-4 py-3 font-medium text-slate-600">Role</th>
-                      <th className="text-left px-4 py-3 font-medium text-slate-600">Status</th>
-                      <th className="text-left px-4 py-3 font-medium text-slate-600">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((u) => (
-                      <tr key={u.id} className="border-b border-slate-50">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            {u.avatar_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={u.avatar_url} alt={u.username} className="w-7 h-7 rounded-full object-cover border border-slate-200" />
-                            ) : (
-                              <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 text-[10px] font-semibold flex items-center justify-center">
-                                {getInitials(u)}
-                              </div>
-                            )}
-                            <span>{u.email || "—"}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 font-medium">{u.username}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                              (u.role === "facility_admin" || u.role === "admin")
-                                ? "bg-red-100 text-red-700"
-                                : (u.role === "lab_manager" || u.role === "manager")
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-slate-100 text-slate-700"
-                            }`}
-                          >
-                            {formatRole(u.role)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {u.is_active ? (
-                            <span className="text-emerald-600">Active</span>
-                          ) : (
-                            <span className="text-slate-400">Inactive</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 flex items-center gap-2">
-                          <Tooltip label="Edit user">
-                            <button
-                              onClick={() => {
-                                setEditingUser(u);
-                                setUserForm({
-                                  username: u.username,
-                                  email: u.email || "",
-                                  password: "",
-                                  role: u.role,
-                                });
-                                setUserModalOpen(true);
-                              }}
-                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50"
-                              aria-label="Edit user"
-                            >
-                              <Pencil size={14} />
-                            </button>
-                          </Tooltip>
-                          <Tooltip label="Reset password">
-                            <button
-                              onClick={() => setResetPasswordModal({ id: u.id, username: u.username })}
-                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50"
-                              aria-label="Reset password"
-                            >
-                              <Key size={14} />
-                            </button>
-                          </Tooltip>
-                          <Tooltip label={u.is_active ? "Deactivate user" : "Activate user"}>
-                            <button
-                              onClick={() => handleToggleActive(u.id, u.is_active)}
-                              className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100"
-                              aria-label={u.is_active ? "Deactivate user" : "Activate user"}
-                            >
-                              {u.is_active ? <X size={14} /> : <Check size={14} />}
-                            </button>
-                          </Tooltip>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {users.length === 0 && (
-                <div className="p-8 text-center text-slate-500">No users yet.</div>
-              )}
-            </div>
-            </div>
+            <AdminUsersSection
+              facilityId={facilityId}
+              onToast={(message, type) => setToast({ message, type })}
+            />
           )}
 
           {activeTab === "unmatched" && (
@@ -1203,120 +1016,6 @@ export default function AdminPage() {
             </div>
           )}
         </>
-      )}
-
-      {/* User Modal */}
-      {userModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
-              {editingUser ? "Edit User" : "Add User"}
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Email <span className="text-red-500">*</span>{" "}
-                  <span className="text-slate-400 font-normal">(sign-in)</span>
-                </label>
-                <input
-                  type="email"
-                  value={userForm.email}
-                  onChange={(e) => setUserForm((p) => ({ ...p, email: e.target.value }))}
-                  disabled={!!editingUser}
-                  className="w-full rounded border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50"
-                  placeholder="name@hospital.org"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Display name <span className="text-slate-400 font-normal">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={userForm.username}
-                  onChange={(e) => setUserForm((p) => ({ ...p, username: e.target.value }))}
-                  disabled={!!editingUser}
-                  className="w-full rounded border border-slate-200 px-3 py-2 text-sm"
-                  placeholder="Shown in the app header"
-                />
-              </div>
-              {!editingUser && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                  <input
-                    type="password"
-                    value={userForm.password}
-                    onChange={(e) => setUserForm((p) => ({ ...p, password: e.target.value }))}
-                    className="w-full rounded border border-slate-200 px-3 py-2 text-sm"
-                  />
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-                <select
-                  value={userForm.role}
-                  onChange={(e) => setUserForm((p) => ({ ...p, role: e.target.value }))}
-                  className="w-full rounded border border-slate-200 px-3 py-2 text-sm"
-                >
-                  <option value="facility_admin">Facility admin</option>
-                  <option value="lab_manager">Lab manager</option>
-                  <option value="lab_technician">Lab technician</option>
-                  <option value="viewer">Viewer</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-2 mt-6">
-              <button
-                onClick={() => setUserModalOpen(false)}
-                className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUserSubmit}
-                disabled={!editingUser && (!userForm.email?.trim() || !userForm.password)}
-                className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
-              >
-                {editingUser ? "Update" : "Create"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reset Password Modal */}
-      {resetPasswordModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
-              Reset Password: {resetPasswordModal.username}
-            </h3>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
-              <input
-                type="password"
-                value={resetPasswordValue}
-                onChange={(e) => setResetPasswordValue(e.target.value)}
-                className="w-full rounded border border-slate-200 px-3 py-2 text-sm"
-              />
-            </div>
-            <div className="flex gap-2 mt-6">
-              <button
-                onClick={() => setResetPasswordModal(null)}
-                className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleResetPassword}
-                disabled={!resetPasswordValue.trim()}
-                className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Toast */}

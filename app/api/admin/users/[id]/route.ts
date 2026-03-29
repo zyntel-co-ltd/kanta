@@ -1,15 +1,31 @@
 /**
- * PUT /api/admin/users/:id — Update facility user (admin/manager)
+ * PUT /api/admin/users/:id — Update facility user role (admin panel only)
  * DELETE — disabled; use deactivate (toggle-active) instead
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
-import { FACILITY_ROLES, isFacilityRole } from "@/lib/auth/roles";
+import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
+import {
+  FACILITY_ROLES,
+  assignableFacilityRoles,
+  isFacilityRole,
+  type FacilityRole,
+} from "@/lib/auth/roles";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
   !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project-ref");
+
+function normalizeRole(value: unknown): FacilityRole {
+  if (typeof value !== "string") return "viewer";
+  const role = value.trim().toLowerCase();
+  if (role === "admin") return "facility_admin";
+  if (role === "manager") return "lab_manager";
+  if (role === "technician" || role === "reception") return "lab_technician";
+  if (role === "viewer") return "viewer";
+  if (isFacilityRole(role)) return role;
+  return "viewer";
+}
 
 export async function PUT(
   req: NextRequest,
@@ -33,7 +49,7 @@ export async function PUT(
 
     const { data: facilityRow } = await db
       .from("facility_users")
-      .select("facility_id, user_id")
+      .select("facility_id, user_id, role")
       .eq("id", id)
       .single();
 
@@ -44,24 +60,54 @@ export async function PUT(
     const ctx = await getAuthContext(req, {
       facilityIdHint: facilityRow.facility_id as string,
     });
-    const denied = requireAdminUserManagement(ctx, facilityRow.facility_id as string);
+    const denied = requireAdminPanel(ctx, facilityRow.facility_id as string);
     if (denied) return denied;
+
+    const targetUserId = facilityRow.user_id as string;
+    const currentRole = normalizeRole(facilityRow.role);
+
+    if (role !== undefined && isFacilityRole(role)) {
+      const newRole: FacilityRole = role;
+      const allowed = assignableFacilityRoles(ctx.role, ctx.isSuperAdmin);
+      if (!allowed.includes(newRole)) {
+        return NextResponse.json(
+          { error: "You cannot assign this role" },
+          { status: 403 }
+        );
+      }
+      if (ctx.user?.id === targetUserId && newRole !== currentRole) {
+        return NextResponse.json(
+          { error: "You cannot change your own role" },
+          { status: 403 }
+        );
+      }
+    }
 
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (role && isFacilityRole(role) && FACILITY_ROLES.includes(role)) {
       updates.role = role;
     }
 
-    const { error } = await db
-      .from("facility_users")
-      .update(updates)
-      .eq("id", id);
+    const { error } = await db.from("facility_users").update(updates).eq("id", id);
 
     if (error) throw error;
 
     if (email !== undefined && facilityRow.user_id) {
-      const authAdmin = (db.auth as { admin?: { updateUserById: (id: string, attrs: { email?: string }) => Promise<unknown> } }).admin;
-      if (authAdmin) await authAdmin.updateUserById(facilityRow.user_id as string, { email: String(email).trim() || undefined });
+      const authAdmin = (
+        db.auth as {
+          admin?: {
+            updateUserById: (
+              id: string,
+              attrs: { email?: string }
+            ) => Promise<unknown>;
+          };
+        }
+      ).admin;
+      if (authAdmin) {
+        await authAdmin.updateUserById(facilityRow.user_id as string, {
+          email: String(email).trim() || undefined,
+        });
+      }
     }
 
     return NextResponse.json({ ok: true });

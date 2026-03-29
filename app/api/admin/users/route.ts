@@ -1,13 +1,19 @@
 /**
- * GET /api/admin/users — List facility users (admin/manager)
- * POST /api/admin/users — Create user (admin/manager)
+ * GET /api/admin/users — List facility users (admin panel only)
+ * POST /api/admin/users — Create user with password (advanced; prefer invites)
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, requireAdminUserManagement } from "@/lib/auth/server";
-import { FACILITY_ROLES, isFacilityRole } from "@/lib/auth/roles";
+import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
+import {
+  FACILITY_ROLES,
+  assignableFacilityRoles,
+  facilityRoleLabel,
+  isFacilityRole,
+  type FacilityRole,
+} from "@/lib/auth/roles";
 
-function normalizeRole(value: unknown): string {
+function normalizeRole(value: unknown): FacilityRole {
   if (typeof value !== "string") return "viewer";
   const role = value.trim().toLowerCase();
   if (role === "admin") return "facility_admin";
@@ -16,6 +22,35 @@ function normalizeRole(value: unknown): string {
   if (role === "viewer") return "viewer";
   if (isFacilityRole(role)) return role;
   return "viewer";
+}
+
+type AuthUserMeta = {
+  username?: string;
+  display_name?: string;
+  full_name?: string;
+  name?: string;
+  avatar_url?: string;
+};
+
+/**
+ * ENG-104: display_name → full_name → name → email local-part. Never use user id or UUID fragments.
+ * (Legacy `username` in metadata is not a display-name tier in the spec.)
+ */
+function resolveFullName(meta: AuthUserMeta | undefined, email: string): string {
+  const d =
+    (typeof meta?.display_name === "string" && meta.display_name.trim()) ||
+    (typeof meta?.full_name === "string" && meta.full_name.trim()) ||
+    (typeof meta?.name === "string" && meta.name.trim()) ||
+    "";
+  if (d) {
+    const looksLikeUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(d);
+    if (!looksLikeUuid) return d;
+  }
+  if (email && email.includes("@")) {
+    return email.split("@")[0] ?? "User";
+  }
+  return "User";
 }
 
 const supabaseConfigured =
@@ -34,8 +69,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json([]);
   }
 
-  const ctx = await getAuthContext(req);
-  const denied = requireAdminUserManagement(ctx, facilityId);
+  const ctx = await getAuthContext(req, { facilityIdHint: facilityId });
+  const denied = requireAdminPanel(ctx, facilityId);
   if (denied) return denied;
 
   try {
@@ -51,20 +86,11 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
 
     const emailById = new Map<string, string>();
-    const usernameById = new Map<string, string>();
-    const avatarById = new Map<string, string>();
+    const metaById = new Map<string, AuthUserMeta>();
+    const avatarById = new Map<string, string | null>();
+    const lastLoginById = new Map<string, string | null>();
     const missingUserIds = new Set<string>();
-    const resolveDisplayName = (meta?: {
-      username?: string;
-      display_name?: string;
-      full_name?: string;
-      name?: string;
-    }) =>
-      meta?.display_name ||
-      meta?.full_name ||
-      meta?.name ||
-      meta?.username ||
-      "";
+
     try {
       const listUsers = (db.auth as {
         admin?: {
@@ -73,13 +99,8 @@ export async function GET(req: NextRequest) {
               users?: Array<{
                 id: string;
                 email?: string;
-                user_metadata?: {
-                  username?: string;
-                  display_name?: string;
-                  full_name?: string;
-                  name?: string;
-                  avatar_url?: string;
-                };
+                last_sign_in_at?: string;
+                user_metadata?: AuthUserMeta;
               }>;
             };
           }>;
@@ -88,13 +109,8 @@ export async function GET(req: NextRequest) {
               user?: {
                 id: string;
                 email?: string;
-                user_metadata?: {
-                  username?: string;
-                  display_name?: string;
-                  full_name?: string;
-                  name?: string;
-                  avatar_url?: string;
-                };
+                last_sign_in_at?: string;
+                user_metadata?: AuthUserMeta;
               };
             };
           }>;
@@ -106,17 +122,23 @@ export async function GET(req: NextRequest) {
         const { data: listData } = await listUsersFn({ page: 1, perPage: 1000 });
         for (const au of listData?.users ?? []) {
           emailById.set(au.id, au.email ?? "");
-          const un = resolveDisplayName(au.user_metadata);
-          if (un) usernameById.set(au.id, un);
-          if (au.user_metadata?.avatar_url) avatarById.set(au.id, au.user_metadata.avatar_url);
+          metaById.set(au.id, au.user_metadata ?? {});
+          if (au.user_metadata?.avatar_url) {
+            avatarById.set(au.id, au.user_metadata.avatar_url);
+          }
+          if (au.last_sign_in_at) {
+            lastLoginById.set(au.id, au.last_sign_in_at);
+          }
         }
       }
 
-      // Resolve any IDs missing from listUsers (or when metadata is sparse).
       for (const u of facilityUsers ?? []) {
         const uid = String(u.user_id || "");
         if (!uid) continue;
-        if (!emailById.get(uid) || !usernameById.get(uid)) missingUserIds.add(uid);
+        const listed = emailById.has(uid) && metaById.has(uid);
+        const emailKnown = (emailById.get(uid) ?? "").trim().length > 0;
+        // Not in first listUsers page, or listUsers returned no email (refetch canonical auth row).
+        if (!listed || !emailKnown) missingUserIds.add(uid);
       }
       if (getUserById && missingUserIds.size > 0) {
         await Promise.all(
@@ -126,11 +148,15 @@ export async function GET(req: NextRequest) {
               const au = data?.user;
               if (!au) return;
               if (au.email) emailById.set(uid, au.email);
-              const un = resolveDisplayName(au.user_metadata);
-              if (un) usernameById.set(uid, un);
-              if (au.user_metadata?.avatar_url) avatarById.set(uid, au.user_metadata.avatar_url);
+              metaById.set(uid, au.user_metadata ?? {});
+              if (au.user_metadata?.avatar_url) {
+                avatarById.set(uid, au.user_metadata.avatar_url);
+              }
+              if (au.last_sign_in_at) {
+                lastLoginById.set(uid, au.last_sign_in_at);
+              }
             } catch {
-              // Keep fallback values below if lookup fails.
+              /* ignore */
             }
           })
         );
@@ -142,17 +168,20 @@ export async function GET(req: NextRequest) {
     const users = (facilityUsers ?? []).map((u) => {
       const uid = u.user_id as string;
       const email = emailById.get(uid) ?? "";
-      const fallbackName = email ? email.split("@")[0] : "User";
+      const meta = metaById.get(uid);
+      const role = normalizeRole(u.role);
+      const full_name = resolveFullName(meta, email);
       return {
         id: u.id,
         user_id: uid,
-        username: usernameById.get(uid) || fallbackName,
-        avatar_url: avatarById.get(uid) ?? null,
+        full_name,
         email,
-        role: normalizeRole(u.role),
+        role,
+        role_label: facilityRoleLabel(role),
         is_active: u.is_active ?? true,
-        last_login: null,
+        last_login: lastLoginById.get(uid) ?? null,
         created_at: u.created_at,
+        avatar_url: avatarById.get(uid) ?? null,
       };
     });
 
@@ -187,23 +216,43 @@ export async function POST(req: NextRequest) {
   }
 
   const ctx = await getAuthContext(req, { facilityIdHint: facility_id });
-  const denied = requireAdminUserManagement(ctx, facility_id);
+  const denied = requireAdminPanel(ctx, facility_id);
   if (denied) return denied;
 
-  const resolvedRole = isFacilityRole(role) ? role : "viewer";
+  const resolvedRole: FacilityRole = isFacilityRole(role) ? role : "viewer";
+  const allowed = assignableFacilityRoles(ctx.role, ctx.isSuperAdmin);
+  if (!allowed.includes(resolvedRole)) {
+    return NextResponse.json({ error: "You cannot assign this role" }, { status: 403 });
+  }
 
   try {
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
 
-    const authAdmin = (db.auth as { admin?: { createUser: (opts: { email: string; password: string; email_confirm?: boolean; user_metadata?: Record<string, unknown> }) => Promise<{ data: { user?: { id: string; email?: string } }; error: { message?: string } | null }> } }).admin;
+    const authAdmin = (db.auth as {
+      admin?: {
+        createUser: (opts: {
+          email: string;
+          password: string;
+          email_confirm?: boolean;
+          user_metadata?: Record<string, unknown>;
+        }) => Promise<{
+          data: { user?: { id: string; email?: string } };
+          error: { message?: string } | null;
+        }>;
+      };
+    }).admin;
     if (!authAdmin) throw new Error("Auth admin not available");
     const displayName = usernameTrim || loginEmail.split("@")[0] || "user";
     const { data: authData, error: authError } = await authAdmin.createUser({
       email: loginEmail,
       password,
       email_confirm: true,
-      user_metadata: { username: displayName, display_name: displayName },
+      user_metadata: {
+        username: displayName,
+        display_name: displayName,
+        full_name: displayName,
+      },
     });
 
     if (authError) {
@@ -234,7 +283,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         id: fuData?.id ?? userId,
-        username: displayName,
+        full_name: displayName,
         email: authData.user?.email ?? loginEmail,
       },
       { status: 201 }

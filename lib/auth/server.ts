@@ -243,6 +243,27 @@ export function requireAdminUserManagement(
   return requireFacilityRole(ctx, facilityId, ADMIN_USER_MANAGER_ROLES);
 }
 
+/**
+ * Admin panel APIs (/dashboard/admin): facility_admin or platform super admin only.
+ * Lab managers must not call these routes (ENG-104 / ENG-105).
+ */
+export function requireAdminPanel(
+  ctx: AuthContext,
+  facilityId: string
+): NextResponse | null {
+  const authErr = requireAuth(ctx);
+  if (authErr) return authErr;
+  if (ctx.isSuperAdmin) return null;
+  const perms = getPermissions(ctx.role, false);
+  if (!perms.canAccessAdminPanel) {
+    return jsonError("Forbidden", 403);
+  }
+  if (ctx.facilityId !== facilityId) {
+    return jsonError("Forbidden", 403);
+  }
+  return null;
+}
+
 export function requireRevenueAccess(
   ctx: AuthContext,
   facilityId: string

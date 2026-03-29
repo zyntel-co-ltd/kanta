@@ -110,3 +110,46 @@ export const REVENUE_ROLES: FacilityRole[] = [
   "facility_admin",
   "lab_manager",
 ];
+
+/** Human-readable labels for facility roles (admin UI). */
+export const FACILITY_ROLE_LABELS: Record<FacilityRole, string> = {
+  facility_admin: "Facility Admin",
+  lab_manager: "Lab Manager",
+  lab_technician: "Lab Technician",
+  viewer: "Viewer",
+};
+
+const ROLE_RANK: Record<FacilityRole, number> = {
+  facility_admin: 4,
+  lab_manager: 3,
+  lab_technician: 2,
+  viewer: 1,
+};
+
+export function roleRank(role: FacilityRole): number {
+  return ROLE_RANK[role] ?? 0;
+}
+
+/** Display label for a stored role string (normalizes legacy values). */
+export function facilityRoleLabel(role: string): string {
+  const r = role?.trim().toLowerCase();
+  if (r === "admin") return FACILITY_ROLE_LABELS.facility_admin;
+  if (r === "manager") return FACILITY_ROLE_LABELS.lab_manager;
+  if (r === "technician" || r === "reception") return FACILITY_ROLE_LABELS.lab_technician;
+  if (isFacilityRole(role)) return FACILITY_ROLE_LABELS[role];
+  return FACILITY_ROLE_LABELS.viewer;
+}
+
+/**
+ * Roles the actor may assign to others (cannot assign above own rank).
+ * Super admin may assign any facility role.
+ */
+export function assignableFacilityRoles(
+  actorRole: FacilityRole | null,
+  isSuperAdmin: boolean
+): FacilityRole[] {
+  if (isSuperAdmin) return [...FACILITY_ROLES];
+  if (!actorRole) return [];
+  const cap = roleRank(actorRole);
+  return FACILITY_ROLES.filter((x) => roleRank(x) <= cap);
+}
