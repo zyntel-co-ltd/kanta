@@ -198,7 +198,7 @@ export default function TestsPage() {
       {
         label: "Tests",
         data: trendValues,
-        backgroundColor: "#10b981",
+        backgroundColor: "#21336a",
         borderRadius: 4,
       },
     ],
@@ -238,7 +238,7 @@ export default function TestsPage() {
       {
         label: "Tests",
         data: topValues,
-        backgroundColor: "#059669",
+        backgroundColor: "#2d3f6e",
         borderRadius: 4,
         barThickness: 14,
       },

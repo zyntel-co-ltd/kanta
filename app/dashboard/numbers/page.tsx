@@ -160,7 +160,7 @@ export default function NumbersPage() {
   const dailyChartData: ChartData<"bar"> = {
     labels: dailyLabels,
     datasets: [
-      { label: "Requests", data: dailyValues, backgroundColor: "#10b981", borderRadius: 4 },
+      { label: "Requests", data: dailyValues, backgroundColor: "#21336a", borderRadius: 4 },
     ],
   };
   const dailyOptions: ChartOptions<"bar"> = {
@@ -195,7 +195,7 @@ export default function NumbersPage() {
   const hourlyChartData: ChartData<"bar"> = {
     labels: hourlyLabels,
     datasets: [
-      { label: "Requests", data: hourlyValues, backgroundColor: "#059669", borderRadius: 4 },
+      { label: "Requests", data: hourlyValues, backgroundColor: "#2d3f6e", borderRadius: 4 },
     ],
   };
   const hourlyOptions: ChartOptions<"bar"> = {

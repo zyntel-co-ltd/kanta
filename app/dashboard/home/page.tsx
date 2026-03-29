@@ -7,7 +7,6 @@ import {
   CircleDollarSign,
   ShieldCheck,
   LayoutDashboard,
-  ScanSearch,
   QrCode,
   Wrench,
   CalendarClock,
@@ -113,10 +112,10 @@ export default function DashboardHomePage() {
 
       {/* Brand hero — identity only */}
       <div
-        className="rounded-2xl overflow-hidden animate-slide-up stagger-1"
+        className="max-w-[780px] rounded-2xl overflow-hidden animate-slide-up stagger-1"
         style={{ background: "linear-gradient(145deg, #042f2e 0%, #065f46 55%, #047857 100%)" }}
       >
-        <div className="px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="px-6 py-3.5">
           <div>
             <div className="flex items-center gap-2.5 mb-2">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
@@ -138,22 +137,6 @@ export default function DashboardHomePage() {
             <p className="text-emerald-200/90 text-xs mt-1.5 font-medium">
               {HOSPITAL_DISPLAY_NAME}
             </p>
-            <Link
-              href="/dashboard/scan"
-              className="inline-flex items-center gap-2 mt-3 px-4 py-2 h-8 bg-white text-emerald-800 text-sm font-semibold rounded-lg hover:bg-emerald-50 transition-colors shadow-sm"
-            >
-              <ScanSearch size={18} strokeWidth={2} />
-              Scan equipment
-            </Link>
-          </div>
-          <div className="flex sm:flex-col gap-2 sm:gap-1.5 flex-shrink-0">
-            <div className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-              <span className="text-xs font-semibold text-white">System Online</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5">
-              <span className="text-[11px] text-emerald-200">Lab · QC · Assets</span>
-            </div>
           </div>
         </div>
       </div>

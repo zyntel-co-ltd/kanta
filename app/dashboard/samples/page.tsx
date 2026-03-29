@@ -78,13 +78,13 @@ const SUB_TABS: { id: SubTab; label: string; icon: typeof Grid3X3 }[] = [
 ];
 
 /* ═══════════════════════════════ STYLE HELPERS ══════════════════════ */
-const btnPrimary   = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 transition-colors";
+const btnPrimary   = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-sky-700 hover:bg-sky-800 transition-colors";
 const btnSecondary = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors";
 const btnDanger    = "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 transition-colors";
-const inputCls     = "w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 transition-all";
+const inputCls     = "w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400 transition-all";
 
 function statusBadge(s: RackStatus) {
-  if (s === "full")    return "bg-emerald-100 text-emerald-700";
+  if (s === "full")    return "bg-sky-100 text-sky-700";
   if (s === "partial") return "bg-amber-100  text-amber-700";
   return "bg-slate-100 text-slate-500";
 }
@@ -307,14 +307,14 @@ function RackGridView({
       {/* Progress bar */}
       <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
         <div
-          className="h-full bg-emerald-500 rounded-full transition-all"
+          className="h-full bg-sky-500 rounded-full transition-all"
           style={{ width: `${fillPct}%` }}
         />
       </div>
 
       {/* Alerts */}
       {error   && <div className="px-4 py-3 bg-red-50   border border-red-200   rounded-xl text-sm text-red-700">{error}</div>}
-      {success && <div className="px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">{success}</div>}
+      {success && <div className="px-4 py-3 bg-sky-50 border border-sky-200 rounded-xl text-sm text-sky-700">{success}</div>}
 
       {/* Grid + detail */}
       <div className="flex gap-4 items-start">
@@ -348,10 +348,10 @@ function RackGridView({
                     onClick={() => handleCellClick(pos)}
                     className={`w-9 h-9 rounded-lg border text-xs font-bold transition-all flex items-center justify-center ${
                       isSel
-                        ? "border-emerald-500 bg-emerald-500 text-white shadow-md scale-110"
+                        ? "border-sky-500 bg-sky-500 text-white shadow-md scale-110"
                         : samp
-                        ? "border-emerald-300 bg-emerald-100 text-emerald-700 hover:border-emerald-500 hover:bg-emerald-200"
-                        : "border-slate-200 bg-slate-50 text-slate-300 hover:border-emerald-300 hover:bg-emerald-50"
+                        ? "border-sky-300 bg-sky-100 text-sky-700 hover:border-sky-500 hover:bg-sky-200"
+                        : "border-slate-200 bg-slate-50 text-slate-300 hover:border-sky-300 hover:bg-sky-50"
                     }`}
                   >
                     {samp ? "●" : ""}
@@ -363,7 +363,7 @@ function RackGridView({
           {/* Legend */}
           <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100">
             <span className="flex items-center gap-1.5 text-xs text-slate-500">
-              <span className="w-4 h-4 rounded border border-emerald-300 bg-emerald-100 inline-block" /> Occupied
+              <span className="w-4 h-4 rounded border border-sky-300 bg-sky-100 inline-block" /> Occupied
             </span>
             <span className="flex items-center gap-1.5 text-xs text-slate-500">
               <span className="w-4 h-4 rounded border border-slate-200 bg-slate-50 inline-block" /> Empty
@@ -660,7 +660,7 @@ export default function SamplesPage() {
   /* ═══════════ Stat cards ═══════════ */
   const statCards = [
     { label: "Total Racks",        value: stats?.total_racks ?? "—",        color: "text-slate-800",   tab: "racks"     as SubTab },
-    { label: "Total Samples",      value: stats?.total_samples ?? "—",      color: "text-emerald-700", tab: "racks"     as SubTab },
+    { label: "Total Samples",      value: stats?.total_samples ?? "—",      color: "text-sky-700", tab: "racks"     as SubTab },
     { label: "Partial Racks",      value: stats?.rack_status?.partial ?? "—", color: "text-amber-700", tab: "racks"     as SubTab },
     { label: "Pending Discarding", value: stats?.pending_discarding ?? "—", color: "text-red-600",     tab: "pending"   as SubTab },
   ];
@@ -687,7 +687,7 @@ export default function SamplesPage() {
             onClick={() => { setSubTab(id); setViewRackId(null); }}
             className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all ${
               subTab === id
-                ? "border-emerald-500 text-emerald-700"
+                ? "border-sky-500 text-sky-700"
                 : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
             }`}
           >
@@ -708,7 +708,7 @@ export default function SamplesPage() {
                   key={label}
                   type="button"
                   onClick={() => setSubTab(tab)}
-                  className="bg-white rounded-2xl border border-slate-200 p-4 text-left hover:shadow-md hover:border-emerald-200 transition-all"
+                  className="bg-white rounded-2xl border border-slate-200 p-4 text-left hover:shadow-md hover:border-sky-200 transition-all"
                 >
                   <p className={`text-2xl font-bold tabular-nums leading-none ${color}`}>{value}</p>
                   <p className="text-xs text-slate-500 mt-1">{label}</p>
@@ -731,7 +731,7 @@ export default function SamplesPage() {
                   <button
                     type="button"
                     onClick={() => setSubTab("racks")}
-                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                    className="text-xs text-sky-600 hover:text-sky-700 font-medium"
                   >
                     View all
                   </button>
@@ -787,7 +787,7 @@ export default function SamplesPage() {
                       <div className="w-24">
                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-emerald-500 rounded-full"
+                            className="h-full bg-sky-500 rounded-full"
                             style={{ width: `${Math.round((r.total_samples / CAPACITY(r.rack_type)) * 100)}%` }}
                           />
                         </div>
@@ -860,7 +860,7 @@ export default function SamplesPage() {
                     const cap    = CAPACITY(r.rack_type);
                     const fillPct = Math.round((r.total_samples / cap) * 100);
                     return (
-                      <div key={r.id} className="bg-white rounded-2xl border border-slate-200 p-4 hover:shadow-md hover:border-emerald-200 transition-all flex flex-col gap-3">
+                      <div key={r.id} className="bg-white rounded-2xl border border-slate-200 p-4 hover:shadow-md hover:border-sky-200 transition-all flex flex-col gap-3">
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="font-semibold text-slate-900 text-sm truncate">{r.rack_name}</h3>
                           <span className={`inline-flex px-2 py-0.5 rounded-lg text-xs font-semibold flex-shrink-0 ${statusBadge(r.status)}`}>
@@ -880,7 +880,7 @@ export default function SamplesPage() {
 
                         {/* Progress bar */}
                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${fillPct}%` }} />
+                          <div className="h-full bg-sky-500 rounded-full transition-all" style={{ width: `${fillPct}%` }} />
                         </div>
 
                         <div className="flex gap-2">
@@ -917,7 +917,7 @@ export default function SamplesPage() {
             </div>
 
             {pendingMsg && (
-              <div className={`px-4 py-3 rounded-xl text-sm ${pendingMsg.type === "ok" ? "bg-emerald-50 border border-emerald-200 text-emerald-700" : "bg-red-50 border border-red-200 text-red-700"}`}>
+              <div className={`px-4 py-3 rounded-xl text-sm ${pendingMsg.type === "ok" ? "bg-sky-50 border border-sky-200 text-sky-700" : "bg-red-50 border border-red-200 text-red-700"}`}>
                 {pendingMsg.text}
               </div>
             )}
@@ -1034,7 +1034,7 @@ export default function SamplesPage() {
                     <label key={val} className="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" value={val} checked={searchField === val}
                         onChange={() => setSearchField(val)}
-                        className="accent-emerald-600" />
+                        className="accent-sky-600" />
                       <span className="text-sm text-slate-700">{lbl}</span>
                     </label>
                   ))}
@@ -1083,7 +1083,7 @@ export default function SamplesPage() {
                             {s.discarded_at ? (
                               <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">Discarded</span>
                             ) : (
-                              <span className="text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-medium">Active</span>
+                              <span className="text-xs bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded font-medium">Active</span>
                             )}
                           </div>
                           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">

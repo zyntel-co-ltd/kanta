@@ -37,8 +37,8 @@ const SHIFTS = [
 ];
 
 const SECTION_COLORS = [
-  "#10b981", "#059669", "#34d399", "#6ee7b7",
-  "#f59e0b", "#3b82f6", "#047857", "#ef4444",
+  "#21336a", "#2d3f6e", "#3b4f84", "#5a6fa8",
+  "#7f91c0", "#9fb0d6", "#c2cde6", "#d9e1f2",
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -176,8 +176,8 @@ export default function RevenuePage() {
       {
         label: "Revenue",
         data: dailyValues,
-        borderColor: "#10b981",
-        backgroundColor: "rgba(16,185,129,0.10)",
+        borderColor: "#21336a",
+        backgroundColor: "rgba(33,51,106,0.10)",
         borderWidth: 2,
         pointRadius: 0,
         tension: 0.35,
@@ -229,7 +229,7 @@ export default function RevenuePage() {
       {
         label: "Revenue",
         data: testValues,
-        backgroundColor: "#059669",
+        backgroundColor: "#2d3f6e",
         borderRadius: 4,
         barThickness: 14,
       },

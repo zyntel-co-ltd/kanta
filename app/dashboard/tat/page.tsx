@@ -376,11 +376,11 @@ export default function TATPage() {
   const perfLabels = perfSections.map((s) => s.section);
   const perfCountData: ChartData<"bar"> = {
     labels: perfLabels,
-    datasets: [{ label: "Tests", data: perfSections.map((s) => s.count), backgroundColor: "#10b981", borderRadius: 4, barThickness: 14 }],
+    datasets: [{ label: "Tests", data: perfSections.map((s) => s.count), backgroundColor: "#21336a", borderRadius: 4, barThickness: 14 }],
   };
   const perfTatData: ChartData<"bar"> = {
     labels: perfLabels,
-    datasets: [{ label: "Avg TAT (min)", data: perfSections.map((s) => s.avgTat), backgroundColor: "#f59e0b", borderRadius: 4, barThickness: 14 }],
+    datasets: [{ label: "Avg TAT (min)", data: perfSections.map((s) => s.avgTat), backgroundColor: "#2d3f6e", borderRadius: 4, barThickness: 14 }],
   };
   const perfBarOpts: ChartOptions<"bar"> = {
     indexAxis: "y",
