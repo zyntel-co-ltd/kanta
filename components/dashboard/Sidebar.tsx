@@ -73,18 +73,18 @@ function SidebarCollapseGlyph({ sidebarExpanded }: { sidebarExpanded: boolean })
   return (
     <span
       className={clsx(
-        "flex h-8 w-8 items-stretch overflow-hidden rounded-[10px] shadow-sm ring-1 ring-slate-900/12",
+        "flex h-6 w-6 items-stretch overflow-hidden rounded-[8px] shadow-sm ring-1 ring-slate-900/12",
         !sidebarExpanded && "scale-x-[-1]"
       )}
       aria-hidden
     >
       <span className="flex min-w-0 flex-1 items-center justify-center bg-[var(--sidebar-active-bg)]">
-        <ArrowLeft className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.5} />
+        <ArrowLeft className="h-2.5 w-2.5 shrink-0 text-white" strokeWidth={2.5} />
       </span>
-      <span className="flex w-[8px] shrink-0 flex-col items-center justify-center gap-[3px] bg-white py-1">
-        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
-        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
-        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
+      <span className="flex w-[6px] shrink-0 flex-col items-center justify-center gap-[2px] bg-white py-0.5">
+        <span className="h-[2px] w-[2px] rounded-full bg-[var(--sidebar-active-bg)]" />
+        <span className="h-[2px] w-[2px] rounded-full bg-[var(--sidebar-active-bg)]" />
+        <span className="h-[2px] w-[2px] rounded-full bg-[var(--sidebar-active-bg)]" />
       </span>
     </span>
   );
@@ -484,7 +484,7 @@ export default function Sidebar() {
 
       {/* ── Nav ── */}
       <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-visible py-4 flex flex-col">
-        <div className={clsx("flex-1", collapsed ? "px-1" : "px-3")}>
+        <div className="flex-1 px-3">
           {navGroups.map((group) => {
             /* ── Collapsible accordion group (Quality Management) ── */
             if (group.collapsible) {
@@ -512,7 +512,7 @@ export default function Sidebar() {
                   {/* Parent row: icon + label + chevron toggle */}
                   <div className="relative">
                     {/* Active module indicator (left edge) */}
-                    {isCollapsibleActive && (
+                    {isCollapsibleActive && !collapsed && (
                       <span
                         className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]"
                       />
