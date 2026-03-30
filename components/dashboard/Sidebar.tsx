@@ -45,7 +45,6 @@ import {
   TestTubes,
   QrCode,
   CalendarClock,
-  ArrowLeft,
   Table2,
 } from "lucide-react";
 
@@ -69,31 +68,8 @@ type NavGroup = {
   };
 };
 
-/**
- * Collapse control matching the reference “sidebar rail” glyph: rounded square, wide pane with
- * left arrow, narrow white gutter with three dots (solid + gutter style — e.g. 4th icon in ref).
- * Flips horizontally when collapsed so the arrow reads as “expand”.
- */
-function SidebarCollapseGlyph({ sidebarExpanded }: { sidebarExpanded: boolean }) {
-  return (
-    <span
-      className={clsx(
-        "flex h-8 w-8 items-stretch overflow-hidden rounded-[10px] shadow-sm ring-1 ring-slate-900/12",
-        !sidebarExpanded && "scale-x-[-1]"
-      )}
-      aria-hidden
-    >
-      <span className="flex min-w-0 flex-1 items-center justify-center bg-[var(--sidebar-active-bg)]">
-        <ArrowLeft className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.5} />
-      </span>
-      <span className="flex w-[8px] shrink-0 flex-col items-center justify-center gap-[3px] bg-white py-1">
-        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
-        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
-        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
-      </span>
-    </span>
-  );
-}
+// Collapse glyph and toggle live in `DashboardChrome` now (so the control is positioned
+// relative to the sidebar wrapper and won't be clipped/hidden).
 
 const navGroupsBase: NavGroup[] = [
   { title: "Home", items: [{ label: "Home", icon: Home, href: "/dashboard/home" }] },
@@ -405,7 +381,7 @@ export default function Sidebar() {
       showTatTestLevel,
     },
   });
-  const { collapsed, setCollapsed } = useSidebarLayout();
+  const { collapsed } = useSidebarLayout();
   const [moduleAttr, setModuleAttr] = useState<string>(() => readModuleAttr());
   const isHomeHub = moduleAttr === "home";
   const [openGroup, setOpenGroup] = useState<string | null>(null);
@@ -715,22 +691,6 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* ── Collapse toggle ── */}
-      <Tooltip label={collapsed ? "Expand sidebar" : "Collapse sidebar"} side="right">
-        <button
-          type="button"
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className={clsx(
-            "absolute -right-3.5 top-[72px] -translate-y-1/2 z-50 flex items-center justify-center rounded-[12px] p-0",
-            "border-0 bg-transparent shadow-none",
-            "transition-transform duration-200 hover:scale-[1.06] active:scale-[0.96]",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-active-bg)] focus-visible:ring-offset-2"
-          )}
-        >
-          <SidebarCollapseGlyph sidebarExpanded={!collapsed} />
-        </button>
-      </Tooltip>
     </aside>
   );
 }
