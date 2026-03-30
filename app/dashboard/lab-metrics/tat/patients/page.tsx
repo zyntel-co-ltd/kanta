@@ -5,7 +5,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import { useAuth } from "@/lib/AuthContext";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useFlag } from "@/lib/featureFlags";
-import { isProfessionalOrAbove } from "@/lib/subscriptionTier";
+import { isAdminAccount, isProfessionalOrAbove } from "@/lib/subscriptionTier";
 import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
 import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
 import TatPatientLevelTab from "@/components/tat/TatPatientLevelTab";
@@ -15,6 +15,12 @@ export default function TatPatientLevelPage() {
   const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
   const showTatPatientLevel = useFlag("show-tat-patient-level");
   const professional = isProfessionalOrAbove(facilityAuth?.subscriptionTier);
+  const adminAccount = isAdminAccount({
+    isSuperAdmin: facilityAuth?.isSuperAdmin,
+    canAccessAdminPanel: facilityAuth?.canAccessAdminPanel,
+    canAccessAdmin: facilityAuth?.canAccessAdmin,
+  });
+  const unlocked = (professional && showTatPatientLevel) || adminAccount;
   const {
     loading: labConfigLoading,
     sectionFilterOptions,
@@ -41,7 +47,7 @@ export default function TatPatientLevelPage() {
     );
   }
 
-  if (!showTatPatientLevel || !professional) {
+  if (!unlocked) {
     return (
       <div className="min-h-[40vh] flex flex-col items-center justify-center text-center px-6 max-w-lg mx-auto">
         <Timer size={32} className="text-slate-300 mb-3" />

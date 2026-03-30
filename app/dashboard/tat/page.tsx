@@ -10,7 +10,7 @@ import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty"
 import TatPatientLevelTab from "@/components/tat/TatPatientLevelTab";
 import TatTestsLevelTab from "@/components/tat/TatTestsLevelTab";
 import { useFlag } from "@/lib/featureFlags";
-import { isProfessionalOrAbove } from "@/lib/subscriptionTier";
+import { isAdminAccount, isProfessionalOrAbove } from "@/lib/subscriptionTier";
 
 type TatTab = "patients" | "tests" | "reception" | "volume";
 
@@ -35,6 +35,13 @@ export default function TATPage() {
   const showTatTestLevel = useFlag("show-tat-test-level");
   const showTatPatientLevel = useFlag("show-tat-patient-level");
   const professional = isProfessionalOrAbove(facilityAuth?.subscriptionTier);
+  const adminAccount = isAdminAccount({
+    isSuperAdmin: facilityAuth?.isSuperAdmin,
+    canAccessAdminPanel: facilityAuth?.canAccessAdminPanel,
+    canAccessAdmin: facilityAuth?.canAccessAdmin,
+  });
+  const canUsePatientTracking = (professional && showTatPatientLevel) || adminAccount;
+  const canUseTestTracking = (professional && showTatTestLevel) || adminAccount;
 
   const requested = (searchParams.get("tab") || "patients") as TatTab;
   const activeTab: TatTab = TAT_TABS.some((t) => t.id === requested) ? requested : "patients";
@@ -88,7 +95,7 @@ export default function TATPage() {
         )}
 
         {activeTab === "patients" && (
-          showTatPatientLevel && professional ? (
+          canUsePatientTracking ? (
             <TatPatientLevelTab
               facilityId={facilityId}
               sectionFilterOptions={sectionFilterOptions}
@@ -103,7 +110,7 @@ export default function TATPage() {
 
         {activeTab === "tests" && (
           <div className="space-y-4">
-            {showTatTestLevel && professional ? (
+            {canUseTestTracking ? (
               <TatTestsLevelTab
                 facilityId={facilityId}
                 sectionFilterOptions={sectionFilterOptions}
@@ -114,7 +121,7 @@ export default function TATPage() {
                 Test Tracker is available for Professional facilities.
               </div>
             )}
-            {showTatTestLevel && professional && (
+            {canUseTestTracking && (
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm text-slate-600">
                 <span className="font-medium text-slate-700">Professional tracker: </span>
                 <Link href="/dashboard/lab-metrics/tat/tests" className="font-semibold text-[#21336a] hover:underline">

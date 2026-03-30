@@ -9,3 +9,11 @@ export function isProfessionalOrAbove(tier: string | null | undefined): boolean 
     t === "advanced"
   );
 }
+
+export function isAdminAccount(input: {
+  isSuperAdmin?: boolean | null;
+  canAccessAdminPanel?: boolean | null;
+  canAccessAdmin?: boolean | null;
+}): boolean {
+  return !!(input.isSuperAdmin || input.canAccessAdminPanel || input.canAccessAdmin);
+}
