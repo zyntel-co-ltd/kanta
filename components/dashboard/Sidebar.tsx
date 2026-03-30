@@ -73,18 +73,18 @@ function SidebarCollapseGlyph({ sidebarExpanded }: { sidebarExpanded: boolean })
   return (
     <span
       className={clsx(
-        "flex h-6 w-6 items-stretch overflow-hidden rounded-[8px] shadow-sm ring-1 ring-slate-900/12",
+        "flex h-5 w-5 items-stretch overflow-hidden rounded-[7px] shadow-sm ring-1 ring-slate-900/12",
         !sidebarExpanded && "scale-x-[-1]"
       )}
       aria-hidden
     >
       <span className="flex min-w-0 flex-1 items-center justify-center bg-[var(--sidebar-active-bg)]">
-        <ArrowLeft className="h-2.5 w-2.5 shrink-0 text-white" strokeWidth={2.5} />
+        <ArrowLeft className="h-2 w-2 shrink-0 text-white" strokeWidth={2.5} />
       </span>
-      <span className="flex w-[6px] shrink-0 flex-col items-center justify-center gap-[2px] bg-white py-0.5">
-        <span className="h-[2px] w-[2px] rounded-full bg-[var(--sidebar-active-bg)]" />
-        <span className="h-[2px] w-[2px] rounded-full bg-[var(--sidebar-active-bg)]" />
-        <span className="h-[2px] w-[2px] rounded-full bg-[var(--sidebar-active-bg)]" />
+      <span className="flex w-[5px] shrink-0 flex-col items-center justify-center gap-[1.5px] bg-white py-0.5">
+        <span className="h-[1.5px] w-[1.5px] rounded-full bg-[var(--sidebar-active-bg)]" />
+        <span className="h-[1.5px] w-[1.5px] rounded-full bg-[var(--sidebar-active-bg)]" />
+        <span className="h-[1.5px] w-[1.5px] rounded-full bg-[var(--sidebar-active-bg)]" />
       </span>
     </span>
   );
@@ -529,7 +529,7 @@ export default function Sidebar() {
                           }}
                           className={clsx(
                             "relative z-[1] flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none flex-1",
-                            collapsed ? "justify-center px-0" : "gap-3 px-4",
+                            collapsed ? "justify-center px-0 translate-x-0.5" : "gap-3 px-4",
                             isCollapsibleActive
                               ? clsx(
                                   "bg-[var(--sidebar-active-bg)] text-white shadow-sm",
@@ -667,7 +667,7 @@ export default function Sidebar() {
                             href={href}
                             className={clsx(
                               "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1] w-full",
-                              collapsed ? "justify-center px-0" : "gap-3 px-4",
+                              collapsed ? "justify-center px-0 translate-x-0.5" : "gap-3 px-4",
                               active
                                 ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
                                 : "text-slate-700 hover:bg-slate-100"
