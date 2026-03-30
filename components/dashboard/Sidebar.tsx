@@ -45,6 +45,7 @@ import {
   TestTubes,
   QrCode,
   CalendarClock,
+  ArrowLeft,
   Table2,
 } from "lucide-react";
 
@@ -68,8 +69,26 @@ type NavGroup = {
   };
 };
 
-// Collapse glyph and toggle live in `DashboardChrome` now (so the control is positioned
-// relative to the sidebar wrapper and won't be clipped/hidden).
+function SidebarCollapseGlyph({ sidebarExpanded }: { sidebarExpanded: boolean }) {
+  return (
+    <span
+      className={clsx(
+        "flex h-8 w-8 items-stretch overflow-hidden rounded-[10px] shadow-sm ring-1 ring-slate-900/12",
+        !sidebarExpanded && "scale-x-[-1]"
+      )}
+      aria-hidden
+    >
+      <span className="flex min-w-0 flex-1 items-center justify-center bg-[var(--sidebar-active-bg)]">
+        <ArrowLeft className="h-3.5 w-3.5 shrink-0 text-white" strokeWidth={2.5} />
+      </span>
+      <span className="flex w-[8px] shrink-0 flex-col items-center justify-center gap-[3px] bg-white py-1">
+        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
+        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
+        <span className="h-[3px] w-[3px] rounded-full bg-[var(--sidebar-active-bg)]" />
+      </span>
+    </span>
+  );
+}
 
 const navGroupsBase: NavGroup[] = [
   { title: "Home", items: [{ label: "Home", icon: Home, href: "/dashboard/home" }] },
@@ -381,7 +400,7 @@ export default function Sidebar() {
       showTatTestLevel,
     },
   });
-  const { collapsed } = useSidebarLayout();
+  const { collapsed, setCollapsed } = useSidebarLayout();
   const iconSize = collapsed ? 22 : 16;
   const [moduleAttr, setModuleAttr] = useState<string>(() => readModuleAttr());
   const isHomeHub = moduleAttr === "home";
@@ -409,11 +428,11 @@ export default function Sidebar() {
       {/* ── Header ── */}
       <div
         className={clsx(
-          "flex-shrink-0 flex items-center py-3 border-b border-slate-200",
+          "flex-shrink-0 flex items-center py-3 border-b border-slate-200 relative",
           collapsed ? "justify-center px-0" : "px-5 gap-3"
         )}
       >
-        <Link href="/dashboard/home" className={clsx("flex items-center focus:outline-none", collapsed ? "justify-center" : "gap-3")}>
+        <Link href="/dashboard/home" className={clsx("flex items-center focus:outline-none flex-1", collapsed ? "justify-center" : "gap-3")}>
           {hospitalLogoUrl ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -445,11 +464,27 @@ export default function Sidebar() {
             />
           )}
         </Link>
+
+        <Tooltip label={collapsed ? "Expand sidebar" : "Collapse sidebar"} side="right">
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={clsx(
+              "absolute -right-3.5 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center",
+              "border-0 bg-transparent shadow-none p-0",
+              "transition-transform duration-200 hover:scale-[1.06] active:scale-[0.96]",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-active-bg)] focus-visible:ring-offset-2"
+            )}
+          >
+            <SidebarCollapseGlyph sidebarExpanded={!collapsed} />
+          </button>
+        </Tooltip>
       </div>
 
       {/* ── Nav ── */}
       <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-visible py-4 flex flex-col">
-        <div className={clsx("flex-1", collapsed ? "px-0" : "px-3")}>
+        <div className={clsx("flex-1", collapsed ? "px-1" : "px-3")}>
           {navGroups.map((group) => {
             /* ── Collapsible accordion group (Quality Management) ── */
             if (group.collapsible) {
@@ -624,7 +659,7 @@ export default function Sidebar() {
 
                     return (
                       <div key={itemKey} className="relative">
-                        {active && (
+                        {active && !collapsed && (
                           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]" />
                         )}
                         <Tooltip label={label} side="right" className={clsx(!collapsed && "contents")}>
