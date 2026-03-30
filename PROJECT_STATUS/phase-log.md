@@ -18,7 +18,7 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 - [x] **PageLoader / LoadingBars** — Lab-metrics bar animation centralized in `components/ui/PageLoader.tsx`; dashboard route `loading.tsx` files drop per-color spinners; auth (`AuthGuard`, login/confirm, `HomeGate`, `ConfirmClient`), equipment/maintenance/refrigerator/admin/intelligence, samples lists, tracker/reception/progress, QC inline rows, meta summary, public LRIDS, `AdminUsersSection` use the same pattern (`onDark` where needed).
 - [x] **Lab Metrics config gate** — `labConfigLoading` prevents `LabMetricsConfigEmpty` until `/api/facility/lab-config` resolves (TAT, Tests, Numbers, Revenue, Meta).
 - [x] **Samples rack grid** — `RackGridView` fluid CSS grid + gaps for wider cells in `app/dashboard/samples/page.tsx`.
-- [x] **Sidebar collapse** — Toggle `top-[72px]`; `DashboardChrome` sidebar column wrapper `overflow-visible` for protruding control.
+- [x] **Sidebar collapse** — Toggle control positioned at `top-4` / `right-1`; `DashboardChrome` sidebar column wrapper `overflow-visible` for protruding control.
 - [x] **QC UI vs module theme** — `app/dashboard/qc/page.tsx` (quant + qual tabs) and `components/qc/QuantitativeQCTab.tsx` use `qualityQc` CSS variables / `module-accent-*` instead of emerald utilities; L-J chart line color aligned to `#0284c7`.
 
 ### 2026-03-29 — Hospital display name + LRIDS branding + Admin vs Hospital Settings nav
@@ -28,6 +28,11 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 - [x] **`GET /api/tat/lrids`** — Also returns `hospital_name` / `hospital_logo_url` from `hospitals` for the `facility_id`; public `app/kanta/[facility]/lrids/page.tsx` consumes them for header/footer.
 - [x] **`GET /api/admin/hospital` stub** — Unconfigured Supabase mock uses env or `"Hospital"`.
 - [x] **`isNavActive` in `Sidebar.tsx`** — `/dashboard/admin/hospital` no longer marks **Admin** as active.
+
+### 2026-03-30 — Sidebar UX: LRIDS reveal on home + keep collapse pill visible
+
+- [x] **Lab Metrics accordion auto-open** — On `/dashboard/home`, keep the “Lab Metrics” accordion open so nested `LRIDS` appears when `show-lrids` is enabled.
+- [x] **Collapse toggle visibility** — Ensure the sidebar collapse pill stays visible (moved from `top-[72px]` / negative-right offset to `top-4` / `right-1`).
 
 ---
 # Kanta — Project Status & Functional Specification

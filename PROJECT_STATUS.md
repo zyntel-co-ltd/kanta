@@ -25,7 +25,7 @@ Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/
 - **Loading UI:** `components/ui/PageLoader.tsx` exports staggered **LoadingBars** (lab-metrics style) using `var(--module-primary)`; route `loading.tsx` files and in-page waits (auth, samples, refrigerator, maintenance, equipment, admin, tracker/reception/progress, QC, meta, etc.) use the same pattern.
 - **Lab Metrics:** `LabMetricsConfigEmpty` shows only after facility lab config fetch completes (`!labConfigLoading && !hasConfiguredSections`) on TAT, Tests, Numbers, Revenue, Meta — avoids a false “no sections” flash.
 - **Samples → Racks:** rack grid uses CSS grid + column `minmax` + gaps so cells use horizontal space in the card.
-- **Sidebar:** collapse control at `top-[72px]` (below header band); `DashboardChrome` wraps the sidebar in an `overflow-visible` column so the `-right-3.5` toggle is not clipped.
+- **Sidebar:** collapse control positioned at `top-4` / `right-1` inside the sidebar; `DashboardChrome` wraps the sidebar in an `overflow-visible` column so protruding controls remain clickable.
 - **QC Management:** quantitative and qualitative tabs in `app/dashboard/qc/page.tsx` plus `components/qc/QuantitativeQCTab.tsx` use **qualityQc** module tokens (`module-accent-text`, `module-accent-soft-text`, `var(--module-primary*)`) instead of hardcoded emerald/green.
 
 ## App / ops (2026-03-29 — hospital branding & sidebar nav)
