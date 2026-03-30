@@ -373,7 +373,11 @@ function accordionGroupForPath(pathname: string): string | null {
     "/dashboard/analytics",
     "/dashboard/reports",
   ];
-  if (assetPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+  if (
+    assetPaths.some((p) =>
+      p === "/dashboard" ? pathname === "/dashboard" : pathname === p || pathname.startsWith(p + "/")
+    )
+  ) {
     return "Asset Management";
   }
   return null;

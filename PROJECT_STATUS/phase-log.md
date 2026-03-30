@@ -34,6 +34,10 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 - [x] **Lab Metrics accordion auto-open** — On `/dashboard/home`, keep the “Lab Metrics” accordion open so nested `LRIDS` appears when `show-lrids` is enabled.
 - [x] **Collapse toggle visibility** — Ensure the sidebar collapse pill stays visible (moved from `top-[72px]` / negative-right offset to `top-4` / `right-1`).
 
+### 2026-03-30 — Sidebar accordion route matching hardening
+
+- [x] **Asset Management false-open fix** — In `accordionGroupForPath()` (`components/dashboard/Sidebar.tsx`), treat `"/dashboard"` as an exact-match route instead of a broad prefix so System routes (`/dashboard/settings`, `/dashboard/admin`, etc.) no longer auto-expand Asset Management.
+
 ---
 # Kanta — Project Status & Functional Specification
 

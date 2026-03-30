@@ -35,3 +35,7 @@ Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/
 - **Public LRIDS:** `GET /api/tat/lrids` returns `hospital_name` / `hospital_logo_url` from `hospitals` for the requested `facility_id`; `app/kanta/[facility]/lrids/page.tsx` shows header/footer branding from that payload (env logo fallback).
 - **`GET /api/admin/hospital`** (Supabase off): mock `name` uses env or `"Hospital"`, not a fixed Zyntel string.
 - **Sidebar active state:** `isNavActive` treats `/dashboard/admin` separately so **`/dashboard/admin/hospital` does not highlight “Admin”** — only Hospital Settings is active there.
+
+## App / ops (2026-03-30 — sidebar route matching)
+
+- **System vs Asset accordion behavior:** `components/dashboard/Sidebar.tsx` `accordionGroupForPath()` now treats `"/dashboard"` as an exact match; Asset Management no longer auto-expands when opening System pages (`/dashboard/settings`, `/dashboard/admin`, `/dashboard/departments`).
