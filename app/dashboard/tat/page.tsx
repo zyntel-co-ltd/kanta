@@ -10,6 +10,7 @@ import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty"
 import TatPatientLevelTab from "@/components/tat/TatPatientLevelTab";
 import TatTestsLevelTab from "@/components/tat/TatTestsLevelTab";
 import { useFlag } from "@/lib/featureFlags";
+import { isProfessionalOrAbove } from "@/lib/subscriptionTier";
 
 type TatTab = "patients" | "tests" | "reception" | "volume";
 
@@ -32,6 +33,8 @@ export default function TATPage() {
     hasConfiguredSections,
   } = useFacilityConfig(facilityId);
   const showTatTestLevel = useFlag("show-tat-test-level");
+  const showTatPatientLevel = useFlag("show-tat-patient-level");
+  const professional = isProfessionalOrAbove(facilityAuth?.subscriptionTier);
 
   const requested = (searchParams.get("tab") || "patients") as TatTab;
   const activeTab: TatTab = TAT_TABS.some((t) => t.id === requested) ? requested : "patients";
@@ -85,21 +88,33 @@ export default function TATPage() {
         )}
 
         {activeTab === "patients" && (
-          <TatPatientLevelTab
-            facilityId={facilityId}
-            sectionFilterOptions={sectionFilterOptions}
-            resolveSectionLabel={resolveSectionLabel}
-          />
-        )}
-
-        {activeTab === "tests" && (
-          <div className="space-y-4">
-            <TatTestsLevelTab
+          showTatPatientLevel && professional ? (
+            <TatPatientLevelTab
               facilityId={facilityId}
               sectionFilterOptions={sectionFilterOptions}
               resolveSectionLabel={resolveSectionLabel}
             />
-            {showTatTestLevel && (
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+              Patient Tracking is available for Professional facilities.
+            </div>
+          )
+        )}
+
+        {activeTab === "tests" && (
+          <div className="space-y-4">
+            {showTatTestLevel && professional ? (
+              <TatTestsLevelTab
+                facilityId={facilityId}
+                sectionFilterOptions={sectionFilterOptions}
+                resolveSectionLabel={resolveSectionLabel}
+              />
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+                Test Tracker is available for Professional facilities.
+              </div>
+            )}
+            {showTatTestLevel && professional && (
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm text-slate-600">
                 <span className="font-medium text-slate-700">Professional tracker: </span>
                 <Link href="/dashboard/lab-metrics/tat/tests" className="font-semibold text-[#21336a] hover:underline">

@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
 
       return {
         id: r.id,
-        lab_number_masked: maskLabNumber(r.lab_number),
+        lab_number_masked: maskLabNumber(r.lab_number, r.requested_at),
         test_name: r.test_name,
         section: r.section,
         status: r.status,

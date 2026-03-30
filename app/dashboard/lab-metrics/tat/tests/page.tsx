@@ -10,6 +10,7 @@ import AvailableWhenOnline from "@/components/ui/AvailableWhenOnline";
 import Skeleton from "@/components/ui/Skeleton";
 import { useSyncQueue } from "@/lib/SyncQueueContext";
 import { computeTatPatientStatus, type TatStatusKind } from "@/lib/tat/patientStatus";
+import { isProfessionalOrAbove } from "@/lib/subscriptionTier";
 import { Timer } from "lucide-react";
 
 type TrackerApiRow = {
@@ -62,6 +63,7 @@ export default function TestLevelTatTrackerPage() {
   const { isOnline } = useSyncQueue();
   const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
   const showTatTestLevel = useFlag("show-tat-test-level");
+  const professional = isProfessionalOrAbove(facilityAuth?.subscriptionTier);
   const {
     loading: labConfigLoading,
     sectionFilterOptions,
@@ -165,7 +167,7 @@ export default function TestLevelTatTrackerPage() {
     );
   }
 
-  if (!showTatTestLevel) {
+  if (!showTatTestLevel || !professional) {
     return (
       <div className="min-h-[40vh] flex flex-col items-center justify-center text-center px-6 max-w-lg mx-auto">
         <Timer size={32} className="text-slate-300 mb-3" />

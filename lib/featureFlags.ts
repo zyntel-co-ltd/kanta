@@ -14,6 +14,7 @@ export const KANTA_FEATURE_FLAG_NAMES = [
   "show-reception-tab",
   "show-refrigerator-module",
   "show-sample-scan",
+  "show-tat-patient-level",
   "show-tat-test-level",
 ] as const;
 
