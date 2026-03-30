@@ -17,7 +17,6 @@ const TAT_TABS: { id: TatTab; label: string }[] = [
   { id: "patients", label: "Patient Tracking" },
   { id: "tests", label: "Test Tracker" },
   { id: "reception", label: "Section Capture" },
-  { id: "volume", label: "Volume" },
 ];
 
 export default function TATPage() {
@@ -74,12 +73,12 @@ export default function TATPage() {
       </div>
 
       <div className="p-6 space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            {TAT_TABS.find((t) => t.id === activeTab)?.label ?? "TAT"}
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">{headerNote}</p>
-        </div>
+        {activeTab === "reception" && (
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Section Capture</h1>
+            <p className="text-sm text-slate-500 mt-0.5">{headerNote}</p>
+          </div>
+        )}
 
         {!labConfigLoading && !hasConfiguredSections && (
           <LabMetricsConfigEmpty canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel} />
