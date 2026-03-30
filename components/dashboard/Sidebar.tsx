@@ -350,11 +350,6 @@ function accordionGroupForPath(pathname: string): string | null {
   ) {
     return "Quality & samples";
   }
-  // ENG-101 / ENG-63: `/dashboard/home` is the main landing page and should
-  // still reveal nested Lab Metrics items like LRIDS (when enabled).
-  if (pathname === "/dashboard/home") {
-    return "Lab Metrics";
-  }
   const labPaths = [
     "/dashboard/lab-analytics",
     "/dashboard/tat",
