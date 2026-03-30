@@ -382,7 +382,7 @@ export default function Sidebar() {
     },
   });
   const { collapsed } = useSidebarLayout();
-  const iconSize = collapsed ? 20 : 16;
+  const iconSize = collapsed ? 22 : 16;
   const [moduleAttr, setModuleAttr] = useState<string>(() => readModuleAttr());
   const isHomeHub = moduleAttr === "home";
   const [openGroup, setOpenGroup] = useState<string | null>(null);
@@ -631,7 +631,7 @@ export default function Sidebar() {
                           <Link
                             href={href}
                             className={clsx(
-                              "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1]",
+                              "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1] w-full",
                               collapsed ? "justify-center px-0" : "gap-3 px-4",
                               active
                                 ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"

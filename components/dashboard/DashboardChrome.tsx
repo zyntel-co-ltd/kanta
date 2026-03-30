@@ -52,7 +52,8 @@ export default function DashboardChrome({ children }: { children: React.ReactNod
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className={clsx(
               // Positioned along the right edge near the header band (matches the ref pill).
-              "absolute -right-2.5 top-[72px] -translate-y-1/2 z-50 flex items-center justify-center rounded-[12px] p-0",
+              // Use vertical center to match the reference screenshot.
+              "absolute -right-2.5 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center rounded-[12px] p-0",
               "border-0 bg-transparent shadow-none",
               "transition-transform duration-200 hover:scale-[1.06] active:scale-[0.96]",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-active-bg)] focus-visible:ring-offset-2"
