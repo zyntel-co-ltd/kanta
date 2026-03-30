@@ -382,6 +382,7 @@ export default function Sidebar() {
     },
   });
   const { collapsed } = useSidebarLayout();
+  const iconSize = collapsed ? 20 : 16;
   const [moduleAttr, setModuleAttr] = useState<string>(() => readModuleAttr());
   const isHomeHub = moduleAttr === "home";
   const [openGroup, setOpenGroup] = useState<string | null>(null);
@@ -448,7 +449,7 @@ export default function Sidebar() {
 
       {/* ── Nav ── */}
       <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-visible py-4 flex flex-col">
-        <div className="flex-1 px-3">
+        <div className={clsx("flex-1", collapsed ? "px-0" : "px-3")}>
           {navGroups.map((group) => {
             /* ── Collapsible accordion group (Quality Management) ── */
             if (group.collapsible) {
@@ -502,7 +503,7 @@ export default function Sidebar() {
                               : "text-slate-700 hover:bg-slate-100"
                           )}
                         >
-                          <ParentIcon size={16} strokeWidth={1.8} className="flex-shrink-0" />
+                          <ParentIcon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
                           {!collapsed && (
                             <span className="truncate text-sm font-medium">{group.title}</span>
                           )}
@@ -578,7 +579,7 @@ export default function Sidebar() {
                                       : "text-slate-700 hover:bg-slate-100"
                                   )}
                                 >
-                                  <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
+                                  <Icon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
                                   <span className="truncate text-xs font-medium">{label}</span>
                                 </button>
                               ) : (
@@ -591,7 +592,7 @@ export default function Sidebar() {
                                       : "text-slate-700 hover:bg-slate-100"
                                   )}
                                 >
-                                  <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
+                                  <Icon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
                                   <span className="truncate text-xs font-medium">{label}</span>
                                 </Link>
                               )}
@@ -637,7 +638,7 @@ export default function Sidebar() {
                                 : "text-slate-700 hover:bg-slate-100"
                             )}
                           >
-                            <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
+                            <Icon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
                             {!collapsed && <span className="truncate text-sm font-medium">{label}</span>}
                           </Link>
                         </Tooltip>
