@@ -43,7 +43,20 @@ export async function GET(req: NextRequest): Promise<NextResponse<ApiResponse<Eq
 export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{ id: string; qr_code: string }>>> {
   try {
     const body = await req.json();
-    const { name, model, serial_number, department_id, hospital_id, category, location, next_maintenance_at } = body;
+    const {
+      name,
+      model,
+      serial_number,
+      department_id,
+      hospital_id,
+      category,
+      location,
+      next_maintenance_at,
+      manufacturer,
+      purchase_date,
+      purchase_value,
+      notes,
+    } = body;
 
     if (!name || !hospital_id || !department_id) {
       return NextResponse.json(
@@ -72,11 +85,15 @@ export async function POST(req: NextRequest): Promise<NextResponse<ApiResponse<{
         serial_number: serial_number ?? null,
         department_id,
         facility_id: hospital_id,
-        category: category ?? "Other",
+        category: category ?? "C",
         location: location ?? null,
         qr_code: qrCode,
         status: "operational",
         next_maintenance_at: next_maintenance_at ?? null,
+        manufacturer: manufacturer ?? null,
+        purchase_date: purchase_date ?? null,
+        purchase_value: purchase_value ?? null,
+        notes: notes ?? null,
       })
       .select("id, qr_code")
       .single();

@@ -69,6 +69,10 @@ export async function createEquipment(payload: {
   category?: string;
   location?: string;
   next_maintenance_at?: string;
+  manufacturer?: string;
+  purchase_date?: string;
+  purchase_value?: number | null;
+  notes?: string;
 }) {
   const res = await fetch(url("/equipment"), {
     method: "POST",
@@ -86,6 +90,32 @@ export async function updateEquipmentStatus(
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status }),
+  });
+  return res.json();
+}
+
+/** ENG-110: partial update (details + optional status). */
+export async function updateEquipmentDetails(
+  equipmentId: string,
+  payload: {
+    name?: string;
+    department_id?: string;
+    model?: string | null;
+    serial_number?: string | null;
+    category?: string;
+    location?: string | null;
+    next_maintenance_at?: string | null;
+    manufacturer?: string | null;
+    purchase_date?: string | null;
+    purchase_value?: number | null;
+    notes?: string | null;
+    status?: "operational" | "maintenance" | "offline" | "retired";
+  }
+) {
+  const res = await fetch(`${API_BASE}/equipment/${equipmentId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
   return res.json();
 }

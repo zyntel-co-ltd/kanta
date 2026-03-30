@@ -5,12 +5,15 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import TopBar from "@/components/dashboard/TopBar";
 import AppTabBar from "@/components/dashboard/AppTabBar";
+import FloatingActionButton from "@/components/dashboard/FloatingActionButton";
 
 /**
  * Standard dashboard chrome (sidebar + top bar + padded main).
  */
 export default function DashboardChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const showAssetManagementFab =
+    pathname === "/dashboard/assets" || pathname === "/dashboard/equipment";
 
   return (
     <>
@@ -38,6 +41,7 @@ export default function DashboardChrome({ children }: { children: React.ReactNod
         >
           {children}
         </main>
+        {showAssetManagementFab && <FloatingActionButton />}
       </div>
     </>
   );

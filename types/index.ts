@@ -24,6 +24,10 @@ export type Equipment = {
   location: string | null;
   next_maintenance_at: string | null;
   created_at: string;
+  manufacturer?: string | null;
+  purchase_date?: string | null;
+  purchase_value?: number | null;
+  notes?: string | null;
 };
 
 export type ScanEvent = {

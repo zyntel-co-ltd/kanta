@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Pencil } from "lucide-react";
 import { fetchEquipment, updateEquipmentStatus } from "@/lib/api";
 import { useEquipmentStore } from "@/lib/EquipmentStore";
 import type { Equipment } from "@/types";
 import type { EquipmentStatus } from "@/types";
 import EquipmentStatusSelect from "@/components/dashboard/EquipmentStatusSelect";
+import AddEquipmentModal from "@/components/dashboard/AddEquipmentModal";
 
 import { DEFAULT_HOSPITAL_ID } from "@/lib/constants";
 import { LoadingBars } from "@/components/ui/PageLoader";
@@ -14,6 +16,7 @@ export default function EquipmentPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<Equipment | null>(null);
   const { sessionEquipment, refreshKey, updateSessionEquipment } = useEquipmentStore();
 
   const handleStatusChange = async (eq: Equipment, newStatus: EquipmentStatus) => {
@@ -98,6 +101,9 @@ export default function EquipmentPage() {
                   <th className="text-left px-4 py-3 font-semibold text-slate-700">Location</th>
                   <th className="text-left px-4 py-3 font-semibold text-slate-700">Status</th>
                   <th className="text-left px-4 py-3 font-semibold text-slate-700">QR Code</th>
+                  <th className="text-right px-4 py-3 font-semibold text-slate-700 w-[1%]">
+                    <span className="sr-only">Edit</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -127,6 +133,16 @@ export default function EquipmentPage() {
                       />
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-500">{eq.qr_code}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setEditTarget(eq)}
+                        className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                        aria-label={`Edit ${eq.name}`}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -134,6 +150,17 @@ export default function EquipmentPage() {
           </div>
         </div>
       )}
+
+      <AddEquipmentModal
+        mode="edit"
+        open={!!editTarget}
+        initialEquipment={editTarget}
+        onClose={() => setEditTarget(null)}
+        onSuccess={() => {
+          void loadEquipment();
+          window.dispatchEvent(new CustomEvent("equipment-updated"));
+        }}
+      />
     </div>
   );
 }
