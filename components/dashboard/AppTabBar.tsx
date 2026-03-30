@@ -105,7 +105,6 @@ function isTabActive(pathname: string, tab: Tab): boolean {
 export default function AppTabBar() {
   const pathname = usePathname();
   const showRefrigeratorModule = useFlag("show-refrigerator-module");
-  const showLrids = useFlag("show-lrids");
   const { facilityAuth } = useAuth();
   const lridsFacilityId = facilityAuth?.facilityId ?? null;
   const assetTabs = useMemo(
@@ -131,7 +130,6 @@ export default function AppTabBar() {
   const tabs = resolveTabs(pathname, assetTabs);
   if (!tabs) return null;
   const showLabLridsAction =
-    showLrids &&
     tabs === LAB_TABS &&
     !!lridsFacilityId;
 

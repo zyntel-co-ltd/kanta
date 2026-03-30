@@ -178,7 +178,6 @@ const navGroupsBase: NavGroup[] = [
 
 export type NavFeatureFlags = {
   showRefrigeratorModule: boolean;
-  showLrids: boolean;
   showAiIntelligence: boolean;
   showTatTestLevel: boolean;
 };
@@ -230,14 +229,6 @@ function filterNavForFacilityAuth(
     if (href.startsWith("/dashboard/admin") && !canAccessAdminPanel) return false;
     if (href.startsWith("/dashboard/departments") && !canAccessAdmin) return false;
     if (href.includes("/dashboard/refrigerator") && !flags.showRefrigeratorModule) return false;
-    if (
-      (href === SIDEBAR_LRIDS_NAV_HREF ||
-        href.includes("tab=lrids") ||
-        href.startsWith("/dashboard/lrids")) &&
-      !flags.showLrids
-    ) {
-      return false;
-    }
     if (href.startsWith("/dashboard/intelligence") && !flags.showAiIntelligence) return false;
     if (href.startsWith("/dashboard/lab-metrics") && !flags.showTatTestLevel) return false;
     if (!canWrite) {
@@ -387,7 +378,6 @@ export default function Sidebar() {
   const searchParams = useSearchParams();
   const { user, signOut, facilityAuth, facilityAuthLoading } = useAuth();
   const showRefrigeratorModule = useFlag("show-refrigerator-module");
-  const showLrids = useFlag("show-lrids");
   const showAiIntelligence = useFlag("show-ai-intelligence");
   const showTatTestLevel = useFlag("show-tat-test-level");
   const hospitalName = hospitalDisplayName(facilityAuth?.hospitalName);
@@ -398,7 +388,6 @@ export default function Sidebar() {
     hasUser: !!user,
     flags: {
       showRefrigeratorModule,
-      showLrids,
       showAiIntelligence,
       showTatTestLevel,
     },

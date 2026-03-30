@@ -45,3 +45,8 @@ Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/
 - **TAT submodule navigation restructure:** `app/dashboard/tat/page.tsx` now shows exactly `Patient Tracking`, `Test Tracker`, `Section Capture`, `Volume`; old TAT `Overview` / `Performance` / `Progress` tabs removed.
 - **Route cleanup:** `app/dashboard/performance/page.tsx` removed; alias redirects added at `app/dashboard/lab-metrics/tat/patients`, `.../reception`, `.../volume` to point to the new destinations.
 - **Navigation alignment:** `components/dashboard/Sidebar.tsx` and `components/dashboard/AppTabBar.tsx` updated to new TAT labels/paths; `/dashboard/performance` removed from Lab match prefixes; LRIDS remains standalone/new-tab.
+
+## App / ops (2026-03-30 — LRIDS visibility)
+
+- **LRIDS visibility widened:** removed `show-lrids` UI gating in `components/dashboard/Sidebar.tsx`, `components/dashboard/AppTabBar.tsx`, and `app/dashboard/progress/page.tsx` so LRIDS entry points are visible to all users in-app.
+- **Token protection retained:** standalone LRIDS board still uses token-based access (`/api/lrids/token` + `/lrids/[facilityId]?token=...`), so visibility is broad while board access remains signed-link controlled.

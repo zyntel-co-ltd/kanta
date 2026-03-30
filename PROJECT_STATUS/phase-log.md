@@ -44,6 +44,11 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 - [x] **Route cleanup + aliases** — deleted `app/dashboard/performance/page.tsx`; added redirect routes under `app/dashboard/lab-metrics/tat/{patients,reception,volume}` to preserve user-facing paths while routing to the new TAT/Volume destinations.
 - [x] **Sidebar + top tabs alignment** — `components/dashboard/Sidebar.tsx` and `components/dashboard/AppTabBar.tsx` updated to new TAT naming/paths; `/dashboard/performance` removed from active match sets; LRIDS remains standalone and available as a top-level/new-tab action.
 
+### 2026-03-30 — LRIDS visibility widened in-app
+
+- [x] **LRIDS nav/buttons no longer feature-flag hidden** — removed `show-lrids` UI gating in `components/dashboard/Sidebar.tsx`, `components/dashboard/AppTabBar.tsx`, and `app/dashboard/progress/page.tsx` so LRIDS entry points are visible to all users in-app.
+- [x] **Security model unchanged** — LRIDS board still requires a signed token (`/api/lrids/token`, `/lrids/[facilityId]?token=...`), preserving token-based access control while broadening discoverability.
+
 ---
 # Kanta — Project Status & Functional Specification
 

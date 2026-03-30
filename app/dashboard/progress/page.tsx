@@ -5,7 +5,6 @@ import { Activity, RefreshCw } from "lucide-react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { LoadingBars } from "@/components/ui/PageLoader";
 import { useAuth } from "@/lib/AuthContext";
-import { useFlag } from "@/lib/featureFlags";
 import { openLridsBoardInNewTab } from "@/lib/lrids/openBoard";
 
 type ProgressRow = {
@@ -17,7 +16,6 @@ type ProgressRow = {
 
 export default function ProgressPage() {
   const { facilityAuth } = useAuth();
-  const showLrids = useFlag("show-lrids");
   const [data, setData] = useState<ProgressRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,18 +52,16 @@ export default function ProgressPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {showLrids && (
-            <button
-              type="button"
-              disabled={!facilityAuth?.facilityId}
-              onClick={() => {
-                if (facilityAuth?.facilityId) void openLridsBoardInNewTab(facilityAuth.facilityId);
-              }}
-              className="text-sm text-emerald-600 hover:text-emerald-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              LRIDS board (new tab)
-            </button>
-          )}
+          <button
+            type="button"
+            disabled={!facilityAuth?.facilityId}
+            onClick={() => {
+              if (facilityAuth?.facilityId) void openLridsBoardInNewTab(facilityAuth.facilityId);
+            }}
+            className="text-sm text-emerald-600 hover:text-emerald-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            LRIDS board (new tab)
+          </button>
           <button
             onClick={fetchData}
             disabled={loading}
