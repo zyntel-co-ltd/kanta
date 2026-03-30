@@ -43,7 +43,6 @@ function detectModule(pathname: string): DashboardModuleKey {
     "/dashboard/numbers",
     "/dashboard/revenue",
     "/dashboard/meta",
-    "/dashboard/performance",
     "/dashboard/lab-analytics",
   ];
   if (labMetrics.some((x) => p === x || p.startsWith(x + "/"))) return "labMetrics";

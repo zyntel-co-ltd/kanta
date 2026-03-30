@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import clsx from "clsx";
 import { useFlag } from "@/lib/featureFlags";
+import { useAuth } from "@/lib/AuthContext";
+import { openLridsBoardInNewTab } from "@/lib/lrids/openBoard";
 import {
   FlaskConical,
   Layers,
@@ -20,6 +22,7 @@ import {
   Thermometer,
   ScanLine,
   BarChart3,
+  Presentation,
 } from "lucide-react";
 
 type Tab = {
@@ -36,7 +39,7 @@ const LAB_TABS: Tab[] = [
     label: "TAT",
     href: "/dashboard/tat",
     icon: Timer,
-    matchPrefixes: ["/dashboard/tat", "/dashboard/performance", "/dashboard/lab-metrics"],
+    matchPrefixes: ["/dashboard/tat", "/dashboard/lab-metrics"],
   },
   { label: "Volume", href: "/dashboard/numbers", icon: Binary, matchPrefixes: ["/dashboard/numbers"] },
   { label: "Revenue", href: "/dashboard/revenue", icon: CircleDollarSign, matchPrefixes: ["/dashboard/revenue"] },
@@ -72,7 +75,6 @@ function resolveTabs(pathname: string, assetTabs: Tab[]): Tab[] | null {
       "/dashboard/numbers",
       "/dashboard/meta",
       "/dashboard/revenue",
-      "/dashboard/performance",
     ].some((p) => pathname === p || pathname.startsWith(p + "/"))
   ) {
     return LAB_TABS;
@@ -103,6 +105,9 @@ function isTabActive(pathname: string, tab: Tab): boolean {
 export default function AppTabBar() {
   const pathname = usePathname();
   const showRefrigeratorModule = useFlag("show-refrigerator-module");
+  const showLrids = useFlag("show-lrids");
+  const { facilityAuth } = useAuth();
+  const lridsFacilityId = facilityAuth?.facilityId ?? null;
   const assetTabs = useMemo(
     () =>
       showRefrigeratorModule
@@ -125,6 +130,10 @@ export default function AppTabBar() {
   }
   const tabs = resolveTabs(pathname, assetTabs);
   if (!tabs) return null;
+  const showLabLridsAction =
+    showLrids &&
+    tabs === LAB_TABS &&
+    !!lridsFacilityId;
 
   return (
     <div className="flex-shrink-0 border-b border-slate-100 bg-white px-6 py-0">
@@ -165,6 +174,20 @@ export default function AppTabBar() {
             );
           })}
         </nav>
+        {showLabLridsAction && (
+          <button
+            type="button"
+            onClick={() => {
+              if (lridsFacilityId) void openLridsBoardInNewTab(lridsFacilityId);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap transition-all flex-shrink-0 text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+            style={{ fontSize: "0.8125rem", fontWeight: 500 }}
+            title="Open LRIDS board in a new tab"
+          >
+            <Presentation size={16} />
+            LRIDS
+          </button>
+        )}
       </div>
     </div>
   );

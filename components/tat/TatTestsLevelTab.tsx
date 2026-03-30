@@ -91,7 +91,7 @@ export default function TatTestsLevelTab({
     return (
       <div className="space-y-4">
         <AvailableWhenOnline
-          title="Test-level TAT available when online"
+          title="Test Tracker available when online"
           detail="Reconnect to load paginated test rows from the server."
         />
       </div>
@@ -101,7 +101,7 @@ export default function TatTestsLevelTab({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Tests level TAT</h1>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Test Tracker</h1>
         <p className="text-sm text-slate-500 mt-0.5">
           Each row is one test request from your LIMS sync. Sample ID is an anonymized handle (not the raw database id).
         </p>

@@ -100,7 +100,7 @@ export default function TatPatientLevelTab({
     return (
       <div className="space-y-4">
         <AvailableWhenOnline
-          title="Patient-level TAT available when online"
+          title="Patient Tracking available when online"
           detail="Reconnect to load visit-grouped tests from the server."
         />
       </div>
@@ -110,7 +110,7 @@ export default function TatPatientLevelTab({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Patient level TAT (visit)</h1>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Patient Tracking</h1>
         <p className="text-sm text-slate-500 mt-0.5">
           Tests grouped by visit token from LIMS, or by lab number when no token is set. Visit token is an anonymized group handle — not a patient identifier.
         </p>

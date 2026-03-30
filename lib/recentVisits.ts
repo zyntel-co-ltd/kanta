@@ -40,13 +40,19 @@ const PATH_LABELS: Record<string, string> = {
 };
 
 function getLabel(path: string): string {
-  const base = path.replace(/\/$/, "") || "/dashboard";
+  const base = (path.split("?")[0] || "").replace(/\/$/, "") || "/dashboard";
+  if (path.includes("tab=patients")) return "Patient Tracking";
+  if (path.includes("tab=tests")) return "Test Tracker";
+  if (path.includes("tab=reception")) return "Section Capture";
   return PATH_LABELS[base] ?? base.split("/").pop() ?? "Dashboard";
 }
 
 export function pushRecentVisit(path: string): void {
   if (typeof window === "undefined") return;
-  const clean = path.replace(/\/$/, "") || "/dashboard";
+  let clean = path.replace(/\/$/, "") || "/dashboard";
+  if (clean === "/dashboard/performance") {
+    clean = "/dashboard/tat?tab=patients";
+  }
   if (clean === "/dashboard/home") return;
 
   try {
@@ -68,7 +74,12 @@ export function getRecentVisits(): RecentVisit[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw);
+    const visits: RecentVisit[] = JSON.parse(raw);
+    return visits.map((v) =>
+      v.path === "/dashboard/performance"
+        ? { ...v, path: "/dashboard/tat?tab=patients", label: "Patient Tracking" }
+        : v
+    );
   } catch {
     return [];
   }

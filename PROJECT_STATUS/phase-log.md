@@ -38,6 +38,12 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 
 - [x] **Asset Management false-open fix** — In `accordionGroupForPath()` (`components/dashboard/Sidebar.tsx`), treat `"/dashboard"` as an exact-match route instead of a broad prefix so System routes (`/dashboard/settings`, `/dashboard/admin`, etc.) no longer auto-expand Asset Management.
 
+### 2026-03-30 — ENG-102 TAT navigation restructure
+
+- [x] **TAT tabs simplified and renamed** — `app/dashboard/tat/page.tsx` now exposes only `Patient Tracking`, `Test Tracker`, `Section Capture`, and `Volume` (in that order); old `Overview` / `Performance` / `Progress` tabs removed from the TAT page.
+- [x] **Route cleanup + aliases** — deleted `app/dashboard/performance/page.tsx`; added redirect routes under `app/dashboard/lab-metrics/tat/{patients,reception,volume}` to preserve user-facing paths while routing to the new TAT/Volume destinations.
+- [x] **Sidebar + top tabs alignment** — `components/dashboard/Sidebar.tsx` and `components/dashboard/AppTabBar.tsx` updated to new TAT naming/paths; `/dashboard/performance` removed from active match sets; LRIDS remains standalone and available as a top-level/new-tab action.
+
 ---
 # Kanta — Project Status & Functional Specification
 

@@ -104,12 +104,12 @@ const navGroupsBase: NavGroup[] = [
         "/dashboard/numbers",
         "/dashboard/meta",
         "/dashboard/revenue",
-        "/dashboard/performance",
       ],
     },
     items: [
-      { label: "TAT",         icon: Timer,             href: "/dashboard/tat"         },
-      { label: "Test-level TAT", icon: Table2,         href: "/dashboard/lab-metrics/tat/tests" },
+      { label: "Patient Tracking", icon: Timer,        href: "/dashboard/tat?tab=patients" },
+      { label: "Test Tracker", icon: Table2,           href: "/dashboard/tat?tab=tests" },
+      { label: "Section Capture", icon: ClipboardList, href: "/dashboard/tat?tab=reception" },
       { label: "Volume",      icon: Binary,            href: "/dashboard/numbers"     },
       { label: "Tests & Lab Mgmt", icon: TableProperties,   href: "/dashboard/meta"   },
       { label: "Revenue",     icon: CircleDollarSign,  href: "/dashboard/revenue"     },
@@ -358,7 +358,6 @@ function accordionGroupForPath(pathname: string): string | null {
     "/dashboard/numbers",
     "/dashboard/meta",
     "/dashboard/revenue",
-    "/dashboard/performance",
   ];
   if (labPaths.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return "Lab Metrics";

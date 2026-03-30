@@ -39,3 +39,9 @@ Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/
 ## App / ops (2026-03-30 — sidebar route matching)
 
 - **System vs Asset accordion behavior:** `components/dashboard/Sidebar.tsx` `accordionGroupForPath()` now treats `"/dashboard"` as an exact match; Asset Management no longer auto-expands when opening System pages (`/dashboard/settings`, `/dashboard/admin`, `/dashboard/departments`).
+
+## App / ops (2026-03-30 — ENG-102 TAT navigation)
+
+- **TAT submodule navigation restructure:** `app/dashboard/tat/page.tsx` now shows exactly `Patient Tracking`, `Test Tracker`, `Section Capture`, `Volume`; old TAT `Overview` / `Performance` / `Progress` tabs removed.
+- **Route cleanup:** `app/dashboard/performance/page.tsx` removed; alias redirects added at `app/dashboard/lab-metrics/tat/patients`, `.../reception`, `.../volume` to point to the new destinations.
+- **Navigation alignment:** `components/dashboard/Sidebar.tsx` and `components/dashboard/AppTabBar.tsx` updated to new TAT labels/paths; `/dashboard/performance` removed from Lab match prefixes; LRIDS remains standalone/new-tab.
