@@ -350,6 +350,11 @@ function accordionGroupForPath(pathname: string): string | null {
   ) {
     return "Quality & samples";
   }
+  // `/dashboard/home` is the hub landing page; it should not auto-expand
+  // any accordion (otherwise `/dashboard/*` assetPaths rule would match).
+  if (pathname === "/dashboard/home") {
+    return null;
+  }
   const labPaths = [
     "/dashboard/lab-analytics",
     "/dashboard/tat",
