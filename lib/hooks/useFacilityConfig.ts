@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
+import useSWR from "swr";
+import { REFERENCE_SWR_OPTIONS } from "@/lib/hooks/swrReferenceConfig";
 
 /** Default laboratory unit options (not facility-configured in ENG-85). */
 const DEFAULT_LABORATORY_OPTIONS = [
@@ -36,65 +38,47 @@ export type TatTargetRow = {
 
 export type FilterOption = { value: string; label: string };
 
+export type LabConfigPayload = {
+  sections: LabSectionRow[];
+  shifts: LabShiftRow[];
+  tatTargets: TatTargetRow[];
+};
+
+async function fetchLabConfig([, facilityId]: readonly ["lab-config", string]): Promise<LabConfigPayload> {
+  const res = await fetch(
+    `/api/facility/lab-config?facility_id=${encodeURIComponent(facilityId)}`
+  );
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    throw new Error(typeof j?.error === "string" ? j.error : "Failed to load lab configuration");
+  }
+  const j = (await res.json()) as {
+    sections?: LabSectionRow[];
+    shifts?: LabShiftRow[];
+    tatTargets?: TatTargetRow[];
+  };
+  return {
+    sections: Array.isArray(j.sections) ? j.sections : [],
+    shifts: Array.isArray(j.shifts) ? j.shifts : [],
+    tatTargets: Array.isArray(j.tatTargets) ? j.tatTargets : [],
+  };
+}
+
+/** Shared SWR cache key for lab config — use with `useLabSections` in the same tree (deduped). */
+export function useLabConfigData(facilityId: string | null | undefined) {
+  const key = facilityId ? (["lab-config", facilityId] as const) : null;
+  return useSWR(key, fetchLabConfig, REFERENCE_SWR_OPTIONS);
+}
+
 /**
- * ENG-86: Single fetch of lab sections, shifts, and section-level TAT targets per facility.
- * Cached in state for the session; refetch only when `facilityId` changes.
+ * ENG-86 / ENG-109: lab sections, shifts, TAT targets — SWR with 5-minute SWR window.
  */
 export function useFacilityConfig(facilityId: string | null | undefined) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [sections, setSections] = useState<LabSectionRow[]>([]);
-  const [shifts, setShifts] = useState<LabShiftRow[]>([]);
-  const [tatTargets, setTatTargets] = useState<TatTargetRow[]>([]);
+  const { data, error, isLoading, mutate } = useLabConfigData(facilityId);
 
-  useEffect(() => {
-    if (!facilityId) {
-      setSections([]);
-      setShifts([]);
-      setTatTargets([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    (async () => {
-      try {
-        const res = await fetch(
-          `/api/facility/lab-config?facility_id=${encodeURIComponent(facilityId)}`
-        );
-        if (!res.ok) {
-          const j = await res.json().catch(() => ({}));
-          throw new Error(typeof j?.error === "string" ? j.error : "Failed to load lab configuration");
-        }
-        const j = (await res.json()) as {
-          sections?: LabSectionRow[];
-          shifts?: LabShiftRow[];
-          tatTargets?: TatTargetRow[];
-        };
-        if (cancelled) return;
-        setSections(Array.isArray(j.sections) ? j.sections : []);
-        setShifts(Array.isArray(j.shifts) ? j.shifts : []);
-        setTatTargets(Array.isArray(j.tatTargets) ? j.tatTargets : []);
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Failed to load configuration");
-          setSections([]);
-          setShifts([]);
-          setTatTargets([]);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [facilityId]);
+  const sections = data?.sections ?? [];
+  const shifts = data?.shifts ?? [];
+  const tatTargets = data?.tatTargets ?? [];
 
   const activeSections = useMemo(
     () =>
@@ -125,7 +109,6 @@ export function useFacilityConfig(facilityId: string | null | undefined) {
 
   const laboratoryFilterOptions = DEFAULT_LABORATORY_OPTIONS;
 
-  /** Section-level targets only (no per-test rows). */
   const targetMinutesBySectionCode = useMemo(() => {
     const m = new Map<string, number>();
     for (const t of tatTargets) {
@@ -151,8 +134,8 @@ export function useFacilityConfig(facilityId: string | null | undefined) {
   const hasConfiguredSections = activeSections.length > 0;
 
   return {
-    loading,
-    error,
+    loading: isLoading,
+    error: error instanceof Error ? error.message : error ? String(error) : null,
     sections,
     activeSections,
     shifts,
@@ -163,5 +146,6 @@ export function useFacilityConfig(facilityId: string | null | undefined) {
     targetMinutesBySectionCode,
     resolveSectionLabel,
     hasConfiguredSections,
+    mutate,
   };
 }

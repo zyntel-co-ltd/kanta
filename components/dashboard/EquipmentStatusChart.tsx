@@ -1,7 +1,6 @@
 "use client";
 
-import "@/components/charts/registry";
-import { Bar } from "react-chartjs-2";
+import { LazyBar } from "@/components/charts/LazyCharts";
 import type { ChartData, ChartOptions } from "chart.js";
 import { CHART_AXIS, CHART_EQUIPMENT_STACK } from "@/lib/chart-theme";
 import { useDashboardData } from "@/lib/DashboardDataContext";
@@ -113,7 +112,7 @@ export default function EquipmentStatusChart() {
       </div>
 
       <div className="mt-4 h-40 min-h-[160px] min-w-[1px]">
-        <Bar data={chartData} options={options} />
+        <LazyBar data={chartData} options={options} />
       </div>
     </div>
   );

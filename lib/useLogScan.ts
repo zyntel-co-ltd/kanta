@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback } from "react";
-import { logScan } from "./api";
-import { enqueueScan } from "./offline-queue";
+import { queuedFetch, responseWasQueued } from "@/lib/sync-queue/queuedFetch";
+
+const SCANS_URL = "/api/v1/scans";
 
 type ScanPayload = {
   equipment_id: string;
@@ -16,20 +17,24 @@ type ScanPayload = {
 type LogScanResult = { success: boolean; queued?: boolean; error?: string };
 
 /**
- * Logs a scan — online: POSTs to API. Offline: queues in IndexedDB for sync on reconnect.
+ * Logs a scan via `queuedFetch` — offline or network failure enqueues to IndexedDB (ENG-63).
  */
 export function useLogScan() {
-  return useCallback(
-    async (payload: ScanPayload): Promise<LogScanResult> => {
-      if (navigator.onLine) {
-        const res = await logScan(payload);
-        if (res.data && !res.error) return { success: true };
-        return { success: false, error: res.error ?? "Failed to log scan" };
-      }
-
-      await enqueueScan(payload);
+  return useCallback(async (payload: ScanPayload): Promise<LogScanResult> => {
+    const res = await queuedFetch(SCANS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const json = (await res.json()) as {
+      data?: unknown;
+      error?: string | null;
+      queued?: boolean;
+    };
+    if (responseWasQueued(res)) {
       return { success: true, queued: true };
-    },
-    []
-  );
+    }
+    if (json.data && !json.error) return { success: true };
+    return { success: false, error: json.error ?? "Failed to log scan" };
+  }, []);
 }

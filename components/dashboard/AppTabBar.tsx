@@ -32,7 +32,12 @@ type Tab = {
 };
 const LAB_TABS: Tab[] = [
   { label: "Overview", href: "/dashboard/lab-analytics", icon: FlaskConical, matchPrefixes: ["/dashboard/lab-analytics"] },
-  { label: "TAT", href: "/dashboard/tat", icon: Timer, matchPrefixes: ["/dashboard/tat", "/dashboard/performance", "/dashboard/lrids"] },
+  {
+    label: "TAT",
+    href: "/dashboard/tat",
+    icon: Timer,
+    matchPrefixes: ["/dashboard/tat", "/dashboard/performance", "/dashboard/lab-metrics"],
+  },
   { label: "Volume", href: "/dashboard/numbers", icon: Binary, matchPrefixes: ["/dashboard/numbers"] },
   { label: "Revenue", href: "/dashboard/revenue", icon: CircleDollarSign, matchPrefixes: ["/dashboard/revenue"] },
   { label: "Tests & Lab Mgmt", href: "/dashboard/meta", icon: TableProperties, matchPrefixes: ["/dashboard/meta", "/dashboard/tests"] },
@@ -58,7 +63,18 @@ const ASSET_TABS: Tab[] = [
 ];
 
 function resolveTabs(pathname: string, assetTabs: Tab[]): Tab[] | null {
-  if (["/dashboard/lab-analytics", "/dashboard/tat", "/dashboard/tests", "/dashboard/numbers", "/dashboard/meta", "/dashboard/revenue", "/dashboard/performance", "/dashboard/lrids"].some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+  if (
+    [
+      "/dashboard/lab-analytics",
+      "/dashboard/tat",
+      "/dashboard/lab-metrics",
+      "/dashboard/tests",
+      "/dashboard/numbers",
+      "/dashboard/meta",
+      "/dashboard/revenue",
+      "/dashboard/performance",
+    ].some((p) => pathname === p || pathname.startsWith(p + "/"))
+  ) {
     return LAB_TABS;
   }
   if (["/dashboard/quality-samples", "/dashboard/qc", "/dashboard/samples"].some((p) => pathname === p || pathname.startsWith(p + "/"))) {
@@ -103,8 +119,7 @@ export default function AppTabBar() {
     pathname.startsWith("/dashboard/departments") ||
     pathname.startsWith("/dashboard/reception") ||
     pathname.startsWith("/dashboard/tracker") ||
-    pathname.startsWith("/dashboard/progress") ||
-    pathname.startsWith("/dashboard/lrids")
+    pathname.startsWith("/dashboard/progress")
   ) {
     return null;
   }

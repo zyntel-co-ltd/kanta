@@ -5,7 +5,7 @@ import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
 import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
 import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
-import { LoadingBars } from "@/components/ui/PageLoader";
+import Skeleton from "@/components/ui/Skeleton";
 import { Plus, Pencil, Trash2, Search, X, ChevronLeft, ChevronRight, Download } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -340,10 +340,10 @@ export default function MetaPage() {
           <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between text-sm text-slate-500">
             <span className="inline-flex items-center gap-2 min-h-[1.25rem]">
               {isLoading ? (
-                <>
-                  <LoadingBars size="sm" />
+                <span className="inline-flex items-center gap-2">
+                  <Skeleton className="h-4 w-32" label="Loading count" />
                   <span className="text-slate-500">Loading…</span>
-                </>
+                </span>
               ) : (
                 `${data.length.toLocaleString()} record${data.length !== 1 ? "s" : ""}`
               )}

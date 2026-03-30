@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
-import "@/components/charts/registry";
-import { Bar } from "react-chartjs-2";
+import { LazyBar } from "@/components/charts/LazyCharts";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
 import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
+import { useTestCatalog } from "@/lib/hooks/useTestCatalog";
 import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
-import PageLoader from "@/components/ui/PageLoader";
+import Skeleton from "@/components/ui/Skeleton";
 import { CalendarDays, BarChart3 } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -133,8 +133,13 @@ export default function TestsPage() {
     endDate: "",
   });
   const [selectedSection, setSelectedSection] = useState("all");
-  const [data, setData] = useState<TestsData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const { data: swrData, isLoading: catalogLoading, isValidating } = useTestCatalog(
+    facilityId,
+    filters
+  );
+  const data = (swrData as TestsData | undefined) ?? null;
+  const isLoading = catalogLoading || isValidating;
 
   const updateFilter = (key: string, value: string) =>
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -151,34 +156,6 @@ export default function TestsPage() {
     });
     setSelectedSection("all");
   };
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams({ facility_id: facilityId, period: filters.period });
-      if (filters.labSection && filters.labSection !== "all") params.append("section", filters.labSection);
-      if (filters.shift && filters.shift !== "all") params.append("shift", filters.shift);
-      if (filters.hospitalUnit && filters.hospitalUnit !== "all")
-        params.append("laboratory", filters.hospitalUnit);
-      if (filters.testName?.trim()) params.append("testName", filters.testName.trim());
-      if (filters.startDate) params.append("startDate", filters.startDate);
-      if (filters.endDate) params.append("endDate", filters.endDate);
-
-      const res = await fetch(`/api/tests?${params}`);
-      if (!res.ok) throw new Error("Failed");
-      const json = await res.json();
-      if (!json.error) setData(json);
-      else setData(null);
-    } catch {
-      setData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters, facilityId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const topTests = flattenTopTests(data, selectedSection);
   const availableSections = useMemo(() => {
@@ -352,7 +329,18 @@ export default function TestsPage() {
       </div>
 
       {/* Loading */}
-      {isLoading && <PageLoader variant="inline" />}
+      {isLoading && (
+        <div className="flex gap-6 p-6" aria-busy="true">
+          <div className="flex w-72 flex-shrink-0 flex-col gap-4">
+            <Skeleton className="h-36 w-full rounded-2xl" />
+            <Skeleton className="h-24 w-full rounded-xl" />
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
+            <Skeleton className="h-64 w-full rounded-2xl" />
+            <Skeleton className="h-80 w-full rounded-2xl" />
+          </div>
+        </div>
+      )}
 
       {/* Main Layout */}
       {!isLoading && (
@@ -391,7 +379,7 @@ export default function TestsPage() {
               </h3>
               {(data?.testVolumeTrend ?? []).length > 0 ? (
                 <div className="h-[240px]">
-                  <Bar data={trendChartData} options={trendOptions} />
+                  <LazyBar data={trendChartData} options={trendOptions} />
                 </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
@@ -423,7 +411,7 @@ export default function TestsPage() {
               </div>
               {topTests.length > 0 ? (
                 <div className="w-full" style={{ height: Math.max(300, topTests.length * 26) }}>
-                  <Bar data={topChartData} options={topOptions} />
+                  <LazyBar data={topChartData} options={topOptions} />
                 </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">

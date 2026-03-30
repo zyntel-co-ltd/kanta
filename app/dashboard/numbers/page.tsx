@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
-import "@/components/charts/registry";
-import { Bar } from "react-chartjs-2";
+import { LazyBar } from "@/components/charts/LazyCharts";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
@@ -351,7 +350,7 @@ export default function NumbersPage() {
               </h3>
               {(data?.dailyRequestVolume ?? []).length > 0 ? (
                 <div className="h-[240px]">
-                  <Bar data={dailyChartData} options={dailyOptions} />
+                  <LazyBar data={dailyChartData} options={dailyOptions} />
                 </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
@@ -367,7 +366,7 @@ export default function NumbersPage() {
               </h3>
               {hourlyData.length > 0 ? (
                 <div className="h-[220px]">
-                  <Bar data={hourlyChartData} options={hourlyOptions} />
+                  <LazyBar data={hourlyChartData} options={hourlyOptions} />
                 </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">

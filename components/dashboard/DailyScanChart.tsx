@@ -1,7 +1,6 @@
 "use client";
 
-import "@/components/charts/registry";
-import { Bar } from "react-chartjs-2";
+import { LazyBar } from "@/components/charts/LazyCharts";
 import type { ChartData, ChartOptions } from "chart.js";
 import { CHART_AXIS, CHART_STATUS } from "@/lib/chart-theme";
 import { BRAND } from "@/lib/design-tokens";
@@ -87,7 +86,7 @@ export default function DailyScanChart() {
       </div>
 
       <div className="mt-4 h-36 min-h-[144px] min-w-[1px]">
-        <Bar data={chartData} options={options} />
+        <LazyBar data={chartData} options={options} />
       </div>
     </div>
   );

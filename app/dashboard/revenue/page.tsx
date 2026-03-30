@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
-import "@/components/charts/registry";
-import { Doughnut, Line, Bar } from "react-chartjs-2";
+import { LazyBar, LazyDoughnut, LazyLine } from "@/components/charts/LazyCharts";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
@@ -399,7 +398,7 @@ export default function RevenuePage() {
                 </h3>
                 {(data?.sectionRevenue ?? []).length > 0 ? (
                   <div className="h-[280px]">
-                    <Doughnut data={sectionChartData} options={sectionOptions} />
+                    <LazyDoughnut data={sectionChartData} options={sectionOptions} />
                   </div>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
@@ -415,7 +414,7 @@ export default function RevenuePage() {
                 </h3>
                 {(data?.dailyRevenue ?? []).length > 0 ? (
                   <div className="h-[280px]">
-                    <Line data={dailyChartData} options={dailyOptions} />
+                    <LazyLine data={dailyChartData} options={dailyOptions} />
                   </div>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
@@ -432,7 +431,7 @@ export default function RevenuePage() {
               </h3>
               {filteredTestRevenue.length > 0 ? (
                 <div className="w-full" style={{ height: Math.max(300, filteredTestRevenue.length * 26) }}>
-                  <Bar data={testChartData} options={testOptions} />
+                  <LazyBar data={testChartData} options={testOptions} />
                 </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">

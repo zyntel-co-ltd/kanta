@@ -3,6 +3,8 @@ import "./globals.css";
 import { DM_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { OfflineSyncProvider } from "@/components/OfflineSyncProvider";
+import SwrProvider from "@/components/providers/SwrProvider";
+import { SyncQueueProvider } from "@/lib/SyncQueueContext";
 import { PostHogProvider } from "@/components/PostHogProvider";
 import { AuthProvider } from "@/lib/AuthContext";
 
@@ -53,7 +55,11 @@ export default function RootLayout({
       <body className={dmSans.className}>
         <PostHogProvider>
           <AuthProvider>
-            <OfflineSyncProvider>{children}</OfflineSyncProvider>
+            <SyncQueueProvider>
+              <SwrProvider>
+                <OfflineSyncProvider>{children}</OfflineSyncProvider>
+              </SwrProvider>
+            </SyncQueueProvider>
           </AuthProvider>
           <Analytics />
         </PostHogProvider>

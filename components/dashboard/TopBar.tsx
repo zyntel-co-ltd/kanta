@@ -14,10 +14,11 @@ import {
   Info,
   X,
 } from "lucide-react";
-import { useSyncStatus } from "@/lib/SyncStatusContext";
+import { useSyncQueue } from "@/lib/SyncQueueContext";
 import { useAuth } from "@/lib/AuthContext";
 import { hospitalDisplayName } from "@/lib/hospitalDisplayName";
 import NLQueryBar from "@/components/ai/NLQueryBar";
+import AvailableWhenOnline from "@/components/ui/AvailableWhenOnline";
 import Tooltip from "@/components/ui/Tooltip";
 
 const HOSPITAL_LOGO_URL = process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
@@ -96,7 +97,13 @@ const severityIcon = {
 
 export default function TopBar() {
   const [secondsAgo, setSecondsAgo] = useState(0);
-  const { status, pendingCount, retry } = useSyncStatus();
+  const {
+    isOnline,
+    pendingCount,
+    failedCount,
+    syncStatus,
+    retryFailedSyncs,
+  } = useSyncQueue();
   const { user, signOut, facilityAuth, facilityAuthLoading, avatarUrl } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -128,11 +135,11 @@ export default function TopBar() {
   }, []);
 
   useEffect(() => {
-    if (facilityAuthLoading || !alertsFacilityId) return;
+    if (facilityAuthLoading || !alertsFacilityId || !isOnline) return;
     void loadAlerts(alertsFacilityId);
     const alertInterval = setInterval(() => void loadAlerts(alertsFacilityId), 60_000);
     return () => clearInterval(alertInterval);
-  }, [facilityAuthLoading, alertsFacilityId, loadAlerts]);
+  }, [facilityAuthLoading, alertsFacilityId, loadAlerts, isOnline]);
 
   /* ── Close panels on outside click ── */
   useEffect(() => {
@@ -151,9 +158,22 @@ export default function TopBar() {
   const lastUpdated =
     secondsAgo < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo / 60)}m ago`;
 
-  const syncDotColor =
-    status === "synced" ? "bg-emerald-400" :
-    status === "pending" ? "bg-amber-400" : "bg-red-500";
+  const connectivityDot =
+    syncStatus === "syncing"
+      ? "bg-amber-400 animate-pulse"
+      : isOnline
+        ? "bg-emerald-500"
+        : "bg-amber-500";
+
+  const connectivityLabel =
+    syncStatus === "syncing"
+      ? "Syncing…"
+      : isOnline
+        ? "Online"
+        : "Offline";
+
+  const pendingSuffix =
+    pendingCount > 0 ? ` · ${pendingCount} pending` : "";
 
   async function markAllRead() {
     setAlerts((prev) => prev.map((a) => ({ ...a, read: true })));
@@ -211,32 +231,50 @@ export default function TopBar() {
         {/* Divider */}
         <div className="hidden md:block w-px h-8 bg-slate-200 mx-1" />
 
-        {/* Sync status */}
-        <button
-          onClick={() => status === "failed" && retry()}
-          title={status === "synced" ? "Synced" : status === "pending" ? `${pendingCount} pending` : "Sync failed — click to retry"}
-          className={`hidden md:flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${
-            status === "synced" ? "bg-emerald-50 text-emerald-700" :
-            status === "pending" ? "bg-amber-50 text-amber-700" :
-            "bg-red-50 text-red-700 hover:bg-red-100 cursor-pointer"
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${syncDotColor} ${status === "synced" ? "animate-pulse" : ""}`} />
-          {status === "synced" ? "Synced" : status === "pending" ? `${pendingCount} pending` : "Sync failed"}
-        </button>
-
         <span className="hidden lg:flex items-center gap-1 text-xs text-slate-400">
           <span className="w-1 h-1 rounded-full bg-slate-300" />
           Updated {lastUpdated}
         </span>
       </div>
 
-      {/* ── Right: AI Query + Alerts + User ── */}
+      {/* ── Right: AI Query + connectivity + Alerts + User ── */}
       <div className="flex items-center gap-1.5">
 
         {/* ── NL Query ── */}
         <div className="hidden lg:block">
           <NLQueryBar facilityId={alertsFacilityId} userId={user?.id} />
+        </div>
+
+        {/* ENG-63: connectivity + sync queue */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => failedCount > 0 && void retryFailedSyncs()}
+            title={
+              failedCount > 0
+                ? `${failedCount} failed — tap to retry`
+                : pendingCount > 0
+                  ? `${pendingCount} pending sync`
+                  : connectivityLabel
+            }
+            className={clsx(
+              "flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors",
+              isOnline && syncStatus !== "syncing" && failedCount === 0
+                ? "bg-emerald-50 text-emerald-800"
+                : "bg-amber-50 text-amber-900",
+              failedCount > 0 && "cursor-pointer hover:bg-amber-100"
+            )}
+          >
+            <span className={clsx("h-1.5 w-1.5 flex-shrink-0 rounded-full", connectivityDot)} />
+            <span className="hidden sm:inline">
+              {connectivityLabel}
+              {pendingSuffix}
+              {failedCount > 0 ? ` · ${failedCount} failed` : ""}
+            </span>
+            <span className="sm:hidden tabular-nums">
+              {pendingCount > 0 ? pendingCount : failedCount > 0 ? `!${failedCount}` : ""}
+            </span>
+          </button>
         </div>
 
         {/* ── Alerts bell ── */}
@@ -291,7 +329,14 @@ export default function TopBar() {
 
               {/* Alert list */}
               <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-50">
-                {alerts.length === 0 ? (
+                {!isOnline ? (
+                  <div className="p-4">
+                    <AvailableWhenOnline
+                      title="Alerts available when online"
+                      detail="Operational alerts are fetched from the server. Reconnect to view and acknowledge them."
+                    />
+                  </div>
+                ) : alerts.length === 0 ? (
                   <div className="py-10 text-center text-sm text-slate-400">
                     No alerts
                   </div>

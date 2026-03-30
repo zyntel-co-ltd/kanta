@@ -7,21 +7,10 @@ import TopBar from "@/components/dashboard/TopBar";
 import AppTabBar from "@/components/dashboard/AppTabBar";
 
 /**
- * Standard dashboard chrome (sidebar + top bar + padded main), except LRIDS:
- * Option B — fullscreen display mode, no sidebar/top bar; page provides its own chrome + exit.
+ * Standard dashboard chrome (sidebar + top bar + padded main).
  */
 export default function DashboardChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLridsDisplay =
-    pathname === "/dashboard/lrids" || pathname.startsWith("/dashboard/lrids/");
-
-  if (isLridsDisplay) {
-    return (
-      <div className="flex flex-1 flex-col min-h-0 min-w-0 overflow-hidden bg-slate-950">
-        {children}
-      </div>
-    );
-  }
 
   return (
     <>

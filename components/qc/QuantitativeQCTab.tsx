@@ -1,8 +1,7 @@
 "use client";
 
-import "@/components/charts/registry";
 import { useEffect, useState, useCallback } from "react";
-import { Line } from "react-chartjs-2";
+import { LazyLine } from "@/components/charts/LazyCharts";
 import type { ChartOptions, ChartData } from "chart.js";
 import {
   Plus, Save, CheckCircle2, AlertTriangle, XCircle,
@@ -138,7 +137,7 @@ function QCLineChart({ runs, stats }: { runs: QCRun[]; stats: RunStats }) {
     },
   };
 
-  return <Line data={data} options={options} />;
+  return <LazyLine data={data} options={options} />;
 }
 
 /* ───── Main component ───── */

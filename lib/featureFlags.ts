@@ -13,6 +13,8 @@ export const KANTA_FEATURE_FLAG_NAMES = [
   "show-lrids",
   "show-reception-tab",
   "show-refrigerator-module",
+  "show-sample-scan",
+  "show-tat-test-level",
 ] as const;
 
 export type KantaFeatureFlagName = (typeof KANTA_FEATURE_FLAG_NAMES)[number];

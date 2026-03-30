@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import "@/components/charts/registry";
-import { Doughnut } from "react-chartjs-2";
+import { LazyDoughnut } from "@/components/charts/LazyCharts";
 import type { ActiveElement, ChartData, ChartEvent, ChartOptions } from "chart.js";
 import { ChevronDown } from "lucide-react";
 import { useDashboardData } from "@/lib/DashboardDataContext";
@@ -81,7 +80,7 @@ export default function CategoryDonut() {
               className="w-full h-full"
               onMouseLeave={() => setActiveIndex(null)}
             >
-              <Doughnut
+              <LazyDoughnut
                 data={chartData}
                 options={options}
               />

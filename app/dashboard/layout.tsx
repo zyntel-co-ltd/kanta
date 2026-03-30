@@ -38,6 +38,7 @@ function detectModule(pathname: string): DashboardModuleKey {
 
   const labMetrics = [
     "/dashboard/tat",
+    "/dashboard/lab-metrics",
     "/dashboard/tests",
     "/dashboard/numbers",
     "/dashboard/revenue",

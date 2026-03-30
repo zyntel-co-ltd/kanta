@@ -27,6 +27,7 @@ export async function fetchScans(hospitalId: string, limit = 10) {
   return res.json();
 }
 
+/** Prefer `useLogScan()` for offline-aware scans (ENG-63). */
 export async function logScan(payload: {
   equipment_id: string;
   hospital_id: string;

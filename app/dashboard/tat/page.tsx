@@ -1,22 +1,24 @@
 "use client";
 
-import "@/components/charts/registry";
 import { useEffect, useState, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import KpiTwemojiIcon, { type KpiTwemojiId } from "@/components/dashboard/KpiTwemojiIcon";
-import { Doughnut, Line, Bar } from "react-chartjs-2";
+import { LazyBar, LazyDoughnut, LazyLine } from "@/components/charts/LazyCharts";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
 import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
 import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
+import TatPatientLevelTab from "@/components/tat/TatPatientLevelTab";
+import TatTestsLevelTab from "@/components/tat/TatTestsLevelTab";
 import { useFlag } from "@/lib/featureFlags";
 import PageLoader from "@/components/ui/PageLoader";
 import { CHART_AXIS, CHART_TAT } from "@/lib/chart-theme";
 import { STATUS } from "@/lib/design-tokens";
 import { CircleDot, TrendingUp, Clock3 } from "lucide-react";
 
-// REGRESSIVE DESIGN: Reception tab hidden by default. Show via PostHog flag 'show-reception-tab' when LIMS does not provide reception_time and result_time. Tests Level and Patient Level tabs stub pending LIMS connection (see ENG LIMS group).
+// REGRESSIVE DESIGN: Reception tab hidden by default (show-reception-tab). LRIDS: /lrids/[facilityId]?token=... (ENG-101). Tests / Patient level TAT: ENG-90 + test_requests.
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const PERIODS = [
@@ -53,7 +55,7 @@ type TATData = {
   };
 };
 
-type TatTab = "overview" | "performance" | "tests-level" | "patient-level" | "progress" | "lrids" | "reception";
+type TatTab = "overview" | "performance" | "tests-level" | "patient-level" | "progress" | "reception";
 
 type PerformanceData = {
   totalResulted: number;
@@ -61,14 +63,6 @@ type PerformanceData = {
   avgTatMinutes: number;
   breachCount: number;
   bySection: { section: string; count: number; avgTat: number }[];
-};
-
-type LRIDSItem = {
-  id: string;
-  lab_number?: string;
-  test_name: string;
-  section: string;
-  status: string;
 };
 
 // ── Sub-components ─────────────────────────────────────────────────────────
@@ -136,11 +130,12 @@ export default function TATPage() {
     loading: labConfigLoading,
     shiftFilterOptions,
     laboratoryFilterOptions,
+    sectionFilterOptions,
     resolveSectionLabel,
     hasConfiguredSections,
   } = useFacilityConfig(facilityId);
   const showReceptionTab = useFlag("show-reception-tab");
-  const showLrids = useFlag("show-lrids");
+  const showTatTestLevel = useFlag("show-tat-test-level");
   const requestedTab = (searchParams.get("tab") || "overview") as TatTab;
 
   const allowedTabs = new Set<TatTab>([
@@ -150,7 +145,6 @@ export default function TATPage() {
     "patient-level",
     "progress",
   ]);
-  if (showLrids) allowedTabs.add("lrids");
   if (showReceptionTab) allowedTabs.add("reception");
 
   const activeTab: TatTab = allowedTabs.has(requestedTab) ? requestedTab : "overview";
@@ -165,7 +159,6 @@ export default function TATPage() {
   const [data, setData] = useState<TATData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
-  const [lrids, setLrids] = useState<LRIDSItem[]>([]);
 
   const setTab = (tab: TatTab) => {
     const next = new URLSearchParams(searchParams.toString());
@@ -214,19 +207,6 @@ export default function TATPage() {
         setPerformanceData(json.data ?? null);
       } catch {
         setPerformanceData(null);
-      }
-    })();
-  }, [activeTab, facilityId]);
-
-  useEffect(() => {
-    if (activeTab !== "lrids") return;
-    (async () => {
-      try {
-        const res = await fetch(`/api/tat/lrids?facility_id=${facilityId}&limit=100`);
-        const json = await res.json();
-        setLrids(json.data ?? []);
-      } catch {
-        setLrids([]);
       }
     })();
   }, [activeTab, facilityId]);
@@ -429,7 +409,6 @@ export default function TATPage() {
     { id: "tests-level", label: "Tests Level" },
     { id: "patient-level", label: "Patient Level" },
     { id: "progress", label: "Progress" },
-    ...(showLrids ? [{ id: "lrids" as TatTab, label: "LRIDS" }] : []),
     ...(showReceptionTab ? [{ id: "reception" as TatTab, label: "Reception" }] : []),
   ];
 
@@ -462,25 +441,35 @@ export default function TATPage() {
                 <KPICard title="TAT Breaches" value={(performanceData?.breachCount ?? 0).toLocaleString()} iconId="breaches" />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Tests Resulted by Section</h3><div className="h-[260px]">{perfSectionRows.length ? <Bar data={perfCountData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Avg. TAT by Section</h3><div className="h-[260px]">{perfSectionRows.length ? <Bar data={perfTatData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Tests Resulted by Section</h3><div className="h-[260px]">{perfSectionRows.length ? <LazyBar data={perfCountData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><h3 className="text-sm font-semibold text-slate-700 mb-4">Avg. TAT by Section</h3><div className="h-[260px]">{perfSectionRows.length ? <LazyBar data={perfTatData} options={perfBarOpts} /> : <div className="h-full flex items-center justify-center text-slate-400 text-sm">No data available</div>}</div></div>
               </div>
             </div>
           )}
-          {activeTab === "lrids" && (
+          {activeTab === "tests-level" && (
             <div className="space-y-4">
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">LRIDS</h1>
-              <p className="text-sm text-slate-500">Laboratory Result Information Display board.</p>
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50"><tr><th className="px-4 py-3 text-left font-semibold text-slate-600">Lab #</th><th className="px-4 py-3 text-left font-semibold text-slate-600">Test</th><th className="px-4 py-3 text-left font-semibold text-slate-600">Section</th><th className="px-4 py-3 text-left font-semibold text-slate-600">Status</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100">{lrids.map((r) => <tr key={r.id}><td className="px-4 py-3">{r.lab_number ?? "—"}</td><td className="px-4 py-3">{r.test_name}</td><td className="px-4 py-3">{resolveSectionLabel(r.section)}</td><td className="px-4 py-3">{r.status}</td></tr>)}</tbody>
-                </table>
-              </div>
+              <TatTestsLevelTab
+                facilityId={facilityId}
+                sectionFilterOptions={sectionFilterOptions}
+                resolveSectionLabel={resolveSectionLabel}
+              />
+              {showTatTestLevel && (
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm text-slate-600">
+                  <span className="font-medium text-slate-700">Professional tracker: </span>
+                  <Link href="/dashboard/lab-metrics/tat/tests" className="font-semibold text-[#21336a] hover:underline">
+                    Open section time-in/out board →
+                  </Link>
+                </div>
+              )}
             </div>
           )}
-          {activeTab === "tests-level" && <div className="bg-white border border-slate-200 rounded-2xl p-6 text-slate-600">Coming soon — requires LIMS data connection. Connect your LIMS in Admin → Data Connections.</div>}
-          {activeTab === "patient-level" && <div className="bg-white border border-slate-200 rounded-2xl p-6 text-slate-600">Coming soon — requires LIMS data connection. Connect your LIMS in Admin → Data Connections.</div>}
+          {activeTab === "patient-level" && (
+            <TatPatientLevelTab
+              facilityId={facilityId}
+              sectionFilterOptions={sectionFilterOptions}
+              resolveSectionLabel={resolveSectionLabel}
+            />
+          )}
           {activeTab === "progress" && <div className="bg-white border border-slate-200 rounded-2xl p-6 text-slate-600">Showing performance data from the Performance tab above while LIMS integration is pending.</div>}
           {activeTab === "reception" && <div className="bg-white border border-slate-200 rounded-2xl p-6 text-slate-600">This tab appears when your LIMS does not supply reception timestamps automatically. Connect LIMS or enable manual reception logging.</div>}
         </div>
@@ -651,7 +640,7 @@ export default function TATPage() {
                 </h3>
                 {pieData.length > 0 ? (
                   <div className="h-[280px]">
-                    <Doughnut data={pieChartData} options={pieOptions} />
+                    <LazyDoughnut data={pieChartData} options={pieOptions} />
                   </div>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
@@ -668,7 +657,7 @@ export default function TATPage() {
                 </h3>
                 {(data?.dailyTrend ?? []).length > 0 ? (
                   <div className="h-[280px]">
-                    <Line data={dailyChartData} options={dailyOptions} />
+                    <LazyLine data={dailyChartData} options={dailyOptions} />
                   </div>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-slate-400 text-sm">
@@ -685,7 +674,7 @@ export default function TATPage() {
               </h3>
               {hourlyData.length > 0 ? (
                 <div className="h-[240px]">
-                  <Bar data={hourlyChartData} options={hourlyOptions} />
+                  <LazyBar data={hourlyChartData} options={hourlyOptions} />
                 </div>
               ) : (
                 <div className="h-48 flex items-center justify-center text-slate-400 text-sm">

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
-    "fitness-check": "node scripts/fitness-functions.js"
+    "fitness-check": "node scripts/fitness-functions.js",
+    "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.6",
@@ -22,6 +23,8 @@
     "chartjs-plugin-datalabels": "^2.2.0",
     "clsx": "^2.1.1",
     "html5-qrcode": "^2.3.8",
+    "idb": "^8.0.3",
+    "jose": "^6.2.2",
     "lucide-react": "^0.576.0",
     "next": "^16.2.1",
     "posthog-js": "^1.363.1",
@@ -30,9 +33,11 @@
     "react": "19.2.3",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.3",
-    "resend": "^4.8.0"
+    "resend": "^4.8.0",
+    "swr": "^2.4.1"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.2.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.6",

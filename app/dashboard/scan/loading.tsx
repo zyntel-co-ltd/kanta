@@ -1,5 +1,5 @@
-import PageLoader from "@/components/ui/PageLoader";
+import DashboardRouteSkeleton from "@/components/dashboard/DashboardRouteSkeleton";
 
-export default function ScanLoading() {
-  return <PageLoader />;
+export default function Loading() {
+  return <DashboardRouteSkeleton />;
 }

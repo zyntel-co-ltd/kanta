@@ -1,6 +1,5 @@
 "use client";
 
-import "@/components/charts/registry";
 import { useEffect, useState, useCallback, useMemo, Fragment } from "react";
 import {
   ShieldCheck, BarChart3, TestTube, Calculator,
@@ -8,7 +7,7 @@ import {
   Download, Copy, Check, Plus, FlaskConical, Activity,
   ChevronDown, ChevronUp, X as XIcon,
 } from "lucide-react";
-import { Line } from "react-chartjs-2";
+import { LazyLine } from "@/components/charts/LazyCharts";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
@@ -17,6 +16,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { STATUS, STRUCTURE } from "@/lib/design-tokens";
 import { CHART_AXIS } from "@/lib/chart-theme";
 import { LoadingBars } from "@/components/ui/PageLoader";
+import { queuedFetch } from "@/lib/sync-queue/queuedFetch";
 
 /* ─────────────────── Theme constants ─────────────────── */
 const inputCls =
@@ -181,18 +181,18 @@ function makeKantaApi() {
         is_active: true,
       };
       if (editingId) {
-        const r = await fetch(`/api/qc/materials/${editingId}`, { method: "PATCH", headers: h(), body: JSON.stringify(payload) });
+        const r = await queuedFetch(`/api/qc/materials/${editingId}`, { method: "PATCH", headers: h(), body: JSON.stringify(payload) });
         return r.json();
       }
-      const r = await fetch(`/api/qc/materials`, { method: "POST", headers: h(), body: JSON.stringify(payload) });
+      const r = await queuedFetch(`/api/qc/materials`, { method: "POST", headers: h(), body: JSON.stringify(payload) });
       return r.json();
     },
     toggleMaterial: async (id: string, isActive: boolean) => {
-      const r = await fetch(`/api/qc/materials/${id}`, { method: "PATCH", headers: h(), body: JSON.stringify({ is_active: isActive }) });
+      const r = await queuedFetch(`/api/qc/materials/${id}`, { method: "PATCH", headers: h(), body: JSON.stringify({ is_active: isActive }) });
       return r.json();
     },
     deleteMaterial: async (id: string) => {
-      const r = await fetch(`/api/qc/materials/${id}`, { method: "DELETE" });
+      const r = await queuedFetch(`/api/qc/materials/${id}`, { method: "DELETE" });
       return r.json();
     },
 
@@ -203,14 +203,14 @@ function makeKantaApi() {
       return (json.data?.points ?? []).map((p: QcItem) => normRun(p, materialId));
     },
     submitRun: async (materialId: string, value: number, runAt: string) => {
-      const r = await fetch(`/api/qc/runs`, {
+      const r = await queuedFetch(`/api/qc/runs`, {
         method: "POST", headers: h(),
         body: JSON.stringify({ material_id: materialId, facility_id: FACILITY_ID, value, run_at: new Date(runAt + "T12:00:00").toISOString() }),
       });
       return r.json();
     },
     deleteRun: async (id: string) => {
-      const r = await fetch(`/api/qc/runs/${id}`, { method: "DELETE" });
+      const r = await queuedFetch(`/api/qc/runs/${id}`, { method: "DELETE" });
       return r.json();
     },
 
@@ -232,14 +232,14 @@ function makeKantaApi() {
         controls: form.controls,
       };
       if (editingId) {
-        const r = await fetch(`/api/qc/qualitative/configs/${editingId}`, { method: "PATCH", headers: h(), body: JSON.stringify(payload) });
+        const r = await queuedFetch(`/api/qc/qualitative/configs/${editingId}`, { method: "PATCH", headers: h(), body: JSON.stringify(payload) });
         return r.json();
       }
-      const r = await fetch(`/api/qc/qualitative/configs`, { method: "POST", headers: h(), body: JSON.stringify(payload) });
+      const r = await queuedFetch(`/api/qc/qualitative/configs`, { method: "POST", headers: h(), body: JSON.stringify(payload) });
       return r.json();
     },
     deleteQualConfig: async (id: string) => {
-      const r = await fetch(`/api/qc/qualitative/configs/${id}`, { method: "DELETE" });
+      const r = await queuedFetch(`/api/qc/qualitative/configs/${id}`, { method: "DELETE" });
       return r.json();
     },
 
@@ -261,14 +261,14 @@ function makeKantaApi() {
         submitted: form.submitted,
       };
       if (editingId) {
-        const r = await fetch(`/api/qc/qualitative/entries/${editingId}`, { method: "PATCH", headers: h(), body: JSON.stringify(payload) });
+        const r = await queuedFetch(`/api/qc/qualitative/entries/${editingId}`, { method: "PATCH", headers: h(), body: JSON.stringify(payload) });
         return r.json();
       }
-      const r = await fetch(`/api/qc/qualitative/entries`, { method: "POST", headers: h(), body: JSON.stringify(payload) });
+      const r = await queuedFetch(`/api/qc/qualitative/entries`, { method: "POST", headers: h(), body: JSON.stringify(payload) });
       return r.json();
     },
     deleteQualEntry: async (id: string) => {
-      const r = await fetch(`/api/qc/qualitative/entries/${id}`, { method: "DELETE" });
+      const r = await queuedFetch(`/api/qc/qualitative/entries/${id}`, { method: "DELETE" });
       return r.json();
     },
   };
@@ -855,7 +855,7 @@ function QCVisualizationTab() {
           )}
         </div>
         <div style={{ height: compact ? 260 : 380 }}>
-          <Line data={chartData} options={options} />
+          <LazyLine data={chartData} options={options} />
         </div>
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500 justify-center">
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[var(--module-primary)] inline-block" /> Normal</span>

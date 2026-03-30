@@ -1,10 +1,47 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
+
+const withBundleAnalyzer = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true",
+});
+
 const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
   skipWaiting: true,
+  /** ENG-63: stale dashboard data offline (GET only). */
+  extendDefaultRuntimeCaching: true,
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: ({
+          url,
+          request,
+        }: {
+          url: URL;
+          request: Request;
+        }) =>
+          request.method === "GET" &&
+          (url.pathname === "/api/me" ||
+            url.pathname === "/api/v1/equipment" ||
+            url.pathname === "/api/facility/lab-config"),
+        handler: "NetworkFirst",
+        method: "GET",
+        options: {
+          cacheName: "kanta-offline-dashboard-api",
+          networkTimeoutSeconds: 8,
+          expiration: {
+            maxEntries: 48,
+            maxAgeSeconds: 86400,
+          },
+          cacheableResponse: {
+            statuses: [0, 200],
+          },
+        },
+      },
+    ],
+  },
 });
 
 const nextConfig: NextConfig = {
@@ -24,7 +61,7 @@ const nextConfig: NextConfig = {
 };
 
 // Sentry — wrap when package is installed
-let config = withPWA(nextConfig);
+let config = withBundleAnalyzer(withPWA(nextConfig));
 try {
   const { withSentryConfig } = require("@sentry/nextjs");
   config = withSentryConfig(config, { silent: true });

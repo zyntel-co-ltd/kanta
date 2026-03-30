@@ -9,6 +9,8 @@ import type { ComponentType } from "react";
 import { useAuth, type FacilityAuthState } from "@/lib/AuthContext";
 import { hospitalDisplayName } from "@/lib/hospitalDisplayName";
 import { useFlag } from "@/lib/featureFlags";
+import { SIDEBAR_LRIDS_NAV_HREF } from "@/lib/lrids/nav";
+import { openLridsBoardInNewTab } from "@/lib/lrids/openBoard";
 import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
 import Tooltip from "@/components/ui/Tooltip";
 import {
@@ -44,6 +46,7 @@ import {
   QrCode,
   CalendarClock,
   ArrowLeft,
+  Table2,
 } from "lucide-react";
 
 type NavItem = {
@@ -102,6 +105,7 @@ const navGroupsBase: NavGroup[] = [
       activePaths: [
         "/dashboard/lab-analytics",
         "/dashboard/tat",
+        "/dashboard/lab-metrics",
         "/dashboard/numbers",
         "/dashboard/meta",
         "/dashboard/revenue",
@@ -110,10 +114,11 @@ const navGroupsBase: NavGroup[] = [
     },
     items: [
       { label: "TAT",         icon: Timer,             href: "/dashboard/tat"         },
+      { label: "Test-level TAT", icon: Table2,         href: "/dashboard/lab-metrics/tat/tests" },
       { label: "Volume",      icon: Binary,            href: "/dashboard/numbers"     },
       { label: "Tests & Lab Mgmt", icon: TableProperties,   href: "/dashboard/meta"   },
       { label: "Revenue",     icon: CircleDollarSign,  href: "/dashboard/revenue"     },
-      { label: "LRIDS",       icon: TestTube,          href: "/dashboard/tat?tab=lrids" },
+      { label: "LRIDS",       icon: TestTube,          href: SIDEBAR_LRIDS_NAV_HREF },
     ],
   },
   {
@@ -180,6 +185,7 @@ export type NavFeatureFlags = {
   showRefrigeratorModule: boolean;
   showLrids: boolean;
   showAiIntelligence: boolean;
+  showTatTestLevel: boolean;
 };
 
 function filterNavForFacilityAuth(
@@ -230,12 +236,15 @@ function filterNavForFacilityAuth(
     if (href.startsWith("/dashboard/departments") && !canAccessAdmin) return false;
     if (href.includes("/dashboard/refrigerator") && !flags.showRefrigeratorModule) return false;
     if (
-      (href.includes("tab=lrids") || href.startsWith("/dashboard/lrids")) &&
+      (href === SIDEBAR_LRIDS_NAV_HREF ||
+        href.includes("tab=lrids") ||
+        href.startsWith("/dashboard/lrids")) &&
       !flags.showLrids
     ) {
       return false;
     }
     if (href.startsWith("/dashboard/intelligence") && !flags.showAiIntelligence) return false;
+    if (href.startsWith("/dashboard/lab-metrics") && !flags.showTatTestLevel) return false;
     if (!canWrite) {
       if (href.includes("tab=data")) return false;
       if (href.includes("tab=qual-entry")) return false;
@@ -344,6 +353,7 @@ function accordionGroupForPath(pathname: string): string | null {
   const labPaths = [
     "/dashboard/lab-analytics",
     "/dashboard/tat",
+    "/dashboard/lab-metrics",
     "/dashboard/tests",
     "/dashboard/numbers",
     "/dashboard/meta",
@@ -376,6 +386,7 @@ export default function Sidebar() {
   const showRefrigeratorModule = useFlag("show-refrigerator-module");
   const showLrids = useFlag("show-lrids");
   const showAiIntelligence = useFlag("show-ai-intelligence");
+  const showTatTestLevel = useFlag("show-tat-test-level");
   const hospitalName = hospitalDisplayName(facilityAuth?.hospitalName);
   const hospitalLogoUrl = facilityAuth?.hospitalLogoUrl || process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
 
@@ -386,6 +397,7 @@ export default function Sidebar() {
       showRefrigeratorModule,
       showLrids,
       showAiIntelligence,
+      showTatTestLevel,
     },
   });
   const { collapsed, setCollapsed } = useSidebarLayout();
@@ -547,7 +559,11 @@ export default function Sidebar() {
                     <div className="mt-1 ml-3 pl-3 border-l border-slate-200 flex flex-col gap-0.5">
                       {group.items.map(({ label, icon: Icon, href, section }, idx) => {
                         const key = href + label;
-                        const subActive = isSubLinkActive(pathname, searchParams, href);
+                        const subActive =
+                          href === SIDEBAR_LRIDS_NAV_HREF
+                            ? pathname.startsWith("/lrids")
+                            : isSubLinkActive(pathname, searchParams, href);
+                        const lridsFacilityId = facilityAuth?.facilityId;
                         return (
                           <div key={key}>
                             {section && (
@@ -562,18 +578,42 @@ export default function Sidebar() {
                               </p>
                             )}
                             <div className="relative">
-                              <Link
-                                href={href}
-                                className={clsx(
-                                  "relative z-[1] flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none",
-                                  subActive
-                                    ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
-                                    : "text-slate-700 hover:bg-slate-100"
-                                )}
-                              >
-                                <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
-                                <span className="truncate text-xs font-medium">{label}</span>
-                              </Link>
+                              {href === SIDEBAR_LRIDS_NAV_HREF ? (
+                                <button
+                                  type="button"
+                                  disabled={!lridsFacilityId}
+                                  title={
+                                    lridsFacilityId
+                                      ? "Open display board in a new tab"
+                                      : "No facility assigned"
+                                  }
+                                  onClick={() => {
+                                    if (lridsFacilityId) void openLridsBoardInNewTab(lridsFacilityId);
+                                  }}
+                                  className={clsx(
+                                    "relative z-[1] flex w-full items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none text-left disabled:opacity-50 disabled:cursor-not-allowed",
+                                    subActive
+                                      ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
+                                      : "text-slate-700 hover:bg-slate-100"
+                                  )}
+                                >
+                                  <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
+                                  <span className="truncate text-xs font-medium">{label}</span>
+                                </button>
+                              ) : (
+                                <Link
+                                  href={href}
+                                  className={clsx(
+                                    "relative z-[1] flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none",
+                                    subActive
+                                      ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
+                                      : "text-slate-700 hover:bg-slate-100"
+                                  )}
+                                >
+                                  <Icon size={16} strokeWidth={1.8} className="flex-shrink-0" />
+                                  <span className="truncate text-xs font-medium">{label}</span>
+                                </Link>
+                              )}
                             </div>
                           </div>
                         );

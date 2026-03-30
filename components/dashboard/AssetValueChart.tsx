@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import "@/components/charts/registry";
-import { Line } from "react-chartjs-2";
+import { LazyLine } from "@/components/charts/LazyCharts";
 import type { ChartData, ChartOptions } from "chart.js";
 import { CHART_AXIS, CHART_BRAND_SECONDARY, CHART_STATUS } from "@/lib/chart-theme";
 import { assetValueDataByPeriod } from "@/lib/data";
@@ -120,7 +119,7 @@ export default function AssetValueChart() {
       </div>
 
       <div className="mt-4 h-36 min-h-[144px] min-w-[1px]">
-        <Line data={chartData} options={options} />
+        <LazyLine data={chartData} options={options} />
       </div>
     </div>
   );

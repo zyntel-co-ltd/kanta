@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TrendingUp, TrendingDown, AlertTriangle, ScanLine, Wrench, Activity } from "lucide-react";
-import "@/components/charts/registry";
-import { Line } from "react-chartjs-2";
+import { LazyLine } from "@/components/charts/LazyCharts";
 import type { ChartData, ChartOptions } from "chart.js";
 import clsx from "clsx";
 import { useDashboardData } from "@/lib/DashboardDataContext";
@@ -240,7 +239,7 @@ export default function KpiCards() {
                   },
                 };
 
-                return <Line data={chartData} options={options} />;
+                return <LazyLine data={chartData} options={options} />;
               })()}
             </div>
 

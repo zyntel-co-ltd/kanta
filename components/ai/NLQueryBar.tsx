@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { Sparkles, SendHorizontal, Loader2, AlertCircle, X } from "lucide-react";
+import { useSyncQueue } from "@/lib/SyncQueueContext";
 type Message = {
   id: string;
   role: "user" | "assistant";
@@ -25,6 +26,7 @@ export default function NLQueryBar({
   facilityId: string | null | undefined;
   userId?: string;
 }) {
+  const { isOnline } = useSyncQueue();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -176,6 +178,18 @@ export default function NLQueryBar({
         title="Select a facility to use AI queries"
       >
         <Sparkles size={14} />
+        Ask Kanta AI
+      </span>
+    );
+  }
+
+  if (!isOnline) {
+    return (
+      <span
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-amber-200 bg-amber-50 text-amber-900/90 cursor-not-allowed"
+        title="Available when online"
+      >
+        <Sparkles size={14} className="text-amber-600" />
         Ask Kanta AI
       </span>
     );
