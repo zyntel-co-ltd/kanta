@@ -4,6 +4,10 @@
   "installCommand": "npm install",
   "crons": [
     {
+      "path": "/api/cron/lims-sync",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron/weekly-summary",
       "schedule": "0 7 * * 1"
     },

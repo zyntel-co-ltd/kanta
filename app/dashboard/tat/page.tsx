@@ -7,6 +7,8 @@ import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
 import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
 import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
+import LimsTestDataEmpty from "@/components/dashboard/LimsTestDataEmpty";
+import { useTestRequestsEmpty } from "@/lib/hooks/useTestRequestsEmpty";
 import TatPatientLevelTab from "@/components/tat/TatPatientLevelTab";
 import TatTestsLevelTab from "@/components/tat/TatTestsLevelTab";
 import { useFlag } from "@/lib/featureFlags";
@@ -32,6 +34,7 @@ export default function TATPage() {
     resolveSectionLabel,
     hasConfiguredSections,
   } = useFacilityConfig(facilityId);
+  const { loading: testRequestsLoading, empty: testRequestsEmpty } = useTestRequestsEmpty(facilityId);
   const showTatTestLevel = useFlag("show-tat-test-level");
   const showTatPatientLevel = useFlag("show-tat-patient-level");
   const professional = isProfessionalOrAbove(facilityAuth?.subscriptionTier);
@@ -93,6 +96,13 @@ export default function TATPage() {
         {!labConfigLoading && !hasConfiguredSections && (
           <LabMetricsConfigEmpty canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel} />
         )}
+
+        {!labConfigLoading &&
+          !testRequestsLoading &&
+          hasConfiguredSections &&
+          testRequestsEmpty && (
+            <LimsTestDataEmpty canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel} />
+          )}
 
         {activeTab === "patients" && (
           canUsePatientTracking ? (

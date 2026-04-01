@@ -8,6 +8,8 @@ import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
 import { useFacilityConfig } from "@/lib/hooks/useFacilityConfig";
 import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty";
+import LimsTestDataEmpty from "@/components/dashboard/LimsTestDataEmpty";
+import { useTestRequestsEmpty } from "@/lib/hooks/useTestRequestsEmpty";
 import PageLoader from "@/components/ui/PageLoader";
 import { BarChart3, Clock3 } from "lucide-react";
 
@@ -107,6 +109,7 @@ export default function NumbersPage() {
     laboratoryFilterOptions,
     hasConfiguredSections,
   } = useFacilityConfig(facilityId);
+  const { loading: testRequestsLoading, empty: testRequestsEmpty } = useTestRequestsEmpty(facilityId);
 
   const [filters, setFilters] = useState({
     period: "thisMonth",
@@ -221,6 +224,14 @@ export default function NumbersPage() {
       {!labConfigLoading && !hasConfiguredSections && (
         <LabMetricsConfigEmpty canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel} />
       )}
+      {!labConfigLoading &&
+        !testRequestsLoading &&
+        hasConfiguredSections &&
+        testRequestsEmpty && (
+          <div className="px-6 pt-4">
+            <LimsTestDataEmpty canAccessAdminPanel={!!facilityAuth?.canAccessAdminPanel} />
+          </div>
+        )}
       {/* Filter Bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="flex flex-wrap items-end gap-4">

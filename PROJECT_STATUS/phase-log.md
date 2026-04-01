@@ -6,6 +6,22 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 
 ---
 
+### 2026-04-01 — ENG-89 Vercel Cron LIMS sync + lab-metrics empty states
+
+- [x] **Cron** — `vercel.json`: `GET /api/cron/lims-sync` every **15 minutes** (`*/15 * * * *`); `Authorization: Bearer CRON_SECRET`; `app/api/cron/lims-sync/route.ts` loads active `lims_connections`, runs `runLIMSSync` per connection (sequential, ~24s wall budget then defer to next run), returns `{ synced, errors }`. `runtime: nodejs`, `maxDuration: 30`. Pattern comment: DATA BRIDGE polling vs future webhook/export.
+- [x] **Facility API** — `GET /api/facility/test-requests-status?facility_id=` → `{ empty }` for authenticated facility (head count on `test_requests`).
+- [x] **UI** — `LimsTestDataEmpty` + `useTestRequestsEmpty` on `/dashboard/tat`, `/dashboard/numbers`, `/dashboard/revenue` when lab sections exist but `test_requests` is empty; copy points to **Admin → Data Connections**.
+- [x] **Docs** — `docs/LIMS_SYNC.md` (interval, manual sync, cron auth, logs, Hobby 15 min minimum, time-budget note).
+
+### 2026-04-01 — ENG-88 LIMS connection UI, ENG-87 data bridge complete
+
+- [x] **LIMS Data Connections page (ENG-88)** — `/dashboard/admin/data-connections` (facility_admin + super-admin only via `requireAdminPanel`). Status states: Not Configured / Disabled / Error (with `lastError` from latest failing sync log) / Connected. Form: PostgreSQL connector selector, host/port/database/user/password (`•••••••• (saved — leave blank to keep)` on update), SSL toggle, six column mapping fields with Nakasero-style placeholders (`lab_requests`, `sample_no`, `received_time`, `result_time`, `section_name`, `test_name`). Actions: Test Connection (10s Promise.race timeout), Save, Enable/Disable toggle, Sync Now (loading spinner). Sync log table: last 10 runs (started_at, duration, records_upserted, error or OK).
+- [x] **LIMS API routes (ENG-88)** — `GET /api/admin/data-connections` (connection without password, `lastError`, last 10 sync logs); `POST` (create/update, encrypts via `encryptConnectionConfig`, blank password on update keeps existing); `PATCH` (`is_active` toggle); `POST /api/admin/data-connections/test` (calls `PostgreSQLLIMSConnector.testConnection()` + `countRowsInTestRequestTable()`, loads saved credentials server-side when `connection_id` passed with empty password, password never logged); `POST /api/admin/data-connections/sync` (calls `runLIMSSync` from `lib/data-bridge/sync.ts`, returns `recordsFetched`, `recordsUpserted`, `duration`, `error`).
+- [x] **Sidebar + recents (ENG-88)** — System group gains "Data Connections" item → `/dashboard/admin/data-connections` (Database icon). `lib/recentVisits.ts` label added.
+- [x] **`lib/data-bridge/connectors/postgresql.ts` (ENG-88)** — `countRowsInTestRequestTable()` added for test connection row count display.
+- [x] **LIMS data bridge library (ENG-87)** — `lib/data-bridge/` with `types.ts`, `errors.ts`, `crypto.ts` (AES-256-GCM), `connectors/base.ts`, `connectors/postgresql.ts`, `connectors/mysql.ts` (stub), `connectors/NAKASERO_MAPPING.md`, `transformers/tat.ts`, `sync.ts`, `index.ts` (`server-only`). Migration `20260401120000_lims_data_bridge.sql`: `lims_connections`, `lims_sync_log`, `test_requests.lims_connection_id` / `lims_external_id`, partial unique index, facility-scoped RLS. `.env.example` updated with `LIMS_ENCRYPTION_KEY`. `package.json` gains `pg`, `@types/pg`, `server-only`.
+- [x] **Deploy requirements** — `LIMS_ENCRYPTION_KEY` (64 hex chars) must be set in Vercel env vars. Migration `20260401120000_lims_data_bridge.sql` must be applied via `supabase db push`.
+
 ### 2026-03-29 — ENG-86 lab config, ENG-84 flags, prod Supabase push hardening
 
 - [x] **Lab Metrics facility config (ENG-86)** — `lib/hooks/useFacilityConfig.ts`, `GET /api/facility/lab-config`, sections/shifts/TAT targets on TAT, Tests, Numbers, Revenue, Meta; chart/table labels via `resolveSectionLabel`; relaxed GET on `/api/admin/config/{sections,shifts,tat-targets}` for authenticated facility users; `LabMetricsConfigEmpty`; performance breach KPI uses per-section targets.
