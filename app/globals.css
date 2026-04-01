@@ -234,6 +234,8 @@ html {
    - --module-* drives tab bars, banners, and module-accent-* helpers.
    ============================================================================= */
 
+/* Module palettes are Kanta brand identifiers. Do not expose as user-selectable themes. */
+
 /* Fallback before attribute match (defaults to Lab Metrics navy) */
 [data-module] {
   --sidebar-bg: #ffffff;

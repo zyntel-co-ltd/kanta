@@ -2,9 +2,9 @@
 
 See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any code.
 
-## Module color map (ENG-131)
+## Module color map (ENG-81 / ENG-131)
 
-Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/globals.css` under `[data-module="…"]` (`--module-primary`, `--sidebar-active-bg`). **Lab Metrics** → teal `#0f766e`; **Asset Management** → sky `#0284c7`; **Quality & samples** → indigo `#6366f1`; **AI Insights** and **Admin/Settings** → emerald `#059669`. Sidebar shell stays white; only the active pill (and collapse toggle) use `--sidebar-active-bg`.
+**Brand-locked** — not configurable per hospital (see `zyntel-playbook/12-projects/kanta/design-system.md`). Canonical accents: `lib/design-tokens.ts` `MODULE_COLORS`, `app/globals.css` §13 `[data-module="…"]`. **Home / AI Insights / Admin** → emerald `#059669`; **Lab Metrics** → navy `#21336a`; **Quality & Samples** → sky `#0284c7`; **Asset Management** → slate `#475569`. Sidebar shell is always white; only the active pill uses `--sidebar-active-bg`.
 
 ## Database migrations (log)
 

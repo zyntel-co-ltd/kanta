@@ -1,6 +1,6 @@
 # Kanta — Start Here
 
-**Last updated:** 2026-04-01 (ENG-89 cron + empty states; ENG-154 Supabase RLS migration)  
+**Last updated:** 2026-04-01 (ENG-81 brand-locked module palette docs; ENG-89; ENG-154)  
 **Updated by:** Cursor  
 **Product type:** SaaS — hospital lab operations & asset intelligence  
 **Status:** Active development — MVP; Phase 29 + 2026-03-29 ops + **ENG-87/88 LIMS data bridge** (encrypted connections, admin Data Connections UI, sync)  

@@ -6,6 +6,14 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 
 ---
 
+### 2026-04-01 — ENG-81 module colors as brand identifiers
+
+- [x] **`lib/design-tokens.ts`** — `MODULE_COLORS` JSDoc: brand-locked, not user/hospital configurable; added `home` entry (`#059669`); playbook cross-reference.
+- [x] **`app/globals.css` §13** — Comment: module palettes are Kanta brand identifiers; do not expose as user-selectable themes.
+- [x] **`PROJECT_STATUS.md`** — Module color map corrected to ENG-81 hexes (navy / sky / slate / emerald).
+- [x] **`PROJECT_STATUS/decisions.md`** — ENG-81 row (per-tenant theme alternatives cancelled).
+- [x] **Playbook** — `knowledge/zyntel-playbook/12-projects/kanta/design-system.md` locked palette table + rationale.
+
 ### 2026-04-01 — ENG-154 Supabase RLS + function search_path
 
 - [x] **Migration** — `supabase/migrations/20260401190000_rls_security_fixes.sql`: RLS + policies on `login_audit`, `qc_results`, `platform_admins`, `facility_invites`, `lab_sections`, `lab_shifts`; `REVOKE SELECT (token)` on `facility_invites` for `PUBLIC`/`anon`/`authenticated`; `ALTER FUNCTION ... SET search_path = public, pg_temp` for `audit_trigger_fn`, `update_rack_status`, and any `custom_access_token_hook` / `update_updated_at` overloads present.

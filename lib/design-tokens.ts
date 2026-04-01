@@ -33,10 +33,20 @@ export const STRUCTURE = {
 } as const;
 
 /**
- * Canonical module map — Tailwind class tokens are static strings for Tailwind JIT.
- * @see globals.css [data-module="…"] for matching CSS variables.
+ * These colors are brand identifiers — they are not configurable by hospitals or users and must not be exposed as user-selectable options.
+ *
+ * Maps to `data-module` in `app/dashboard/layout.tsx` and `[data-module="…"]` in `app/globals.css` §13. There is no theme switcher; alternatives are out of scope (ENG-81).
+ *
+ * @see zyntel-playbook/12-projects/kanta/design-system.md
  */
 export const MODULE_COLORS = {
+  /** `/dashboard/home` — emerald brand hub */
+  home: {
+    bg: "bg-emerald-600",
+    text: "text-emerald-600",
+    border: "border-emerald-600",
+    hex: "#059669",
+  },
   labMetrics: {
     bg: "bg-[#21336a]",
     text: "text-[#21336a]",
