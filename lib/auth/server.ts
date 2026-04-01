@@ -47,6 +47,15 @@ export type AuthContext = {
   isActive: boolean;
 };
 
+/**
+ * ENG-160: Unmatched-tests admin APIs — super-admin, or deployments with
+ * `NEXT_PUBLIC_FLAG_SHOW_UNMATCHED_TESTS=true` (aligns with `show-unmatched-tests` client flag).
+ */
+export function canAccessUnmatchedTestsApi(ctx: AuthContext): boolean {
+  if (ctx.isSuperAdmin) return true;
+  return process.env.NEXT_PUBLIC_FLAG_SHOW_UNMATCHED_TESTS === "true";
+}
+
 export async function getAuthContext(
   req: NextRequest,
   options?: { facilityIdHint?: string | null }

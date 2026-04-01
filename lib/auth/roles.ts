@@ -20,6 +20,18 @@ export function isFacilityRole(value: unknown): value is FacilityRole {
   return typeof value === "string" && FACILITY_ROLES.includes(value as FacilityRole);
 }
 
+/** Normalize legacy DB strings and aliases to `FacilityRole` (admin UI + APIs). */
+export function normalizeFacilityRoleInput(value: unknown): FacilityRole {
+  if (typeof value !== "string") return "viewer";
+  const role = value.trim().toLowerCase();
+  if (role === "admin") return "facility_admin";
+  if (role === "manager") return "lab_manager";
+  if (role === "technician" || role === "reception") return "lab_technician";
+  if (role === "viewer") return "viewer";
+  if (isFacilityRole(role)) return role;
+  return "viewer";
+}
+
 export type RolePermissions = {
   /** Gates /dashboard/admin. Only facility_admin + super admin. */
   canAccessAdminPanel: boolean;

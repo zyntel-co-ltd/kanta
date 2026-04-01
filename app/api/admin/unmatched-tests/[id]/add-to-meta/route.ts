@@ -3,7 +3,12 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
+import {
+  canAccessUnmatchedTestsApi,
+  getAuthContext,
+  jsonError,
+  requireAdminPanel,
+} from "@/lib/auth/server";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -54,6 +59,9 @@ export async function POST(
     });
     const denied = requireAdminPanel(ctx, unmatched.facility_id as string);
     if (denied) return denied;
+    if (!canAccessUnmatchedTestsApi(ctx)) {
+      return jsonError("Forbidden", 403);
+    }
 
     const { error: insertErr } = await db.from("test_metadata").insert({
       facility_id: unmatched.facility_id,

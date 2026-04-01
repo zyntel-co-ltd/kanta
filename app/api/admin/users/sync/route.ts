@@ -22,28 +22,36 @@ export async function POST(req: NextRequest) {
 
   const ctx = await getAuthContext(req, { facilityIdHint: facility_id });
   if (!ctx.user) return jsonError("Unauthorized", 401);
+  /** ENG-160: Cross-tenant user linking — super-admin only (UI also gates `AdminUsersSection`). */
   if (!ctx.isSuperAdmin) return jsonError("Forbidden", 403);
 
   try {
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
 
-    const listUsersFn = (
+    // Call via the admin object — extracting the method without binding loses `this`.
+    const adminAuth = (
       db.auth as {
         admin?: {
           listUsers: (o: {
             page?: number;
             perPage?: number;
-          }) => Promise<{ data?: { users?: Array<{ id: string }> } }>;
+          }) => Promise<{ data: { users: Array<{ id: string }> }; error: unknown }>;
         };
       }
-    ).admin?.listUsers;
-    if (!listUsersFn) {
+    ).admin;
+
+    if (!adminAuth) {
       return jsonError("Auth admin not available", 500);
     }
 
-    const { data: listData } = await listUsersFn({ page: 1, perPage: 1000 });
-    const allAuthUsers = listData?.users ?? [];
+    const listResult = await adminAuth.listUsers({ page: 1, perPage: 1000 });
+    if ((listResult as { error?: { message?: string } }).error) {
+      const msg = ((listResult as { error?: { message?: string } }).error)?.message ?? "listUsers failed";
+      console.error("[POST /api/admin/users/sync] listUsers:", msg);
+      return NextResponse.json({ error: msg, synced: 0 }, { status: 500 });
+    }
+    const allAuthUsers = listResult.data?.users ?? [];
 
     const { data: existingRows, error: exErr } = await db
       .from("facility_users")

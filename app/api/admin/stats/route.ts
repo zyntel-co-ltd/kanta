@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
+import { canAccessUnmatchedTestsApi, getAuthContext, requireAdminPanel } from "@/lib/auth/server";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -30,6 +30,8 @@ export async function GET(req: NextRequest) {
   const denied = requireAdminPanel(ctx, facilityId);
   if (denied) return denied;
 
+  const allowUnmatched = canAccessUnmatchedTestsApi(ctx);
+
   try {
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
@@ -55,11 +57,13 @@ export async function GET(req: NextRequest) {
         .select("id", { count: "exact", head: true })
         .eq("facility_id", facilityId)
         .eq("is_active", true),
-      db
-        .from("unmatched_tests")
-        .select("id", { count: "exact", head: true })
-        .eq("facility_id", facilityId)
-        .eq("is_resolved", false),
+      allowUnmatched
+        ? db
+            .from("unmatched_tests")
+            .select("id", { count: "exact", head: true })
+            .eq("facility_id", facilityId)
+            .eq("is_resolved", false)
+        : Promise.resolve({ count: 0 as number | null }),
       db
         .from("test_cancellations")
         .select("id", { count: "exact", head: true })
@@ -70,7 +74,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       totalTests: totalTests ?? 0,
       totalUsers: totalUsers ?? 0,
-      unmatchedTests: unmatchedTests ?? 0,
+      unmatchedTests: allowUnmatched ? (unmatchedTests ?? 0) : 0,
       recentCancellations: recentCancellations ?? 0,
     });
   } catch (err) {

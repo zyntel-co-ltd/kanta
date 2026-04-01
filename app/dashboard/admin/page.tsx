@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
+import { useFlag } from "@/lib/featureFlags";
 import AdminUsersSection from "@/components/dashboard/admin/AdminUsersSection";
 import AdminConfigurationSection from "@/components/dashboard/admin/AdminConfigurationSection";
 import { auditActionLabel } from "@/lib/auditLabels";
@@ -78,16 +79,6 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
-  const { facilityAuth, facilityAuthLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (facilityAuthLoading) return;
-    if (!facilityAuth?.canAccessAdminPanel) {
-      router.replace("/dashboard/home");
-    }
-  }, [facilityAuthLoading, facilityAuth, router]);
-
   const [monthlyTarget, setMonthlyTarget] = useState({
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
@@ -143,6 +134,24 @@ export default function AdminPage() {
 
   const [facilityList, setFacilityList] = useState<{ id: string; name: string }[]>([]);
   const [facilityOverride, setFacilityOverride] = useState<string | null>(null);
+
+  const { facilityAuth, facilityAuthLoading } = useAuth();
+  const router = useRouter();
+  const showUnmatchedTestsFlag = useFlag("show-unmatched-tests");
+  const showUnmatchedTab = !!facilityAuth?.isSuperAdmin || showUnmatchedTestsFlag;
+
+  useEffect(() => {
+    if (facilityAuthLoading) return;
+    if (!facilityAuth?.canAccessAdminPanel) {
+      router.replace("/dashboard/home");
+    }
+  }, [facilityAuthLoading, facilityAuth, router]);
+
+  useEffect(() => {
+    if (!showUnmatchedTab && activeTab === "unmatched") {
+      setActiveTab("users");
+    }
+  }, [showUnmatchedTab, activeTab]);
 
   useEffect(() => {
     if (!facilityAuth?.isSuperAdmin) return;
@@ -313,13 +322,21 @@ export default function AdminPage() {
     );
   }
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "users", label: "User Management", icon: <Users size={16} /> },
-    { id: "configuration", label: "Configuration", icon: <Cog size={16} /> },
-    { id: "cancellations", label: "Cancellations", icon: <Ban size={16} /> },
-    { id: "audit", label: "Audit Trail", icon: <ClipboardList size={16} /> },
-    { id: "settings", label: "Settings", icon: <Sliders size={16} /> },
-  ];
+  const tabs = useMemo(() => {
+    const t: { id: Tab; label: string; icon: React.ReactNode }[] = [
+      { id: "users", label: "User Management", icon: <Users size={16} /> },
+      { id: "configuration", label: "Configuration", icon: <Cog size={16} /> },
+    ];
+    if (showUnmatchedTab) {
+      t.push({ id: "unmatched", label: "Unmatched Tests", icon: <AlertTriangle size={16} /> });
+    }
+    t.push(
+      { id: "cancellations", label: "Cancellations", icon: <Ban size={16} /> },
+      { id: "audit", label: "Audit Trail", icon: <ClipboardList size={16} /> },
+      { id: "settings", label: "Settings", icon: <Sliders size={16} /> }
+    );
+    return t;
+  }, [showUnmatchedTab]);
 
   const getUnmatchedEdit = (t: UnmatchedTest) =>
     unmatchedEdits[t.id] ?? { labSection: "CHEMISTRY", tat: 60, price: 0 };

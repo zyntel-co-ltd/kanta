@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Key, Check, X, Mail, RefreshCw, Trash2 } from "lucide-react";
+import { Plus, Key, Check, X, Mail, RefreshCw, XCircle } from "lucide-react";
 import {
   assignableFacilityRoles,
   facilityRoleLabel,
   isFacilityRole,
+  normalizeFacilityRoleInput,
+  roleRank,
   type FacilityRole,
 } from "@/lib/auth/roles";
 import Tooltip from "@/components/ui/Tooltip";
@@ -298,7 +300,10 @@ export default function AdminUsersSection({
             <strong>Direct create</strong> (advanced) — only when you must set a temporary password
             in-app.
           </li>
-          <li>Accounts are scoped to this facility. Deactivate users who should no longer access Kanta.</li>
+          <li>
+            Accounts are scoped to this facility. <strong>Deactivate</strong> users who should no
+            longer access Kanta — accounts are not deleted.
+          </li>
         </ul>
       </div>
 
@@ -394,7 +399,7 @@ export default function AdminUsersSection({
                             className="p-1.5 rounded-lg text-red-600 hover:bg-red-50"
                             aria-label="Cancel invite"
                           >
-                            <Trash2 size={14} />
+                            <XCircle size={14} />
                           </button>
                         </Tooltip>
                       </div>
@@ -465,7 +470,12 @@ export default function AdminUsersSection({
               ) : (
                 users.map((u) => {
                   const isSelf = u.user_id === currentUserId;
-                  const canEditRole = !isSelf && assignable.length > 0;
+                  const rowRole = normalizeFacilityRoleInput(u.role);
+                  const canManageRow =
+                    !isSelf &&
+                    (isSuperAdmin ||
+                      (actorRole !== null && roleRank(rowRole) <= roleRank(actorRole)));
+                  const canEditRole = canManageRow && assignable.includes(rowRole);
                   return (
                     <tr key={u.id} className="border-b border-slate-50">
                       <td className="px-4 py-3">
@@ -525,16 +535,23 @@ export default function AdminUsersSection({
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 flex-wrap">
-                          <Tooltip label="Reset password">
+                          <Tooltip
+                            label={
+                              !canManageRow
+                                ? "You cannot modify this user"
+                                : "Reset password"
+                            }
+                          >
                             <button
                               type="button"
+                              disabled={!canManageRow}
                               onClick={() =>
                                 setResetPasswordModal({
                                   id: u.id,
                                   label: u.full_name,
                                 })
                               }
-                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50"
+                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 disabled:opacity-40 disabled:cursor-not-allowed"
                               aria-label="Reset password"
                             >
                               <Key size={14} />
@@ -544,14 +561,16 @@ export default function AdminUsersSection({
                             label={
                               isSelf
                                 ? "You cannot deactivate your own account"
-                                : u.is_active
-                                  ? "Deactivate user"
-                                  : "Reactivate user"
+                                : !canManageRow
+                                  ? "You cannot modify this user"
+                                  : u.is_active
+                                    ? "Deactivate user"
+                                    : "Reactivate user"
                             }
                           >
                             <button
                               type="button"
-                              disabled={isSelf}
+                              disabled={isSelf || !canManageRow}
                               onClick={() =>
                                 void handleToggleActive(u.id, u.user_id, u.is_active)
                               }

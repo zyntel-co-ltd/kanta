@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { userCanAccessAdminPanel } from "@/lib/auth/server";
+import AdminPanelSubNav from "@/components/dashboard/admin/AdminPanelSubNav";
 
 /**
  * Server-side guard for `/dashboard/admin/*` — complements middleware (defense in depth).
@@ -27,5 +28,10 @@ export default async function AdminSectionLayout({
     redirect("/dashboard/home");
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <AdminPanelSubNav />
+      {children}
+    </>
+  );
 }

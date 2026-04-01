@@ -6,6 +6,23 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 
 ---
 
+### 2026-04-01 — ENG-104 Admin user table + role hierarchy
+
+- [x] **`normalizeFacilityRoleInput`** in `lib/auth/roles.ts` — single normalization for APIs/UI.
+- [x] **`GET /api/admin/users`** — Documented 403 via `requireAdminPanel` (`canAccessAdminPanel`); list joins `auth.users` for names/email (existing); `resolveFullName` avoids UUID display.
+- [x] **`PUT` / `toggle-active`** — Cannot modify users **above** actor rank (unless super-admin); cannot change own role; cannot self-deactivate; **DELETE** remains 405 (no hard delete).
+- [x] **`AdminUsersSection`** — Role dropdown only when actor may assign target’s current role; reset password + activate/deactivate gated by `canManageRow`; invite cancel icon `XCircle` (not user delete). Copy clarifies deactivate vs delete.
+
+### 2026-04-01 — ENG-160 Admin Panel scope cleanup (facility-only)
+
+- [x] **Sidebar** — Removed **Data Connections** from System group; entry via `AdminPanelSubNav` in `app/dashboard/admin/layout.tsx` only.
+- [x] **Admin sub-nav** — `AdminPanelSubNav`: Admin home, Hospital settings, Data connections.
+- [x] **Unmatched tests** — Tab only if `isSuperAdmin || useFlag("show-unmatched-tests")`; `canAccessUnmatchedTestsApi` on APIs; `GET /api/admin/stats` hides unmatched count when gated off.
+- [x] **Hospital settings** — Read-only **Your plan** (`tier` from API) + Contact Zyntel note.
+- [x] **Sync users** — `POST /api/admin/users/sync` documents super-admin-only; `AdminUsersSection` guard unchanged.
+- [x] **Flags** — `show-unmatched-tests` in `KANTA_FEATURE_FLAG_NAMES`.
+- [x] **ENG-107** — Re-scoped in `decisions.md` (Console branch creation; Admin = read-only siblings).
+
 ### 2026-04-01 — ENG-156 Zyntel Console v1 + Supabase user sync
 
 - [x] **Console** — `/dashboard/console` (super-admin only; client guard + redirect + toast). Cards: Facilities (live), Super-admins / Feature flags / Platform audit (coming soon). `/dashboard/console/facilities` table from `GET /api/console/facilities`; **Provision user** modal → `POST /api/admin/users` (`facility_admin`).

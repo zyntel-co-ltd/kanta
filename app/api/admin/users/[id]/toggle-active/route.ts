@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, requireAdminPanel } from "@/lib/auth/server";
 import { writeAuditLog } from "@/lib/audit";
+import { normalizeFacilityRoleInput, roleRank } from "@/lib/auth/roles";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -32,7 +33,7 @@ export async function POST(
 
     const { data: row } = await db
       .from("facility_users")
-      .select("facility_id, user_id, is_active")
+      .select("facility_id, user_id, is_active, role")
       .eq("id", id)
       .single();
 
@@ -45,6 +46,16 @@ export async function POST(
     });
     const denied = requireAdminPanel(ctx, row.facility_id as string);
     if (denied) return denied;
+
+    const targetRole = normalizeFacilityRoleInput(row.role);
+    if (!ctx.isSuperAdmin && ctx.role) {
+      if (roleRank(targetRole) > roleRank(ctx.role)) {
+        return NextResponse.json(
+          { error: "You cannot modify a user above your role" },
+          { status: 403 }
+        );
+      }
+    }
 
     if (ctx.user?.id === row.user_id && is_active === false) {
       return NextResponse.json(

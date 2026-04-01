@@ -13,7 +13,16 @@ type HospitalForm = {
   logo_url: string | null;
   address: string;
   phone: string;
+  tier: string | null;
 };
+
+function tierPlanLabel(tier: string | null): string {
+  if (!tier) return "—";
+  const t = tier.toLowerCase();
+  if (t === "pro") return "Professional";
+  if (t === "starter") return "Starter";
+  return tier.charAt(0).toUpperCase() + tier.slice(1);
+}
 
 export default function HospitalSettingsPage() {
   const { facilityAuth, facilityAuthLoading } = useAuth();
@@ -32,6 +41,7 @@ export default function HospitalSettingsPage() {
     logo_url: null,
     address: "",
     phone: "",
+    tier: null,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,6 +59,7 @@ export default function HospitalSettingsPage() {
           logo_url: data?.logo_url ?? null,
           address: data?.address ?? "",
           phone: data?.phone ?? "",
+          tier: typeof data?.tier === "string" ? data.tier : null,
         });
       })
       .catch(() => setToast({ type: "error", message: "Failed to load hospital settings" }))
@@ -129,6 +140,14 @@ export default function HospitalSettingsPage() {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6">
+        <div className="rounded-xl border border-slate-100 bg-slate-50/90 p-4 space-y-1">
+          <p className="text-sm font-medium text-slate-700">Your plan</p>
+          <p className="text-lg font-semibold text-slate-900">{tierPlanLabel(form.tier)}</p>
+          <p className="text-xs text-slate-500">
+            Subscription tier is set by Zyntel. Contact Zyntel to change your plan.
+          </p>
+        </div>
+
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">Hospital Name</label>
           <input

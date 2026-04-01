@@ -11,19 +11,9 @@ import {
   assignableFacilityRoles,
   facilityRoleLabel,
   isFacilityRole,
+  normalizeFacilityRoleInput,
   type FacilityRole,
 } from "@/lib/auth/roles";
-
-function normalizeRole(value: unknown): FacilityRole {
-  if (typeof value !== "string") return "viewer";
-  const role = value.trim().toLowerCase();
-  if (role === "admin") return "facility_admin";
-  if (role === "manager") return "lab_manager";
-  if (role === "technician" || role === "reception") return "lab_technician";
-  if (role === "viewer") return "viewer";
-  if (isFacilityRole(role)) return role;
-  return "viewer";
-}
 
 type AuthUserMeta = {
   username?: string;
@@ -71,6 +61,7 @@ export async function GET(req: NextRequest) {
   }
 
   const ctx = await getAuthContext(req, { facilityIdHint: facilityId });
+  /** ENG-104/105: 403 unless `canAccessAdminPanel` (via `requireAdminPanel`). */
   const denied = requireAdminPanel(ctx, facilityId);
   if (denied) return denied;
 
@@ -93,35 +84,38 @@ export async function GET(req: NextRequest) {
     const missingUserIds = new Set<string>();
 
     try {
-      const listUsers = (db.auth as {
+      // Call via the admin object — extracting listUsers/getUserById as bare functions
+      // loses `this` binding and causes a runtime crash (swallowed silently before this fix).
+      const adminAuth = (db.auth as {
         admin?: {
           listUsers: (o: { page?: number; perPage?: number }) => Promise<{
-            data?: {
-              users?: Array<{
+            data: {
+              users: Array<{
                 id: string;
                 email?: string;
                 last_sign_in_at?: string;
                 user_metadata?: AuthUserMeta;
               }>;
             };
+            error: unknown;
           }>;
-          getUserById?: (id: string) => Promise<{
-            data?: {
-              user?: {
+          getUserById: (id: string) => Promise<{
+            data: {
+              user: {
                 id: string;
                 email?: string;
                 last_sign_in_at?: string;
                 user_metadata?: AuthUserMeta;
-              };
+              } | null;
             };
+            error: unknown;
           }>;
         };
       }).admin;
-      const getUserById = listUsers?.getUserById;
-      const listUsersFn = listUsers?.listUsers;
-      if (listUsersFn) {
-        const { data: listData } = await listUsersFn({ page: 1, perPage: 1000 });
-        for (const au of listData?.users ?? []) {
+
+      if (adminAuth) {
+        const listResult = await adminAuth.listUsers({ page: 1, perPage: 1000 });
+        for (const au of listResult.data?.users ?? []) {
           emailById.set(au.id, au.email ?? "");
           metaById.set(au.id, au.user_metadata ?? {});
           if (au.user_metadata?.avatar_url) {
@@ -131,46 +125,48 @@ export async function GET(req: NextRequest) {
             lastLoginById.set(au.id, au.last_sign_in_at);
           }
         }
-      }
 
-      for (const u of facilityUsers ?? []) {
-        const uid = String(u.user_id || "");
-        if (!uid) continue;
-        const listed = emailById.has(uid) && metaById.has(uid);
-        const emailKnown = (emailById.get(uid) ?? "").trim().length > 0;
-        // Not in first listUsers page, or listUsers returned no email (refetch canonical auth row).
-        if (!listed || !emailKnown) missingUserIds.add(uid);
-      }
-      if (getUserById && missingUserIds.size > 0) {
-        await Promise.all(
-          Array.from(missingUserIds).map(async (uid) => {
-            try {
-              const { data } = await getUserById(uid);
-              const au = data?.user;
-              if (!au) return;
-              if (au.email) emailById.set(uid, au.email);
-              metaById.set(uid, au.user_metadata ?? {});
-              if (au.user_metadata?.avatar_url) {
-                avatarById.set(uid, au.user_metadata.avatar_url);
+        for (const u of facilityUsers ?? []) {
+          const uid = String(u.user_id || "");
+          if (!uid) continue;
+          const listed = emailById.has(uid) && metaById.has(uid);
+          const emailKnown = (emailById.get(uid) ?? "").trim().length > 0;
+          // Not in first listUsers page, or Supabase-dashboard users may have empty email in page result.
+          if (!listed || !emailKnown) missingUserIds.add(uid);
+        }
+
+        if (missingUserIds.size > 0) {
+          await Promise.all(
+            Array.from(missingUserIds).map(async (uid) => {
+              try {
+                const { data } = await adminAuth.getUserById(uid);
+                const au = data?.user;
+                if (!au) return;
+                if (au.email) emailById.set(uid, au.email);
+                metaById.set(uid, au.user_metadata ?? {});
+                if (au.user_metadata?.avatar_url) {
+                  avatarById.set(uid, au.user_metadata.avatar_url);
+                }
+                if (au.last_sign_in_at) {
+                  lastLoginById.set(uid, au.last_sign_in_at);
+                }
+              } catch {
+                /* per-user lookup failures are non-fatal */
               }
-              if (au.last_sign_in_at) {
-                lastLoginById.set(uid, au.last_sign_in_at);
-              }
-            } catch {
-              /* ignore */
-            }
-          })
-        );
+            })
+          );
+        }
       }
-    } catch {
-      /* auth list optional */
+    } catch (authErr) {
+      console.error("[GET /api/admin/users] auth enrichment failed:", authErr);
+      /* auth enrichment is best-effort; facility_users rows still returned below */
     }
 
     const users = (facilityUsers ?? []).map((u) => {
       const uid = u.user_id as string;
       const email = emailById.get(uid) ?? "";
       const meta = metaById.get(uid);
-      const role = normalizeRole(u.role);
+      const role = normalizeFacilityRoleInput(u.role);
       const full_name = resolveFullName(meta, email);
       return {
         id: u.id,

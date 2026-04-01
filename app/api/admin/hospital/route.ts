@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
       logo_url: null,
       address: null,
       phone: null,
+      tier: null,
     });
   }
 
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
     const db = createAdminClient();
     const { data, error } = await db
       .from("hospitals")
-      .select("id, name, logo_url, address, phone")
+      .select("id, name, logo_url, address, phone, tier")
       .eq("id", facilityId)
       .maybeSingle();
     if (error) throw error;

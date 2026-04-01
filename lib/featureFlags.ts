@@ -16,6 +16,8 @@ export const KANTA_FEATURE_FLAG_NAMES = [
   "show-sample-scan",
   "show-tat-patient-level",
   "show-tat-test-level",
+  /** ENG-160: Nakasero-style unmatched tests tab in Admin Panel (API also uses env override). */
+  "show-unmatched-tests",
 ] as const;
 
 export type KantaFeatureFlagName = (typeof KANTA_FEATURE_FLAG_NAMES)[number];

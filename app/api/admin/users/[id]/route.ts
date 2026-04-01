@@ -10,23 +10,14 @@ import {
   FACILITY_ROLES,
   assignableFacilityRoles,
   isFacilityRole,
+  normalizeFacilityRoleInput,
+  roleRank,
   type FacilityRole,
 } from "@/lib/auth/roles";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
   !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-project-ref");
-
-function normalizeRole(value: unknown): FacilityRole {
-  if (typeof value !== "string") return "viewer";
-  const role = value.trim().toLowerCase();
-  if (role === "admin") return "facility_admin";
-  if (role === "manager") return "lab_manager";
-  if (role === "technician" || role === "reception") return "lab_technician";
-  if (role === "viewer") return "viewer";
-  if (isFacilityRole(role)) return role;
-  return "viewer";
-}
 
 export async function PUT(
   req: NextRequest,
@@ -65,7 +56,16 @@ export async function PUT(
     if (denied) return denied;
 
     const targetUserId = facilityRow.user_id as string;
-    const currentRole = normalizeRole(facilityRow.role);
+    const currentRole = normalizeFacilityRoleInput(facilityRow.role);
+
+    if (!ctx.isSuperAdmin && ctx.role) {
+      if (roleRank(currentRole) > roleRank(ctx.role)) {
+        return NextResponse.json(
+          { error: "You cannot modify a user above your role" },
+          { status: 403 }
+        );
+      }
+    }
 
     if (role !== undefined && isFacilityRole(role)) {
       const newRole: FacilityRole = role;

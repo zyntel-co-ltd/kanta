@@ -47,7 +47,6 @@ import {
   CalendarClock,
   ArrowLeft,
   Table2,
-  Database,
   Terminal,
 } from "lucide-react";
 
@@ -173,7 +172,6 @@ const navGroupsBase: NavGroup[] = [
       { label: "Departments", icon: Building2, href: "/dashboard/departments" },
       { label: "Admin",       icon: Shield,    href: "/dashboard/admin"       },
       { label: "Hospital Settings", icon: Building2, href: "/dashboard/admin/hospital" },
-      { label: "Data Connections", icon: Database, href: "/dashboard/admin/data-connections" },
       { label: "Console", icon: Terminal, href: "/dashboard/console" },
       { label: "Settings",    icon: Settings,  href: "/dashboard/settings"    },
     ],
