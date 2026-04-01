@@ -13,6 +13,13 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 - [x] **Sync** — `POST /api/admin/users/sync` (`isSuperAdmin`); `AdminUsersSection` **Sync Supabase users**; `listUsers` + upsert `viewer` rows for `facility_id`.
 - [x] **`lib/recentVisits.ts`** — Console paths labeled.
 
+### 2026-04-01 — ENG-157 Console hospital provisioning + super-admins doc
+
+- [x] **Facilities** — Slide-over **New hospital** + **Add branch** (`parent_hospital_id`); `POST /api/console/facilities`; tier UI maps Professional → DB `pro`. **Add admin** per row → `POST /api/console/users`; client `generatePassword()` (12 chars); success credential block + clipboard (`CheckCircle` on copy). Login URL from `NEXT_PUBLIC_APP_URL` or `window.location.origin`.
+- [x] **Migration** — `20260402120000_hospitals_parent_hospital_id.sql` (`parent_hospital_id`); POST retries without parent only when error indicates missing column.
+- [x] **Console home** — Super-admins card → read-only `GET /api/console/platform-admins` + amber SQL callout (no UI promotion).
+- [x] **Docs** — `PROJECT_STATUS.md`, `decisions.md`, `api.md`.
+
 ### 2026-04-01 — ENG-81 module colors as brand identifiers
 
 - [x] **`lib/design-tokens.ts`** — `MODULE_COLORS` JSDoc: brand-locked, not user/hospital configurable; added `home` entry (`#059669`); playbook cross-reference.
