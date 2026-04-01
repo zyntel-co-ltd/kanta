@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     const db = createAdminClient();
     const { data, error } = await db
       .from("facility_invites")
-      .select("id, email, role, token, expires_at, created_at, accepted_at")
+      .select("id, email, role, expires_at, created_at, accepted_at")
       .eq("facility_id", facility_id)
       .is("accepted_at", null)
       .order("created_at", { ascending: false });

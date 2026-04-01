@@ -14,6 +14,7 @@ Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/
 | 2026-03-29 | `supabase/migrations/20260329140000_lab_sections_shifts_audit_app.sql` | ENG-85: `lab_sections`, `lab_shifts`, `tat_targets.section_id`; ENG-64: relax `audit_log.action` CHECK, add `user_id` / `entity_type`; seed sections/shifts per hospital |
 | 2026-03-29 | In-place edits to older migration files (same filenames) | **`supabase db push` hardening** for Mazra / partial prod: `20250321000001` — backfill `facility_id` from `hospital_id` only if that column exists; `20250321000003` — create `facility_role` only if missing; `20250321000006` — `tat_targets` uniqueness via expression index (not invalid inline `UNIQUE`); `20260322000001` — `ALTER lab_racks ADD COLUMN status` when table pre-exists without it |
 | 2026-04-01 | `supabase/migrations/20260401120000_lims_data_bridge.sql` | ENG-87: `lims_connections`, `lims_sync_log`, `test_requests.lims_*` dedupe index; RLS for facility members |
+| 2026-04-01 | `supabase/migrations/20260401190000_rls_security_fixes.sql` | ENG-154: RLS on `login_audit`, `qc_results`, `platform_admins`, `facility_invites`, `lab_sections`, `lab_shifts`; revoke SELECT on `facility_invites.token` for anon/authenticated; `search_path` on 4 functions |
 
 ## Phase — ENG-87 LIMS Data Bridge (library)
 

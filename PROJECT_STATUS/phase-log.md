@@ -6,6 +6,12 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 
 ---
 
+### 2026-04-01 — ENG-154 Supabase RLS + function search_path
+
+- [x] **Migration** — `supabase/migrations/20260401190000_rls_security_fixes.sql`: RLS + policies on `login_audit`, `qc_results`, `platform_admins`, `facility_invites`, `lab_sections`, `lab_shifts`; `REVOKE SELECT (token)` on `facility_invites` for `PUBLIC`/`anon`/`authenticated`; `ALTER FUNCTION ... SET search_path = public, pg_temp` for `audit_trigger_fn`, `update_rack_status`, and any `custom_access_token_hook` / `update_updated_at` overloads present.
+- [x] **API** — `GET /api/invites` no longer selects `token` in the JSON list response (resend still loads token server-side only).
+- [x] **Ops** — Leaked Password Protection remains a **Supabase Dashboard** toggle (documented in `decisions.md`).
+
 ### 2026-04-01 — ENG-89 Vercel Cron LIMS sync + lab-metrics empty states
 
 - [x] **Cron** — `vercel.json`: `GET /api/cron/lims-sync` every **15 minutes** (`*/15 * * * *`); `Authorization: Bearer CRON_SECRET`; `app/api/cron/lims-sync/route.ts` loads active `lims_connections`, runs `runLIMSSync` per connection (sequential, ~24s wall budget then defer to next run), returns `{ synced, errors }`. `runtime: nodejs`, `maxDuration: 30`. Pattern comment: DATA BRIDGE polling vs future webhook/export.
