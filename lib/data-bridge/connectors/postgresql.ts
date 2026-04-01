@@ -82,6 +82,16 @@ export class PostgreSQLLIMSConnector extends LIMSConnector {
     return r.rows?.[0]?.ok === 1;
   }
 
+  /** Approximate row count in the configured test-request table (for admin "Test connection"). */
+  async countRowsInTestRequestTable(): Promise<number> {
+    if (!this.pool) await this.connect();
+    const p = this.pool!;
+    const q = this.queryConfig;
+    const table = quoteTable(parseTableIdent(q.testRequestTable));
+    const res = await p.query(`SELECT COUNT(*)::bigint AS c FROM ${table}`);
+    return Number(res.rows?.[0]?.c ?? 0);
+  }
+
   private watermarkColumn(): string {
     const q = this.queryConfig;
     return assertCol(

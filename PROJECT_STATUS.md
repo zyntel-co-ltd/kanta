@@ -21,6 +21,12 @@ Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/
 - **Deps:** `pg`, `@types/pg`, `server-only`.
 - **Verify:** `npm run lint`, `npm run type-check`, `npm run build`; apply migration in Supabase; set `LIMS_ENCRYPTION_KEY` on Vercel for encrypted LIMS credentials.
 
+## Phase — ENG-88 LIMS admin UI
+
+- **Page:** `/dashboard/admin/data-connections` (facility admin panel only) — connection form, Nakasero-style column mapping placeholders, Test connection, Save (encrypted), Enable sync toggle, Sync now, last 10 `lims_sync_log` rows.
+- **API:** `GET|POST|PATCH /api/admin/data-connections`, `POST .../test` (10s timeout, optional `connection_id` to test saved creds without retyping password), `POST .../sync` — all gated with `requireAdminPanel`.
+- **Nav:** Sidebar System → “Data Connections”; `lib/recentVisits.ts` label.
+
 ## App / ops (2026-03-29)
 
 - **ENG-86:** Lab Metrics filters/charts use `useFacilityConfig` + `/api/facility/lab-config`; admin config GETs opened to facility members; `LabMetricsConfigEmpty` when no sections.
