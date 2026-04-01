@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Info,
   X,
+  Terminal,
 } from "lucide-react";
 import { useSyncQueue } from "@/lib/SyncQueueContext";
 import { useAuth } from "@/lib/AuthContext";
@@ -370,6 +371,18 @@ export default function TopBar() {
             </div>
           )}
         </div>
+
+        {facilityAuth?.isSuperAdmin && (
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/console")}
+            className="inline-flex items-center gap-1.5 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-full font-medium hover:bg-slate-700 transition-colors"
+            title="Zyntel Console"
+          >
+            <Terminal size={12} className="shrink-0" aria-hidden />
+            Console
+          </button>
+        )}
 
         {/* ── User menu ── */}
         {user && (

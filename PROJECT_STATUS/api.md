@@ -1,6 +1,6 @@
 # Kanta — API Surface
 
-**Last updated:** 2026-04-01  
+**Last updated:** 2026-04-01 (ENG-156 console)  
 
 List significant `app/api/**` routes: method, path, auth, purpose, rate limits where relevant.
 
@@ -13,3 +13,5 @@ List significant `app/api/**` routes: method, path, auth, purpose, rate limits w
 | GET | `/api/facility/test-requests-status?facility_id=` | Session + facility access | `empty: true` when no `test_requests` for facility (ENG-89 empty states). |
 | GET | `/api/cron/lims-sync` | `Authorization: Bearer CRON_SECRET` | Vercel Cron — sync all active `lims_connections` (ENG-89). Returns `{ synced, errors }`. |
 | POST | `/api/admin/data-connections/sync` | Admin panel | Manual LIMS sync (ENG-88); see `phase-log.md`. |
+| GET | `/api/console/facilities` | Session; **`isSuperAdmin` only** | All `hospitals` rows (ENG-156). |
+| POST | `/api/admin/users/sync` | Session; **`isSuperAdmin` only** | Link `auth.users` missing from `facility_users` as `viewer` for given `facility_id`. Returns `{ synced }`. |

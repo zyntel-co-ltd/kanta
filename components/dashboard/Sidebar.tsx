@@ -48,6 +48,7 @@ import {
   ArrowLeft,
   Table2,
   Database,
+  Terminal,
 } from "lucide-react";
 
 type NavItem = {
@@ -173,6 +174,7 @@ const navGroupsBase: NavGroup[] = [
       { label: "Admin",       icon: Shield,    href: "/dashboard/admin"       },
       { label: "Hospital Settings", icon: Building2, href: "/dashboard/admin/hospital" },
       { label: "Data Connections", icon: Database, href: "/dashboard/admin/data-connections" },
+      { label: "Console", icon: Terminal, href: "/dashboard/console" },
       { label: "Settings",    icon: Settings,  href: "/dashboard/settings"    },
     ],
   },
@@ -227,6 +229,7 @@ function filterNavForFacilityAuth(
   const { flags } = opts;
 
   const allowItem = (href: string) => {
+    if (href.startsWith("/dashboard/console")) return false;
     if (href.startsWith("/dashboard/revenue") && !canViewRevenue) return false;
     if (href.startsWith("/dashboard/admin") && !canAccessAdminPanel) return false;
     if (href.startsWith("/dashboard/departments") && !canAccessAdmin) return false;

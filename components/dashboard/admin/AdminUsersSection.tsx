@@ -89,6 +89,7 @@ export default function AdminUsersSection({
   } | null>(null);
   const [resetPasswordValue, setResetPasswordValue] = useState("");
   const [roleSavingId, setRoleSavingId] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const load = useCallback(async () => {
     if (!facilityId) return;
@@ -248,6 +249,26 @@ export default function AdminUsersSection({
     }
   };
 
+  const handleSyncSupabaseUsers = async () => {
+    if (!isSuperAdmin) return;
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/admin/users/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facility_id: facilityId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Sync failed");
+      onToast(`Synced ${typeof data.synced === "number" ? data.synced : 0} user(s)`, "success");
+      await load();
+    } catch (e) {
+      onToast((e as Error).message || "Sync failed", "error");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const resendInvite = async (inviteId: string) => {
     try {
       const res = await fetch(`/api/invites/${inviteId}/resend`, {
@@ -390,22 +411,35 @@ export default function AdminUsersSection({
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <span className="font-semibold text-slate-800">Facility users</span>
-          <button
-            type="button"
-            onClick={() => {
-              setUserForm({
-                username: "",
-                email: "",
-                password: "",
-                role: "lab_technician",
-              });
-              setUserModalOpen(true);
-            }}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50"
-          >
-            <Plus size={14} />
-            Advanced: create with password
-          </button>
+          <div className="flex flex-wrap items-center gap-2 justify-end">
+            {isSuperAdmin && (
+              <button
+                type="button"
+                disabled={syncing}
+                onClick={() => void handleSyncSupabaseUsers()}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+              >
+                <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+                {syncing ? "Syncing…" : "Sync Supabase users"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setUserForm({
+                  username: "",
+                  email: "",
+                  password: "",
+                  role: "lab_technician",
+                });
+                setUserModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50"
+            >
+              <Plus size={14} />
+              Advanced: create with password
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[720px]">

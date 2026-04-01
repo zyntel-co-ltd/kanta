@@ -26,6 +26,8 @@ function detectModule(pathname: string): DashboardModuleKey {
 
   if (p.startsWith("/dashboard/intelligence")) return "aiInsights";
 
+  if (p.startsWith("/dashboard/console")) return "adminSettings";
+
   if (
     p.startsWith("/dashboard/admin") ||
     p.startsWith("/dashboard/settings") ||

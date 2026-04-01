@@ -6,6 +6,13 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 
 ---
 
+### 2026-04-01 — ENG-156 Zyntel Console v1 + Supabase user sync
+
+- [x] **Console** — `/dashboard/console` (super-admin only; client guard + redirect + toast). Cards: Facilities (live), Super-admins / Feature flags / Platform audit (coming soon). `/dashboard/console/facilities` table from `GET /api/console/facilities`; **Provision user** modal → `POST /api/admin/users` (`facility_admin`).
+- [x] **Chrome** — Sidebar System → **Console** (`Terminal`); TopBar pill between alerts and avatar. `filterNavForFacilityAuth` hides Console unless `isSuperAdmin`; `detectModule` includes `/dashboard/console`.
+- [x] **Sync** — `POST /api/admin/users/sync` (`isSuperAdmin`); `AdminUsersSection` **Sync Supabase users**; `listUsers` + upsert `viewer` rows for `facility_id`.
+- [x] **`lib/recentVisits.ts`** — Console paths labeled.
+
 ### 2026-04-01 — ENG-81 module colors as brand identifiers
 
 - [x] **`lib/design-tokens.ts`** — `MODULE_COLORS` JSDoc: brand-locked, not user/hospital configurable; added `home` entry (`#059669`); playbook cross-reference.
