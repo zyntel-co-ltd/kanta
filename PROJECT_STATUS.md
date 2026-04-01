@@ -13,6 +13,13 @@ Canonical accents live in `lib/design-tokens.ts` as `MODULE_COLORS` and in `app/
 | 2026-03-29 | `supabase/migrations/20260329120000_post_mazra_cleanup.sql` | Post-Mazra pivot: drop `mazra_generated` columns, hospital `classification` / `subscription_status`, facility-scoped RLS, canonical Mazra hospital names — idempotent |
 | 2026-03-29 | `supabase/migrations/20260329140000_lab_sections_shifts_audit_app.sql` | ENG-85: `lab_sections`, `lab_shifts`, `tat_targets.section_id`; ENG-64: relax `audit_log.action` CHECK, add `user_id` / `entity_type`; seed sections/shifts per hospital |
 | 2026-03-29 | In-place edits to older migration files (same filenames) | **`supabase db push` hardening** for Mazra / partial prod: `20250321000001` — backfill `facility_id` from `hospital_id` only if that column exists; `20250321000003` — create `facility_role` only if missing; `20250321000006` — `tat_targets` uniqueness via expression index (not invalid inline `UNIQUE`); `20260322000001` — `ALTER lab_racks ADD COLUMN status` when table pre-exists without it |
+| 2026-04-01 | `supabase/migrations/20260401120000_lims_data_bridge.sql` | ENG-87: `lims_connections`, `lims_sync_log`, `test_requests.lims_*` dedupe index; RLS for facility members |
+
+## Phase — ENG-87 LIMS Data Bridge (library)
+
+- **Added** `lib/data-bridge/` — types, abstract `LIMSConnector`, PostgreSQL (`pg`) implementation, MySQL stub, TAT transformer, `runLIMSSync` orchestration, AES-GCM helpers (`LIMS_ENCRYPTION_KEY`), Nakasero reference doc `connectors/NAKASERO_MAPPING.md`.
+- **Deps:** `pg`, `@types/pg`, `server-only`.
+- **Verify:** `npm run lint`, `npm run type-check`, `npm run build`; apply migration in Supabase; set `LIMS_ENCRYPTION_KEY` on Vercel for encrypted LIMS credentials.
 
 ## App / ops (2026-03-29)
 
