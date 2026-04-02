@@ -100,3 +100,10 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 - **Backdrop dismiss for overlay mode:** `components/dashboard/DashboardChrome.tsx` now renders `fixed inset-0 bg-black/30 z-[149]` when expanded; clicking backdrop collapses sidebar via `setCollapsed(true)`.
 - **Chrome structure aligned for overlay behavior:** sidebar is rendered outside the main content wrapper with a collapsed-width suspense fallback spacer, while TopBar/app tabs/main stay in the primary content column.
 - **Transition + controls preserved:** existing collapse glyph/button behavior and sidebar transitions remain intact while adopting overlay semantics.
+
+## App / ops (2026-04-02 — ENG-149 AI response navigation chips)
+
+- **Structured link extraction in AI query API:** `app/api/ai/query/route.ts` now instructs the model to append `[LINKS: ...]`, extracts/removes that block from assistant text, validates/whitelists dashboard hrefs, caps to 3 links, and returns `links` with the response.
+- **Malformed link JSON is non-fatal:** parsing failures are caught and logged (`console.warn`), while API still returns `200` with `links: []` (no hard error path).
+- **Chat message model expanded:** `components/ai/NLQueryBar.tsx` `Message` now supports optional `links` and maps `data.links` from `/api/ai/query`.
+- **Clickable route chips in assistant bubbles:** assistant messages render navigation pills with `ArrowRight`; clicking chips calls `router.push(href)` and intentionally keeps the AI panel open.

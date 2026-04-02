@@ -2,14 +2,17 @@
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { Sparkles, SendHorizontal, Loader2, AlertCircle, X } from "lucide-react";
+import { Sparkles, SendHorizontal, Loader2, AlertCircle, X, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useSyncQueue } from "@/lib/SyncQueueContext";
 import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
+type MessageLink = { label: string; href: string };
 type Message = {
   id: string;
   role: "user" | "assistant";
   text: string;
   latency_ms?: number;
+  links?: MessageLink[];
 };
 
 const SUGGESTIONS = [
@@ -35,6 +38,7 @@ export default function NLQueryBar({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -72,6 +76,7 @@ export default function NLQueryBar({
         role: "assistant",
         text: data.answer,
         latency_ms: data.latency_ms,
+        links: Array.isArray(data.links) ? data.links : [],
       };
       setMessages((m) => [...m, assistantMsg]);
     } catch (err) {
@@ -148,6 +153,21 @@ export default function NLQueryBar({
                     }`}
                   >
                     {m.text}
+                    {m.role === "assistant" && Array.isArray(m.links) && m.links.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {m.links.map((link) => (
+                          <button
+                            key={`${m.id}-${link.href}-${link.label}`}
+                            type="button"
+                            onClick={() => router.push(link.href)}
+                            className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs px-2.5 py-1 rounded-full hover:bg-emerald-100 flex items-center gap-1"
+                          >
+                            <span>{link.label}</span>
+                            <ArrowRight size={11} />
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     {m.role === "assistant" && m.latency_ms && (
                       <p className="text-[10px] text-slate-400 mt-1">{(m.latency_ms / 1000).toFixed(1)}s</p>
                     )}
