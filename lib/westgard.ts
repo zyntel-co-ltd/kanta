@@ -15,6 +15,12 @@ export type WestgardFlag = {
   level: "warning" | "rejection";
 };
 
+export type DriftAlert = {
+  window: number;
+  direction: "positive" | "negative";
+  maxAbsZ: number;
+};
+
 export function evaluateWestgard(
   runs: QcRun[],
   mean: number,
@@ -75,4 +81,43 @@ export function evaluateWestgard(
 export function computeZScore(value: number, mean: number, sd: number): number {
   if (sd <= 0) return 0;
   return (value - mean) / sd;
+}
+
+/**
+ * Proactive drift detection: looks for consistent same-side movement toward +/-2 SD
+ * before hard Westgard rejection.
+ */
+export function detectDriftAlerts(
+  runs: QcRun[],
+  mean: number,
+  sd: number,
+  window = 6
+): Record<string, DriftAlert> {
+  const out: Record<string, DriftAlert> = {};
+  if (runs.length < window || sd <= 0) return out;
+
+  const z = runs.map((r) => (r.z_score != null ? Number(r.z_score) : computeZScore(r.value, mean, sd)));
+  const minAbsForTrend = 1.5;
+  const maxAbsForPreViolation = 2.8;
+
+  for (let i = window - 1; i < runs.length; i++) {
+    const seg = z.slice(i - window + 1, i + 1);
+    const last = seg[seg.length - 1];
+    const direction: "positive" | "negative" | null = last > 0 ? "positive" : last < 0 ? "negative" : null;
+    if (!direction) continue;
+
+    const sameSide = seg.every((v) => (direction === "positive" ? v > 0 : v < 0));
+    if (!sameSide) continue;
+
+    const nonDecreasingAbs = seg.every((v, idx) => idx === 0 || Math.abs(v) >= Math.abs(seg[idx - 1]));
+    if (!nonDecreasingAbs) continue;
+
+    const maxAbsZ = Math.max(...seg.map((v) => Math.abs(v)));
+    const nearTwoSd = maxAbsZ >= minAbsForTrend && maxAbsZ < maxAbsForPreViolation;
+    if (!nearTwoSd) continue;
+
+    out[runs[i].id] = { window, direction, maxAbsZ };
+  }
+
+  return out;
 }
