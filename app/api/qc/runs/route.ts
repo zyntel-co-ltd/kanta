@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { evaluateWestgard, computeZScore } from "@/lib/westgard";
+import { evaluateWestgard, computeZScore, detectDriftAlerts } from "@/lib/westgard";
 import { getAuthContext } from "@/lib/auth/server";
 import { writeAuditLog } from "@/lib/audit";
 
@@ -52,11 +52,20 @@ export async function GET(req: NextRequest) {
       .order("run_at", { ascending: true })
       .limit(limit);
 
+    const runsWithValues = (runs ?? []).map((r) => ({
+      id: String(r.id),
+      value: Number(r.value),
+      run_at: String(r.run_at),
+      z_score: r.z_score != null ? Number(r.z_score) : null,
+    }));
+    const driftMap = detectDriftAlerts(runsWithValues, mean, sd);
+
     const points = (runs ?? []).map((r, i) => {
       const z = r.z_score != null ? Number(r.z_score) : computeZScore(Number(r.value), mean, sd);
       let status: "ok" | "warning" | "rejection" = "ok";
       if (Math.abs(z) >= 3) status = "rejection";
       else if (Math.abs(z) >= 2) status = "warning";
+      const drift = driftMap[String(r.id)] ?? null;
 
       return {
         id: r.id,
@@ -65,6 +74,7 @@ export async function GET(req: NextRequest) {
         value: Number(r.value),
         zScore: z,
         status,
+        drift_alert: drift,
       };
     });
 
@@ -102,7 +112,7 @@ export async function POST(req: NextRequest) {
 
     const { data: material } = await db
       .from("qc_materials")
-      .select("target_mean, target_sd")
+      .select("target_mean, target_sd, analyte, lot_number")
       .eq("id", material_id)
       .single();
 
@@ -148,15 +158,65 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error;
 
+    const ctx = await getAuthContext(req);
+
     if (flags.some((f) => f.level === "rejection")) {
       await db.from("qc_violations").insert({
         run_id: run.id,
         facility_id,
         rule: flags.find((f) => f.level === "rejection")!.rule,
       });
+
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { count: recentFlaggedCount } = await db
+        .from("qc_runs")
+        .select("id", { count: "exact", head: true })
+        .eq("material_id", material_id)
+        .gte("run_at", since)
+        .neq("westgard_flags", "[]");
+
+      if ((recentFlaggedCount ?? 0) >= 3) {
+        const { data: existingRecommendation } = await db
+          .from("qc_lot_recommendations")
+          .select("id, status, violation_count")
+          .eq("facility_id", facility_id)
+          .eq("material_id", material_id)
+          .maybeSingle();
+
+        await db.from("qc_lot_recommendations").upsert(
+          {
+            facility_id,
+            material_id,
+            analyte: String(material.analyte ?? "Unknown"),
+            lot_number: material.lot_number ?? null,
+            violation_count: recentFlaggedCount,
+            window_days: 30,
+            status: "open",
+            first_detected_at: existingRecommendation?.id ? undefined : new Date().toISOString(),
+            last_detected_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            resolved_at: null,
+          },
+          { onConflict: "facility_id,material_id" }
+        );
+
+        await writeAuditLog({
+          facilityId: facility_id,
+          userId: ctx.user?.id ?? null,
+          action: "qc.lot_review_recommended",
+          entityType: "qc_lot_recommendation",
+          entityId: existingRecommendation?.id ?? null,
+          newValue: {
+            material_id,
+            analyte: material.analyte ?? "Unknown",
+            lot_number: material.lot_number ?? null,
+            violation_count: recentFlaggedCount,
+            window_days: 30,
+          },
+        });
+      }
     }
 
-    const ctx = await getAuthContext(req);
     await writeAuditLog({
       facilityId: facility_id,
       userId: ctx.user?.id ?? null,
