@@ -178,3 +178,7 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 ## App / ops (2026-04-02 — ENG-169 Settings load latency)
 
 - **Dashboard prefetch gated:** `components/dashboard/DashboardProviders.tsx` now only instantiates `DashboardDataProvider` on asset home (`/dashboard`) and analytics (`/dashboard/analytics`), so `Settings` no longer triggers dashboard KPI/scan/department fetches during app start/refresh.
+
+## App / ops (2026-04-02 — ENG-90 sample lookup scanner UX)
+
+- **Keyboard-wedge barcode scanner flow improved:** `app/dashboard/scan/page.tsx` sample lookup input now auto-focuses when sample mode is active and triggers lookup on scanner Enter suffix, reducing manual taps/clicks during high-volume scanning.

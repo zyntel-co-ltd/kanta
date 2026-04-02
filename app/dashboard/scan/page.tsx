@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { fetchEquipment, fetchEquipmentByQr } from "@/lib/api";
 import { useLogScan } from "@/lib/useLogScan";
@@ -65,6 +65,7 @@ export default function ScanPage() {
   const [sampleBarcodeInput, setSampleBarcodeInput] = useState("");
   const [sampleLoading, setSampleLoading] = useState(false);
   const [sampleMatches, setSampleMatches] = useState<LookupMatch[] | null>(null);
+  const sampleInputRef = useRef<HTMLInputElement>(null);
 
   const logScanFn = useLogScan();
 
@@ -73,6 +74,12 @@ export default function ScanPage() {
   useEffect(() => {
     if (requestedPurpose === "sample" && showSampleScan) setScanPurpose("sample");
   }, [requestedPurpose, showSampleScan]);
+
+  useEffect(() => {
+    if (scanPurpose !== "sample") return;
+    const id = window.setTimeout(() => sampleInputRef.current?.focus(), 0);
+    return () => window.clearTimeout(id);
+  }, [scanPurpose]);
 
   const runSampleLookup = useCallback(async (code: string) => {
     const trimmed = code.trim();
@@ -377,11 +384,12 @@ export default function ScanPage() {
           </div>
           <div className="flex gap-2">
             <input
+              ref={sampleInputRef}
               type="text"
               value={sampleBarcodeInput}
               onChange={(e) => setSampleBarcodeInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && runSampleLookup(sampleBarcodeInput)}
-              placeholder="Or type barcode / accession…"
+              placeholder="Scan with barcode scanner or type barcode / accession…"
               className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
             <button
