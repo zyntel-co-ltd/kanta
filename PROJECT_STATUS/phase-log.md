@@ -6,6 +6,14 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 
 ---
 
+### 2026-04-02 — ENG-158 Console PostHog feature flag management
+
+- [x] **`/dashboard/console/flags`** — Two-column UI: searchable facility list (`GET /api/console/facilities`), flag toggles from `KANTA_FEATURE_FLAG_NAMES` + `FLAG_LABELS` (`lib/featureFlagCatalog.ts`).
+- [x] **`GET/PATCH /api/console/flags`** — Super-admin only; reads/writes PostHog `filters.groups` branch overrides via `lib/posthogConsoleApi.ts`. PATCH body: `{ facility_id, flag_key, enabled }` or `{ facility_id, reset_defaults: true }` (tier from `hospitals.tier` + `getDefaultEnabledFlagsForTier`).
+- [x] **Env** — `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID` (optional `POSTHOG_API_HOST`); amber in-app warning + disabled toggles when unset.
+- [x] **Console home** — Feature flags card links to `/dashboard/console/flags`.
+- [x] **`lib/featureFlags.ts`** — Re-exports catalog; hooks unchanged.
+
 ### 2026-04-01 — ENG-104 Admin user table + role hierarchy
 
 - [x] **`normalizeFacilityRoleInput`** in `lib/auth/roles.ts` — single normalization for APIs/UI.

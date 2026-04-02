@@ -195,9 +195,10 @@ export default function ConsoleHomePage() {
     },
     {
       title: "Feature flags",
-      description: "PostHog and product flags.",
+      description: "Per-facility PostHog module toggles.",
+      href: "/dashboard/console/flags",
       icon: Flag,
-      badge: <ComingSoonBadge />,
+      badge: null,
     },
     {
       title: "Platform audit log",
