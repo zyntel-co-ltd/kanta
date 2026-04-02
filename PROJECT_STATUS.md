@@ -174,3 +174,7 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 
 - **Lab Metrics entry point added:** `app/dashboard/tat/page.tsx` Section Capture panel now includes `QR Sample Lookup (Results)` linking to `/dashboard/scan?scanPurpose=sample` (behind `show-sample-scan` flag).
 - **Scan mode deep-link support:** `app/dashboard/scan/page.tsx` now reads `scanPurpose`/`purpose` query params and initializes in sample lookup mode when requested and feature-flagged.
+
+## App / ops (2026-04-02 — ENG-169 Settings load latency)
+
+- **Dashboard prefetch gated:** `components/dashboard/DashboardProviders.tsx` now only instantiates `DashboardDataProvider` on asset home (`/dashboard`) and analytics (`/dashboard/analytics`), so `Settings` no longer triggers dashboard KPI/scan/department fetches during app start/refresh.
