@@ -182,3 +182,10 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 ## App / ops (2026-04-02 — ENG-90 sample lookup scanner UX)
 
 - **Keyboard-wedge barcode scanner flow improved:** `app/dashboard/scan/page.tsx` sample lookup input now auto-focuses when sample mode is active and triggers lookup on scanner Enter suffix, reducing manual taps/clicks during high-volume scanning.
+
+## App / ops (2026-04-02 — ENG-97 manual Section Capture workflow)
+
+- **Reception API added:** `GET|PATCH /api/tat/reception` now provides facility-scoped section capture rows and secure timestamp stamping (`section_time_in` / `section_time_out`) with row ownership checks.
+- **Section Capture UI implemented:** `components/tat/TatReceptionTab.tsx` adds date + section + search filters, Lab Number / anonymized patient token / test columns, green `Stamp In` / `Stamp Out` actions, and computed TAT minutes.
+- **Edit safety window enforced:** stamped values can be corrected via `Edit` only within 30 minutes, after which API returns an edit-window error.
+- **Tab visibility gated by feature flag:** `app/dashboard/tat/page.tsx` now shows the Reception/Section Capture tab only when `show-reception-tab` is enabled.
