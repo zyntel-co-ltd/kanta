@@ -16,6 +16,8 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 | 2026-04-01 | `supabase/migrations/20260401120000_lims_data_bridge.sql` | ENG-87: `lims_connections`, `lims_sync_log`, `test_requests.lims_*` dedupe index; RLS for facility members |
 | 2026-04-01 | `supabase/migrations/20260401190000_rls_security_fixes.sql` | ENG-154: RLS on `login_audit`, `qc_results`, `platform_admins`, `facility_invites`, `lab_sections`, `lab_shifts`; revoke SELECT on `facility_invites.token` for anon/authenticated; `search_path` on 4 functions |
 | 2026-04-01 | `supabase/migrations/20260402120000_hospitals_parent_hospital_id.sql` | ENG-157: optional `hospitals.parent_hospital_id` FK for branch / hospital groups |
+| 2026-04-02 | `supabase/migrations/20260402130000_qc_corrective_followup_tracking.sql` | ENG-163: qualitative QC follow-up lifecycle fields (`followup_status`, rerun linkage, closure timestamps) |
+| 2026-04-02 | `supabase/migrations/20260402142000_qc_lot_review_recommendations.sql` | ENG-166: `qc_lot_recommendations` table for repeated-lot Westgard recommendation tracking |
 | — | *(no migration)* | ENG-156: Zyntel Console `/dashboard/console` (super-admin), `/api/console/facilities`, `POST /api/admin/users/sync` |
 
 ## Phase — ENG-157 Console hospital provisioning (2026-04-01)
@@ -119,3 +121,38 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 
 - **Persistence behavior confirmed by architecture:** `components/ai/NLQueryBar.tsx` now includes an explicit comment documenting why message state survives same-layout `/dashboard/*` route transitions under Next.js App Router.
 - **No storage added intentionally:** chat state remains in-memory React state only; no `localStorage`, `sessionStorage`, or backend persistence introduced.
+
+## App / ops (2026-04-02 — ENG-163 corrective-action follow-up closure)
+
+- **Qualitative follow-up lifecycle added:** `qualitative_qc_entries` now tracks `followup_status` (`none/open/closed/override`), rerun linkage (`rerun_for_entry_id`, `rerun_entry_id`), closure timestamp, and optional override reason.
+- **API linkage + closure logic:** `app/api/qc/qualitative/entries/route.ts` and `[id]/route.ts` now link reruns to failed incidents and auto-close follow-up when linked rerun passes.
+- **Audit evidence trail:** qualitative QC create/update events now emit app-level audit entries with old/new lifecycle state to support ISO 15189 evidence workflows.
+- **UI follow-up visibility:** `app/dashboard/qc/page.tsx` now surfaces open corrective actions, allows rerun-to-incident linkage in entry flow, and displays follow-up status in qualitative log views.
+
+## App / ops (2026-04-02 — ENG-164 proactive QC drift alerts)
+
+- **Drift heuristic introduced:** `lib/westgard.ts` now exposes `detectDriftAlerts()` for same-side, non-decreasing z-score drift toward ±2 SD over configurable run windows.
+- **Runs API enriched:** `app/api/qc/runs/route.ts` now includes per-point `drift_alert` metadata alongside existing status flags.
+- **Visualization + stats signals:** `app/dashboard/qc/page.tsx` now renders proactive drift cards in QC Visualization and labels drift-flagged points distinctly in QC Stats before hard rule violations.
+
+## App / ops (2026-04-02 — ENG-166 repeated-lot review recommendations)
+
+- **Recommendation persistence:** added `qc_lot_recommendations` table for analyte/lot recommendation state (`open/acknowledged/resolved`) and violation window counts.
+- **Automatic recommendation trigger:** `app/api/qc/runs/route.ts` now upserts a recommendation when repeated flagged Westgard runs for the same lot exceed threshold in rolling window.
+- **Recommendation APIs:** added `GET /api/qc/recommendations` and `PATCH /api/qc/recommendations/:id/ack`.
+- **QC UI actioning:** QC Stats now shows “Review Lot” recommendations with acknowledge action and corresponding audit log writes.
+
+## App / ops (2026-04-02 — ENG-167 lot transition comparison)
+
+- **Previous-lot baseline detection:** QC Visualization now locates previous lot for same analyte/level and computes baseline mean/SD.
+- **First-10-run transition overlay summary:** new lot’s first 10 runs are compared to prior baseline with mean shift, SD deltas, and recommendation (`Acceptable`, `Monitor`, `Investigate`).
+
+## App / ops (2026-04-02 — ENG-165 monthly QC summary PDF export)
+
+- **One-click monthly export added:** QC Stats includes month selector and `Export Monthly PDF` action per selected analyte/config.
+- **Formatted report payload:** generated print-ready report includes monthly run table (L-J datapoints), violations section, and pass-rate summary metrics.
+
+## App / ops (2026-04-02 — ENG-168 QC expiry calendar)
+
+- **Expiry calendar surfaced:** quantitative and qualitative config views now show upcoming lot expiries in dedicated calendar-style lists.
+- **Amber lead-time warnings:** both calendars expose configurable warning threshold (N days) and mark soon-expiring vs expired lots for proactive planning.

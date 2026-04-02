@@ -105,6 +105,7 @@ function normMaterial(m: QcItem): QcItem {
     sd: m.target_sd,
     units: m.units ?? "μmol/L",
     enabled: m.is_active !== false,
+    createdAt: m.created_at ?? "",
   };
 }
 
@@ -118,6 +119,7 @@ function normRun(r: QcItem, materialId: string): QcItem {
     createdAt: r.date ?? r.run_at ?? "",
     resolved: false,
     zScore: r.zScore ?? r.z_score ?? null,
+    driftAlert: r.drift_alert ?? null,
     _status: r.status === "rejection" ? "failure" : r.status === "warning" ? "warning" : "normal",
   };
 }
@@ -152,6 +154,11 @@ function normQualEntry(e: QcItem): QcItem {
     submitted: e.submitted,
     createdAt: e.created_at ?? e.run_at ?? "",
     enteredBy: e.entered_by ?? "",
+    rerunForEntryId: e.rerun_for_entry_id ?? "",
+    rerunEntryId: e.rerun_entry_id ?? "",
+    followupStatus: e.followup_status ?? "none",
+    followupClosedAt: e.followup_closed_at ?? "",
+    followupOverrideReason: e.followup_override_reason ?? "",
     resolved: false,
   };
 }
@@ -259,6 +266,7 @@ function makeKantaApi() {
         corrective_action: form.correctiveAction || null,
         entered_by: form.enteredBy || null,
         submitted: form.submitted,
+        rerun_for_entry_id: form.rerunForEntryId || null,
       };
       if (editingId) {
         const r = await queuedFetch(`/api/qc/qualitative/entries/${editingId}`, { method: "PATCH", headers: h(), body: JSON.stringify(payload) });
@@ -269,6 +277,15 @@ function makeKantaApi() {
     },
     deleteQualEntry: async (id: string) => {
       const r = await queuedFetch(`/api/qc/qualitative/entries/${id}`, { method: "DELETE" });
+      return r.json();
+    },
+    getLotRecommendations: async (): Promise<QcItem[]> => {
+      const res = await fetch(`/api/qc/recommendations?facility_id=${FACILITY_ID}`);
+      const json = await res.json();
+      return json.data ?? [];
+    },
+    acknowledgeLotRecommendation: async (id: string) => {
+      const r = await queuedFetch(`/api/qc/recommendations/${id}/ack`, { method: "PATCH" });
       return r.json();
     },
   };
@@ -393,6 +410,7 @@ export default function QCPage() {
 function QCConfigTab() {
   const api = useMemo(() => makeKantaApi(), []);
   const [qcConfigs, setQcConfigs]   = useState<QcItem[]>([]);
+  const [warningLeadDays, setWarningLeadDays] = useState(14);
   const [editingId, setEditingId]   = useState<string | null>(null);
   const [isLoading, setIsLoading]   = useState(false);
   const [error, setError]           = useState("");
@@ -471,6 +489,18 @@ function QCConfigTab() {
     });
   };
 
+  const expiryCalendarRows: QcItem[] = useMemo(() => {
+    const today = new Date();
+    return qcConfigs
+      .filter((cfg) => !!cfg.expiryDate)
+      .map((cfg) => {
+        const expiry = new Date(String(cfg.expiryDate));
+        const daysRemaining = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return { ...cfg, daysRemaining } as QcItem;
+      })
+      .sort((a, b) => a.daysRemaining - b.daysRemaining);
+  }, [qcConfigs]);
+
   return (
     <div className="space-y-6">
       {isLoading && <div className="flex items-center gap-2 module-accent-text text-sm"><LoadingBars size="sm" /> Loading…</div>}
@@ -525,6 +555,48 @@ function QCConfigTab() {
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h4 className="text-sm font-semibold text-amber-800">QC Expiry Calendar</h4>
+            <label className="text-xs text-slate-600 flex items-center gap-2">
+              Amber warning lead time (days)
+              <input
+                type="number"
+                min={1}
+                value={warningLeadDays}
+                onChange={(e) => setWarningLeadDays(Math.max(1, Number(e.target.value) || 14))}
+                className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs"
+              />
+            </label>
+          </div>
+          {expiryCalendarRows.length === 0 ? (
+            <p className="text-xs text-slate-500">No expiry dates configured yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {expiryCalendarRows.slice(0, 8).map((row) => (
+                <div key={String(row.id)} className="flex items-center justify-between rounded-lg border border-amber-100 bg-white px-3 py-2 text-xs">
+                  <span className="font-semibold text-slate-800">
+                    {row.qcName} L{row.level} {row.lotNumber ? `· ${row.lotNumber}` : ""}
+                  </span>
+                  <span className="text-slate-600">{row.expiryDate}</span>
+                  <span
+                    className={
+                      row.daysRemaining < 0
+                        ? "text-red-700 font-semibold"
+                        : row.daysRemaining <= warningLeadDays
+                          ? "text-amber-700 font-semibold"
+                          : "text-slate-500"
+                    }
+                  >
+                    {row.daysRemaining < 0
+                      ? `Expired ${Math.abs(row.daysRemaining)}d ago`
+                      : `${row.daysRemaining}d remaining`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <SectionHead icon={BarChart3} title="Existing QC Configurations" />
         <div className="overflow-x-auto rounded-xl border border-slate-100">
           <table className="w-full text-sm">
@@ -730,6 +802,7 @@ function QCVisualizationTab() {
   const [qcConfigs, setQcConfigs]                 = useState<QcItem[]>([]);
   const [runs1, setRuns1]                         = useState<QcItem[]>([]);
   const [runs2, setRuns2]                         = useState<QcItem[]>([]);
+  const [previousLotRuns, setPreviousLotRuns]     = useState<QcItem[]>([]);
   const [selectedConfigId, setSelectedConfigId]   = useState("");
   const [selectedConfigId2, setSelectedConfigId2] = useState("");
   const [fromDate, setFromDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`; });
@@ -758,10 +831,64 @@ function QCVisualizationTab() {
 
   const selectedConfig  = qcConfigs.find((c) => c.id === selectedConfigId);
   const selectedConfig2 = qcConfigs.find((c) => c.id === selectedConfigId2);
+  const previousLotConfig = useMemo(() => {
+    if (!selectedConfig) return null;
+    const candidates = qcConfigs
+      .filter((cfg) =>
+        cfg.id !== selectedConfig.id &&
+        cfg.qcName === selectedConfig.qcName &&
+        String(cfg.level) === String(selectedConfig.level) &&
+        (cfg.lotNumber ?? "") !== (selectedConfig.lotNumber ?? "")
+      )
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    return candidates[0] ?? null;
+  }, [qcConfigs, selectedConfig]);
+
+  useEffect(() => {
+    if (!previousLotConfig?.id) {
+      setPreviousLotRuns([]);
+      return;
+    }
+    api.getRuns(previousLotConfig.id).then(setPreviousLotRuns).catch(() => setPreviousLotRuns([]));
+  }, [api, previousLotConfig?.id]);
   const filtered1 = filterRuns(runs1);
   const filtered2 = filterRuns(runs2);
   const analyzed1 = selectedConfig  && filtered1.length > 0 ? applyWestgard(filtered1.map((e) => ({ ...e, name: fmtShort(e.date) })), Number(selectedConfig.mean),  Number(selectedConfig.sd))  : [];
   const analyzed2 = selectedConfig2 && filtered2.length > 0 ? applyWestgard(filtered2.map((e) => ({ ...e, name: fmtShort(e.date) })), Number(selectedConfig2.mean), Number(selectedConfig2.sd)) : [];
+  const driftAlerts = [...analyzed1, ...analyzed2].filter((d) => d.driftAlert);
+  const lotTransitionFirstRuns = useMemo(() => (runs1 ?? []).slice(0, 10), [runs1]);
+  const previousLotValues = useMemo(
+    () => (previousLotRuns ?? []).map((r) => Number(r.value)).filter((v) => !Number.isNaN(v)),
+    [previousLotRuns]
+  );
+  const previousLotBaseline = useMemo(() => {
+    if (!previousLotValues.length) return null;
+    const mean = previousLotValues.reduce((sum, v) => sum + v, 0) / previousLotValues.length;
+    const sd = Math.sqrt(
+      previousLotValues.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / previousLotValues.length
+    );
+    return { mean, sd };
+  }, [previousLotValues]);
+  const lotTransitionSummary = useMemo(() => {
+    if (!lotTransitionFirstRuns.length || !previousLotBaseline) return null;
+    const firstValues = lotTransitionFirstRuns.map((r) => Number(r.value)).filter((v) => !Number.isNaN(v));
+    if (!firstValues.length) return null;
+    const mean = firstValues.reduce((sum, v) => sum + v, 0) / firstValues.length;
+    const sd = Math.sqrt(firstValues.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / firstValues.length);
+    const meanShift = mean - previousLotBaseline.mean;
+    const meanShiftPct = previousLotBaseline.mean !== 0 ? (meanShift / previousLotBaseline.mean) * 100 : 0;
+    const recommendation =
+      Math.abs(meanShiftPct) <= 5 ? "Acceptable transition" : Math.abs(meanShiftPct) <= 10 ? "Monitor closely" : "Investigate lot";
+    return {
+      firstMean: mean,
+      firstSd: sd,
+      baselineMean: previousLotBaseline.mean,
+      baselineSd: previousLotBaseline.sd,
+      meanShift,
+      meanShiftPct,
+      recommendation,
+    };
+  }, [lotTransitionFirstRuns, previousLotBaseline]);
 
   const renderGraph = (config: QcItem, data: QcItem[], compact = false) => {
     const mean = Number(config.mean), sd = Number(config.sd);
@@ -816,8 +943,11 @@ function QCVisualizationTab() {
               if (ctx.datasetIndex !== 0) return "";
               const v = Number(ctx.parsed.y ?? 0);
               const status = data[ctx.dataIndex]?._status;
+              const drift = data[ctx.dataIndex]?.driftAlert;
               const tag = status === "failure" ? "Violation" : status === "warning" ? "Warning" : "Normal";
-              return `Value: ${v} (${tag})`;
+              return drift
+                ? `Value: ${v} (${tag}, Drift: ${drift.direction} over ${drift.window} runs)`
+                : `Value: ${v} (${tag})`;
             },
           },
           filter: (item) => item.datasetIndex === 0,
@@ -889,6 +1019,50 @@ function QCVisualizationTab() {
           <input type="date" value={toDate}   onChange={(e) => setToDate(e.target.value)}   className="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400" />
         </div>
       </div>
+      {driftAlerts.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <h4 className="text-sm font-semibold text-amber-800 mb-2">Proactive Drift Alerts</h4>
+          <div className="space-y-2">
+            {driftAlerts.slice(-6).map((item, idx) => (
+              <div key={`${item.id ?? idx}-drift`} className="flex items-center justify-between text-xs bg-white border border-amber-100 rounded-lg px-3 py-2">
+                <span className="font-semibold text-slate-800">{item.name}</span>
+                <span className="text-slate-600">Z {Number(item.zScore ?? 0).toFixed(2)}</span>
+                <span className="text-amber-700">
+                  {item.driftAlert.direction === "positive" ? "Upward drift" : "Downward drift"} ({item.driftAlert.window} runs)
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {selectedConfig && previousLotConfig && lotTransitionSummary && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+          <h4 className="text-sm font-semibold text-slate-800 mb-3">Lot Transition Comparison (first 10 runs)</h4>
+          <p className="text-xs text-slate-500 mb-3">
+            New lot <strong>{selectedConfig.lotNumber || "—"}</strong> vs previous lot{" "}
+            <strong>{previousLotConfig.lotNumber || "—"}</strong> for {selectedConfig.qcName} level {selectedConfig.level}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+              <div className="text-slate-500">Previous lot baseline</div>
+              <div className="font-semibold text-slate-800">Mean {lotTransitionSummary.baselineMean.toFixed(3)}</div>
+              <div className="text-slate-600">SD {lotTransitionSummary.baselineSd.toFixed(3)}</div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+              <div className="text-slate-500">First 10 runs (new lot)</div>
+              <div className="font-semibold text-slate-800">Mean {lotTransitionSummary.firstMean.toFixed(3)}</div>
+              <div className="text-slate-600">SD {lotTransitionSummary.firstSd.toFixed(3)}</div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+              <div className="text-slate-500">Mean shift</div>
+              <div className="font-semibold text-slate-800">
+                {lotTransitionSummary.meanShift.toFixed(3)} ({lotTransitionSummary.meanShiftPct.toFixed(1)}%)
+              </div>
+              <div className="text-slate-600">{lotTransitionSummary.recommendation}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {((selectedConfig && analyzed1.length > 0) || (selectedConfig2 && analyzed2.length > 0)) ? (
         <div className="space-y-5">
@@ -1005,16 +1179,19 @@ function QCCalculatorTab() {
 function QCStatsTab() {
   const api = useMemo(() => makeKantaApi(), []);
   const [qcConfigs, setQcConfigs]           = useState<QcItem[]>([]);
+  const [lotRecommendations, setLotRecommendations] = useState<QcItem[]>([]);
   const [runs, setRuns]                     = useState<QcItem[]>([]);
   const [selectedConfig, setSelectedConfig] = useState("");
   const [startDate, setStartDate]           = useState("");
   const [endDate, setEndDate]               = useState("");
+  const [reportMonth, setReportMonth]       = useState(() => new Date().toISOString().slice(0, 7));
   const [error, setError]                   = useState("");
   const [confirm, setConfirm]               = useState<ConfirmState>(closedConfirm);
   const [loadingRuns, setLoadingRuns]       = useState(false);
 
   useEffect(() => {
     api.getMaterials().then(setQcConfigs).catch(() => {});
+    api.getLotRecommendations().then(setLotRecommendations).catch(() => {});
   }, [api]);
 
   useEffect(() => {
@@ -1031,6 +1208,12 @@ function QCStatsTab() {
     if (endDate)   filtered = filtered.filter((item) => item.date <= endDate);
     return filtered.sort((a, b) => a.date < b.date ? 1 : -1);
   }, [selectedConfig, startDate, endDate, runs]);
+  const monthlyData = useMemo(() => {
+    if (!selectedConfig || !runs.length || !reportMonth) return [];
+    return runs
+      .filter((item) => String(item.date || "").slice(0, 7) === reportMonth)
+      .sort((a, b) => (a.date > b.date ? 1 : -1));
+  }, [selectedConfig, reportMonth, runs]);
 
   const statistics = useMemo(() => {
     const values = filteredData.map((item) => parseFloat(item.value)).filter((v) => !isNaN(v));
@@ -1055,6 +1238,15 @@ function QCStatsTab() {
     });
   };
 
+  const handleAcknowledgeRecommendation = async (id: string) => {
+    try {
+      await api.acknowledgeLotRecommendation(String(id));
+      setLotRecommendations((prev) => prev.filter((item) => String(item.id) !== String(id)));
+    } catch (e) {
+      setError(`Failed to acknowledge recommendation: ${(e as Error).message}`);
+    }
+  };
+
   const handleExportCSV = () => {
     if (!selectedConfig || !filteredData.length) return;
     const configLabel = selectedConfigObj ? `${selectedConfigObj.qcName} Level ${selectedConfigObj.level}` : selectedConfig;
@@ -1069,9 +1261,119 @@ function QCStatsTab() {
     downloadCSV(rows, `QC_Statistics_${configLabel.replace(/\s+/g, "_")}_${todayStr()}.csv`);
   };
 
+  const handleExportMonthlyPDF = () => {
+    if (!selectedConfigObj || monthlyData.length === 0) return;
+    const configLabel = `${selectedConfigObj.qcName} Level ${selectedConfigObj.level}${selectedConfigObj.lotNumber ? ` · Lot ${selectedConfigObj.lotNumber}` : ""}`;
+    const total = monthlyData.length;
+    const violations = monthlyData.filter((item) => item._status === "failure");
+    const warnings = monthlyData.filter((item) => item._status === "warning");
+    const passes = total - violations.length;
+    const passRate = total > 0 ? ((passes / total) * 100).toFixed(1) : "0.0";
+    const rowsHtml = monthlyData
+      .map(
+        (item, idx) => `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${item.date}</td>
+            <td>${Number(item.value).toFixed(3)}</td>
+            <td>${item.zScore != null ? Number(item.zScore).toFixed(2) : "—"}</td>
+            <td>${item._status === "failure" ? "Violation" : item._status === "warning" ? "Warning" : "Normal"}</td>
+          </tr>
+        `
+      )
+      .join("");
+    const violationRowsHtml =
+      violations.length === 0
+        ? `<tr><td colspan="4">No Westgard violations in this month.</td></tr>`
+        : violations
+            .map(
+              (item) => `
+                <tr>
+                  <td>${item.date}</td>
+                  <td>${Number(item.value).toFixed(3)}</td>
+                  <td>${item.zScore != null ? Number(item.zScore).toFixed(2) : "—"}</td>
+                  <td>${item._status}</td>
+                </tr>
+              `
+            )
+            .join("");
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>QC Monthly Summary - ${configLabel}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; color: #0f172a; }
+            h1 { font-size: 18px; margin-bottom: 6px; }
+            h2 { font-size: 14px; margin-top: 20px; margin-bottom: 8px; }
+            p { margin: 4px 0; font-size: 12px; }
+            table { width: 100%; border-collapse: collapse; font-size: 11px; }
+            th, td { border: 1px solid #cbd5e1; padding: 6px; text-align: left; }
+            th { background: #f8fafc; }
+            .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+            .card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px; }
+          </style>
+        </head>
+        <body>
+          <h1>Kanta QC Monthly Summary</h1>
+          <p><strong>Analyte:</strong> ${configLabel}</p>
+          <p><strong>Month:</strong> ${reportMonth}</p>
+          <div class="summary">
+            <div class="card"><strong>Total Runs</strong><br/>${total}</div>
+            <div class="card"><strong>Pass Rate</strong><br/>${passRate}%</div>
+            <div class="card"><strong>Warnings</strong><br/>${warnings.length}</div>
+            <div class="card"><strong>Violations</strong><br/>${violations.length}</div>
+          </div>
+          <h2>Levey-Jennings Data Points</h2>
+          <table>
+            <thead><tr><th>#</th><th>Date</th><th>Value</th><th>Z-Score</th><th>Status</th></tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+          <h2>Westgard Violations</h2>
+          <table>
+            <thead><tr><th>Date</th><th>Value</th><th>Z-Score</th><th>Classification</th></tr></thead>
+            <tbody>${violationRowsHtml}</tbody>
+          </table>
+          <script>window.onload = () => { window.print(); };</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   return (
     <div className="space-y-5">
       {error && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
+      {lotRecommendations.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <h3 className="text-sm font-semibold text-amber-800 mb-2">Review Lot Recommendations</h3>
+          <div className="space-y-2">
+            {lotRecommendations.map((rec) => (
+              <div key={String(rec.id)} className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-white p-3">
+                <div className="text-xs text-slate-700">
+                  <div className="font-semibold">
+                    {rec.analyte} {rec.lot_number ? `· Lot ${rec.lot_number}` : ""}
+                  </div>
+                  <div className="text-slate-500">
+                    {rec.violation_count} flagged Westgard runs in last {rec.window_days} days
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleAcknowledgeRecommendation(String(rec.id))}
+                  className="px-2.5 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-semibold"
+                >
+                  Acknowledge
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5">
         <SectionHead icon={TrendingUp} title="Filter Options" />
@@ -1090,6 +1392,10 @@ function QCStatsTab() {
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">End Date</label>
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Report Month</label>
+            <input type="month" value={reportMonth} onChange={(e) => setReportMonth(e.target.value)} className={inputCls} />
           </div>
         </div>
       </div>
@@ -1122,6 +1428,13 @@ function QCStatsTab() {
           <button onClick={handleExportCSV} disabled={!selectedConfig || !filteredData.length} className={btnSecondary + " disabled:opacity-40"}>
             <Download size={14} /> Export CSV
           </button>
+          <button
+            onClick={handleExportMonthlyPDF}
+            disabled={!selectedConfig || monthlyData.length === 0}
+            className={btnSecondary + " disabled:opacity-40"}
+          >
+            <Download size={14} /> Export Monthly PDF
+          </button>
         </div>
         {filteredData.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-8">
@@ -1136,6 +1449,7 @@ function QCStatsTab() {
               <tbody className="divide-y divide-slate-50">
                 {filteredData.map((item, idx) => {
                   const isFailure = item._status === "failure";
+                  const hasDrift = !!item.driftAlert;
                   return (
                     <tr key={item.id ?? idx} className="hover:bg-slate-50 transition-colors">
                       <td className={tblCell}>{fmtDate(item.date)}</td>
@@ -1144,6 +1458,8 @@ function QCStatsTab() {
                       <td className={tblCell}>
                         {isFailure
                           ? <StatusBadge variant="bad">Violation</StatusBadge>
+                          : hasDrift
+                          ? <StatusBadge variant="warn">Drift Alert</StatusBadge>
                           : item._status === "warning"
                           ? <StatusBadge variant="warn">Warning</StatusBadge>
                           : <StatusBadge variant="ok">Normal</StatusBadge>}
@@ -1186,6 +1502,7 @@ function QualConfigTab() {
   const api = useMemo(() => makeKantaApi(), []);
   const [form, setForm]             = useState(blankQualForm());
   const [configs, setConfigs]       = useState<QcItem[]>([]);
+  const [warningLeadDays, setWarningLeadDays] = useState(14);
   const [editingId, setEditingId]   = useState<string | null>(null);
   const [isLoading, setIsLoading]   = useState(false);
   const [error, setError]           = useState("");
@@ -1203,6 +1520,17 @@ function QualConfigTab() {
   useEffect(() => { fetchConfigs(); }, [fetchConfigs]);
 
   const resetForm = () => { setForm(blankQualForm()); setEditingId(null); setError(""); setSuccess(""); };
+  const expiryCalendarRows: QcItem[] = useMemo(() => {
+    const today = new Date();
+    return configs
+      .filter((cfg) => !!cfg.expiryDate)
+      .map((cfg) => {
+        const expiry = new Date(String(cfg.expiryDate));
+        const daysRemaining = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return { ...cfg, daysRemaining } as QcItem;
+      })
+      .sort((a, b) => a.daysRemaining - b.daysRemaining);
+  }, [configs]);
 
   const updateControl = (idx: number, field: string, value: string) => {
     setForm({ ...form, controls: form.controls.map((c, i) => i === idx ? { ...c, [field]: value } : c) });
@@ -1321,6 +1649,48 @@ function QualConfigTab() {
       </form>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h4 className="text-sm font-semibold text-amber-800">Qualitative QC Expiry Calendar</h4>
+            <label className="text-xs text-slate-600 flex items-center gap-2">
+              Amber warning lead time (days)
+              <input
+                type="number"
+                min={1}
+                value={warningLeadDays}
+                onChange={(e) => setWarningLeadDays(Math.max(1, Number(e.target.value) || 14))}
+                className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs"
+              />
+            </label>
+          </div>
+          {expiryCalendarRows.length === 0 ? (
+            <p className="text-xs text-slate-500">No qualitative lot expiry dates configured yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {expiryCalendarRows.slice(0, 8).map((row) => (
+                <div key={String(row.id)} className="flex items-center justify-between rounded-lg border border-amber-100 bg-white px-3 py-2 text-xs">
+                  <span className="font-semibold text-slate-800">
+                    {row.testName} {row.lotNumber ? `· ${row.lotNumber}` : ""}
+                  </span>
+                  <span className="text-slate-600">{row.expiryDate}</span>
+                  <span
+                    className={
+                      row.daysRemaining < 0
+                        ? "text-red-700 font-semibold"
+                        : row.daysRemaining <= warningLeadDays
+                          ? "text-amber-700 font-semibold"
+                          : "text-slate-500"
+                    }
+                  >
+                    {row.daysRemaining < 0
+                      ? `Expired ${Math.abs(row.daysRemaining)}d ago`
+                      : `${row.daysRemaining}d remaining`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <SectionHead icon={FlaskConical} title="Existing Qualitative QC Configurations" />
         {configs.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-8">No qualitative QC configurations found. Create one above.</p>
@@ -1379,10 +1749,12 @@ function QualEntryTab() {
   const api = useMemo(() => makeKantaApi(), []);
   const [qualConfigs, setQualConfigs]           = useState<QcItem[]>([]);
   const [draftEntries, setDraftEntries]         = useState<QcItem[]>([]);
+  const [openIncidents, setOpenIncidents]       = useState<QcItem[]>([]);
   const [selectedConfigId, setSelectedConfigId] = useState("");
   const [selectedDate, setSelectedDate]         = useState(todayStr());
   const [controlResults, setControlResults]     = useState<QcItem[]>([]);
   const [correctiveAction, setCorrectiveAction] = useState("");
+  const [rerunForEntryId, setRerunForEntryId]   = useState("");
   const [editingId, setEditingId]               = useState<string | null>(null);
   const [isLoading, setIsLoading]               = useState(false);
   const [error, setError]                       = useState("");
@@ -1394,6 +1766,11 @@ function QualEntryTab() {
       const [configs, entries] = await Promise.all([api.getQualConfigs(), api.getQualEntries()]);
       setQualConfigs(configs);
       setDraftEntries(entries.filter((e) => !e.submitted));
+      setOpenIncidents(
+        entries.filter(
+          (e) => e.submitted && !e.overallPass && (e.followupStatus ?? "none") === "open"
+        )
+      );
     } catch (e) { setError(`Error loading configurations: ${(e as Error).message}`); }
   }, [api]);
 
@@ -1407,6 +1784,7 @@ function QualEntryTab() {
       controlName: ctrl.name, level: ctrl.level, expectedResult: ctrl.expectedResult, notes: ctrl.notes || "", observedResult: "",
     })));
     setCorrectiveAction("");
+    setRerunForEntryId("");
   }, [selectedConfigId, qualConfigs, editingId]);
 
   const selectedConfig = qualConfigs.find((c) => c.id === selectedConfigId);
@@ -1417,7 +1795,7 @@ function QualEntryTab() {
   const overallPass = allFilled && !anyFail;
 
   const resetForm = () => {
-    setSelectedConfigId(""); setControlResults([]); setCorrectiveAction("");
+    setSelectedConfigId(""); setControlResults([]); setCorrectiveAction(""); setRerunForEntryId("");
     setSelectedDate(todayStr()); setEditingId(null); setError(""); setSuccess("");
   };
 
@@ -1433,6 +1811,7 @@ function QualEntryTab() {
       controlResults,
       overallPass: allFilled && !anyFail,
       correctiveAction: anyFail ? correctiveAction.trim() : "",
+      rerunForEntryId: rerunForEntryId || "",
       submitted: submit,
     };
     try {
@@ -1477,7 +1856,7 @@ function QualEntryTab() {
 
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6">
         <SectionHead icon={TestTube} title={`Qualitative QC Data Entry${editingId ? " — Editing Draft" : ""}`} />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-5">
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Select Test <span className="text-red-500">*</span></label>
             <select value={selectedConfigId} onChange={(e) => { setSelectedConfigId(e.target.value); if (!editingId) setControlResults([]); }} className={selectCls} required>
@@ -1497,6 +1876,28 @@ function QualEntryTab() {
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Result Type</label>
             <div className="w-full border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-100 text-slate-700 text-sm min-h-[42px] flex items-center">{selectedConfig?.resultType || "—"}</div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+              Rerun For Failed Incident
+            </label>
+            <select
+              value={rerunForEntryId}
+              onChange={(e) => setRerunForEntryId(e.target.value)}
+              className={selectCls}
+            >
+              <option value="">None</option>
+              {openIncidents
+                .filter((entry) => !selectedConfigId || entry.qcConfigId === selectedConfigId)
+                .map((entry) => (
+                  <option key={String(entry.id)} value={String(entry.id)}>
+                    {entry.testName} · {entry.date}
+                  </option>
+                ))}
+            </select>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Link this run to close a previous failed incident when rerun passes.
+            </p>
           </div>
         </div>
 
@@ -1595,7 +1996,7 @@ function QualEntryTab() {
                       <td className={tblCell}>{entry.enteredBy || "—"}</td>
                       <td className={tblCell}>
                         <div className="flex gap-2 flex-wrap">
-                          <button onClick={() => { setEditingId(String(entry.id)); setSelectedConfigId(entry.qcConfigId); setSelectedDate(entry.date); setControlResults(entry.controlResults || []); setCorrectiveAction(entry.correctiveAction || ""); }} className="px-2 py-1 rounded-lg bg-[var(--module-primary-light)] hover:brightness-[0.96] module-accent-soft-text text-xs font-semibold">Edit</button>
+                          <button onClick={() => { setEditingId(String(entry.id)); setSelectedConfigId(entry.qcConfigId); setSelectedDate(entry.date); setControlResults(entry.controlResults || []); setCorrectiveAction(entry.correctiveAction || ""); setRerunForEntryId(entry.rerunForEntryId || ""); }} className="px-2 py-1 rounded-lg bg-[var(--module-primary-light)] hover:brightness-[0.96] module-accent-soft-text text-xs font-semibold">Edit</button>
                           <button onClick={() => handleSubmitDraft(entry)} className="px-2 py-1 rounded-lg bg-[var(--module-primary)] hover:opacity-90 text-[var(--module-primary-on)] text-xs font-semibold">Submit</button>
                           <button onClick={() => handleDelete(entry)} className="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold">Delete</button>
                         </div>
@@ -1649,6 +2050,9 @@ function QualLogTab() {
   const passedRuns = filtered.filter((r) => r.overallPass).length;
   const failedRuns = totalRuns - passedRuns;
   const passRate   = totalRuns > 0 ? ((passedRuns / totalRuns) * 100).toFixed(1) : "—";
+  const openFollowups = filtered.filter(
+    (run) => !run.overallPass && (run.followupStatus ?? "none") === "open"
+  );
   const testNames  = [...new Set(allRuns.map((r) => r.testName).filter(Boolean))];
 
   const handleDelete = (run: QcItem) => {
@@ -1671,12 +2075,21 @@ function QualLogTab() {
       ["Filter: Test", filterTest || "All"], ["Filter: Date Range", filterFrom && filterTo ? `${filterFrom} to ${filterTo}` : "All"],
       [], ["Summary"], ["Total Runs", "Passed", "Failed", "Pass Rate"],
       [totalRuns, passedRuns, failedRuns, passRate !== "—" ? `${passRate}%` : "—"],
-      [], ["Date", "Test Name", "Controls Run", "Passed", "Failed", "Overall Result", "Corrective Action"],
+      [], ["Date", "Test Name", "Controls Run", "Passed", "Failed", "Overall Result", "Follow-up Status", "Corrective Action"],
     ];
     filtered.forEach((run) => {
       const controls = run.controlResults || [];
       const passed = controls.filter((c: QcItem) => c.observedResult === c.expectedResult).length;
-      rows.push([run.date, run.testName, controls.length, passed, controls.length - passed, run.overallPass ? "PASS" : "FAIL", run.correctiveAction || "—"]);
+      rows.push([
+        run.date,
+        run.testName,
+        controls.length,
+        passed,
+        controls.length - passed,
+        run.overallPass ? "PASS" : "FAIL",
+        run.followupStatus || "none",
+        run.correctiveAction || "—",
+      ]);
     });
     downloadCSV(rows, `QualitativeQC_Log_${todayStr()}.csv`);
   };
@@ -1701,6 +2114,20 @@ function QualLogTab() {
           </div>
         ))}
       </div>
+      {openFollowups.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <h4 className="text-sm font-semibold text-amber-800 mb-2">Open Corrective Actions</h4>
+          <div className="space-y-2">
+            {openFollowups.slice(0, 5).map((run) => (
+              <div key={String(run.id)} className="flex items-center justify-between text-xs bg-white border border-amber-100 rounded-lg px-3 py-2">
+                <span className="font-semibold text-slate-800">{run.testName}</span>
+                <span className="text-slate-600">{fmtDate(run.date)}</span>
+                <span className="text-amber-700">Awaiting pass rerun</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5">
         <h3 className="text-xs font-bold uppercase tracking-wider module-accent-text mb-3">Filter Options</h3>
@@ -1738,7 +2165,7 @@ function QualLogTab() {
           <div className="overflow-x-auto rounded-xl border border-slate-100">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>{["Date", "Test", "Controls", "Pass", "Fail", "Overall", "Date Entered", "Details", ""].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
+                <tr>{["Date", "Test", "Controls", "Pass", "Fail", "Overall", "Follow-up", "Date Entered", "Details", ""].map((h) => <th key={h} className={tblHead}>{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filtered.flatMap((run) => {
@@ -1755,6 +2182,12 @@ function QualLogTab() {
                       <td className={tblCell + " font-bold module-accent-text text-center"}>{passed}</td>
                       <td className={tblCell + " font-bold text-center"}><span className={failed > 0 ? "text-red-600" : "text-slate-400"}>{failed}</span></td>
                       <td className={tblCell}><PassBadge pass={run.overallPass} /></td>
+                      <td className={tblCell}>
+                        {(run.followupStatus ?? "none") === "open" && <StatusBadge variant="warn">Open</StatusBadge>}
+                        {(run.followupStatus ?? "none") === "closed" && <StatusBadge variant="ok">Closed</StatusBadge>}
+                        {(run.followupStatus ?? "none") === "override" && <StatusBadge variant="warn">Override</StatusBadge>}
+                        {(run.followupStatus ?? "none") === "none" && <span className="text-slate-400">—</span>}
+                      </td>
                       <td className={tblCell + " text-slate-500"}>{run.createdAt ? new Date(run.createdAt).toLocaleString() : "—"}</td>
                       <td className={tblCell}>
                         <button onClick={() => setExpandedRow(isExpanded ? null : String(run.id))} className="module-accent-text hover:text-[var(--module-primary-dark)] text-xs font-semibold underline flex items-center gap-1">
@@ -1771,7 +2204,7 @@ function QualLogTab() {
 
                   const detailRow = (
                     <tr key={`${run.id}-detail`} className="bg-slate-50">
-                      <td colSpan={9} className="px-6 py-4">
+                      <td colSpan={10} className="px-6 py-4">
                         <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
                           <h4 className="font-bold module-accent-soft-text mb-3 text-sm">Control Results Detail</h4>
                           <table className="w-full text-sm">
@@ -1808,6 +2241,21 @@ function QualLogTab() {
                             <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
                               <span className="text-xs font-bold text-red-700 uppercase">Corrective Action: </span>
                               <span className="text-sm text-red-900">{run.correctiveAction}</span>
+                            </div>
+                          )}
+                          {(run.followupStatus ?? "none") !== "none" && (
+                            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700">
+                              <span className="font-semibold">Follow-up status:</span> {run.followupStatus}
+                              {run.followupClosedAt && (
+                                <span className="ml-2 text-slate-500">
+                                  (closed {new Date(run.followupClosedAt).toLocaleString()})
+                                </span>
+                              )}
+                              {run.rerunEntryId && (
+                                <div className="mt-1 text-xs text-slate-500">
+                                  Linked rerun entry: {run.rerunEntryId}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
