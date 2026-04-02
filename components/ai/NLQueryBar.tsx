@@ -31,6 +31,7 @@ export default function NLQueryBar({
   facilityId: string | null | undefined;
   userId?: string;
 }) {
+  // Message state persists across /dashboard/* route changes because this component lives in the stable app/dashboard/layout.tsx tree (Next.js App Router — layouts do not remount on same-layout navigation).
   const { isOnline } = useSyncQueue();
   const { aiPanelOpen, setAiPanelOpen } = useSidebarLayout();
   const open = aiPanelOpen;

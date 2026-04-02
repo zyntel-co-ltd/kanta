@@ -114,3 +114,8 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 - **Sidebar copy quality improved:** `components/dashboard/Sidebar.tsx` nav items now carry descriptive `tooltip` text; collapse/expand and log-out controls now explain intent instead of echoing labels.
 - **TopBar actions clarified:** `components/dashboard/TopBar.tsx` tooltips now describe alerts, sync status, dismiss/close actions, console access, and user menu behavior.
 - **Browser-native titles replaced in dashboard interactions:** removed `title=` tooltip fallbacks on key interactive elements and replaced with styled `Tooltip` triggers in `app/dashboard/numbers/page.tsx`, `components/dashboard/AppTabBar.tsx`, `components/dashboard/ScanFeed.tsx`, `components/dashboard/AddEquipmentModal.tsx`, and `components/ai/NLQueryBar.tsx`.
+
+## App / ops (2026-04-02 — ENG-151 AI panel history persistence)
+
+- **Persistence behavior confirmed by architecture:** `components/ai/NLQueryBar.tsx` now includes an explicit comment documenting why message state survives same-layout `/dashboard/*` route transitions under Next.js App Router.
+- **No storage added intentionally:** chat state remains in-memory React state only; no `localStorage`, `sessionStorage`, or backend persistence introduced.
