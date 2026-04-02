@@ -169,3 +169,8 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 - **Monthly PDF availability improved:** QC Stats now auto-selects the latest month with data for the chosen control when the current month filter has no rows, preventing a disabled export state.
 - **Visualization graph export added:** each L-J chart card now includes `Download L-J Graph PDF` that exports the currently date-filtered graph.
 - **PDF metadata expanded:** visualization export includes control name, control level, lot number, selected date range, `Prepared by`, and download/print timestamp; filename also carries control/lot/date-range metadata.
+
+## App / ops (2026-04-02 — ENG-90 TAT QR sample lookup placement)
+
+- **Lab Metrics entry point added:** `app/dashboard/tat/page.tsx` Section Capture panel now includes `QR Sample Lookup (Results)` linking to `/dashboard/scan?scanPurpose=sample` (behind `show-sample-scan` flag).
+- **Scan mode deep-link support:** `app/dashboard/scan/page.tsx` now reads `scanPurpose`/`purpose` query params and initializes in sample lookup mode when requested and feature-flagged.

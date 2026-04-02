@@ -37,6 +37,7 @@ export default function TATPage() {
   const { loading: testRequestsLoading, empty: testRequestsEmpty } = useTestRequestsEmpty(facilityId);
   const showTatTestLevel = useFlag("show-tat-test-level");
   const showTatPatientLevel = useFlag("show-tat-patient-level");
+  const showSampleScan = useFlag("show-sample-scan");
   const professional = isProfessionalOrAbove(facilityAuth?.subscriptionTier);
   const adminAccount = isAdminAccount({
     isSuperAdmin: facilityAuth?.isSuperAdmin,
@@ -148,12 +149,22 @@ export default function TATPage() {
               This page appears when your LIMS does not supply reception timestamps automatically.
               Connect LIMS or enable manual section capture logging.
             </p>
-            <Link
-              href="/dashboard/lab-metrics/tat/scan"
-              className="inline-flex items-center rounded-xl bg-[#21336a] px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
-            >
-              Open Scan Results
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/dashboard/lab-metrics/tat/scan"
+                className="inline-flex items-center rounded-xl bg-[#21336a] px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
+              >
+                Open Scan Results
+              </Link>
+              {showSampleScan && (
+                <Link
+                  href="/dashboard/scan?scanPurpose=sample"
+                  className="inline-flex items-center rounded-xl border border-[#21336a] px-4 py-2 text-sm font-semibold text-[#21336a] hover:bg-slate-50"
+                >
+                  QR Sample Lookup (Results)
+                </Link>
+              )}
+            </div>
           </div>
         )}
       </div>

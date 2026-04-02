@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { fetchEquipment, fetchEquipmentByQr } from "@/lib/api";
 import { useLogScan } from "@/lib/useLogScan";
@@ -10,6 +10,7 @@ import { CheckCircle2, Search, ScanLine, Loader2, TestTube2 } from "lucide-react
 import { DEFAULT_FACILITY_ID, DEFAULT_HOSPITAL_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
 import { useFlag } from "@/lib/featureFlags";
+import { useSearchParams } from "next/navigation";
 
 const DEFAULT_SCANNED_BY = "Staff"; // TODO: from auth
 
@@ -47,6 +48,8 @@ export default function ScanPage() {
   const { facilityAuth } = useAuth();
   const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
   const showSampleScan = useFlag("show-sample-scan");
+  const searchParams = useSearchParams();
+  const requestedPurpose = searchParams.get("scanPurpose") ?? searchParams.get("purpose");
 
   const [scanPurpose, setScanPurpose] = useState<"equipment" | "sample">("equipment");
   const [mode, setMode] = useState<"scan" | "search">("scan");
@@ -64,6 +67,12 @@ export default function ScanPage() {
   const [sampleMatches, setSampleMatches] = useState<LookupMatch[] | null>(null);
 
   const logScanFn = useLogScan();
+
+  // Allow deep-linking into sample lookup mode from other modules (e.g. TAT → QR sample lookup).
+  // Gated by `show-sample-scan` so we never render sample lookup when the feature flag is off.
+  useEffect(() => {
+    if (requestedPurpose === "sample" && showSampleScan) setScanPurpose("sample");
+  }, [requestedPurpose, showSampleScan]);
 
   const runSampleLookup = useCallback(async (code: string) => {
     const trimmed = code.trim();
