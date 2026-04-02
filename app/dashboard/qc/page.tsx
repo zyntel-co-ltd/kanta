@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, Fragment } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef, Fragment } from "react";
 import {
   ShieldCheck, BarChart3, TestTube, Calculator,
   TrendingUp, ClipboardList,
@@ -792,7 +792,7 @@ function QCDataEntryTab() {
 /*  QC VISUALIZATION TAB                                      */
 /* ═══════════════════════════════════════════════════════════ */
 function QCVisualizationTab() {
-  const { facilityAuth } = useAuth();
+  const { facilityAuth, displayName, user } = useAuth();
   const graphHospitalTitle = facilityBrandingLine(
     facilityAuth?.hospitalName,
     facilityAuth?.groupId,
@@ -807,6 +807,8 @@ function QCVisualizationTab() {
   const [selectedConfigId2, setSelectedConfigId2] = useState("");
   const [fromDate, setFromDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`; });
   const [toDate, setToDate]     = useState(() => new Date().toISOString().slice(0, 10));
+  const [visualError, setVisualError] = useState("");
+  const graphRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     api.getMaterials().then(setQcConfigs).catch(() => {});
@@ -976,9 +978,91 @@ function QCVisualizationTab() {
         },
       },
     };
+    const downloadGraphPdf = async () => {
+      const graphNode = graphRefs.current[String(config.id)];
+      const canvas = graphNode?.querySelector("canvas");
+      if (!(canvas instanceof HTMLCanvasElement)) {
+        setVisualError("Could not find graph canvas to download. Try again.");
+        return;
+      }
+      try {
+        const { jsPDF } = await import("jspdf");
+        const imageData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF({
+          orientation: "landscape",
+          unit: "pt",
+          format: "a4",
+        });
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const title = `${graphHospitalTitle} - ${config.qcName} Level ${config.level}`;
+        const lotLabel = config.lotNumber ? `Lot: ${config.lotNumber}` : "Lot: —";
+        const dateLabel =
+          fromDate && toDate
+            ? `Filtered dates: ${fromDate} to ${toDate}`
+            : fromDate
+              ? `Filtered dates: from ${fromDate}`
+              : toDate
+                ? `Filtered dates: to ${toDate}`
+                : "Filtered dates: all";
+
+        const preparedBy =
+          displayName?.trim() || user?.email?.trim() || "Unknown preparer";
+        const printedAt = new Date();
+        const printedAtLabel = printedAt.toLocaleString(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        });
+        const rangeSlug =
+          fromDate && toDate ? `${fromDate}_to_${toDate}` : fromDate ? `from_${fromDate}` : toDate ? `to_${toDate}` : "all_dates";
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(13);
+        pdf.text(title, 28, 30);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(10);
+        pdf.text(`${config.qcName} (Level ${config.level})`, 28, 44);
+        pdf.text(lotLabel, 28, 56);
+        pdf.text(dateLabel, 28, 68);
+        pdf.text(`Prepared by: ${preparedBy}`, 28, 80);
+        pdf.text(`Printed/Downloaded at: ${printedAtLabel}`, 28, 92);
+
+        const maxImageWidth = pageWidth - 56;
+        const maxImageHeight = pageHeight - 84;
+        const ratio = Math.min(maxImageWidth / canvas.width, maxImageHeight / canvas.height);
+        const renderWidth = canvas.width * ratio;
+        const renderHeight = canvas.height * ratio;
+        const x = (pageWidth - renderWidth) / 2;
+        const y = 110;
+
+        pdf.addImage(imageData, "PNG", x, y, renderWidth, renderHeight);
+        pdf.save(
+          `LJ_${String(config.qcName).replace(/\s+/g, "_")}_L${config.level}_Lot-${(config.lotNumber ?? "NoLot").replace(/\s+/g, "_")}_${rangeSlug}_${todayStr()}.pdf`.replace(
+            /[^a-zA-Z0-9_\\-\\.]/g,
+            "_"
+          )
+        );
+        setVisualError("");
+      } catch {
+        setVisualError("Failed to generate PDF. Please try again.");
+      }
+    };
     return (
-      <div key={config.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <div
+        key={config.id}
+        ref={(node) => {
+          graphRefs.current[String(config.id)] = node;
+        }}
+        className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5"
+      >
         <div className="text-center border-b border-slate-100 pb-4 mb-4">
+          <div className="mb-2 flex justify-end">
+            <button type="button" onClick={() => void downloadGraphPdf()} className={btnSecondary}>
+              <Download size={14} /> Download L-J Graph PDF
+            </button>
+          </div>
           <h3 className={`font-bold text-slate-800 uppercase tracking-wide ${compact ? "text-sm" : "text-base"}`}>{graphHospitalTitle} QUALITY CONTROL GRAPH</h3>
           <h4 className={`font-bold text-slate-900 mt-1 ${compact ? "text-lg" : "text-2xl"}`}>{config.qcName} Level {config.level}</h4>
           {config.lotNumber && <p className="text-slate-500 text-xs mt-0.5">Control Lot: {config.lotNumber}</p>}
@@ -1004,6 +1088,7 @@ function QCVisualizationTab() {
 
   return (
     <div className="space-y-5">
+      {visualError && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{visualError}</div>}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <SectionHead icon={BarChart3} title="Visualization" />
         <div className="flex flex-wrap gap-3">
@@ -1199,6 +1284,17 @@ function QCStatsTab() {
     setLoadingRuns(true);
     api.getRuns(selectedConfig).then(setRuns).catch(() => setRuns([])).finally(() => setLoadingRuns(false));
   }, [api, selectedConfig]);
+
+  useEffect(() => {
+    if (!selectedConfig || runs.length === 0) return;
+    const hasRowsForSelectedMonth = runs.some((item) => String(item.date || "").slice(0, 7) === reportMonth);
+    if (hasRowsForSelectedMonth) return;
+    const latestMonth = [...runs]
+      .sort((a, b) => (a.date < b.date ? 1 : -1))[0]
+      ?.date
+      ?.slice(0, 7);
+    if (latestMonth) setReportMonth(latestMonth);
+  }, [selectedConfig, runs, reportMonth]);
 
   const selectedConfigObj = qcConfigs.find((c) => c.id === selectedConfig);
   const filteredData = useMemo(() => {
@@ -1423,18 +1519,20 @@ function QCStatsTab() {
       )}
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <SectionHead icon={ClipboardList} title="QC Values" />
-          <button onClick={handleExportCSV} disabled={!selectedConfig || !filteredData.length} className={btnSecondary + " disabled:opacity-40"}>
-            <Download size={14} /> Export CSV
-          </button>
-          <button
-            onClick={handleExportMonthlyPDF}
-            disabled={!selectedConfig || monthlyData.length === 0}
-            className={btnSecondary + " disabled:opacity-40"}
-          >
-            <Download size={14} /> Export Monthly PDF
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={handleExportCSV} disabled={!selectedConfig || !filteredData.length} className={btnSecondary + " disabled:opacity-40"}>
+              <Download size={14} /> Export CSV
+            </button>
+            <button
+              onClick={handleExportMonthlyPDF}
+              disabled={!selectedConfig || monthlyData.length === 0}
+              className={btnSecondary + " disabled:opacity-40"}
+            >
+              <Download size={14} /> Export Monthly PDF
+            </button>
+          </div>
         </div>
         {filteredData.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-8">

@@ -163,3 +163,9 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 - **Payload decode:** supports legacy delimiter payloads and JSON payloads via `lib/tat/qrPayload.ts`.
 - **API wiring:** added `GET|PATCH /api/tat/scan` to look up active test requests and write section `time-in/time-out` timestamps; offline writes go through `queuedFetch` so scanning works without connectivity.
 - **Navigation:** TAT `Section Capture` landing panel now links to “Open Scan Results”.
+
+## App / ops (2026-04-02 — QC export UX refinements)
+
+- **Monthly PDF availability improved:** QC Stats now auto-selects the latest month with data for the chosen control when the current month filter has no rows, preventing a disabled export state.
+- **Visualization graph export added:** each L-J chart card now includes `Download L-J Graph PDF` that exports the currently date-filtered graph.
+- **PDF metadata expanded:** visualization export includes control name, control level, lot number, selected date range, `Prepared by`, and download/print timestamp; filename also carries control/lot/date-range metadata.
