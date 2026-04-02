@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { Sparkles, SendHorizontal, Loader2, AlertCircle, X } from "lucide-react";
 import { useSyncQueue } from "@/lib/SyncQueueContext";
+import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
 type Message = {
   id: string;
   role: "user" | "assistant";
@@ -27,14 +28,28 @@ export default function NLQueryBar({
   userId?: string;
 }) {
   const { isOnline } = useSyncQueue();
-  const [open, setOpen] = useState(false);
+  const { aiPanelOpen, setAiPanelOpen } = useSidebarLayout();
+  const open = aiPanelOpen;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => setIsMobile(window.innerWidth < 640);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  useEffect(() => {
+    if (!open) return;
+    const t = window.setTimeout(() => inputRef.current?.focus(), 50);
+    return () => window.clearTimeout(t);
+  }, [open]);
 
   const send = async (question: string) => {
     if (!facilityId || !question.trim() || loading) return;
@@ -69,7 +84,7 @@ export default function NLQueryBar({
 
   const handleKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); }
-    if (e.key === "Escape") setOpen(false);
+    if (e.key === "Escape") setAiPanelOpen(false);
   };
 
   const overlay =
@@ -77,9 +92,19 @@ export default function NLQueryBar({
     mounted &&
     createPortal(
       <div className="fixed inset-0 z-[200] flex items-stretch justify-center sm:items-center p-3 sm:p-6 pointer-events-auto">
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setOpen(false)} aria-hidden />
+        <div
+          className="fixed inset-0 z-[199] bg-black/20"
+          onClick={() => setAiPanelOpen(false)}
+          aria-hidden
+        />
 
-        <div className="relative z-10 mt-auto sm:mt-0 w-full max-w-xl max-h-[min(85vh,32rem)] sm:max-h-[80vh] rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+        <div
+          className={`fixed z-[200] bg-white border-slate-200 shadow-2xl flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${
+            isMobile
+              ? `left-0 right-0 bottom-0 h-[85vh] rounded-t-2xl border-t transform ${open ? "translate-y-0" : "translate-y-full"}`
+              : `top-0 right-0 h-screen w-[380px] max-w-full border-l transform ${open ? "translate-x-0" : "translate-x-full"}`
+          }`}
+        >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
@@ -91,7 +116,7 @@ export default function NLQueryBar({
                   <p className="text-[11px] text-slate-400">Operational data only · No patient inference</p>
                 </div>
               </div>
-              <button onClick={() => setOpen(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50">
+              <button onClick={() => setAiPanelOpen(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50">
                 <X size={16} />
               </button>
             </div>
@@ -200,8 +225,7 @@ export default function NLQueryBar({
       <button
         type="button"
         onClick={() => {
-          setOpen(true);
-          setTimeout(() => inputRef.current?.focus(), 50);
+          setAiPanelOpen(true);
         }}
         className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:border-emerald-300 transition-all"
       >

@@ -86,3 +86,10 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 - **Offline queue expanded to sample operations:** `app/dashboard/samples/page.tsx` mutating calls now use `queuedFetch` for sample add/delete, rack create/delete, rack discard, and discarded-item delete; queued writes replay via existing FIFO sync flush.
 - **Top bar alert actions queue-enabled:** `components/dashboard/TopBar.tsx` alert acknowledgement/dismiss `PATCH` writes now use `queuedFetch`, preserving offline behavior consistency.
 - **Admin configuration writes queue-enabled:** `components/dashboard/admin/AdminConfigurationSection.tsx` section/shift/TAT target mutations moved to `queuedFetch`.
+
+## App / ops (2026-04-02 — ENG-148 AI panel push layout refactor)
+
+- **Shared panel state in layout context:** `lib/SidebarLayoutContext.tsx` now exposes `aiPanelOpen` and `setAiPanelOpen`; state is in-memory only (not persisted to localStorage).
+- **NLQueryBar converted from centered modal to slide panel:** `components/ai/NLQueryBar.tsx` now renders as a fixed right drawer on desktop (`w-[380px]`, full height, `translateX` transition) and a mobile bottom sheet (`translateY` transition), both via `createPortal`.
+- **Dashboard push behavior added:** `components/dashboard/DashboardChrome.tsx` now reads `aiPanelOpen` and applies a desktop-only `margin-right: 380px` transition to the main content wrapper and `main` area so TopBar/tab strip/content compress together while panel is open.
+- **Close interactions preserved:** backdrop click, close button, and Escape from input all close the panel via `setAiPanelOpen(false)`; chat logic and suggestions remain intact.
