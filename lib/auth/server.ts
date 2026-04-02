@@ -81,18 +81,13 @@ export async function getAuthContext(
 
   const db = createAdminClient();
 
-  const { data: pa } = await db
-    .from("platform_admins")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  // Run both lookups in parallel — cuts server-side auth latency roughly in half.
+  const [{ data: pa }, { data: memberships }] = await Promise.all([
+    db.from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle(),
+    db.from("facility_users").select("facility_id, role, is_active").eq("user_id", user.id),
+  ]);
 
   const isSuperAdmin = !!pa;
-
-  const { data: memberships } = await db
-    .from("facility_users")
-    .select("facility_id, role, is_active")
-    .eq("user_id", user.id);
 
   const facilityIdParam =
     req.nextUrl.searchParams.get("facility_id") ?? undefined;

@@ -77,14 +77,47 @@ type AuthContextType = {
   refreshUser: () => Promise<void>;
 };
 
+const AUTH_CACHE_KEY = "zyntel_facility_auth_v1";
+
+function readCachedAuth(): FacilityAuthState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(AUTH_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as FacilityAuthState;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedAuth(auth: FacilityAuthState | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (auth) {
+      sessionStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(auth));
+    } else {
+      sessionStorage.removeItem(AUTH_CACHE_KEY);
+    }
+  } catch {
+    // sessionStorage unavailable (private mode quota etc.) — degrade gracefully
+  }
+}
+
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [facilityAuth, setFacilityAuth] = useState<FacilityAuthState | null>(null);
-  const [facilityAuthLoading, setFacilityAuthLoading] = useState(true);
+
+  // Seed from sessionStorage so the panel renders immediately on repeat visits.
+  // The background fetch below will validate and update if anything has changed.
+  const [facilityAuth, setFacilityAuth] = useState<FacilityAuthState | null>(
+    () => readCachedAuth()
+  );
+  const [facilityAuthLoading, setFacilityAuthLoading] = useState(
+    () => readCachedAuth() === null  // only show spinner when there is no cached data
+  );
 
   useEffect(() => {
     const client = createClient();
@@ -106,22 +139,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) {
+      writeCachedAuth(null);
       setFacilityAuth(null);
       setFacilityAuthLoading(false);
       return;
     }
 
     let cancelled = false;
-    setFacilityAuthLoading(true);
+    // Only show the spinner if there's no cached auth to display yet.
+    if (readCachedAuth() === null) setFacilityAuthLoading(true);
 
     fetch("/api/me", { credentials: "same-origin" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (cancelled || !data) {
-          if (!cancelled) setFacilityAuth(null);
+          if (!cancelled) {
+            writeCachedAuth(null);
+            setFacilityAuth(null);
+          }
           return;
         }
-        setFacilityAuth({
+        const next: FacilityAuthState = {
           facilityId: data.facilityId ?? null,
           hospitalName: data.hospitalName ?? null,
           hospitalLogoUrl: data.hospitalLogoUrl ?? null,
@@ -134,10 +172,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           canViewRevenue: !!data.canViewRevenue,
           canManageUsers: !!data.canManageUsers,
           canWrite: !!data.canWrite,
-        });
+        };
+        writeCachedAuth(next);
+        if (!cancelled) setFacilityAuth(next);
       })
       .catch(() => {
-        if (!cancelled) setFacilityAuth(null);
+        if (!cancelled) {
+          // On network error keep the cached value — don't flash the spinner.
+          // The next successful fetch will refresh it.
+        }
       })
       .finally(() => {
         if (!cancelled) setFacilityAuthLoading(false);
@@ -176,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     const client = createClient();
     const auth = client.auth as unknown as BrowserAuth;
+    writeCachedAuth(null);
     setFacilityAuth(null);
     await auth.signOut();
   }, []);

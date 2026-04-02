@@ -140,6 +140,23 @@ export default function AdminPage() {
   const showUnmatchedTestsFlag = useFlag("show-unmatched-tests");
   const showUnmatchedTab = !!facilityAuth?.isSuperAdmin || showUnmatchedTestsFlag;
 
+  // Must live before the early return so hook call count is constant across renders.
+  const tabs = useMemo(() => {
+    const t: { id: Tab; label: string; icon: React.ReactNode }[] = [
+      { id: "users", label: "User Management", icon: <Users size={16} /> },
+      { id: "configuration", label: "Configuration", icon: <Cog size={16} /> },
+    ];
+    if (showUnmatchedTab) {
+      t.push({ id: "unmatched", label: "Unmatched Tests", icon: <AlertTriangle size={16} /> });
+    }
+    t.push(
+      { id: "cancellations", label: "Cancellations", icon: <Ban size={16} /> },
+      { id: "audit", label: "Audit Trail", icon: <ClipboardList size={16} /> },
+      { id: "settings", label: "Settings", icon: <Sliders size={16} /> }
+    );
+    return t;
+  }, [showUnmatchedTab]);
+
   useEffect(() => {
     if (facilityAuthLoading) return;
     if (!facilityAuth?.canAccessAdminPanel) {
@@ -321,22 +338,6 @@ export default function AdminPage() {
       </div>
     );
   }
-
-  const tabs = useMemo(() => {
-    const t: { id: Tab; label: string; icon: React.ReactNode }[] = [
-      { id: "users", label: "User Management", icon: <Users size={16} /> },
-      { id: "configuration", label: "Configuration", icon: <Cog size={16} /> },
-    ];
-    if (showUnmatchedTab) {
-      t.push({ id: "unmatched", label: "Unmatched Tests", icon: <AlertTriangle size={16} /> });
-    }
-    t.push(
-      { id: "cancellations", label: "Cancellations", icon: <Ban size={16} /> },
-      { id: "audit", label: "Audit Trail", icon: <ClipboardList size={16} /> },
-      { id: "settings", label: "Settings", icon: <Sliders size={16} /> }
-    );
-    return t;
-  }, [showUnmatchedTab]);
 
   const getUnmatchedEdit = (t: UnmatchedTest) =>
     unmatchedEdits[t.id] ?? { labSection: "CHEMISTRY", tat: 60, price: 0 };
