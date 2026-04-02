@@ -7,6 +7,10 @@ import { NextResponse } from "next/server";
 
 export const runtime = "edge";
 
+export async function HEAD() {
+  return new Response(null, { status: 200 });
+}
+
 export async function GET() {
   const checks: Record<string, "ok" | "fail"> = {};
 

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import PageLoader from "@/components/ui/PageLoader";
+import { queuedFetch } from "@/lib/sync-queue/queuedFetch";
 
 /* ═══════════════════════════════ TYPES ═══════════════════════════════ */
 type RackType   = "normal" | "igra";
@@ -220,7 +221,7 @@ function RackGridView({
           }
         }
         for (let i = 0; i < 4; i++) {
-          const res = await fetch(`/api/samples/racks/${rackId}`, {
+          const res = await queuedFetch(`/api/samples/racks/${rackId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...form, barcode: `${form.barcode}${suffixes[i]}`, position: positions[i] }),
@@ -230,7 +231,7 @@ function RackGridView({
         }
         setSuccess(`4 IGRA samples added (${form.barcode}A–D)`);
       } else {
-        const res = await fetch(`/api/samples/racks/${rackId}`, {
+        const res = await queuedFetch(`/api/samples/racks/${rackId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...form, position: selected }),
@@ -248,7 +249,7 @@ function RackGridView({
 
   const handleDeleteSample = async () => {
     if (!delConfirm) return;
-    await fetch(`/api/samples/sample/${delConfirm.id}`, { method: "DELETE" });
+    await queuedFetch(`/api/samples/sample/${delConfirm.id}`, { method: "DELETE" });
     setDelConfirm(null);
     setSelected(null);
     loadRack();
@@ -601,7 +602,7 @@ export default function SamplesPage() {
   async function handleCreateRack(e: React.FormEvent) {
     e.preventDefault(); setCreating(true);
     try {
-      const res = await fetch("/api/samples", {
+      const res = await queuedFetch("/api/samples", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ facility_id: DEFAULT_FACILITY_ID, ...newRack }),
@@ -617,7 +618,7 @@ export default function SamplesPage() {
 
   async function handleDeleteRack() {
     if (!delRackConfirm) return;
-    await fetch(`/api/samples/racks/${delRackConfirm.id}`, { method: "DELETE" });
+    await queuedFetch(`/api/samples/racks/${delRackConfirm.id}`, { method: "DELETE" });
     setDelRackConfirm(null);
     loadRacks(); loadStats();
   }
@@ -625,7 +626,7 @@ export default function SamplesPage() {
   async function handleDiscard() {
     if (!discardConfirm) return;
     try {
-      const res = await fetch(`/api/samples/racks/${discardConfirm.id}/discard`, { method: "POST" });
+      const res = await queuedFetch(`/api/samples/racks/${discardConfirm.id}/discard`, { method: "POST" });
       if (!res.ok) throw new Error("failed");
       setPendingMsg({ type: "ok", text: `Samples in "${discardConfirm.rack_name}" have been discarded` });
       setDiscardConfirm(null);
@@ -638,7 +639,7 @@ export default function SamplesPage() {
 
   async function handleDeleteDiscarded() {
     if (!delSampleConfirm) return;
-    await fetch(`/api/samples/discarded/${delSampleConfirm.id}`, { method: "DELETE" });
+    await queuedFetch(`/api/samples/discarded/${delSampleConfirm.id}`, { method: "DELETE" });
     setDelSampleConfirm(null);
     loadDiscarded();
   }

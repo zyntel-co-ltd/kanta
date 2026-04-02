@@ -21,6 +21,7 @@ import { facilityBrandingLine } from "@/lib/hospitalDisplayName";
 import NLQueryBar from "@/components/ai/NLQueryBar";
 import AvailableWhenOnline from "@/components/ui/AvailableWhenOnline";
 import Tooltip from "@/components/ui/Tooltip";
+import { queuedFetch } from "@/lib/sync-queue/queuedFetch";
 
 const HOSPITAL_LOGO_URL = process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
 
@@ -180,7 +181,7 @@ export default function TopBar() {
     setAlerts((prev) => prev.map((a) => ({ ...a, read: true })));
     setUnreadCount(0);
     if (!alertsFacilityId) return;
-    await fetch("/api/alerts", {
+    await queuedFetch("/api/alerts", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ acknowledge_all: true, facility_id: alertsFacilityId }),
@@ -190,7 +191,7 @@ export default function TopBar() {
   async function dismissAlert(id: string) {
     setAlerts((prev) => prev.filter((a) => a.id !== id));
     setUnreadCount((n) => Math.max(0, n - 1));
-    await fetch("/api/alerts", {
+    await queuedFetch("/api/alerts", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),

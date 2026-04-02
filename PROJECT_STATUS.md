@@ -79,3 +79,10 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 - **AI trigger verified on all dashboard routes:** `components/dashboard/TopBar.tsx` renders `NLQueryBar` unconditionally (no route/module gating), and `components/dashboard/DashboardChrome.tsx` mounts `TopBar` for all dashboard pages.
 - **Prop threading clarified:** `NLQueryBar` now receives `facilityId={alertsFacilityId ?? null}` and `userId={user?.id}` explicitly.
 - **Inline intent comment added:** documented above `<NLQueryBar .../>` that the AI side panel is available on all routes and opens as a right-side panel without navigation.
+
+## App / ops (2026-04-02 — ENG-63 offline-first sync queue hardening)
+
+- **Connectivity probe aligned to spec:** `lib/SyncQueueContext.tsx` now probes `"/api/health"` using `HEAD` every 30s (instead of `GET /api/healthcheck`), and `app/api/health/route.ts` now supports `HEAD` with fast `200` response.
+- **Offline queue expanded to sample operations:** `app/dashboard/samples/page.tsx` mutating calls now use `queuedFetch` for sample add/delete, rack create/delete, rack discard, and discarded-item delete; queued writes replay via existing FIFO sync flush.
+- **Top bar alert actions queue-enabled:** `components/dashboard/TopBar.tsx` alert acknowledgement/dismiss `PATCH` writes now use `queuedFetch`, preserving offline behavior consistency.
+- **Admin configuration writes queue-enabled:** `components/dashboard/admin/AdminConfigurationSection.tsx` section/shift/TAT target mutations moved to `queuedFetch`.
