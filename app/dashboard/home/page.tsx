@@ -25,7 +25,7 @@ import {
 import RecentlyVisited from "@/components/dashboard/RecentlyVisited";
 import QuickActions from "@/components/dashboard/QuickActions";
 import { useAuth } from "@/lib/AuthContext";
-import { hospitalDisplayName } from "@/lib/hospitalDisplayName";
+import { facilityBrandingLine } from "@/lib/hospitalDisplayName";
 
 /* ─────────────────────────── types ─────────────────────────── */
 
@@ -110,7 +110,11 @@ const apps: AppCard[] = [
 
 export default function DashboardHomePage() {
   const { facilityAuth } = useAuth();
-  const displayHospital = hospitalDisplayName(facilityAuth?.hospitalName);
+  const displayHospital = facilityBrandingLine(
+    facilityAuth?.hospitalName,
+    facilityAuth?.groupId,
+    facilityAuth?.branchName
+  );
   const showRefrigeratorModule = useFlag("show-refrigerator-module");
   const appsFiltered = apps.map((app) => {
     if (app.title !== "Asset Management") return app;

@@ -11,7 +11,7 @@ import { LazyLine } from "@/components/charts/LazyCharts";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
-import { hospitalDisplayName } from "@/lib/hospitalDisplayName";
+import { facilityBrandingLine } from "@/lib/hospitalDisplayName";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { STATUS, STRUCTURE } from "@/lib/design-tokens";
 import { CHART_AXIS } from "@/lib/chart-theme";
@@ -721,7 +721,11 @@ function QCDataEntryTab() {
 /* ═══════════════════════════════════════════════════════════ */
 function QCVisualizationTab() {
   const { facilityAuth } = useAuth();
-  const graphHospitalTitle = hospitalDisplayName(facilityAuth?.hospitalName).toUpperCase();
+  const graphHospitalTitle = facilityBrandingLine(
+    facilityAuth?.hospitalName,
+    facilityAuth?.groupId,
+    facilityAuth?.branchName
+  ).toUpperCase();
   const api = useMemo(() => makeKantaApi(), []);
   const [qcConfigs, setQcConfigs]                 = useState<QcItem[]>([]);
   const [runs1, setRuns1]                         = useState<QcItem[]>([]);

@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { Cable, LayoutDashboard, Building2 } from "lucide-react";
+import { Cable, LayoutDashboard, Building2, Network } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 
-const LINKS = [
+const BASE_LINKS = [
   { href: "/dashboard/admin", label: "Admin home", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/admin/hospital", label: "Hospital settings", icon: Building2, exact: false },
   { href: "/dashboard/admin/data-connections", label: "Data connections", icon: Cable, exact: false },
@@ -13,16 +14,32 @@ const LINKS = [
 
 /**
  * ENG-160: Facility-scoped Admin Panel sections — Data Connections lives here, not in the System sidebar.
+ * ENG-91: Hospital groups — Zyntel platform super-admins only.
  */
 export default function AdminPanelSubNav() {
   const pathname = (usePathname() || "").replace(/\/$/, "") || "/";
+  const { facilityAuth } = useAuth();
+  const showGroups = !!facilityAuth?.isSuperAdmin;
+
+  const links = showGroups
+    ? [
+        ...BASE_LINKS.slice(0, 2),
+        {
+          href: "/dashboard/admin/groups",
+          label: "Hospital groups",
+          icon: Network,
+          exact: false,
+        } as const,
+        ...BASE_LINKS.slice(2),
+      ]
+    : [...BASE_LINKS];
 
   return (
     <nav
       className="flex flex-wrap gap-2 border-b border-slate-200 pb-3 mb-6"
       aria-label="Admin panel sections"
     >
-      {LINKS.map(({ href, label, icon: Icon, exact }) => {
+      {links.map(({ href, label, icon: Icon, exact }) => {
         const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
         return (
           <Link

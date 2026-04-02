@@ -9,3 +9,20 @@ export function hospitalDisplayName(facilityName: string | null | undefined): st
   if (fromEnv) return fromEnv;
   return "Hospital";
 }
+
+/**
+ * ENG-91: When the facility belongs to a hospital group, show `{name} — {branch}` in TopBar/Sidebar.
+ * If `groupId` is set but `branchName` is empty, fall back to `hospitalDisplayName` only.
+ */
+export function facilityBrandingLine(
+  hospitalName: string | null | undefined,
+  groupId: string | null | undefined,
+  branchName: string | null | undefined
+): string {
+  const base = hospitalDisplayName(hospitalName);
+  const branch = branchName?.trim();
+  if (groupId && branch) {
+    return `${base} — ${branch}`;
+  }
+  return base;
+}

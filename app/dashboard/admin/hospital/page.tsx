@@ -14,6 +14,10 @@ type HospitalForm = {
   address: string;
   phone: string;
   tier: string | null;
+  /** ENG-91 — read-only; set by Zyntel platform admin */
+  group_id: string | null;
+  group_name: string | null;
+  branch_name: string;
 };
 
 function tierPlanLabel(tier: string | null): string {
@@ -25,7 +29,7 @@ function tierPlanLabel(tier: string | null): string {
 }
 
 export default function HospitalSettingsPage() {
-  const { facilityAuth, facilityAuthLoading } = useAuth();
+  const { facilityAuth, facilityAuthLoading, refreshFacilityAuth } = useAuth();
   const router = useRouter();
   const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
 
@@ -42,6 +46,9 @@ export default function HospitalSettingsPage() {
     address: "",
     phone: "",
     tier: null,
+    group_id: null,
+    group_name: null,
+    branch_name: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,6 +67,9 @@ export default function HospitalSettingsPage() {
           address: data?.address ?? "",
           phone: data?.phone ?? "",
           tier: typeof data?.tier === "string" ? data.tier : null,
+          group_id: typeof data?.group_id === "string" ? data.group_id : null,
+          group_name: typeof data?.group_name === "string" ? data.group_name : null,
+          branch_name: typeof data?.branch_name === "string" ? data.branch_name : "",
         });
       })
       .catch(() => setToast({ type: "error", message: "Failed to load hospital settings" }))
@@ -121,10 +131,14 @@ export default function HospitalSettingsPage() {
           logo_url: form.logo_url,
           address: form.address.trim() || null,
           phone: form.phone.trim() || null,
+          ...(form.group_id
+            ? { branch_name: form.branch_name.trim() || null }
+            : {}),
         }),
       });
       if (!res.ok) throw new Error("Failed to save hospital settings");
       setToast({ type: "success", message: "Hospital settings saved" });
+      await refreshFacilityAuth();
     } catch (error) {
       setToast({ type: "error", message: (error as Error).message || "Failed to save hospital settings" });
     } finally {
@@ -158,6 +172,32 @@ export default function HospitalSettingsPage() {
             disabled={loading}
           />
         </div>
+
+        {form.group_id && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Branch</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                This facility belongs to a hospital group. Group membership is managed by Zyntel; you
+                can edit the branch label shown in the app header.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-600">Group</label>
+              <p className="text-sm text-slate-900">{form.group_name ?? "—"}</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Branch name</label>
+              <input
+                value={form.branch_name}
+                onChange={(e) => setForm((prev) => ({ ...prev, branch_name: e.target.value }))}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm bg-white"
+                placeholder="e.g. Main Branch, North Clinic"
+                disabled={loading}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">Logo (PNG/SVG, max 1MB)</label>

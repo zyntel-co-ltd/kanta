@@ -21,6 +21,10 @@ export async function GET(req: NextRequest) {
       address: null,
       phone: null,
       tier: null,
+      group_id: null,
+      branch_name: null,
+      group_name: null,
+      group_slug: null,
     });
   }
 
@@ -33,12 +37,41 @@ export async function GET(req: NextRequest) {
     const db = createAdminClient();
     const { data, error } = await db
       .from("hospitals")
-      .select("id, name, logo_url, address, phone, tier")
+      .select(
+        "id, name, logo_url, address, phone, tier, group_id, branch_name, hospital_groups ( id, name, slug )"
+      )
       .eq("id", facilityId)
       .maybeSingle();
     if (error) throw error;
     if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json(data);
+    const raw = data as {
+      id: string;
+      name: string;
+      logo_url: string | null;
+      address: string | null;
+      phone: string | null;
+      tier: string | null;
+      group_id: string | null;
+      branch_name: string | null;
+      hospital_groups?:
+        | { id: string; name: string; slug: string }
+        | { id: string; name: string; slug: string }[]
+        | null;
+    };
+    const hgRaw = raw.hospital_groups;
+    const hg = Array.isArray(hgRaw) ? hgRaw[0] : hgRaw;
+    return NextResponse.json({
+      id: raw.id,
+      name: raw.name,
+      logo_url: raw.logo_url,
+      address: raw.address,
+      phone: raw.phone,
+      tier: raw.tier,
+      group_id: raw.group_id,
+      branch_name: raw.branch_name,
+      group_name: hg?.name ?? null,
+      group_slug: hg?.slug ?? null,
+    });
   } catch (error) {
     console.error("[GET /api/admin/hospital]", error);
     return NextResponse.json({ error: "Failed to load hospital settings" }, { status: 500 });
@@ -65,6 +98,7 @@ export async function PATCH(req: NextRequest) {
     logo_url?: string | null;
     address?: string | null;
     phone?: string | null;
+    branch_name?: string | null;
   } = {};
 
   if (typeof body.name === "string") updates.name = body.name.trim();
@@ -82,9 +116,25 @@ export async function PATCH(req: NextRequest) {
 
     const { data: prev } = await db
       .from("hospitals")
-      .select("name, logo_url, address, phone")
+      .select("name, logo_url, address, phone, group_id")
       .eq("id", facilityId)
       .maybeSingle();
+
+    if (body.branch_name !== undefined) {
+      const bn =
+        body.branch_name === null
+          ? null
+          : typeof body.branch_name === "string"
+            ? body.branch_name.trim() || null
+            : undefined;
+      if (bn !== undefined) {
+        if (ctx.isSuperAdmin) {
+          updates.branch_name = bn;
+        } else if (prev?.group_id) {
+          updates.branch_name = bn;
+        }
+      }
+    }
 
     const { error } = await db.from("hospitals").update(updates).eq("id", facilityId);
     if (error) throw error;
@@ -96,7 +146,7 @@ export async function PATCH(req: NextRequest) {
       entityType: "hospital",
       entityId: facilityId,
       oldValue: (prev ?? {}) as Record<string, unknown>,
-      newValue: updates as Record<string, unknown>,
+      newValue: { ...updates } as Record<string, unknown>,
     });
 
     return NextResponse.json({ ok: true });

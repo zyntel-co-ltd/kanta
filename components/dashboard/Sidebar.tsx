@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import type { ComponentType } from "react";
 import { useAuth, type FacilityAuthState } from "@/lib/AuthContext";
-import { hospitalDisplayName } from "@/lib/hospitalDisplayName";
+import { facilityBrandingLine } from "@/lib/hospitalDisplayName";
 import { useFlag } from "@/lib/featureFlags";
 import { SIDEBAR_LRIDS_NAV_HREF } from "@/lib/lrids/nav";
 import { openLridsBoardInNewTab } from "@/lib/lrids/openBoard";
@@ -207,6 +207,9 @@ function filterNavForFacilityAuth(
       hospitalName: null,
       hospitalLogoUrl: null,
       subscriptionTier: null,
+      groupId: null,
+      groupName: null,
+      branchName: null,
       role: null,
       isSuperAdmin: false,
       canAccessAdminPanel: false,
@@ -383,7 +386,11 @@ export default function Sidebar() {
   const showRefrigeratorModule = useFlag("show-refrigerator-module");
   const showAiIntelligence = useFlag("show-ai-intelligence");
   const showTatTestLevel = useFlag("show-tat-test-level");
-  const hospitalName = hospitalDisplayName(facilityAuth?.hospitalName);
+  const hospitalName = facilityBrandingLine(
+    facilityAuth?.hospitalName,
+    facilityAuth?.groupId,
+    facilityAuth?.branchName
+  );
   const hospitalLogoUrl = facilityAuth?.hospitalLogoUrl || process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
 
   const navGroups = filterNavForFacilityAuth(navGroupsBase, facilityAuth, {

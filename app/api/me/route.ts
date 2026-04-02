@@ -16,17 +16,32 @@ export async function GET(req: NextRequest) {
   let hospitalLogoUrl: string | null = null;
   let subscriptionTier: string | null = null;
 
+  let groupId: string | null = null;
+  let groupName: string | null = null;
+  let branchName: string | null = null;
+
   if (ctx.facilityId) {
     try {
       const db = createAdminClient();
       const { data } = await db
         .from("hospitals")
-        .select("name, logo_url, tier")
+        .select("name, logo_url, tier, group_id, branch_name")
         .eq("id", ctx.facilityId)
         .maybeSingle();
       hospitalName = data?.name ?? null;
       hospitalLogoUrl = data?.logo_url ?? null;
       subscriptionTier = (data as { tier?: string | null } | null)?.tier ?? null;
+      groupId = (data as { group_id?: string | null } | null)?.group_id ?? null;
+      branchName = (data as { branch_name?: string | null } | null)?.branch_name ?? null;
+
+      if (groupId) {
+        const { data: g } = await db
+          .from("hospital_groups")
+          .select("name")
+          .eq("id", groupId)
+          .maybeSingle();
+        groupName = (g as { name?: string } | null)?.name ?? null;
+      }
     } catch {
       // Keep /api/me resilient; fall back to env values in UI.
     }
@@ -38,6 +53,9 @@ export async function GET(req: NextRequest) {
     hospitalName,
     hospitalLogoUrl,
     subscriptionTier,
+    groupId,
+    groupName,
+    branchName,
     role: ctx.role,
     isSuperAdmin: ctx.isSuperAdmin,
     ...perms,

@@ -6,6 +6,15 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 
 ---
 
+### 2026-04-02 — ENG-91 Hospital groups + branches (data model & UI)
+
+- [x] **Migration** — `hospital_groups`; `hospitals.group_id` FK; `hospitals.branch_name`; RLS enabled on `hospital_groups` (API uses service role).
+- [x] **`GET /api/me`** — `groupId`, `groupName`, `branchName`; AuthContext + session cache; `refreshFacilityAuth()` after hospital save.
+- [x] **Chrome** — `facilityBrandingLine` in Sidebar, TopBar, home, QC graph title.
+- [x] **Admin → Hospital settings** — Branch section when `group_id` set: read-only group name; editable branch name (`PATCH /api/admin/hospital`).
+- [x] **Admin → Hospital groups** (`/dashboard/admin/groups`) — Super-admin only: list/create/delete groups; assign hospitals + branch names (`/api/admin/groups`, `/api/admin/hospitals/branch`).
+- [x] **Docs** — `docs/HOSPITAL_BRANCHES.md`.
+
 ### 2026-04-02 — ENG-158 Console PostHog feature flag management
 
 - [x] **`/dashboard/console/flags`** — Two-column UI: searchable facility list (`GET /api/console/facilities`), flag toggles from `KANTA_FEATURE_FLAG_NAMES` + `FLAG_LABELS` (`lib/featureFlagCatalog.ts`).

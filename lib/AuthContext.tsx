@@ -32,6 +32,10 @@ export type FacilityAuthState = {
   hospitalLogoUrl: string | null;
   /** From `hospitals.tier` — plan ceiling for feature gating */
   subscriptionTier: string | null;
+  /** ENG-91: `hospital_groups` membership; null = standalone facility */
+  groupId: string | null;
+  groupName: string | null;
+  branchName: string | null;
   role: FacilityRole | null;
   isSuperAdmin: boolean;
   canAccessAdminPanel: boolean;
@@ -75,7 +79,10 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   refreshUser: () => Promise<void>;
+  /** Re-fetch GET /api/me (e.g. after saving hospital branch name). */
+  refreshFacilityAuth: () => Promise<void>;
 };
+
 
 const AUTH_CACHE_KEY = "zyntel_facility_auth_v1";
 
@@ -84,7 +91,13 @@ function readCachedAuth(): FacilityAuthState | null {
   try {
     const raw = sessionStorage.getItem(AUTH_CACHE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as FacilityAuthState;
+    const p = JSON.parse(raw) as Partial<FacilityAuthState>;
+    return {
+      ...p,
+      groupId: p.groupId ?? null,
+      groupName: p.groupName ?? null,
+      branchName: p.branchName ?? null,
+    } as FacilityAuthState;
   } catch {
     return null;
   }
@@ -137,6 +150,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const applyMePayload = useCallback((data: Record<string, unknown> | null): FacilityAuthState | null => {
+    if (!data) return null;
+    return {
+      facilityId: (data.facilityId as string | null) ?? null,
+      hospitalName: (data.hospitalName as string | null) ?? null,
+      hospitalLogoUrl: (data.hospitalLogoUrl as string | null) ?? null,
+      subscriptionTier:
+        typeof data.subscriptionTier === "string" ? data.subscriptionTier : null,
+      groupId: typeof data.groupId === "string" ? data.groupId : null,
+      groupName: typeof data.groupName === "string" ? data.groupName : null,
+      branchName: typeof data.branchName === "string" ? data.branchName : null,
+      role: (data.role as FacilityRole | null) ?? null,
+      isSuperAdmin: !!data.isSuperAdmin,
+      canAccessAdminPanel: !!data.canAccessAdminPanel,
+      canAccessAdmin: !!data.canAccessAdmin,
+      canViewRevenue: !!data.canViewRevenue,
+      canManageUsers: !!data.canManageUsers,
+      canWrite: !!data.canWrite,
+    };
+  }, []);
+
+  const refreshFacilityAuth = useCallback(async () => {
+    const res = await fetch("/api/me", { credentials: "same-origin" });
+    const data = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+    if (!res.ok || !data) return;
+    const next = applyMePayload(data);
+    if (next) {
+      writeCachedAuth(next);
+      setFacilityAuth(next);
+    }
+  }, [applyMePayload]);
+
   useEffect(() => {
     if (!user) {
       writeCachedAuth(null);
@@ -159,20 +204,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
           return;
         }
-        const next: FacilityAuthState = {
-          facilityId: data.facilityId ?? null,
-          hospitalName: data.hospitalName ?? null,
-          hospitalLogoUrl: data.hospitalLogoUrl ?? null,
-          subscriptionTier:
-            typeof data.subscriptionTier === "string" ? data.subscriptionTier : null,
-          role: data.role ?? null,
-          isSuperAdmin: !!data.isSuperAdmin,
-          canAccessAdminPanel: !!data.canAccessAdminPanel,
-          canAccessAdmin: !!data.canAccessAdmin,
-          canViewRevenue: !!data.canViewRevenue,
-          canManageUsers: !!data.canManageUsers,
-          canWrite: !!data.canWrite,
-        };
+        const next = applyMePayload(data as Record<string, unknown>);
+        if (!next) {
+          writeCachedAuth(null);
+          setFacilityAuth(null);
+          return;
+        }
         writeCachedAuth(next);
         if (!cancelled) setFacilityAuth(next);
       })
@@ -189,7 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, applyMePayload]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -199,11 +236,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     posthog.group("branch", fid, {
       name: facilityAuth?.hospitalName ?? undefined,
       tier: facilityAuth?.subscriptionTier ?? undefined,
+      branch: facilityAuth?.branchName ?? undefined,
+      group: facilityAuth?.groupName ?? undefined,
     });
   }, [
     facilityAuth?.facilityId,
     facilityAuth?.hospitalName,
     facilityAuth?.subscriptionTier,
+    facilityAuth?.branchName,
+    facilityAuth?.groupName,
   ]);
 
   const signIn = useCallback(
@@ -273,6 +314,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         resetPassword,
         refreshUser,
+        refreshFacilityAuth,
       }}
     >
       {children}

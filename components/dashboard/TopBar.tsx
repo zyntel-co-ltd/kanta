@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useSyncQueue } from "@/lib/SyncQueueContext";
 import { useAuth } from "@/lib/AuthContext";
-import { hospitalDisplayName } from "@/lib/hospitalDisplayName";
+import { facilityBrandingLine } from "@/lib/hospitalDisplayName";
 import NLQueryBar from "@/components/ai/NLQueryBar";
 import AvailableWhenOnline from "@/components/ui/AvailableWhenOnline";
 import Tooltip from "@/components/ui/Tooltip";
@@ -197,7 +197,11 @@ export default function TopBar() {
     });
   }
 
-  const hospitalName = hospitalDisplayName(facilityAuth?.hospitalName);
+  const hospitalName = facilityBrandingLine(
+    facilityAuth?.hospitalName,
+    facilityAuth?.groupId,
+    facilityAuth?.branchName
+  );
   const hospitalLogo = facilityAuth?.hospitalLogoUrl || HOSPITAL_LOGO_URL;
 
   return (
