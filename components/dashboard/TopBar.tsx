@@ -254,39 +254,46 @@ export default function TopBar() {
 
         {/* ENG-63: connectivity + sync queue */}
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => failedCount > 0 && void retryFailedSyncs()}
-            title={
+          <Tooltip
+            label="Sync status"
+            description={
               failedCount > 0
-                ? `${failedCount} failed — tap to retry`
+                ? `${failedCount} failed items; click to retry sync`
                 : pendingCount > 0
-                  ? `${pendingCount} pending sync`
-                  : connectivityLabel
+                  ? `${pendingCount} updates are queued for upload`
+                  : "Shows whether dashboard data is syncing"
             }
-            className={clsx(
-              "flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors",
-              isOnline && syncStatus !== "syncing" && failedCount === 0
-                ? "bg-emerald-50 text-emerald-800"
-                : "bg-amber-50 text-amber-900",
-              failedCount > 0 && "cursor-pointer hover:bg-amber-100"
-            )}
           >
-            <span className={clsx("h-1.5 w-1.5 flex-shrink-0 rounded-full", connectivityDot)} />
-            <span className="hidden sm:inline">
-              {connectivityLabel}
-              {pendingSuffix}
-              {failedCount > 0 ? ` · ${failedCount} failed` : ""}
-            </span>
-            <span className="sm:hidden tabular-nums">
-              {pendingCount > 0 ? pendingCount : failedCount > 0 ? `!${failedCount}` : ""}
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => failedCount > 0 && void retryFailedSyncs()}
+              className={clsx(
+                "flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors",
+                isOnline && syncStatus !== "syncing" && failedCount === 0
+                  ? "bg-emerald-50 text-emerald-800"
+                  : "bg-amber-50 text-amber-900",
+                failedCount > 0 && "cursor-pointer hover:bg-amber-100"
+              )}
+            >
+              <span className={clsx("h-1.5 w-1.5 flex-shrink-0 rounded-full", connectivityDot)} />
+              <span className="hidden sm:inline">
+                {connectivityLabel}
+                {pendingSuffix}
+                {failedCount > 0 ? ` · ${failedCount} failed` : ""}
+              </span>
+              <span className="sm:hidden tabular-nums">
+                {pendingCount > 0 ? pendingCount : failedCount > 0 ? `!${failedCount}` : ""}
+              </span>
+            </button>
+          </Tooltip>
         </div>
 
         {/* ── Alerts bell ── */}
         <div className="relative" ref={alertsRef}>
-          <Tooltip label="View operational alerts">
+          <Tooltip
+            label="Operational alerts"
+            description="See flagged issues, anomalies, and unread alerts for your facility"
+          >
           <button
             type="button"
             onClick={() => { setAlertsOpen((o) => !o); setUserMenuOpen(false); }}
@@ -322,7 +329,7 @@ export default function TopBar() {
                       Mark all read
                     </button>
                   )}
-                  <Tooltip label="Close alerts">
+                  <Tooltip label="Close alerts" description="Hide the alerts panel and return to the dashboard">
                     <button
                       onClick={() => setAlertsOpen(false)}
                       className="p-1 rounded-lg hover:bg-slate-100 text-slate-400"
@@ -361,7 +368,7 @@ export default function TopBar() {
                         <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{alert.message}</p>
                         <p className="text-[10px] text-slate-400 mt-1">{timeAgo(alert.created_at)}</p>
                       </div>
-                      <Tooltip label="Dismiss alert">
+                      <Tooltip label="Dismiss alert" description="Mark this alert as handled and remove it">
                         <button
                           onClick={() => dismissAlert(alert.id)}
                           className="p-0.5 rounded hover:bg-slate-200 text-slate-300 hover:text-slate-500 flex-shrink-0"
@@ -379,48 +386,54 @@ export default function TopBar() {
         </div>
 
         {facilityAuth?.isSuperAdmin && (
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard/console")}
-            className="inline-flex items-center gap-1.5 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-full font-medium hover:bg-slate-700 transition-colors"
-            title="Zyntel Console"
+          <Tooltip
+            label="Zyntel Console"
+            description="Open internal administration and diagnostics tools"
           >
-            <Terminal size={12} className="shrink-0" aria-hidden />
-            Console
-          </button>
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard/console")}
+              className="inline-flex items-center gap-1.5 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-full font-medium hover:bg-slate-700 transition-colors"
+            >
+              <Terminal size={12} className="shrink-0" aria-hidden />
+              Console
+            </button>
+          </Tooltip>
         )}
 
         {/* ── User menu ── */}
         {user && (
           <div className="relative pl-1.5 border-l border-slate-200 ml-1" ref={userMenuRef}>
-            <button
-              onClick={() => { setUserMenuOpen((o) => !o); setAlertsOpen(false); }}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-slate-100 transition-colors"
-            >
-              {/* Avatar */}
-              {avatarUrl?.trim() ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={avatarUrl}
-                  alt={getFirstName(user)}
-                  className="w-8 h-8 rounded-full object-cover ring-2 ring-white"
+            <Tooltip label="User menu" description="Open account actions like settings and sign out">
+              <button
+                onClick={() => { setUserMenuOpen((o) => !o); setAlertsOpen(false); }}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                {/* Avatar */}
+                {avatarUrl?.trim() ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={avatarUrl}
+                    alt={getFirstName(user)}
+                    className="w-8 h-8 rounded-full object-cover ring-2 ring-white"
+                  />
+                ) : (
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0"
+                    style={{ background: "linear-gradient(135deg, #065f46, #059669)" }}
+                  >
+                    {getInitials(user)}
+                  </div>
+                )}
+                <span className="hidden sm:block text-sm font-medium text-slate-800">
+                  {getFirstName(user)}
+                </span>
+                <ChevronDown
+                  size={13}
+                  className={`text-slate-400 hidden sm:block transition-transform duration-200 ${userMenuOpen ? "rotate-180" : ""}`}
                 />
-              ) : (
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0"
-                  style={{ background: "linear-gradient(135deg, #065f46, #059669)" }}
-                >
-                  {getInitials(user)}
-                </div>
-              )}
-              <span className="hidden sm:block text-sm font-medium text-slate-800">
-                {getFirstName(user)}
-              </span>
-              <ChevronDown
-                size={13}
-                className={`text-slate-400 hidden sm:block transition-transform duration-200 ${userMenuOpen ? "rotate-180" : ""}`}
-              />
-            </button>
+              </button>
+            </Tooltip>
 
             {/* User dropdown */}
             {userMenuOpen && (

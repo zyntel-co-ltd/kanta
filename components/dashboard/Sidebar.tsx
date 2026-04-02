@@ -52,6 +52,7 @@ import {
 
 type NavItem = {
   label: string;
+  tooltip?: string;
   icon: ComponentType<{ size?: number; className?: string; strokeWidth?: number; style?: React.CSSProperties }>;
   href: string;
   /** When set, a section label is rendered above this item (collapsible sub-menus only). */
@@ -92,7 +93,7 @@ function SidebarCollapseGlyph({ sidebarExpanded }: { sidebarExpanded: boolean })
 }
 
 const navGroupsBase: NavGroup[] = [
-  { title: "Home", items: [{ label: "Home", icon: Home, href: "/dashboard/home" }] },
+  { title: "Home", items: [{ label: "Home", tooltip: "Go to your Kanta dashboard overview", icon: Home, href: "/dashboard/home" }] },
   {
     title: "Lab Metrics",
     collapsible: {
@@ -108,13 +109,13 @@ const navGroupsBase: NavGroup[] = [
       ],
     },
     items: [
-      { label: "Patient Tracking", icon: Timer,        href: "/dashboard/tat?tab=patients" },
-      { label: "Test Tracker", icon: Table2,           href: "/dashboard/tat?tab=tests" },
-      { label: "Section Capture", icon: ClipboardList, href: "/dashboard/tat?tab=reception" },
-      { label: "Volume",      icon: Binary,            href: "/dashboard/numbers"     },
-      { label: "Tests & Lab Mgmt", icon: TableProperties,   href: "/dashboard/meta"   },
-      { label: "Revenue",     icon: CircleDollarSign,  href: "/dashboard/revenue"     },
-      { label: "LRIDS",       icon: TestTube,          href: SIDEBAR_LRIDS_NAV_HREF },
+      { label: "Patient Tracking", tooltip: "Track individual patient turnaround from reception to result", icon: Timer, href: "/dashboard/tat?tab=patients" },
+      { label: "Test Tracker", tooltip: "Monitor test progress and status across sections", icon: Table2, href: "/dashboard/tat?tab=tests" },
+      { label: "Section Capture", tooltip: "Log timestamps as specimens move between lab sections", icon: ClipboardList, href: "/dashboard/tat?tab=reception" },
+      { label: "Volume", tooltip: "View daily and hourly test request volumes", icon: Binary, href: "/dashboard/numbers" },
+      { label: "Tests & Lab Mgmt", tooltip: "Manage your test catalogue and lab configuration", icon: TableProperties, href: "/dashboard/meta" },
+      { label: "Revenue", tooltip: "Track revenue by test type, section, and period", icon: CircleDollarSign, href: "/dashboard/revenue" },
+      { label: "LRIDS", tooltip: "Open the waiting-room results display board in a new tab", icon: TestTube, href: SIDEBAR_LRIDS_NAV_HREF },
     ],
   },
   {
@@ -125,19 +126,19 @@ const navGroupsBase: NavGroup[] = [
       activePaths: ["/dashboard/qc", "/dashboard/samples"],
     },
     items: [
-      { section: "QC", label: "QC Config",     icon: FlaskConical,  href: "/dashboard/qc?tab=config"      },
-      { label: "Data Entry",    icon: ClipboardList, href: "/dashboard/qc?tab=data"        },
-      { label: "Visualization", icon: BarChart3,      href: "/dashboard/qc?tab=visual"      },
-      { label: "QC Calculator", icon: Calculator,     href: "/dashboard/qc?tab=calc"        },
-      { label: "QC Stats",      icon: TrendingUp,     href: "/dashboard/qc?tab=stats"       },
-      { label: "Qual. Config",  icon: FlaskConical,   href: "/dashboard/qc?tab=qual-config" },
-      { label: "Qual. Entry",   icon: TestTube,       href: "/dashboard/qc?tab=qual-entry"  },
-      { label: "Qual. Log",     icon: Activity,       href: "/dashboard/qc?tab=qual-log"    },
-      { section: "Samples", label: "Dashboard",          icon: TestTubes,     href: "/dashboard/samples?tab=dashboard" },
-      { label: "Racks",              icon: Grid3X3,       href: "/dashboard/samples?tab=racks"     },
-      { label: "Pending Discarding", icon: AlertTriangle, href: "/dashboard/samples?tab=pending"   },
-      { label: "Discarded",          icon: Archive,       href: "/dashboard/samples?tab=discarded" },
-      { label: "Search",             icon: Search,        href: "/dashboard/samples?tab=search"    },
+      { section: "QC", label: "QC Config", tooltip: "Set up quality control parameters for each analyte", icon: FlaskConical, href: "/dashboard/qc?tab=config" },
+      { label: "Data Entry", tooltip: "Enter QC control results for the current run", icon: ClipboardList, href: "/dashboard/qc?tab=data" },
+      { label: "Visualization", tooltip: "View Levey-Jennings charts and Westgard rule violations", icon: BarChart3, href: "/dashboard/qc?tab=visual" },
+      { label: "QC Calculator", tooltip: "Calculate QC statistics and SD ranges", icon: Calculator, href: "/dashboard/qc?tab=calc" },
+      { label: "QC Stats", tooltip: "Summary statistics for QC performance over time", icon: TrendingUp, href: "/dashboard/qc?tab=stats" },
+      { label: "Qual. Config", tooltip: "Configure qualitative QC tests (positive/negative controls)", icon: FlaskConical, href: "/dashboard/qc?tab=qual-config" },
+      { label: "Qual. Entry", tooltip: "Record results for qualitative QC runs", icon: TestTube, href: "/dashboard/qc?tab=qual-entry" },
+      { label: "Qual. Log", tooltip: "Review the history of qualitative QC runs", icon: Activity, href: "/dashboard/qc?tab=qual-log" },
+      { section: "Samples", label: "Dashboard", tooltip: "Track lab racks and specimen progress through the lab", icon: TestTubes, href: "/dashboard/samples?tab=dashboard" },
+      { label: "Racks", tooltip: "Track lab racks and specimen progress through the lab", icon: Grid3X3, href: "/dashboard/samples?tab=racks" },
+      { label: "Pending Discarding", tooltip: "Track lab racks and specimen progress through the lab", icon: AlertTriangle, href: "/dashboard/samples?tab=pending" },
+      { label: "Discarded", tooltip: "Track lab racks and specimen progress through the lab", icon: Archive, href: "/dashboard/samples?tab=discarded" },
+      { label: "Search", tooltip: "Track lab racks and specimen progress through the lab", icon: Search, href: "/dashboard/samples?tab=search" },
     ],
   },
   {
@@ -157,23 +158,23 @@ const navGroupsBase: NavGroup[] = [
       ],
     },
     items: [
-      { label: "Overview",     icon: LayoutDashboard, href: "/dashboard/assets"       },
-      { label: "Equipment",    icon: Wrench,          href: "/dashboard/equipment"    },
-      { label: "Maintenance",  icon: CalendarClock,   href: "/dashboard/maintenance"  },
-      { label: "Refrigerator", icon: Thermometer,     href: "/dashboard/refrigerator" },
-      { label: "Scan",         icon: QrCode,          href: "/dashboard/scan"         },
-      { label: "Analytics",    icon: BarChart3,       href: "/dashboard/analytics"    },
+      { label: "Overview", tooltip: "See your full equipment inventory and status at a glance", icon: LayoutDashboard, href: "/dashboard/assets" },
+      { label: "Equipment", tooltip: "Browse and manage all registered lab equipment", icon: Wrench, href: "/dashboard/equipment" },
+      { label: "Maintenance", tooltip: "Log and review scheduled and unscheduled maintenance", icon: CalendarClock, href: "/dashboard/maintenance" },
+      { label: "Refrigerator", tooltip: "Monitor cold-chain temperatures and get alerts", icon: Thermometer, href: "/dashboard/refrigerator" },
+      { label: "Scan", tooltip: "Scan a QR code to check in or update a piece of equipment", icon: QrCode, href: "/dashboard/scan" },
+      { label: "Analytics", tooltip: "Equipment utilisation and performance analytics", icon: BarChart3, href: "/dashboard/analytics" },
     ],
   },
-  { title: "Intelligence", items: [{ label: "AI Insights", icon: Brain, href: "/dashboard/intelligence" }] },
+  { title: "Intelligence", items: [{ label: "AI Insights", tooltip: "Get AI-generated summaries and anomaly alerts for your lab", icon: Brain, href: "/dashboard/intelligence" }] },
   {
     title: "System",
     items: [
-      { label: "Departments", icon: Building2, href: "/dashboard/departments" },
-      { label: "Admin",       icon: Shield,    href: "/dashboard/admin"       },
-      { label: "Hospital Settings", icon: Building2, href: "/dashboard/admin/hospital" },
-      { label: "Console", icon: Terminal, href: "/dashboard/console" },
-      { label: "Settings",    icon: Settings,  href: "/dashboard/settings"    },
+      { label: "Departments", tooltip: "Manage users, roles, cancellations, and audit logs", icon: Building2, href: "/dashboard/departments" },
+      { label: "Admin", tooltip: "Manage users, roles, cancellations, and audit logs", icon: Shield, href: "/dashboard/admin" },
+      { label: "Hospital Settings", tooltip: "Configure your facility preferences and integrations", icon: Building2, href: "/dashboard/admin/hospital" },
+      { label: "Console", tooltip: "Manage users, roles, cancellations, and audit logs", icon: Terminal, href: "/dashboard/console" },
+      { label: "Settings", tooltip: "Configure your facility preferences and integrations", icon: Settings, href: "/dashboard/settings" },
     ],
   },
 ];
@@ -467,7 +468,15 @@ export default function Sidebar() {
           )}
         </Link>
 
-        <Tooltip label={collapsed ? "Expand sidebar" : "Collapse sidebar"} side="right">
+        <Tooltip
+          label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          description={
+            collapsed
+              ? "Show the full navigation menu"
+              : "Hide the menu to give more space to the dashboard"
+          }
+          side="right"
+        >
           <button
             type="button"
             onClick={() => setCollapsed(!collapsed)}
@@ -521,7 +530,12 @@ export default function Sidebar() {
                     )}
 
                     <div className="flex items-center">
-                      <Tooltip label={group.title} side="right" className={clsx(!collapsed && "contents")}>
+                      <Tooltip
+                        label={group.title}
+                        description="Open this module and view related pages"
+                        side="right"
+                        className={clsx(!collapsed && "contents")}
+                      >
                         <Link
                           href={parentHref}
                           onClick={() => {
@@ -576,7 +590,7 @@ export default function Sidebar() {
                   {/* Sub-items — only shown when sidebar is expanded AND accordion is open */}
                   {!collapsed && isOpen && (
                     <div className="mt-1 ml-3 pl-3 border-l border-slate-200 flex flex-col gap-0.5">
-                      {group.items.map(({ label, icon: Icon, href, section }, idx) => {
+                      {group.items.map(({ label, tooltip, icon: Icon, href, section }, idx) => {
                         const key = href + label;
                         const subActive =
                           href === SIDEBAR_LRIDS_NAV_HREF
@@ -598,14 +612,10 @@ export default function Sidebar() {
                             )}
                             <div className="relative">
                               {href === SIDEBAR_LRIDS_NAV_HREF ? (
-                                <button
+                                <Tooltip label={label} description={tooltip} side="right" className="contents">
+                                  <button
                                   type="button"
                                   disabled={!lridsFacilityId}
-                                  title={
-                                    lridsFacilityId
-                                      ? "Open display board in a new tab"
-                                      : "No facility assigned"
-                                  }
                                   onClick={() => {
                                     if (lridsFacilityId) void openLridsBoardInNewTab(lridsFacilityId);
                                   }}
@@ -618,20 +628,23 @@ export default function Sidebar() {
                                 >
                                   <Icon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
                                   <span className="truncate text-xs font-medium">{label}</span>
-                                </button>
+                                  </button>
+                                </Tooltip>
                               ) : (
-                                <Link
-                                  href={href}
-                                  className={clsx(
-                                    "relative z-[1] flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none",
-                                    subActive
-                                      ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
-                                      : "text-slate-700 hover:bg-slate-100"
-                                  )}
-                                >
-                                  <Icon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
-                                  <span className="truncate text-xs font-medium">{label}</span>
-                                </Link>
+                                <Tooltip label={label} description={tooltip} side="right" className="contents">
+                                  <Link
+                                    href={href}
+                                    className={clsx(
+                                      "relative z-[1] flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none",
+                                      subActive
+                                        ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
+                                        : "text-slate-700 hover:bg-slate-100"
+                                    )}
+                                  >
+                                    <Icon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
+                                    <span className="truncate text-xs font-medium">{label}</span>
+                                  </Link>
+                                </Tooltip>
                               )}
                             </div>
                           </div>
@@ -655,7 +668,7 @@ export default function Sidebar() {
                   </p>
                 )}
                 <div className="flex flex-col gap-0.5">
-                  {group.items.map(({ label, icon: Icon, href }) => {
+                  {group.items.map(({ label, tooltip, icon: Icon, href }) => {
                     const active      = isNavActive(pathname, href);
                     const itemKey     = href + label;
 
@@ -664,7 +677,7 @@ export default function Sidebar() {
                         {active && !collapsed && (
                           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]" />
                         )}
-                        <Tooltip label={label} side="right" className={clsx(!collapsed && "contents")}>
+                        <Tooltip label={label} description={tooltip} side="right" className={clsx(!collapsed && "contents")}>
                           <Link
                             href={href}
                             className={clsx(
@@ -698,7 +711,10 @@ export default function Sidebar() {
               {!collapsed && (
                 <div className="flex-1 min-w-0 flex items-center justify-between">
                   <p className="text-sm font-medium truncate text-slate-700">{getFirstName(user)}</p>
-                  <Tooltip label="Log out">
+                  <Tooltip
+                    label="Log out"
+                    description="Sign out of Kanta and return to the login screen"
+                  >
                     <button
                       type="button"
                       onClick={() => signOut()}
@@ -714,7 +730,11 @@ export default function Sidebar() {
           )}
           {user && collapsed && (
             <div className="flex justify-center">
-              <Tooltip label="Log out" side="right">
+              <Tooltip
+                label="Log out"
+                description="Sign out of Kanta and return to the login screen"
+                side="right"
+              >
                 <button
                   type="button"
                   onClick={() => signOut()}

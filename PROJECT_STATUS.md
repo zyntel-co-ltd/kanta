@@ -107,3 +107,10 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 - **Malformed link JSON is non-fatal:** parsing failures are caught and logged (`console.warn`), while API still returns `200` with `links: []` (no hard error path).
 - **Chat message model expanded:** `components/ai/NLQueryBar.tsx` `Message` now supports optional `links` and maps `data.links` from `/api/ai/query`.
 - **Clickable route chips in assistant bubbles:** assistant messages render navigation pills with `ArrowRight`; clicking chips calls `router.push(href)` and intentionally keeps the AI panel open.
+
+## App / ops (2026-04-02 — ENG-153 tooltip UX upgrade)
+
+- **Tooltip component upgraded:** `components/ui/Tooltip.tsx` now supports optional `description` and renders two-line tooltips (headline + explanatory sub-line) while preserving existing single-line behavior and mobile hidden bubble behavior.
+- **Sidebar copy quality improved:** `components/dashboard/Sidebar.tsx` nav items now carry descriptive `tooltip` text; collapse/expand and log-out controls now explain intent instead of echoing labels.
+- **TopBar actions clarified:** `components/dashboard/TopBar.tsx` tooltips now describe alerts, sync status, dismiss/close actions, console access, and user menu behavior.
+- **Browser-native titles replaced in dashboard interactions:** removed `title=` tooltip fallbacks on key interactive elements and replaced with styled `Tooltip` triggers in `app/dashboard/numbers/page.tsx`, `components/dashboard/AppTabBar.tsx`, `components/dashboard/ScanFeed.tsx`, `components/dashboard/AddEquipmentModal.tsx`, and `components/ai/NLQueryBar.tsx`.

@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import useSWR from "swr";
 import { REFERENCE_SWR_OPTIONS } from "@/lib/hooks/swrReferenceConfig";
 
@@ -49,19 +48,7 @@ async function fetchTestCatalog([, facilityId, f]: readonly [
  * ENG-109: `/api/tests` with 5-minute SWR — volume, trends, top tests by section.
  */
 export function useTestCatalog(facilityId: string, filters: TestCatalogFilters) {
-  const key = useMemo(() => {
-    if (!facilityId) return null;
-    return ["tests", facilityId, filters] as const;
-  }, [
-    facilityId,
-    filters.period,
-    filters.labSection,
-    filters.shift,
-    filters.hospitalUnit,
-    filters.testName,
-    filters.startDate,
-    filters.endDate,
-  ]);
+  const key = facilityId ? (["tests", facilityId, filters] as const) : null;
 
   return useSWR(key, fetchTestCatalog, REFERENCE_SWR_OPTIONS);
 }

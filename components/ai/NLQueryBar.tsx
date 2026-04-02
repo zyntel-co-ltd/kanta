@@ -6,6 +6,7 @@ import { Sparkles, SendHorizontal, Loader2, AlertCircle, X, ArrowRight } from "l
 import { useRouter } from "next/navigation";
 import { useSyncQueue } from "@/lib/SyncQueueContext";
 import { useSidebarLayout } from "@/lib/SidebarLayoutContext";
+import Tooltip from "@/components/ui/Tooltip";
 type MessageLink = { label: string; href: string };
 type Message = {
   id: string;
@@ -218,25 +219,23 @@ export default function NLQueryBar({
 
   if (!facilityId) {
     return (
-      <span
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed"
-        title="Select a facility to use AI queries"
-      >
-        <Sparkles size={14} />
-        Ask Kanta AI
-      </span>
+      <Tooltip label="Ask Kanta AI" description="Select a facility first to run AI queries">
+        <span className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed">
+          <Sparkles size={14} />
+          Ask Kanta AI
+        </span>
+      </Tooltip>
     );
   }
 
   if (!isOnline) {
     return (
-      <span
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-amber-200 bg-amber-50 text-amber-900/90 cursor-not-allowed"
-        title="Available when online"
-      >
-        <Sparkles size={14} className="text-amber-600" />
-        Ask Kanta AI
-      </span>
+      <Tooltip label="Ask Kanta AI" description="Reconnect to use AI insights and chat">
+        <span className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-amber-200 bg-amber-50 text-amber-900/90 cursor-not-allowed">
+          <Sparkles size={14} className="text-amber-600" />
+          Ask Kanta AI
+        </span>
+      </Tooltip>
     );
   }
 

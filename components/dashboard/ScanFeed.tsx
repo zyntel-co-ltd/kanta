@@ -4,6 +4,7 @@ import { ArrowUpRight, CheckCircle2, Clock, WifiOff, Download } from "lucide-rea
 import clsx from "clsx";
 import { useDashboardData } from "@/lib/DashboardDataContext";
 import type { ScanEvent } from "@/types";
+import Tooltip from "@/components/ui/Tooltip";
 
 const statusConfig = {
   operational: {
@@ -90,14 +91,15 @@ export default function ScanFeed() {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => exportToCSV(scans)}
-              title="Export to CSV"
-              disabled={scans.length === 0}
-              className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-colors disabled:opacity-50"
-            >
-              <Download size={13} />
-            </button>
+            <Tooltip label="Export scan feed" description="Download the current scan list as a CSV file">
+              <button
+                onClick={() => exportToCSV(scans)}
+                disabled={scans.length === 0}
+                className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-colors disabled:opacity-50"
+              >
+                <Download size={13} />
+              </button>
+            </Tooltip>
             <button className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 hover:bg-emerald-100 transition-colors">
               <ArrowUpRight size={13} />
             </button>

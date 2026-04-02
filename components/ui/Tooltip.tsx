@@ -10,11 +10,13 @@ import { createPortal } from "react-dom";
  */
 export default function Tooltip({
   label,
+  description,
   children,
   className,
   side = "top",
 }: {
   label: string;
+  description?: string;
   children: React.ReactNode;
   className?: string;
   side?: "top" | "right" | "left";
@@ -90,7 +92,14 @@ export default function Tooltip({
             )}
             role="tooltip"
           >
-            {label}
+            {description ? (
+              <>
+                <span className="block font-semibold leading-snug">{label}</span>
+                <span className="mt-0.5 block font-normal leading-snug opacity-80">{description}</span>
+              </>
+            ) : (
+              label
+            )}
           </span>,
           document.body
         )}

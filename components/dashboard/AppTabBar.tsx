@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { useFlag } from "@/lib/featureFlags";
 import { useAuth } from "@/lib/AuthContext";
 import { openLridsBoardInNewTab } from "@/lib/lrids/openBoard";
+import Tooltip from "@/components/ui/Tooltip";
 import {
   FlaskConical,
   Layers,
@@ -173,18 +174,22 @@ export default function AppTabBar() {
           })}
         </nav>
         {showLabLridsAction && (
-          <button
-            type="button"
-            onClick={() => {
-              if (lridsFacilityId) void openLridsBoardInNewTab(lridsFacilityId);
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap transition-all flex-shrink-0 text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-            style={{ fontSize: "0.8125rem", fontWeight: 500 }}
-            title="Open LRIDS board in a new tab"
+          <Tooltip
+            label="LRIDS board"
+            description="Open the waiting-room results display in a new tab"
           >
-            <Presentation size={16} />
-            LRIDS
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (lridsFacilityId) void openLridsBoardInNewTab(lridsFacilityId);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg whitespace-nowrap transition-all flex-shrink-0 text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+              style={{ fontSize: "0.8125rem", fontWeight: 500 }}
+            >
+              <Presentation size={16} />
+              LRIDS
+            </button>
+          </Tooltip>
         )}
       </div>
     </div>
