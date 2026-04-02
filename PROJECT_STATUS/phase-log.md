@@ -6,6 +6,13 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 
 ---
 
+### 2026-04-02 — ENG-107 Admin Hospital Settings: branch details + read-only siblings
+
+- [x] **`GET /api/admin/hospital`** — `parent_hospital_id`, `city`, `country`; graceful fallback if `parent_hospital_id` column missing.
+- [x] **`PATCH /api/admin/hospital`** — `city`, `country` for facility admins.
+- [x] **`GET /api/admin/hospital/siblings`** — Same `parent_hospital_id` as requester, excludes self; `requireAdminPanel`; empty if no parent.
+- [x] **Hospital settings UI** — “Branch details” (name, branch name when grouped, city, country, tier read-only); amber callout to contact Zyntel for new branches; “Other branches in your group” table when `parent_hospital_id` set.
+
 ### 2026-04-02 — ENG-91 Hospital groups + branches (data model & UI)
 
 - [x] **Migration** — `hospital_groups`; `hospitals.group_id` FK; `hospitals.branch_name`; RLS enabled on `hospital_groups` (API uses service role).

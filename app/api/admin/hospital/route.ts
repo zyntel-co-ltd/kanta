@@ -21,6 +21,9 @@ export async function GET(req: NextRequest) {
       address: null,
       phone: null,
       tier: null,
+      city: null,
+      country: null,
+      parent_hospital_id: null,
       group_id: null,
       branch_name: null,
       group_name: null,
@@ -35,15 +38,37 @@ export async function GET(req: NextRequest) {
   try {
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
-    const { data, error } = await db
-      .from("hospitals")
-      .select(
-        "id, name, logo_url, address, phone, tier, group_id, branch_name, hospital_groups ( id, name, slug )"
-      )
-      .eq("id", facilityId)
-      .maybeSingle();
+
+    const selectWithParent = `id, name, logo_url, address, phone, tier, city, country, group_id, branch_name, parent_hospital_id, hospital_groups ( id, name, slug )`;
+    const selectWithoutParent = `id, name, logo_url, address, phone, tier, city, country, group_id, branch_name, hospital_groups ( id, name, slug )`;
+
+    let data: unknown = null;
+    let error: { message?: string } | null = null;
+
+    const first = await db.from("hospitals").select(selectWithParent).eq("id", facilityId).maybeSingle();
+    data = first.data;
+    error = first.error;
+
+    if (error) {
+      const msg = (error.message ?? "").toLowerCase();
+      if (
+        msg.includes("parent_hospital_id") ||
+        (msg.includes("column") && msg.includes("does not exist")) ||
+        msg.includes("schema cache")
+      ) {
+        const second = await db
+          .from("hospitals")
+          .select(selectWithoutParent)
+          .eq("id", facilityId)
+          .maybeSingle();
+        data = second.data;
+        error = second.error;
+      }
+    }
+
     if (error) throw error;
     if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
     const raw = data as {
       id: string;
       name: string;
@@ -51,8 +76,11 @@ export async function GET(req: NextRequest) {
       address: string | null;
       phone: string | null;
       tier: string | null;
+      city: string | null;
+      country: string | null;
       group_id: string | null;
       branch_name: string | null;
+      parent_hospital_id?: string | null;
       hospital_groups?:
         | { id: string; name: string; slug: string }
         | { id: string; name: string; slug: string }[]
@@ -67,6 +95,9 @@ export async function GET(req: NextRequest) {
       address: raw.address,
       phone: raw.phone,
       tier: raw.tier,
+      city: raw.city ?? null,
+      country: raw.country ?? null,
+      parent_hospital_id: raw.parent_hospital_id ?? null,
       group_id: raw.group_id,
       branch_name: raw.branch_name,
       group_name: hg?.name ?? null,
@@ -98,6 +129,8 @@ export async function PATCH(req: NextRequest) {
     logo_url?: string | null;
     address?: string | null;
     phone?: string | null;
+    city?: string | null;
+    country?: string | null;
     branch_name?: string | null;
   } = {};
 
@@ -105,6 +138,12 @@ export async function PATCH(req: NextRequest) {
   if (typeof body.logo_url === "string" || body.logo_url === null) updates.logo_url = body.logo_url;
   if (typeof body.address === "string" || body.address === null) updates.address = body.address;
   if (typeof body.phone === "string" || body.phone === null) updates.phone = body.phone;
+  if (typeof body.city === "string" || body.city === null) {
+    updates.city = typeof body.city === "string" ? body.city.trim() || null : null;
+  }
+  if (typeof body.country === "string" || body.country === null) {
+    updates.country = typeof body.country === "string" ? body.country.trim() || null : null;
+  }
 
   if (updates.name !== undefined && !updates.name) {
     return NextResponse.json({ error: "Hospital name is required" }, { status: 400 });
@@ -116,7 +155,7 @@ export async function PATCH(req: NextRequest) {
 
     const { data: prev } = await db
       .from("hospitals")
-      .select("name, logo_url, address, phone, group_id")
+      .select("name, logo_url, address, phone, city, country, group_id")
       .eq("id", facilityId)
       .maybeSingle();
 

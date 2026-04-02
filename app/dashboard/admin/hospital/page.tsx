@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Upload, Save, AlertCircle } from "lucide-react";
+import { Building2, Upload, Save, AlertCircle, Info } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/AuthContext";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
@@ -14,11 +14,17 @@ type HospitalForm = {
   address: string;
   phone: string;
   tier: string | null;
+  city: string;
+  country: string;
+  /** ENG-107 — parent link for sibling list; not editable here */
+  parent_hospital_id: string | null;
   /** ENG-91 — read-only; set by Zyntel platform admin */
   group_id: string | null;
   group_name: string | null;
   branch_name: string;
 };
+
+type SiblingRow = { id: string; name: string; city: string | null; tier: string | null };
 
 function tierPlanLabel(tier: string | null): string {
   if (!tier) return "—";
@@ -46,10 +52,15 @@ export default function HospitalSettingsPage() {
     address: "",
     phone: "",
     tier: null,
+    city: "",
+    country: "",
+    parent_hospital_id: null,
     group_id: null,
     group_name: null,
     branch_name: "",
   });
+  const [siblings, setSiblings] = useState<SiblingRow[]>([]);
+  const [siblingsLoading, setSiblingsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -67,6 +78,10 @@ export default function HospitalSettingsPage() {
           address: data?.address ?? "",
           phone: data?.phone ?? "",
           tier: typeof data?.tier === "string" ? data.tier : null,
+          city: typeof data?.city === "string" ? data.city : "",
+          country: typeof data?.country === "string" ? data.country : "",
+          parent_hospital_id:
+            typeof data?.parent_hospital_id === "string" ? data.parent_hospital_id : null,
           group_id: typeof data?.group_id === "string" ? data.group_id : null,
           group_name: typeof data?.group_name === "string" ? data.group_name : null,
           branch_name: typeof data?.branch_name === "string" ? data.branch_name : "",
@@ -75,6 +90,22 @@ export default function HospitalSettingsPage() {
       .catch(() => setToast({ type: "error", message: "Failed to load hospital settings" }))
       .finally(() => setLoading(false));
   }, [facilityId]);
+
+  useEffect(() => {
+    if (!facilityId || loading) return;
+    if (!form.parent_hospital_id) {
+      setSiblings([]);
+      return;
+    }
+    setSiblingsLoading(true);
+    fetch(`/api/admin/hospital/siblings?facility_id=${encodeURIComponent(facilityId)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setSiblings(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setSiblings([]))
+      .finally(() => setSiblingsLoading(false));
+  }, [facilityId, form.parent_hospital_id, loading]);
 
   if (facilityAuthLoading || !facilityAuth?.canAccessAdminPanel) {
     return (
@@ -131,6 +162,8 @@ export default function HospitalSettingsPage() {
           logo_url: form.logo_url,
           address: form.address.trim() || null,
           phone: form.phone.trim() || null,
+          city: form.city.trim() || null,
+          country: form.country.trim() || null,
           ...(form.group_id
             ? { branch_name: form.branch_name.trim() || null }
             : {}),
@@ -154,50 +187,117 @@ export default function HospitalSettingsPage() {
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6">
-        <div className="rounded-xl border border-slate-100 bg-slate-50/90 p-4 space-y-1">
-          <p className="text-sm font-medium text-slate-700">Your plan</p>
-          <p className="text-lg font-semibold text-slate-900">{tierPlanLabel(form.tier)}</p>
-          <p className="text-xs text-slate-500">
-            Subscription tier is set by Zyntel. Contact Zyntel to change your plan.
-          </p>
-        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50/90 p-4 space-y-4">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">Branch details</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Current facility profile. Branch creation is done in Zyntel Console — not from this screen.
+            </p>
+          </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-700">Hospital Name</label>
-          <input
-            value={form.name}
-            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
-            placeholder="Enter hospital name"
-            disabled={loading}
-          />
-        </div>
-
-        {form.group_id && (
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-3">
-            <div>
-              <p className="text-sm font-semibold text-slate-800">Branch</p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                This facility belongs to a hospital group. Group membership is managed by Zyntel; you
-                can edit the branch label shown in the app header.
-              </p>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-600">Group</label>
-              <p className="text-sm text-slate-900">{form.group_name ?? "—"}</p>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Branch name</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2 sm:col-span-2">
+              <label className="text-sm font-medium text-slate-700">Facility name</label>
               <input
-                value={form.branch_name}
-                onChange={(e) => setForm((prev) => ({ ...prev, branch_name: e.target.value }))}
+                value={form.name}
+                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm bg-white"
-                placeholder="e.g. Main Branch, North Clinic"
+                placeholder="Hospital or branch legal name"
                 disabled={loading}
               />
             </div>
+
+            {form.group_id ? (
+              <div className="space-y-2 sm:col-span-2">
+                <label className="text-sm font-medium text-slate-700">Branch name</label>
+                <p className="text-xs text-slate-500">
+                  Group: <span className="font-medium text-slate-700">{form.group_name ?? "—"}</span>
+                  {" — "}
+                  label shown in the app header next to the facility name.
+                </p>
+                <input
+                  value={form.branch_name}
+                  onChange={(e) => setForm((prev) => ({ ...prev, branch_name: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm bg-white"
+                  placeholder="e.g. Main Branch, North Clinic"
+                  disabled={loading}
+                />
+              </div>
+            ) : null}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">City</label>
+              <input
+                value={form.city}
+                onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm bg-white"
+                placeholder="City"
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Country</label>
+              <input
+                value={form.country}
+                onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value }))}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm bg-white"
+                placeholder="Country"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="sm:col-span-2 rounded-lg border border-slate-100 bg-white px-3 py-2.5">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Plan (tier)</p>
+              <p className="text-lg font-semibold text-slate-900">{tierPlanLabel(form.tier)}</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Subscription tier is set by Zyntel. Contact Zyntel to change your plan.
+              </p>
+            </div>
           </div>
-        )}
+
+          <div className="flex gap-2 rounded-lg border border-amber-100 bg-amber-50/90 px-3 py-2.5 text-sm text-amber-950">
+            <Info size={18} className="shrink-0 mt-0.5 opacity-80" />
+            <p>
+              To add a branch, contact your Zyntel administrator. New branches are provisioned from the
+              Zyntel Console.
+            </p>
+          </div>
+        </div>
+
+        {form.parent_hospital_id ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-3">
+            <h2 className="text-sm font-semibold text-slate-900">Other branches in your group</h2>
+            <p className="text-xs text-slate-500">
+              Facilities under the same parent hospital link (read-only).
+            </p>
+            {siblingsLoading ? (
+              <p className="text-sm text-slate-500">Loading…</p>
+            ) : siblings.length === 0 ? (
+              <p className="text-sm text-slate-500">No other branches listed.</p>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50/90 text-left text-xs text-slate-500 uppercase tracking-wide">
+                      <th className="px-3 py-2 font-medium">Name</th>
+                      <th className="px-3 py-2 font-medium">City</th>
+                      <th className="px-3 py-2 font-medium">Tier</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {siblings.map((s) => (
+                      <tr key={s.id} className="border-b border-slate-50 last:border-0">
+                        <td className="px-3 py-2 text-slate-900">{s.name}</td>
+                        <td className="px-3 py-2 text-slate-600">{s.city ?? "—"}</td>
+                        <td className="px-3 py-2 text-slate-600">{tierPlanLabel(s.tier)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : null}
 
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">Logo (PNG/SVG, max 1MB)</label>
@@ -219,7 +319,7 @@ export default function HospitalSettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
+          <div className="space-y-2 md:col-span-2">
             <label className="text-sm font-medium text-slate-700">Address (optional)</label>
             <input
               value={form.address}
@@ -253,7 +353,7 @@ export default function HospitalSettingsPage() {
             <AlertCircle size={14} />
             {toast.message}
           </div>
-          <button onClick={() => setToast(null)} className="ml-2 opacity-80 hover:opacity-100">x</button>
+          <button type="button" onClick={() => setToast(null)} className="ml-2 opacity-80 hover:opacity-100">x</button>
         </div>
       )}
     </div>
