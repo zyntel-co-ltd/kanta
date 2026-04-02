@@ -373,7 +373,7 @@ export default function ScanPage() {
       {scanPurpose === "sample" && (
         <div className="space-y-4">
           <div className="relative">
-            <QrScanner onScan={handleQrDecode} onError={setError} />
+            <QrScanner onScan={handleQrDecode} onError={setError} mode="qr-and-barcode" />
           </div>
           <div className="flex gap-2">
             <input
