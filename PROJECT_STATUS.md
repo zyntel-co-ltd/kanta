@@ -73,3 +73,9 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 
 - **LRIDS visibility widened:** removed `show-lrids` UI gating in `components/dashboard/Sidebar.tsx`, `components/dashboard/AppTabBar.tsx`, and `app/dashboard/progress/page.tsx` so LRIDS entry points are visible to all users in-app.
 - **Token protection retained:** standalone LRIDS board still uses token-based access (`/api/lrids/token` + `/lrids/[facilityId]?token=...`), so visibility is broad while board access remains signed-link controlled.
+
+## App / ops (2026-03-30 — ENG-150 AI panel trigger availability)
+
+- **AI trigger verified on all dashboard routes:** `components/dashboard/TopBar.tsx` renders `NLQueryBar` unconditionally (no route/module gating), and `components/dashboard/DashboardChrome.tsx` mounts `TopBar` for all dashboard pages.
+- **Prop threading clarified:** `NLQueryBar` now receives `facilityId={alertsFacilityId ?? null}` and `userId={user?.id}` explicitly.
+- **Inline intent comment added:** documented above `<NLQueryBar .../>` that the AI side panel is available on all routes and opens as a right-side panel without navigation.

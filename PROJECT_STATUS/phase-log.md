@@ -134,6 +134,12 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 - [x] **LRIDS nav/buttons no longer feature-flag hidden** — removed `show-lrids` UI gating in `components/dashboard/Sidebar.tsx`, `components/dashboard/AppTabBar.tsx`, and `app/dashboard/progress/page.tsx` so LRIDS entry points are visible to all users in-app.
 - [x] **Security model unchanged** — LRIDS board still requires a signed token (`/api/lrids/token`, `/lrids/[facilityId]?token=...`), preserving token-based access control while broadening discoverability.
 
+### 2026-03-30 — ENG-150 AI side-panel trigger availability
+
+- [x] **TopBar AI trigger verified as global** — confirmed `components/dashboard/TopBar.tsx` mounts `NLQueryBar` without any route/module condition and `components/dashboard/DashboardChrome.tsx` renders `TopBar` for all dashboard routes.
+- [x] **Prop threading kept explicit** — `NLQueryBar` callsite uses `facilityId={alertsFacilityId ?? null}` and `userId={user?.id}`.
+- [x] **Clarifying inline comment added** — inserted required ENG-150 note above `<NLQueryBar .../>` describing always-available right-side panel behavior.
+
 ---
 # Kanta — Project Status & Functional Specification
 

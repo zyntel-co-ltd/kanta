@@ -247,7 +247,8 @@ export default function TopBar() {
 
         {/* ── NL Query ── */}
         <div className="hidden lg:block">
-          <NLQueryBar facilityId={alertsFacilityId} userId={user?.id} />
+          {/* AI side panel — available on all dashboard routes. Panel slides in from right; does not navigate away from current page. */}
+          <NLQueryBar facilityId={alertsFacilityId ?? null} userId={user?.id} />
         </div>
 
         {/* ENG-63: connectivity + sync queue */}
