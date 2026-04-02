@@ -143,9 +143,17 @@ export default function TATPage() {
         )}
 
         {activeTab === "reception" && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 text-slate-600">
-            This page appears when your LIMS does not supply reception timestamps automatically.
-            Connect LIMS or enable manual section capture logging.
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 text-slate-600 space-y-3">
+            <p>
+              This page appears when your LIMS does not supply reception timestamps automatically.
+              Connect LIMS or enable manual section capture logging.
+            </p>
+            <Link
+              href="/dashboard/lab-metrics/tat/scan"
+              className="inline-flex items-center rounded-xl bg-[#21336a] px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
+            >
+              Open Scan Results
+            </Link>
           </div>
         )}
       </div>

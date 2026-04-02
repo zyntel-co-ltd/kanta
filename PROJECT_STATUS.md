@@ -156,3 +156,10 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 
 - **Expiry calendar surfaced:** quantitative and qualitative config views now show upcoming lot expiries in dedicated calendar-style lists.
 - **Amber lead-time warnings:** both calendars expose configurable warning threshold (N days) and mark soon-expiring vs expired lots for proactive planning.
+
+## App / ops (2026-04-02 — ENG-103 QR results scanning for TAT)
+
+- **Scan UI:** added `/dashboard/lab-metrics/tat/scan` with continuous camera scanning plus a manual payload fallback.
+- **Payload decode:** supports legacy delimiter payloads and JSON payloads via `lib/tat/qrPayload.ts`.
+- **API wiring:** added `GET|PATCH /api/tat/scan` to look up active test requests and write section `time-in/time-out` timestamps; offline writes go through `queuedFetch` so scanning works without connectivity.
+- **Navigation:** TAT `Section Capture` landing panel now links to “Open Scan Results”.
