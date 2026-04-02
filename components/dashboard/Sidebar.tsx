@@ -420,10 +420,10 @@ export default function Sidebar() {
   return (
     <aside
       className={clsx(
-        // Stack above main column so the edge collapse control (-right-3.5) stays clickable;
-        // TopBar is z-20 and would otherwise capture hits on the overlap strip.
-        "kanta-sidebar relative z-30 flex flex-col h-screen flex-shrink-0 transition-all duration-300 ease-in-out overflow-visible border-r border-slate-200 bg-white",
-        collapsed ? "w-[72px]" : "w-[260px]"
+        "kanta-sidebar flex flex-col h-screen transition-transform duration-300 ease-in-out overflow-visible border-r border-slate-200 bg-white",
+        collapsed
+          ? "relative z-30 flex-shrink-0 w-[60px] translate-x-0"
+          : "fixed top-0 left-0 z-[150] w-[260px] translate-x-0"
       )}
       style={{ borderRadius: "0 28px 28px 0" }}
     >

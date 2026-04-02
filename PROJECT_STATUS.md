@@ -93,3 +93,10 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 - **NLQueryBar converted from centered modal to slide panel:** `components/ai/NLQueryBar.tsx` now renders as a fixed right drawer on desktop (`w-[380px]`, full height, `translateX` transition) and a mobile bottom sheet (`translateY` transition), both via `createPortal`.
 - **Dashboard push behavior added:** `components/dashboard/DashboardChrome.tsx` now reads `aiPanelOpen` and applies a desktop-only `margin-right: 380px` transition to the main content wrapper and `main` area so TopBar/tab strip/content compress together while panel is open.
 - **Close interactions preserved:** backdrop click, close button, and Escape from input all close the panel via `setAiPanelOpen(false)`; chat logic and suggestions remain intact.
+
+## App / ops (2026-04-02 — ENG-152 expanded sidebar overlay mode)
+
+- **Expanded sidebar now overlays instead of consuming layout width:** `components/dashboard/Sidebar.tsx` uses conditional positioning — collapsed rail remains in-flow (`relative`, `w-[60px]`), expanded sidebar becomes fixed overlay (`fixed top-0 left-0`, `w-[260px]`, `z-[150]`).
+- **Backdrop dismiss for overlay mode:** `components/dashboard/DashboardChrome.tsx` now renders `fixed inset-0 bg-black/30 z-[149]` when expanded; clicking backdrop collapses sidebar via `setCollapsed(true)`.
+- **Chrome structure aligned for overlay behavior:** sidebar is rendered outside the main content wrapper with a collapsed-width suspense fallback spacer, while TopBar/app tabs/main stay in the primary content column.
+- **Transition + controls preserved:** existing collapse glyph/button behavior and sidebar transitions remain intact while adopting overlay semantics.
