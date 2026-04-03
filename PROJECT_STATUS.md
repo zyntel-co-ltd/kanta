@@ -216,3 +216,8 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 - **Verify:** `npm run build`, `npx tsc --noEmit`; apply migration on Supabase; set `CRON_SECRET` on Vercel for protected crons.
 
 **Follow-up (not blocking):** `GET /api/tat/anomalies` is scheduled in `vercel.json` but does not yet check `CRON_SECRET` — consider aligning with other cron routes for defense in depth.
+
+## App / ops (2026-04-03 — ENG-182 sidebar avatar sync)
+
+- **Bug:** Sidebar footer showed only initials; it never read `avatarUrl` from `AuthContext`, so avatar changes in Settings updated TopBar but not the sidebar.
+- **Fix:** `components/dashboard/Sidebar.tsx` — footer uses the same conditional as TopBar: `<img>` when `avatarUrl` is set, else initials fallback. `refreshFacilityAuth()` from Settings already updates context; no API change.

@@ -384,7 +384,7 @@ function accordionGroupForPath(pathname: string): string | null {
 export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, signOut, facilityAuth, facilityAuthLoading } = useAuth();
+  const { user, signOut, facilityAuth, facilityAuthLoading, avatarUrl } = useAuth();
   const showRefrigeratorModule = useFlag("show-refrigerator-module");
   const showAiIntelligence = useFlag("show-ai-intelligence");
   const showTatTestLevel = useFlag("show-tat-test-level");
@@ -706,9 +706,18 @@ export default function Sidebar() {
         <div className="flex-shrink-0 border-t border-slate-200 pt-3 pb-4 px-3">
           {user && (
             <div className={clsx("flex items-center gap-3", collapsed ? "justify-center mb-3" : "mb-3")}>
-              <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border bg-slate-100 text-slate-700 border-slate-200">
-                {getInitials(user)}
-              </div>
+              {avatarUrl?.trim() ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={avatarUrl}
+                  alt={getFirstName(user)}
+                  className="flex-shrink-0 w-9 h-9 rounded-full object-cover border border-slate-200 bg-slate-100"
+                />
+              ) : (
+                <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border bg-slate-100 text-slate-700 border-slate-200">
+                  {getInitials(user)}
+                </div>
+              )}
               {!collapsed && (
                 <div className="flex-1 min-w-0 flex items-center justify-between">
                   <p className="text-sm font-medium truncate text-slate-700">{getFirstName(user)}</p>
