@@ -19,6 +19,7 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 | 2026-04-02 | `supabase/migrations/20260402130000_qc_corrective_followup_tracking.sql` | ENG-163: qualitative QC follow-up lifecycle fields (`followup_status`, rerun linkage, closure timestamps) |
 | 2026-04-02 | `supabase/migrations/20260402142000_qc_lot_review_recommendations.sql` | ENG-166: `qc_lot_recommendations` table for repeated-lot Westgard recommendation tracking |
 | 2026-04-03 | `supabase/migrations/20260403180000_facility_users_avatar_url.sql` | ENG-106: `facility_users.avatar_url` for default SVG paths or HTTPS storage URLs (per-facility) |
+| 2026-04-03 | `supabase/migrations/20260403220000_eng98_99_100_92_platform.sql` | ENG-98: `external_ref`, `test_name_mappings`, `bridge_unmatched_test_names`; ENG-99: `lab_number_retention_days`, `purge_after`, `price_ugx`, `daily_metrics`; ENG-100: `dedupe_*`, import dedupe index, `data_import_jobs`; ENG-92: `api_keys` + RLS |
 | — | *(no migration)* | ENG-156: Zyntel Console `/dashboard/console` (super-admin), `/api/console/facilities`, `POST /api/admin/users/sync` |
 
 ## Phase — ENG-157 Console hospital provisioning (2026-04-01)
@@ -199,3 +200,19 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 - **Section Capture UI implemented:** `components/tat/TatReceptionTab.tsx` adds date + section + search filters, Lab Number / anonymized patient token / test columns, green `Stamp In` / `Stamp Out` actions, and computed TAT minutes.
 - **Edit safety window enforced:** stamped values can be corrected via `Edit` only within 30 minutes, after which API returns an edit-window error.
 - **Tab visibility gated by feature flag:** `app/dashboard/tat/page.tsx` now shows the Reception/Section Capture tab only when `show-reception-tab` is enabled.
+
+## App / ops (2026-04-03 — ENG-98 / ENG-99 / ENG-100 / ENG-92 / ENG-93 platform)
+
+- **Migration:** `20260403220000_eng98_99_100_92_platform.sql` — bridge metadata, retention + `daily_metrics`, dedupe columns + `data_import_jobs`, `api_keys` (hashed keys, tier/rate limits).
+- **LIMS sync:** `external_ref` from optional `externalRefColumn`; `test_name_mappings` + `lab_number_retention_days` from `facility_capability_profile`; unmatched names bump `bridge_unmatched_test_names`.
+- **Bridge library:** `lib/bridge/` (types, name matcher, PDF metadata via `pdf-parse`, registry).
+- **Import:** `lib/data-import/parseTestRequestFile.ts`, `POST /api/admin/data-import` (multipart, chunked upsert, job row).
+- **Purge cron:** `GET /api/cron/purge-lab-numbers` — aggregate to `daily_metrics`, null lab PII; **Vercel:** `vercel.json` schedule `5 2 * * *`.
+- **Public API (ENG-92):** Bearer `kanta_*` keys — `lib/api/authenticate.ts` (SHA-256, Upstash per-key limits); `GET|POST /api/admin/api-keys`, `PATCH /api/admin/api-keys/[id]`; `GET /api/v1/facilities/{id}/equipment/summary` (Redis cache ~5m), `GET .../tat/benchmarks`; middleware skips IP limit for `/api/v1/*`.
+- **Admin UI:** `/dashboard/admin/api-keys`, `/dashboard/admin/data-import`; subnav links; data connections: optional **external reference** column + unmatched-names banner; hospital settings: read-only **lab number retention** + Zyntel copy.
+- **TAT summary:** `GET /api/tat/summary` merges `daily_metrics` when no matching raw row for same `(date, section, test_name)` (avoids double-count).
+- **Docs / local DB (ENG-93):** `docker-compose.yml`, `scripts/create-local-db.sh`, `docs/SELF_HOSTED.md`, `.env.local.docker.example` (git-tracked via `.gitignore` exception), README Docker blurb; `docs/adr/ADR-003-api-platform-strategy.md`; public **`/api-platform`** page.
+- **Ops / env:** `.env.example` documents `CRON_SECRET` and which cron routes verify Bearer (lims-sync, weekly-summary, purge-lab-numbers).
+- **Verify:** `npm run build`, `npx tsc --noEmit`; apply migration on Supabase; set `CRON_SECRET` on Vercel for protected crons.
+
+**Follow-up (not blocking):** `GET /api/tat/anomalies` is scheduled in `vercel.json` but does not yet check `CRON_SECRET` — consider aligning with other cron routes for defense in depth.

@@ -29,6 +29,7 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^0.576.0",
     "next": "^16.2.1",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.20.0",
     "posthog-js": "^1.363.1",
     "posthog-node": "^5.28.5",

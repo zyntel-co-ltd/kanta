@@ -18,6 +18,16 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Local development with Docker (optional Postgres)
+
+To run a local PostgreSQL instance for migrations or experiments (without replacing Supabase Auth), use Docker Compose from the `kanta` directory:
+
+```bash
+./scripts/create-local-db.sh
+```
+
+Details: [docs/SELF_HOSTED.md](docs/SELF_HOSTED.md). Environment template: `.env.local.docker.example`.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

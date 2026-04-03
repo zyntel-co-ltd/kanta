@@ -57,6 +57,8 @@ export async function GET(req: NextRequest) {
 
     const sectionStats: Record<string, { avg: number; count: number; target: number }> = {};
     const heatmapData: Record<string, Record<number, number[]>> = {};
+    /** Dedup raw rows vs daily_metrics (purge aggregates) per ENG-99. */
+    const coveredDayKeys = new Set<string>();
 
     for (const r of requests ?? []) {
       if (!r.received_at || !r.resulted_at) continue;
@@ -71,10 +73,43 @@ export async function GET(req: NextRequest) {
       sectionStats[r.section].avg += tat;
       sectionStats[r.section].count += 1;
 
+      const d = received.toISOString().slice(0, 10);
+      coveredDayKeys.add(`${d}|${r.section}|${String(r.test_name ?? "")}`);
+
       const hour = received.getHours();
       if (!heatmapData[r.section]) heatmapData[r.section] = {};
       if (!heatmapData[r.section][hour]) heatmapData[r.section][hour] = [];
       heatmapData[r.section][hour].push(tat);
+    }
+
+    const sinceDay = since.toISOString().slice(0, 10);
+    const { data: dailyRows } = await db
+      .from("daily_metrics")
+      .select("test_date, section, test_name, request_count, avg_tat_minutes")
+      .eq("facility_id", facilityId)
+      .gte("test_date", sinceDay);
+
+    for (const m of dailyRows ?? []) {
+      const d = String(m.test_date);
+      const section = String(m.section ?? "");
+      const testName = String(m.test_name ?? "");
+      const k = `${d}|${section}|${testName}`;
+      if (coveredDayKeys.has(k)) continue;
+
+      const cnt = Math.max(0, Math.floor(Number(m.request_count ?? 0)));
+      const avgMin =
+        m.avg_tat_minutes != null && !Number.isNaN(Number(m.avg_tat_minutes))
+          ? Number(m.avg_tat_minutes)
+          : null;
+      if (cnt <= 0 || avgMin == null) continue;
+
+      const target =
+        targetMap.get(`${section}:${testName}`) ?? targetMap.get(section) ?? 60;
+      if (!sectionStats[section]) {
+        sectionStats[section] = { avg: 0, count: 0, target };
+      }
+      sectionStats[section].avg += avgMin * cnt;
+      sectionStats[section].count += cnt;
     }
 
     const sections = Object.entries(sectionStats).map(([section, s]) => ({
@@ -105,6 +140,24 @@ export async function GET(req: NextRequest) {
       if (!dayBuckets[r.section]) dayBuckets[r.section] = {};
       if (!dayBuckets[r.section][d]) dayBuckets[r.section][d] = [];
       dayBuckets[r.section][d].push(tat);
+    }
+    for (const m of dailyRows ?? []) {
+      const d = String(m.test_date);
+      const section = String(m.section ?? "");
+      const testName = String(m.test_name ?? "");
+      if (coveredDayKeys.has(`${d}|${section}|${testName}`)) continue;
+      const cnt = Math.max(0, Math.floor(Number(m.request_count ?? 0)));
+      const avgMin =
+        m.avg_tat_minutes != null && !Number.isNaN(Number(m.avg_tat_minutes))
+          ? Number(m.avg_tat_minutes)
+          : null;
+      if (cnt <= 0 || avgMin == null) continue;
+      const rounded = Math.round(avgMin);
+      if (!dayBuckets[section]) dayBuckets[section] = {};
+      if (!dayBuckets[section][d]) dayBuckets[section][d] = [];
+      for (let i = 0; i < cnt; i++) {
+        dayBuckets[section][d].push(rounded);
+      }
     }
     for (const [section, days] of Object.entries(dayBuckets)) {
       const sorted = Object.entries(days).sort(([a], [b]) => a.localeCompare(b));

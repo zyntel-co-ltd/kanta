@@ -28,6 +28,8 @@ export type LIMSQueryConfig = {
   updatedAtColumn?: string;
   requestedAtColumn?: string;
   patientIdColumn?: string;
+  /** ENG-98: maps to `test_requests.external_ref` (invoice / file id — not patient id). */
+  externalRefColumn?: string;
   priorityColumn?: string;
   statusColumn?: string;
   /** Optional separate table for TAT events; if unset, connector may reuse test request table. */
@@ -66,6 +68,7 @@ export type TestRequest = {
   status: "pending" | "received" | "in_progress" | "resulted" | "cancelled";
   lims_connection_id: string;
   lims_external_id: string;
+  external_ref?: string | null;
 };
 
 /** DB row shape for `lims_connections` (server-side). */

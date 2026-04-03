@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
       branch_name: null,
       group_name: null,
       group_slug: null,
+      lab_number_retention_days: 90,
     });
   }
 
@@ -69,6 +70,18 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
     if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+    const { data: cap } = await db
+      .from("facility_capability_profile")
+      .select("lab_number_retention_days")
+      .eq("facility_id", facilityId)
+      .maybeSingle();
+
+    let retention = 90;
+    if (cap && typeof (cap as { lab_number_retention_days?: unknown }).lab_number_retention_days === "number") {
+      const n = (cap as { lab_number_retention_days: number }).lab_number_retention_days;
+      if (n > 0) retention = n;
+    }
+
     const raw = data as {
       id: string;
       name: string;
@@ -102,6 +115,7 @@ export async function GET(req: NextRequest) {
       branch_name: raw.branch_name,
       group_name: hg?.name ?? null,
       group_slug: hg?.slug ?? null,
+      lab_number_retention_days: retention,
     });
   } catch (error) {
     console.error("[GET /api/admin/hospital]", error);

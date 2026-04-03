@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
     "idColumn",
     "labNumberColumn",
     "updatedAtColumn",
+    "externalRefColumn",
   ] as const) {
     const v = rawBody[key];
     if (typeof v === "string" && v.trim()) qc[key] = v.trim();
@@ -113,6 +114,7 @@ export async function POST(req: NextRequest) {
     idColumn: qc.idColumn ? String(qc.idColumn).trim() : undefined,
     labNumberColumn: qc.labNumberColumn ? String(qc.labNumberColumn).trim() : undefined,
     updatedAtColumn: qc.updatedAtColumn ? String(qc.updatedAtColumn).trim() : undefined,
+    externalRefColumn: qc.externalRefColumn ? String(qc.externalRefColumn).trim() : undefined,
   } satisfies LIMSQueryConfig;
 
   if (
