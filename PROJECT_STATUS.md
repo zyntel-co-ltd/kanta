@@ -100,7 +100,7 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 
 ## App / ops (2026-04-02 — ENG-152 expanded sidebar overlay mode)
 
-- **Expanded sidebar now overlays instead of consuming layout width:** `components/dashboard/Sidebar.tsx` uses conditional positioning — collapsed rail remains in-flow (`relative`, `w-[60px]`), expanded sidebar becomes fixed overlay (`fixed top-0 left-0`, `w-[260px]`, `z-[150]`).
+- **Expanded sidebar now overlays instead of consuming layout width:** `components/dashboard/Sidebar.tsx` uses conditional positioning — collapsed rail remains in-flow (`relative`, `w-[76px]` as of ENG-183), expanded sidebar becomes fixed overlay (`fixed top-0 left-0`, `w-[260px]`, `z-[150]`).
 - **Backdrop dismiss for overlay mode:** `components/dashboard/DashboardChrome.tsx` now renders `fixed inset-0 bg-black/30 z-[149]` when expanded; clicking backdrop collapses sidebar via `setCollapsed(true)`.
 - **Chrome structure aligned for overlay behavior:** sidebar is rendered outside the main content wrapper with a collapsed-width suspense fallback spacer, while TopBar/app tabs/main stay in the primary content column.
 - **Transition + controls preserved:** existing collapse glyph/button behavior and sidebar transitions remain intact while adopting overlay semantics.
@@ -221,3 +221,9 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 
 - **Bug:** Sidebar footer showed only initials; it never read `avatarUrl` from `AuthContext`, so avatar changes in Settings updated TopBar but not the sidebar.
 - **Fix:** `components/dashboard/Sidebar.tsx` — footer uses the same conditional as TopBar: `<img>` when `avatarUrl` is set, else initials fallback. `refreshFacilityAuth()` from Settings already updates context; no API change.
+
+## App / ops (2026-04-03 — ENG-183 / ENG-184 collapsed sidebar UX)
+
+- **ENG-183 — Rail width & padding:** Collapsed aside **76px** (was 60px); nav + footer use **`px-2`** when collapsed. **`DashboardChrome`** Suspense fallback **`w-[76px]`** matches sidebar width to avoid layout shift.
+- **ENG-184 — Collapsed active state:** **`navLinkTone(collapsed, active)`** — collapsed active = transparent background, brand-colored icon, **3px left accent bar** (accordion parents + flat items); collapsed inactive = `text-slate-500` with hover surface; expanded nav unchanged (solid brand pill + 4px bar). **`min-h-[40px]`** on collapsed top-level links for touch targets.
+- **Linear:** [ENG-183](https://linear.app/zyntel/issue/ENG-183), [ENG-184](https://linear.app/zyntel/issue/ENG-184).

@@ -43,7 +43,7 @@ export default function DashboardChrome({ children }: { children: React.ReactNod
         />
       )}
 
-      <Suspense fallback={<div className="w-[60px] flex-shrink-0" aria-hidden />}>
+      <Suspense fallback={<div className="w-[76px] flex-shrink-0" aria-hidden />}>
         <Sidebar />
       </Suspense>
 

@@ -335,6 +335,21 @@ function homeGroupColor(title: string): string {
   return "#334155";
 }
 
+/**
+ * Expanded: solid brand pill (readable with labels).
+ * Collapsed: no fill — brand icon + left accent bar (see sibling span) for a lighter rail.
+ */
+function navLinkTone(collapsed: boolean, active: boolean): string {
+  if (active) {
+    return collapsed
+      ? "bg-transparent text-[var(--sidebar-active-bg)] shadow-none ring-0"
+      : "bg-[var(--sidebar-active-bg)] text-white shadow-sm";
+  }
+  return collapsed
+    ? "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+    : "text-slate-700 hover:bg-slate-100";
+}
+
 /** One-time accordion open for direct URL loads (ENG-127). */
 function accordionGroupForPath(pathname: string): string | null {
   if (
@@ -424,7 +439,7 @@ export default function Sidebar() {
       className={clsx(
         "kanta-sidebar flex flex-col h-screen transition-transform duration-300 ease-in-out overflow-visible border-r border-slate-200 bg-white",
         collapsed
-          ? "relative z-30 flex-shrink-0 w-[60px] translate-x-0"
+          ? "relative z-30 flex-shrink-0 w-[76px] translate-x-0"
           : "fixed top-0 left-0 z-[150] w-[260px] translate-x-0"
       )}
       style={{ borderRadius: "0 28px 28px 0" }}
@@ -496,7 +511,7 @@ export default function Sidebar() {
 
       {/* ── Nav ── */}
       <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-visible py-4 flex flex-col">
-        <div className="flex-1 px-3">
+        <div className={clsx("flex-1", collapsed ? "px-2" : "px-3")}>
           {navGroups.map((group) => {
             /* ── Collapsible accordion group (Quality Management) ── */
             if (group.collapsible) {
@@ -524,6 +539,12 @@ export default function Sidebar() {
                   {/* Parent row: icon + label + chevron toggle */}
                   <div className="relative">
                     {/* Active module indicator (left edge) */}
+                    {isCollapsibleActive && collapsed && (
+                      <span
+                        className="pointer-events-none absolute left-0 top-1/2 z-10 h-8 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--sidebar-active-bg)]"
+                        aria-hidden
+                      />
+                    )}
                     {isCollapsibleActive && !collapsed && (
                       <span
                         className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]"
@@ -546,13 +567,8 @@ export default function Sidebar() {
                           }}
                           className={clsx(
                             "relative z-[1] flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none flex-1",
-                            collapsed ? "justify-center px-0 translate-x-0.5" : "gap-3 px-4",
-                            isCollapsibleActive
-                              ? clsx(
-                                  "bg-[var(--sidebar-active-bg)] text-white shadow-sm",
-                                  collapsed && "ring-2 ring-offset-2 ring-offset-white ring-[var(--sidebar-active-bg)]/40"
-                                )
-                              : "text-slate-700 hover:bg-slate-100"
+                            collapsed ? "justify-center px-0 min-h-[40px]" : "gap-3 px-4",
+                            navLinkTone(collapsed, isCollapsibleActive)
                           )}
                         >
                           <ParentIcon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
@@ -675,6 +691,12 @@ export default function Sidebar() {
 
                     return (
                       <div key={itemKey} className="relative">
+                        {active && collapsed && (
+                          <span
+                            className="pointer-events-none absolute left-0 top-1/2 z-10 h-8 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--sidebar-active-bg)]"
+                            aria-hidden
+                          />
+                        )}
                         {active && !collapsed && (
                           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]" />
                         )}
@@ -683,10 +705,8 @@ export default function Sidebar() {
                             href={href}
                             className={clsx(
                               "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1] w-full",
-                              collapsed ? "justify-center px-0 translate-x-0.5" : "gap-3 px-4",
-                              active
-                                ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
-                                : "text-slate-700 hover:bg-slate-100"
+                              collapsed ? "justify-center px-0 min-h-[40px]" : "gap-3 px-4",
+                              navLinkTone(collapsed, active)
                             )}
                           >
                             <Icon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
@@ -703,7 +723,7 @@ export default function Sidebar() {
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex-shrink-0 border-t border-slate-200 pt-3 pb-4 px-3">
+        <div className={clsx("flex-shrink-0 border-t border-slate-200 pt-3 pb-4", collapsed ? "px-2" : "px-3")}>
           {user && (
             <div className={clsx("flex items-center gap-3", collapsed ? "justify-center mb-3" : "mb-3")}>
               {avatarUrl?.trim() ? (
