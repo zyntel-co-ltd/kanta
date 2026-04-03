@@ -60,3 +60,6 @@ next-env.d.ts
 # Local AI codebase pack (Repomix; never commit)
 repomix-output.xml
 repomix-output.*.xml
+
+# Supabase CLI local artifacts
+supabase/.temp/

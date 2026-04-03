@@ -18,6 +18,7 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 | 2026-04-01 | `supabase/migrations/20260402120000_hospitals_parent_hospital_id.sql` | ENG-157: optional `hospitals.parent_hospital_id` FK for branch / hospital groups |
 | 2026-04-02 | `supabase/migrations/20260402130000_qc_corrective_followup_tracking.sql` | ENG-163: qualitative QC follow-up lifecycle fields (`followup_status`, rerun linkage, closure timestamps) |
 | 2026-04-02 | `supabase/migrations/20260402142000_qc_lot_review_recommendations.sql` | ENG-166: `qc_lot_recommendations` table for repeated-lot Westgard recommendation tracking |
+| 2026-04-03 | `supabase/migrations/20260403180000_facility_users_avatar_url.sql` | ENG-106: `facility_users.avatar_url` for default SVG paths or HTTPS storage URLs (per-facility) |
 | — | *(no migration)* | ENG-156: Zyntel Console `/dashboard/console` (super-admin), `/api/console/facilities`, `POST /api/admin/users/sync` |
 
 ## Phase — ENG-157 Console hospital provisioning (2026-04-01)
@@ -125,9 +126,18 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 ## App / ops (2026-04-02 — ENG-163 corrective-action follow-up closure)
 
 - **Qualitative follow-up lifecycle added:** `qualitative_qc_entries` now tracks `followup_status` (`none/open/closed/override`), rerun linkage (`rerun_for_entry_id`, `rerun_entry_id`), closure timestamp, and optional override reason.
-- **API linkage + closure logic:** `app/api/qc/qualitative/entries/route.ts` and `[id]/route.ts` now link reruns to failed incidents and auto-close follow-up when linked rerun passes.
-- **Audit evidence trail:** qualitative QC create/update events now emit app-level audit entries with old/new lifecycle state to support ISO 15189 evidence workflows.
-- **UI follow-up visibility:** `app/dashboard/qc/page.tsx` now surfaces open corrective actions, allows rerun-to-incident linkage in entry flow, and displays follow-up status in qualitative log views.
+- **API linkage + closure logic:** `app/api/qc/qualitative/entries/route.ts` and `[id]/route.ts` now link reruns to failed incidents and auto-close follow-up when linked rerun passes; PATCH validates rerun targets and preserves `closed`/`override` rows on edit.
+- **Audit evidence trail:** qualitative QC create/update emit `qc.qual_entry.*` app audit rows; linked reruns also write `qc.qual_entry.followup_updated` on the **originating** failed entry; manual override logs `qc.qual_entry.followup_override`.
+- **Incident audit API + UI:** `GET /api/qc/qualitative/entries/:id/audit-trail` returns chronological events for the entry plus linked rerun/parent IDs; Qual. Log expanded rows show an **Audit trail** timeline and optional **manual closure (override)** with required justification.
+
+## App / ops (2026-04-03 — ENG-106 default avatars + Pro-gated photo upload)
+
+- **Per-facility avatar column:** `facility_users.avatar_url` stores either a public default path (`/avatars/default-01.svg` … `default-16.svg`) or an HTTPS (or localhost dev) storage URL after upload.
+- **API:** `GET /api/me` includes `profileAvatarUrl`; `PATCH /api/me/avatar` applies tier rules (defaults any plan; custom URL Professional+ with upsell error copy on 403); syncs Supabase Auth `user_metadata.avatar_url` via admin merge.
+- **Auth resolution:** `lib/AuthContext.tsx` prefers `profileAvatarUrl` over OAuth/metadata so the TopBar matches the active facility.
+- **Settings UI:** `app/dashboard/settings/page.tsx` — grid of 16 abstract SVG defaults; upload control hidden below Pro with amber upsell; Pro uploads still use Storage then `PATCH /api/me/avatar`.
+- **TopBar sizing:** `components/dashboard/TopBar.tsx` user avatar uses responsive 24px / 32px / 40px classes for crisp SVG rendering.
+- **Assets:** `public/avatars/default-01.svg`–`default-16.svg`; optional regen via `scripts/gen-default-avatars.mjs`.
 
 ## App / ops (2026-04-02 — ENG-164 proactive QC drift alerts)
 

@@ -415,11 +415,11 @@ export default function TopBar() {
                   <img
                     src={avatarUrl}
                     alt={getFirstName(user)}
-                    className="w-8 h-8 rounded-full object-cover ring-2 ring-white"
+                    className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 rounded-full object-cover ring-2 ring-white bg-slate-100"
                   />
                 ) : (
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0"
+                    className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 rounded-full flex items-center justify-center text-white font-semibold text-[10px] sm:text-xs flex-shrink-0"
                     style={{ background: "linear-gradient(135deg, #065f46, #059669)" }}
                   >
                     {getInitials(user)}

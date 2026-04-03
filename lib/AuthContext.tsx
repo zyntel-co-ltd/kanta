@@ -32,6 +32,8 @@ export type FacilityAuthState = {
   hospitalLogoUrl: string | null;
   /** From `hospitals.tier` — plan ceiling for feature gating */
   subscriptionTier: string | null;
+  /** ENG-106: `facility_users.avatar_url` for this facility */
+  profileAvatarUrl: string | null;
   /** ENG-91: `hospital_groups` membership; null = standalone facility */
   groupId: string | null;
   groupName: string | null;
@@ -97,6 +99,7 @@ function readCachedAuth(): FacilityAuthState | null {
       groupId: p.groupId ?? null,
       groupName: p.groupName ?? null,
       branchName: p.branchName ?? null,
+      profileAvatarUrl: p.profileAvatarUrl ?? null,
     } as FacilityAuthState;
   } catch {
     return null;
@@ -158,6 +161,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hospitalLogoUrl: (data.hospitalLogoUrl as string | null) ?? null,
       subscriptionTier:
         typeof data.subscriptionTier === "string" ? data.subscriptionTier : null,
+      profileAvatarUrl:
+        typeof data.profileAvatarUrl === "string" && data.profileAvatarUrl.trim()
+          ? data.profileAvatarUrl.trim()
+          : null,
       groupId: typeof data.groupId === "string" ? data.groupId : null,
       groupName: typeof data.groupName === "string" ? data.groupName : null,
       branchName: typeof data.branchName === "string" ? data.branchName : null,
@@ -295,6 +302,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     "User";
   const meta = user?.user_metadata;
   const avatarUrl =
+    facilityAuth?.profileAvatarUrl?.trim() ||
     (typeof meta?.avatar_url === "string" && meta.avatar_url.trim()) ||
     (typeof meta?.picture === "string" && meta.picture.trim()) ||
     (typeof meta?.image === "string" && meta.image.trim()) ||

@@ -124,19 +124,8 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error;
 
-    if (data?.rerun_for_entry_id && data.submitted) {
-      const parentFollowupStatus = data.overall_pass ? "closed" : "open";
-      await db
-        .from("qualitative_qc_entries")
-        .update({
-          rerun_entry_id: data.id,
-          followup_status: parentFollowupStatus,
-          followup_closed_at: data.overall_pass ? new Date().toISOString() : null,
-        })
-        .eq("id", data.rerun_for_entry_id);
-    }
-
     const ctx = await getAuthContext(req);
+
     await writeAuditLog({
       facilityId: facility_id,
       userId: ctx.user?.id ?? null,
@@ -152,6 +141,46 @@ export async function POST(req: NextRequest) {
         followup_status: followupStatus,
       },
     });
+
+    if (data?.rerun_for_entry_id && data.submitted) {
+      const { data: parentBefore, error: parentLoadErr } = await db
+        .from("qualitative_qc_entries")
+        .select("followup_status, rerun_entry_id, followup_closed_at")
+        .eq("id", data.rerun_for_entry_id)
+        .single();
+      if (parentLoadErr) throw parentLoadErr;
+
+      const parentFollowupStatus = data.overall_pass ? "closed" : "open";
+      const closedAt = data.overall_pass ? new Date().toISOString() : null;
+      const { error: parentUpdErr } = await db
+        .from("qualitative_qc_entries")
+        .update({
+          rerun_entry_id: data.id,
+          followup_status: parentFollowupStatus,
+          followup_closed_at: closedAt,
+        })
+        .eq("id", data.rerun_for_entry_id);
+      if (parentUpdErr) throw parentUpdErr;
+
+      await writeAuditLog({
+        facilityId: facility_id,
+        userId: ctx.user?.id ?? null,
+        action: "qc.qual_entry.followup_updated",
+        entityType: "qualitative_qc_entry",
+        entityId: data.rerun_for_entry_id,
+        oldValue: {
+          followup_status: parentBefore?.followup_status,
+          rerun_entry_id: parentBefore?.rerun_entry_id,
+          followup_closed_at: parentBefore?.followup_closed_at,
+        },
+        newValue: {
+          followup_status: parentFollowupStatus,
+          rerun_entry_id: data.id,
+          followup_closed_at: closedAt,
+          trigger: "linked_rerun_submitted",
+        },
+      });
+    }
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (err) {

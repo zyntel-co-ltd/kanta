@@ -208,6 +208,7 @@ function filterNavForFacilityAuth(
       hospitalName: null,
       hospitalLogoUrl: null,
       subscriptionTier: null,
+      profileAvatarUrl: null,
       groupId: null,
       groupName: null,
       branchName: null,

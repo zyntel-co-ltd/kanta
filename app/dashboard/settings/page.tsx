@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Upload, UserRound, Shield, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, UserRound, Shield, CheckCircle2, AlertCircle, Palette } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/AuthContext";
+import { DEFAULT_AVATAR_PATHS } from "@/lib/defaultAvatars";
+import { isProfessionalOrAbove } from "@/lib/subscriptionTier";
 
 type BrowserAuth = {
   updateUser: (payload: {
@@ -27,12 +29,14 @@ function initials(nameOrEmail: string) {
 type Toast = { message: string; type: "success" | "error" };
 
 export default function SettingsPage() {
-  const { user, displayName, avatarUrl, refreshUser } = useAuth();
+  const { user, displayName, avatarUrl, refreshUser, facilityAuth, facilityAuthLoading, refreshFacilityAuth } =
+    useAuth();
   const client = useMemo(() => createClient(), []);
   const auth = client.auth as unknown as BrowserAuth;
   const [profileName, setProfileName] = useState(displayName);
   const [profileSaving, setProfileSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [savingAvatarChoice, setSavingAvatarChoice] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -45,6 +49,37 @@ export default function SettingsPage() {
 
   const email = user?.email || "";
   const identityLabel = profileName?.trim() || email || "User";
+
+  const canCustomAvatar =
+    !facilityAuthLoading && isProfessionalOrAbove(facilityAuth?.subscriptionTier);
+
+  const persistAvatarUrl = async (nextUrl: string) => {
+    const res = await fetch("/api/me/avatar", {
+      method: "PATCH",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ avatarUrl: nextUrl }),
+    });
+    const json = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) {
+      throw new Error(json.error || "Could not save avatar");
+    }
+    await refreshUser();
+    await refreshFacilityAuth();
+  };
+
+  const onPickDefaultAvatar = async (path: string) => {
+    if (!user) return;
+    setSavingAvatarChoice(true);
+    try {
+      await persistAvatarUrl(path);
+      setToast({ message: "Avatar updated", type: "success" });
+    } catch (e) {
+      setToast({ message: (e as Error).message || "Failed to set avatar", type: "error" });
+    } finally {
+      setSavingAvatarChoice(false);
+    }
+  };
 
   const onSaveProfile = async () => {
     if (!user) return;
@@ -69,6 +104,13 @@ export default function SettingsPage() {
 
   const onUploadAvatar = async (file?: File) => {
     if (!user || !file) return;
+    if (!canCustomAvatar) {
+      setToast({
+        message: "Custom photo avatars are a Pro feature — upgrade to upload your own",
+        type: "error",
+      });
+      return;
+    }
     if (!["image/jpeg", "image/png"].includes(file.type)) {
       setToast({ message: "Only JPEG or PNG files are allowed", type: "error" });
       return;
@@ -88,11 +130,7 @@ export default function SettingsPage() {
       });
       if (uploadError) throw uploadError;
       const { data } = client.storage.from("avatars").getPublicUrl(path);
-      const { error: updateError } = await auth.updateUser({
-        data: { avatar_url: data.publicUrl },
-      });
-      if (updateError) throw updateError;
-      await refreshUser();
+      await persistAvatarUrl(data.publicUrl);
       setToast({ message: "Avatar updated", type: "success" });
     } catch (e) {
       setToast({ message: (e as Error).message || "Avatar upload failed", type: "error" });
@@ -169,31 +207,74 @@ export default function SettingsPage() {
 
       <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
         <div className="flex items-center gap-2">
-          <Upload size={18} className="module-accent-text" />
+          <Palette size={18} className="module-accent-text" />
           <h2 className="text-lg font-semibold text-slate-800">Avatar</h2>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt={identityLabel} className="w-16 h-16 rounded-full object-cover border border-slate-200" />
+            <img
+              src={avatarUrl}
+              alt={identityLabel}
+              className="w-16 h-16 rounded-full object-cover border border-slate-200 bg-slate-50"
+            />
           ) : (
             <div className="w-16 h-16 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold">
               {initials(identityLabel)}
             </div>
           )}
-          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium cursor-pointer hover:bg-slate-200">
-            <Upload size={14} />
-            {uploading ? "Uploading..." : "Upload photo"}
-            <input
-              type="file"
-              accept="image/jpeg,image/png"
-              className="hidden"
-              disabled={uploading}
-              onChange={(e) => onUploadAvatar(e.target.files?.[0])}
-            />
-          </label>
+          {canCustomAvatar ? (
+            <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium cursor-pointer hover:bg-slate-200">
+              <Upload size={14} />
+              {uploading ? "Uploading..." : "Upload your own photo"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png"
+                className="hidden"
+                disabled={uploading || savingAvatarChoice}
+                onChange={(e) => onUploadAvatar(e.target.files?.[0])}
+              />
+            </label>
+          ) : (
+            <div className="max-w-md rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+              <span className="font-semibold">Custom photo avatars are a Pro feature — upgrade to upload your own.</span>
+              <span className="block text-xs text-amber-800/90 mt-1">
+                Choose a default avatar below, or upgrade to Professional or Enterprise to use your photo.
+              </span>
+            </div>
+          )}
         </div>
-        <p className="text-xs text-slate-500">JPEG/PNG only, max size 2MB. Stored in Supabase Storage bucket `avatars`.</p>
+        {canCustomAvatar && (
+          <p className="text-xs text-slate-500">
+            JPEG/PNG only, max size 2MB. Stored in Supabase Storage bucket <code className="text-slate-600">avatars</code>.
+          </p>
+        )}
+        <div>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Default avatars</p>
+          <p className="text-xs text-slate-500 mb-3">
+            Abstract designs — pick one to update your profile immediately across the app.
+          </p>
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-w-2xl">
+            {DEFAULT_AVATAR_PATHS.map((path) => {
+              const selected = avatarUrl === path;
+              return (
+                <button
+                  key={path}
+                  type="button"
+                  disabled={savingAvatarChoice}
+                  title={`Use ${path}`}
+                  onClick={() => onPickDefaultAvatar(path)}
+                  className={`relative rounded-full p-0.5 border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]/40 ${
+                    selected ? "border-[var(--module-primary)] ring-2 ring-[var(--module-primary)]/25" : "border-transparent hover:border-slate-300"
+                  } disabled:opacity-50`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={path} alt="" className="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover bg-slate-100" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
       <section className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">

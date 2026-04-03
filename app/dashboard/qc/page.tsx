@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef, Fragment } from "rea
 import {
   ShieldCheck, BarChart3, TestTube, Calculator,
   TrendingUp, ClipboardList,
-  Download, Copy, Check, Plus, FlaskConical, Activity,
+  Download, Copy, Check, Plus, FlaskConical, Activity, Clock,
   ChevronDown, ChevronUp, X as XIcon,
 } from "lucide-react";
 import { LazyLine } from "@/components/charts/LazyCharts";
@@ -278,6 +278,27 @@ function makeKantaApi() {
     deleteQualEntry: async (id: string) => {
       const r = await queuedFetch(`/api/qc/qualitative/entries/${id}`, { method: "DELETE" });
       return r.json();
+    },
+    getQualEntryAuditTrail: async (entryId: string) => {
+      const res = await fetch(
+        `/api/qc/qualitative/entries/${encodeURIComponent(entryId)}/audit-trail?facility_id=${encodeURIComponent(FACILITY_ID)}`
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to load audit trail");
+      return (json.events ?? []) as QcItem[];
+    },
+    applyQualFollowupOverride: async (entryId: string, reason: string) => {
+      const r = await queuedFetch(`/api/qc/qualitative/entries/${encodeURIComponent(entryId)}`, {
+        method: "PATCH",
+        headers: h(),
+        body: JSON.stringify({
+          followup_status: "override",
+          followup_override_reason: reason,
+        }),
+      });
+      const json = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error((json as { error?: string }).error || r.statusText);
+      return json;
     },
     getLotRecommendations: async (): Promise<QcItem[]> => {
       const res = await fetch(`/api/qc/recommendations?facility_id=${FACILITY_ID}`);
@@ -959,6 +980,12 @@ function QCVisualizationTab() {
         x: {
           grid: { display: false },
           ticks: { color: "#64748b", font: { size: 11 }, maxRotation: 45 },
+          title: {
+            display: true,
+            text: "Date",
+            color: "#475569",
+            font: { size: 11, weight: 600 },
+          },
         },
         y: {
           min: mean - 3 * sd,
@@ -2122,6 +2149,10 @@ function QualLogTab() {
   const [filterFrom, setFilterFrom]   = useState("");
   const [filterTo, setFilterTo]       = useState("");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [auditByEntry, setAuditByEntry] = useState<Record<string, QcItem[]>>({});
+  const [auditLoadingId, setAuditLoadingId] = useState<string | null>(null);
+  const [overrideReason, setOverrideReason] = useState("");
+  const [overrideBusy, setOverrideBusy] = useState(false);
   const [isLoading, setIsLoading]     = useState(false);
   const [error, setError]             = useState("");
   const [confirm, setConfirm]         = useState<ConfirmState>(closedConfirm);
@@ -2136,6 +2167,27 @@ function QualLogTab() {
   }, [api]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    setOverrideReason("");
+    if (!expandedRow) return;
+    let cancelled = false;
+    setAuditLoadingId(expandedRow);
+    api
+      .getQualEntryAuditTrail(expandedRow)
+      .then((events) => {
+        if (!cancelled) setAuditByEntry((prev) => ({ ...prev, [expandedRow]: events }));
+      })
+      .catch((e) => {
+        if (!cancelled) setError(`Audit trail: ${(e as Error).message}`);
+      })
+      .finally(() => {
+        if (!cancelled) setAuditLoadingId(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, expandedRow]);
 
   const filtered = allRuns.filter((run) => {
     if (filterTest && run.testName !== filterTest) return false;
@@ -2349,13 +2401,108 @@ function QualLogTab() {
                                   (closed {new Date(run.followupClosedAt).toLocaleString()})
                                 </span>
                               )}
+                              {run.rerunForEntryId && (
+                                <div className="mt-1 text-xs text-slate-600">
+                                  Rerun linked to originating failed entry:{" "}
+                                  <span className="font-mono">{run.rerunForEntryId}</span>
+                                </div>
+                              )}
                               {run.rerunEntryId && (
                                 <div className="mt-1 text-xs text-slate-500">
-                                  Linked rerun entry: {run.rerunEntryId}
+                                  Linked pass/fail rerun entry:{" "}
+                                  <span className="font-mono">{run.rerunEntryId}</span>
+                                </div>
+                              )}
+                              {run.followupOverrideReason && (
+                                <div className="mt-2 text-xs text-amber-900 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1.5">
+                                  <span className="font-semibold">Override reason: </span>
+                                  {run.followupOverrideReason}
                                 </div>
                               )}
                             </div>
                           )}
+                          {(run.followupStatus ?? "none") === "open" && (
+                            <div className="mt-3 p-3 bg-amber-50/80 border border-amber-200 rounded-xl">
+                              <h5 className="text-xs font-bold text-amber-900 uppercase tracking-wide mb-2">
+                                Manual closure (override)
+                              </h5>
+                              <p className="text-[11px] text-amber-800 mb-2">
+                                Use only when policy allows closing without a passing linked rerun. Reason is stored in the audit log.
+                              </p>
+                              <textarea
+                                value={overrideReason}
+                                onChange={(e) => setOverrideReason(e.target.value)}
+                                placeholder="Document justification (required)…"
+                                rows={3}
+                                className={inputCls + " text-sm mb-2"}
+                                disabled={overrideBusy}
+                              />
+                              <button
+                                type="button"
+                                disabled={overrideBusy || !overrideReason.trim()}
+                                onClick={async () => {
+                                  if (expandedRow !== String(run.id)) return;
+                                  setOverrideBusy(true);
+                                  setError("");
+                                  try {
+                                    await api.applyQualFollowupOverride(String(run.id), overrideReason.trim());
+                                    setOverrideReason("");
+                                    setAuditByEntry((prev) => {
+                                      const next = { ...prev };
+                                      delete next[String(run.id)];
+                                      return next;
+                                    });
+                                    await fetchData();
+                                  } catch (e) {
+                                    setError((e as Error).message);
+                                  } finally {
+                                    setOverrideBusy(false);
+                                  }
+                                }}
+                                className={btnSecondary + " text-xs border-amber-300 bg-amber-100 hover:bg-amber-200 text-amber-900 disabled:opacity-40"}
+                              >
+                                {overrideBusy ? "Saving…" : "Close follow-up with override"}
+                              </button>
+                            </div>
+                          )}
+                          <div className="mt-4 p-3 bg-white border border-slate-200 rounded-xl">
+                            <h5 className="text-xs font-bold module-accent-text uppercase tracking-wide mb-2 flex items-center gap-2">
+                              <Clock size={14} /> Audit trail (linked entries)
+                            </h5>
+                            {auditLoadingId === String(run.id) && (
+                              <div className="flex items-center gap-2 text-slate-500 text-xs py-2">
+                                <LoadingBars size="sm" /> Loading audit events…
+                              </div>
+                            )}
+                            {auditLoadingId !== String(run.id) && !(auditByEntry[String(run.id)]?.length) && (
+                              <p className="text-xs text-slate-400">No application audit events yet for this incident chain.</p>
+                            )}
+                            {auditLoadingId !== String(run.id) && (auditByEntry[String(run.id)]?.length ?? 0) > 0 && (
+                              <ol className="space-y-2 border-l-2 border-[var(--module-primary)]/30 pl-3 ml-1">
+                                {(auditByEntry[String(run.id)] ?? []).map((ev: QcItem) => (
+                                  <li key={String(ev.id)} className="text-xs text-slate-700">
+                                    <div className="text-slate-500 font-medium">
+                                      {ev.created_at ? new Date(ev.created_at).toLocaleString() : "—"}
+                                      {ev.user_id && (
+                                        <span className="ml-2 text-slate-400 font-mono text-[10px]">
+                                          actor {String(ev.user_id).slice(0, 8)}…
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="font-semibold text-slate-800 mt-0.5">{ev.action}</div>
+                                    {ev.record_id && (
+                                      <div className="text-[10px] text-slate-500 font-mono mt-0.5">record {ev.record_id}</div>
+                                    )}
+                                    {(ev.new_data != null || ev.old_data != null) && (
+                                      <pre className="mt-1 text-[10px] bg-slate-50 rounded p-2 overflow-x-auto max-h-32 text-slate-600">
+                                        {JSON.stringify({ before: ev.old_data ?? null, after: ev.new_data ?? null }, null, 2)}
+                                      </pre>
+                                    )}
+                                  </li>
+                                ))}
+                              </ol>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
