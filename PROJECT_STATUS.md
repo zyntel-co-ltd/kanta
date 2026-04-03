@@ -225,5 +225,8 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 ## App / ops (2026-04-03 — ENG-183 / ENG-184 collapsed sidebar UX)
 
 - **ENG-183 — Rail width & padding:** Collapsed aside **76px** (was 60px); nav + footer use **`px-2`** when collapsed. **`DashboardChrome`** Suspense fallback **`w-[76px]`** matches sidebar width to avoid layout shift.
-- **ENG-184 — Collapsed active state:** **`navLinkTone(collapsed, active)`** — collapsed active = transparent background, brand-colored icon, **3px left accent bar** (accordion parents + flat items); collapsed inactive = `text-slate-500` with hover surface; expanded nav unchanged (solid brand pill + 4px bar). **`min-h-[40px]`** on collapsed top-level links for touch targets.
+- **ENG-184 — Collapsed active state (expanded):** Expanded nav unchanged — solid **`--sidebar-active-bg`** pill + **4px** rounded-r bar on the left.
+- **Collapsed alignment (Slack-style rail):** Nav tooltips use **`flex w-full justify-center`** so **`h-10 w-10`** link targets center on the same axis as the footer avatar and logout (fixes left-heavy icons from `inline-flex` tooltip triggers). Accordion parent rows use the same centered pattern.
+- **Collapsed selection:** **`CollapsedSelectionPill`** — thin **`rounded-full`** vertical bar (**`emerald-500`**, **`h-5 w-[3px]`**, inset **`left-2`**) so the indicator stays clear of icon geometry (Discord/Slack pattern). Active row adds **`bg-emerald-50`** + **`text-emerald-600`** on the rounded control; inactive stays neutral slate with light hover.
+- **Collapsed footer:** Avatar + logout stack in **`flex-col items-center gap-2`**; logout uses the same **`h-10 w-10`** hit area as nav icons for consistent hierarchy.
 - **Linear:** [ENG-183](https://linear.app/zyntel/issue/ENG-183), [ENG-184](https://linear.app/zyntel/issue/ENG-184).

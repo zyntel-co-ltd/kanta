@@ -337,17 +337,27 @@ function homeGroupColor(title: string): string {
 
 /**
  * Expanded: solid brand pill (readable with labels).
- * Collapsed: no fill — brand icon + left accent bar (see sibling span) for a lighter rail.
+ * Collapsed: Slack/Discord-style — soft surface + emerald-500 icon; selection pill is a separate rounded bar (see span).
  */
 function navLinkTone(collapsed: boolean, active: boolean): string {
   if (active) {
     return collapsed
-      ? "bg-transparent text-[var(--sidebar-active-bg)] shadow-none ring-0"
+      ? "bg-emerald-50 text-emerald-600 shadow-none ring-0"
       : "bg-[var(--sidebar-active-bg)] text-white shadow-sm";
   }
   return collapsed
     ? "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
     : "text-slate-700 hover:bg-slate-100";
+}
+
+/** Slack-style inset pill on the rail edge (collapsed only). */
+function CollapsedSelectionPill() {
+  return (
+    <span
+      className="pointer-events-none absolute left-2 top-1/2 z-10 h-5 w-[3px] -translate-y-1/2 rounded-full bg-emerald-500"
+      aria-hidden
+    />
+  );
 }
 
 /** One-time accordion open for direct URL loads (ENG-127). */
@@ -537,26 +547,25 @@ export default function Sidebar() {
                   )}
 
                   {/* Parent row: icon + label + chevron toggle */}
-                  <div className="relative">
-                    {/* Active module indicator (left edge) */}
-                    {isCollapsibleActive && collapsed && (
-                      <span
-                        className="pointer-events-none absolute left-0 top-1/2 z-10 h-8 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--sidebar-active-bg)]"
-                        aria-hidden
-                      />
-                    )}
+                  <div className="relative w-full">
+                    {isCollapsibleActive && collapsed && <CollapsedSelectionPill />}
                     {isCollapsibleActive && !collapsed && (
                       <span
                         className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]"
                       />
                     )}
 
-                    <div className="flex items-center">
+                    <div
+                      className={clsx(
+                        "flex items-center",
+                        collapsed ? "w-full justify-center" : ""
+                      )}
+                    >
                       <Tooltip
                         label={group.title}
                         description="Open this module and view related pages"
                         side="right"
-                        className={clsx(!collapsed && "contents")}
+                        className={clsx(collapsed ? "flex w-full justify-center" : "contents")}
                       >
                         <Link
                           href={parentHref}
@@ -566,8 +575,10 @@ export default function Sidebar() {
                             }
                           }}
                           className={clsx(
-                            "relative z-[1] flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none flex-1",
-                            collapsed ? "justify-center px-0 min-h-[40px]" : "gap-3 px-4",
+                            "relative z-[1] flex items-center rounded-xl transition-all duration-150 focus:outline-none",
+                            collapsed
+                              ? "h-10 w-10 shrink-0 justify-center p-0"
+                              : "min-h-[40px] flex-1 gap-3 px-4 py-2.5",
                             navLinkTone(collapsed, isCollapsibleActive)
                           )}
                         >
@@ -690,22 +701,24 @@ export default function Sidebar() {
                     const itemKey     = href + label;
 
                     return (
-                      <div key={itemKey} className="relative">
-                        {active && collapsed && (
-                          <span
-                            className="pointer-events-none absolute left-0 top-1/2 z-10 h-8 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--sidebar-active-bg)]"
-                            aria-hidden
-                          />
-                        )}
+                      <div key={itemKey} className="relative w-full">
+                        {active && collapsed && <CollapsedSelectionPill />}
                         {active && !collapsed && (
                           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]" />
                         )}
-                        <Tooltip label={label} description={tooltip} side="right" className={clsx(!collapsed && "contents")}>
+                        <Tooltip
+                          label={label}
+                          description={tooltip}
+                          side="right"
+                          className={clsx(collapsed ? "flex w-full justify-center" : "contents")}
+                        >
                           <Link
                             href={href}
                             className={clsx(
-                              "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1] w-full",
-                              collapsed ? "justify-center px-0 min-h-[40px]" : "gap-3 px-4",
+                              "relative z-[1] flex items-center rounded-xl transition-all duration-150 focus:outline-none",
+                              collapsed
+                                ? "h-10 w-10 shrink-0 justify-center p-0"
+                                : "w-full min-h-[40px] gap-3 px-4 py-2.5",
                               navLinkTone(collapsed, active)
                             )}
                           >
@@ -725,7 +738,12 @@ export default function Sidebar() {
         {/* ── Footer ── */}
         <div className={clsx("flex-shrink-0 border-t border-slate-200 pt-3 pb-4", collapsed ? "px-2" : "px-3")}>
           {user && (
-            <div className={clsx("flex items-center gap-3", collapsed ? "justify-center mb-3" : "mb-3")}>
+            <div
+              className={clsx(
+                "flex items-center gap-3",
+                collapsed ? "mb-3 flex-col items-center gap-2" : "mb-3"
+              )}
+            >
               {avatarUrl?.trim() ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -756,24 +774,23 @@ export default function Sidebar() {
                   </Tooltip>
                 </div>
               )}
-            </div>
-          )}
-          {user && collapsed && (
-            <div className="flex justify-center">
-              <Tooltip
-                label="Log out"
-                description="Sign out of Kanta and return to the login screen"
-                side="right"
-              >
-                <button
-                  type="button"
-                  onClick={() => signOut()}
-                  aria-label="Log out"
-                  className="p-2.5 rounded-xl hover:bg-red-500/20 text-red-300 transition-colors"
+              {collapsed && (
+                <Tooltip
+                  label="Log out"
+                  description="Sign out of Kanta and return to the login screen"
+                  side="right"
+                  className="flex w-full justify-center"
                 >
-                  <LogOut size={20} strokeWidth={1.5} />
-                </button>
-              </Tooltip>
+                  <button
+                    type="button"
+                    onClick={() => signOut()}
+                    aria-label="Log out"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
+                  >
+                    <LogOut size={20} strokeWidth={1.5} />
+                  </button>
+                </Tooltip>
+              )}
             </div>
           )}
         </div>
