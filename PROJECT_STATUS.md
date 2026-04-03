@@ -203,7 +203,7 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 
 ## App / ops (2026-04-03 — ENG-98 / ENG-99 / ENG-100 / ENG-92 / ENG-93 platform)
 
-- **Migration:** `20260403220000_eng98_99_100_92_platform.sql` — bridge metadata, retention + `daily_metrics`, dedupe columns + `data_import_jobs`, `api_keys` (hashed keys, tier/rate limits).
+- **Migration:** `20260403220000_eng98_99_100_92_platform.sql` — bridge metadata, retention + `daily_metrics`, dedupe columns + `data_import_jobs`, `api_keys` (hashed keys, tier/rate limits). **Before** `idx_test_requests_import_dedupe`, the migration deletes duplicate `test_requests` rows per `(facility_id, dedupe_lab, test_name, section, dedupe_day)` (keeps latest `updated_at`) so existing prod data does not block the unique index (`23505`).
 - **LIMS sync:** `external_ref` from optional `externalRefColumn`; `test_name_mappings` + `lab_number_retention_days` from `facility_capability_profile`; unmatched names bump `bridge_unmatched_test_names`.
 - **Bridge library:** `lib/bridge/` (types, name matcher, PDF metadata via `pdf-parse`, registry).
 - **Import:** `lib/data-import/parseTestRequestFile.ts`, `POST /api/admin/data-import` (multipart, chunked upsert, job row).

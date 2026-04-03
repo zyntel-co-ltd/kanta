@@ -106,6 +106,20 @@ BEGIN
   END IF;
 END $$;
 
+-- ENG-100: existing prod data may repeat the same lab/test/section/day; keep one row per key
+-- (latest activity first) so the import dedupe index can be created.
+WITH ranked AS (
+  SELECT id,
+    ROW_NUMBER() OVER (
+      PARTITION BY facility_id, dedupe_lab, test_name, section, dedupe_day
+      ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST, id ASC
+    ) AS rn
+  FROM public.test_requests
+)
+DELETE FROM public.test_requests tr
+USING ranked r
+WHERE tr.id = r.id AND r.rn > 1;
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_test_requests_import_dedupe
   ON public.test_requests (facility_id, dedupe_lab, test_name, section, dedupe_day);
 
