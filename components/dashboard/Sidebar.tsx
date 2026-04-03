@@ -75,18 +75,18 @@ function SidebarCollapseGlyph({ sidebarExpanded }: { sidebarExpanded: boolean })
   return (
     <span
       className={clsx(
-        "flex h-5 w-5 items-stretch overflow-hidden rounded-[7px] shadow-sm ring-1 ring-slate-900/12",
+        "flex h-5 w-5 items-stretch overflow-hidden rounded-[7px] shadow-sm ring-1 ring-slate-200",
         !sidebarExpanded && "scale-x-[-1]"
       )}
       aria-hidden
     >
-      <span className="flex min-w-0 flex-1 items-center justify-center bg-[var(--sidebar-active-bg)]">
-        <ArrowLeft className="h-2 w-2 shrink-0 text-white" strokeWidth={2.5} />
+      <span className="flex min-w-0 flex-1 items-center justify-center bg-slate-100">
+        <ArrowLeft className="h-2 w-2 shrink-0 text-slate-600" strokeWidth={2.5} />
       </span>
       <span className="flex w-[5px] shrink-0 flex-col items-center justify-center gap-[1.5px] bg-white py-0.5">
-        <span className="h-[1.5px] w-[1.5px] rounded-full bg-[var(--sidebar-active-bg)]" />
-        <span className="h-[1.5px] w-[1.5px] rounded-full bg-[var(--sidebar-active-bg)]" />
-        <span className="h-[1.5px] w-[1.5px] rounded-full bg-[var(--sidebar-active-bg)]" />
+        <span className="h-[1.5px] w-[1.5px] rounded-full bg-slate-400" />
+        <span className="h-[1.5px] w-[1.5px] rounded-full bg-slate-400" />
+        <span className="h-[1.5px] w-[1.5px] rounded-full bg-slate-400" />
       </span>
     </span>
   );
@@ -501,7 +501,7 @@ export default function Sidebar() {
               "absolute -right-3.5 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center",
               "border-0 bg-transparent shadow-none p-0",
               "transition-transform duration-200 hover:scale-[1.06] active:scale-[0.96]",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-active-bg)] focus-visible:ring-offset-2"
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
             )}
           >
             <SidebarCollapseGlyph sidebarExpanded={!collapsed} />
