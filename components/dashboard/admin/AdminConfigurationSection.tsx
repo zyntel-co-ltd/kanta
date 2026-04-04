@@ -22,7 +22,7 @@ type LabShift = {
   is_active: boolean;
 };
 
-type TatRow = { section_id: string; target_minutes: number };
+type MonthlyTarget = { month: number; year: number; target: number };
 
 export default function AdminConfigurationSection({
   facilityId,
@@ -31,38 +31,29 @@ export default function AdminConfigurationSection({
   facilityId: string;
   onToast: (message: string, type: "success" | "error" | "info") => void;
 }) {
-  const [sub, setSub] = useState<"sections" | "shifts" | "tat">("sections");
+  const [sub, setSub] = useState<"sections" | "shifts" | "targets">("sections");
   const [sections, setSections] = useState<LabSection[]>([]);
   const [shifts, setShifts] = useState<LabShift[]>([]);
-  const [tatDraft, setTatDraft] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
-  const [savingTat, setSavingTat] = useState(false);
   const [newSection, setNewSection] = useState({ name: "", abbreviation: "", code: "" });
   const [newShift, setNewShift] = useState({ name: "", start_time: "07:00", end_time: "15:00" });
+
+  const now = new Date();
+  const [revenueTarget, setRevenueTarget] = useState<MonthlyTarget>({ month: now.getMonth() + 1, year: now.getFullYear(), target: 0 });
+  const [testsTarget, setTestsTarget] = useState<MonthlyTarget>({ month: now.getMonth() + 1, year: now.getFullYear(), target: 0 });
+  const [numbersTarget, setNumbersTarget] = useState<MonthlyTarget>({ month: now.getMonth() + 1, year: now.getFullYear(), target: 0 });
+  const [savingTarget, setSavingTarget] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!facilityId) return;
     setLoading(true);
     try {
-      const [sRes, shRes, tRes] = await Promise.all([
+      const [sRes, shRes] = await Promise.all([
         fetch(`/api/admin/config/sections?facility_id=${facilityId}`),
         fetch(`/api/admin/config/shifts?facility_id=${facilityId}`),
-        fetch(`/api/admin/config/tat-targets?facility_id=${facilityId}`),
       ]);
       if (sRes.ok) setSections((await sRes.json()) as LabSection[]);
       if (shRes.ok) setShifts((await shRes.json()) as LabShift[]);
-      if (tRes.ok) {
-        const tJson = (await tRes.json()) as {
-          sections: LabSection[];
-          targets: { section_id: string | null; target_minutes: number }[];
-        };
-        const map: Record<string, number> = {};
-        for (const sec of tJson.sections ?? []) {
-          const row = tJson.targets?.find((x) => x.section_id === sec.id);
-          map[sec.id] = row?.target_minutes ?? 60;
-        }
-        setTatDraft(map);
-      }
     } catch {
       onToast("Failed to load configuration", "error");
     } finally {
@@ -70,9 +61,47 @@ export default function AdminConfigurationSection({
     }
   }, [facilityId, onToast]);
 
+  const fetchTargets = useCallback(async (rev: MonthlyTarget, tests: MonthlyTarget, numbers: MonthlyTarget) => {
+    if (!facilityId) return;
+    try {
+      const [rRes, tRes, nRes] = await Promise.all([
+        fetch(`/api/admin/targets/revenue?facility_id=${facilityId}&month=${rev.month}&year=${rev.year}`),
+        fetch(`/api/admin/targets/tests?facility_id=${facilityId}&month=${tests.month}&year=${tests.year}`),
+        fetch(`/api/admin/targets/numbers?facility_id=${facilityId}&month=${numbers.month}&year=${numbers.year}`),
+      ]);
+      if (rRes.ok) { const j = await rRes.json(); if (j?.target != null) setRevenueTarget((p) => ({ ...p, target: j.target })); }
+      if (tRes.ok) { const j = await tRes.json(); if (j?.target != null) setTestsTarget((p) => ({ ...p, target: j.target })); }
+      if (nRes.ok) { const j = await nRes.json(); if (j?.target != null) setNumbersTarget((p) => ({ ...p, target: j.target })); }
+    } catch { /* ignore */ }
+  }, [facilityId]);
+
+  const saveMonthlyTarget = useCallback(async (type: "revenue" | "tests" | "numbers", payload: MonthlyTarget) => {
+    setSavingTarget(type);
+    try {
+      const res = await fetch(`/api/admin/targets/${type}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facility_id: facilityId, ...payload }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      onToast(`${type.charAt(0).toUpperCase() + type.slice(1)} target saved`, "success");
+    } catch {
+      onToast("Failed to save target", "error");
+    } finally {
+      setSavingTarget(null);
+    }
+  }, [facilityId, onToast]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (sub === "targets") {
+      void fetchTargets(revenueTarget, testsTarget, numbersTarget);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sub, facilityId]);
 
   const patchSection = async (id: string, body: Partial<LabSection>) => {
     try {
@@ -170,29 +199,6 @@ export default function AdminConfigurationSection({
     }
   };
 
-  const saveTatTargets = async () => {
-    const activeSections = sections.filter((s) => s.is_active);
-    const targets: TatRow[] = activeSections.map((s) => ({
-      section_id: s.id,
-      target_minutes: Math.max(1, Math.floor(Number(tatDraft[s.id]) || 60)),
-    }));
-    setSavingTat(true);
-    try {
-      const res = await queuedFetch("/api/admin/config/tat-targets", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ facility_id: facilityId, targets }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Failed");
-      onToast("TAT targets saved", "success");
-      await load();
-    } catch (e) {
-      onToast((e as Error).message, "error");
-    } finally {
-      setSavingTat(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -202,14 +208,12 @@ export default function AdminConfigurationSection({
     );
   }
 
-  const activeSections = sections.filter((s) => s.is_active);
-
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-950">
         <p className="font-semibold text-emerald-900 mb-1">Facility configuration</p>
         <p className="text-emerald-900/90">
-          Sections, shifts, and TAT targets apply to Lab Metrics (TAT charts and breach logic).{" "}
+          Sections and shifts apply to Lab Metrics tracking.{" "}
           <Link href="/dashboard/admin/hospital" className="underline font-medium text-emerald-800">
             Hospital settings
           </Link>{" "}
@@ -222,7 +226,7 @@ export default function AdminConfigurationSection({
           [
             ["sections", "Lab sections"],
             ["shifts", "Shifts"],
-            ["tat", "TAT targets"],
+            ["targets", "Targets"],
           ] as const
         ).map(([k, label]) => (
           <button
@@ -446,57 +450,98 @@ export default function AdminConfigurationSection({
         </div>
       )}
 
-      {sub === "tat" && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-2">
-            <span className="font-semibold text-slate-800">TAT targets (minutes)</span>
-            <button
-              type="button"
-              disabled={savingTat}
-              onClick={() => void saveTatTargets()}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 text-white text-sm font-medium px-4 py-2 hover:bg-emerald-700 disabled:opacity-50"
-            >
-              <Save size={16} />
-              {savingTat ? "Saving…" : "Save all targets"}
-            </button>
+      {sub === "targets" && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-8">
+          <h3 className="text-base font-semibold text-slate-800">Monthly Targets</h3>
+
+          {/* Revenue */}
+          <div>
+            <h4 className="text-sm font-medium text-slate-700 mb-3">Monthly Revenue Target (UGX)</h4>
+            <div className="flex flex-wrap gap-4 items-end">
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Month</label>
+                <select value={revenueTarget.month} onChange={(e) => setRevenueTarget((p) => ({ ...p, month: parseInt(e.target.value) }))} className="rounded border border-slate-200 px-3 py-2 text-sm">
+                  {Array.from({ length: 12 }, (_, i) => (<option key={i + 1} value={i + 1}>{new Date(2000, i).toLocaleString("default", { month: "long" })}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Year</label>
+                <input type="number" value={revenueTarget.year} onChange={(e) => setRevenueTarget((p) => ({ ...p, year: parseInt(e.target.value) }))} className="rounded border border-slate-200 px-3 py-2 text-sm w-24" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Target (UGX)</label>
+                <input type="number" value={revenueTarget.target} onChange={(e) => setRevenueTarget((p) => ({ ...p, target: parseInt(e.target.value) || 0 }))} className="rounded border border-slate-200 px-3 py-2 text-sm w-44" />
+              </div>
+              <button
+                type="button"
+                disabled={savingTarget === "revenue"}
+                onClick={() => void saveMonthlyTarget("revenue", revenueTarget)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+              >
+                <Save size={14} />
+                {savingTarget === "revenue" ? "Saving…" : "Save"}
+              </button>
+            </div>
           </div>
-          <div className="p-4 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50">
-                  <th className="text-left px-3 py-2">Section</th>
-                  <th className="text-left px-3 py-2">Target (minutes)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activeSections.map((s) => (
-                  <tr key={s.id} className="border-b border-slate-50">
-                    <td className="px-3 py-2">
-                      {s.name}{" "}
-                      <span className="text-slate-400 text-xs">({s.code})</span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        type="number"
-                        min={1}
-                        step={1}
-                        value={tatDraft[s.id] ?? 60}
-                        onChange={(e) =>
-                          setTatDraft((p) => ({
-                            ...p,
-                            [s.id]: Math.max(1, parseInt(e.target.value, 10) || 1),
-                          }))
-                        }
-                        className="w-28 rounded border border-slate-200 px-2 py-1"
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {activeSections.length === 0 && (
-              <p className="text-slate-500 text-sm py-4">Activate at least one lab section first.</p>
-            )}
+
+          {/* Tests */}
+          <div>
+            <h4 className="text-sm font-medium text-slate-700 mb-3">Monthly Tests Target</h4>
+            <div className="flex flex-wrap gap-4 items-end">
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Month</label>
+                <select value={testsTarget.month} onChange={(e) => setTestsTarget((p) => ({ ...p, month: parseInt(e.target.value) }))} className="rounded border border-slate-200 px-3 py-2 text-sm">
+                  {Array.from({ length: 12 }, (_, i) => (<option key={i + 1} value={i + 1}>{new Date(2000, i).toLocaleString("default", { month: "long" })}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Year</label>
+                <input type="number" value={testsTarget.year} onChange={(e) => setTestsTarget((p) => ({ ...p, year: parseInt(e.target.value) }))} className="rounded border border-slate-200 px-3 py-2 text-sm w-24" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Target (Tests)</label>
+                <input type="number" value={testsTarget.target} onChange={(e) => setTestsTarget((p) => ({ ...p, target: parseInt(e.target.value) || 0 }))} className="rounded border border-slate-200 px-3 py-2 text-sm w-36" />
+              </div>
+              <button
+                type="button"
+                disabled={savingTarget === "tests"}
+                onClick={() => void saveMonthlyTarget("tests", testsTarget)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+              >
+                <Save size={14} />
+                {savingTarget === "tests" ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+
+          {/* Numbers / Requests */}
+          <div>
+            <h4 className="text-sm font-medium text-slate-700 mb-3">Monthly Numbers Target (Requests)</h4>
+            <div className="flex flex-wrap gap-4 items-end">
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Month</label>
+                <select value={numbersTarget.month} onChange={(e) => setNumbersTarget((p) => ({ ...p, month: parseInt(e.target.value) }))} className="rounded border border-slate-200 px-3 py-2 text-sm">
+                  {Array.from({ length: 12 }, (_, i) => (<option key={i + 1} value={i + 1}>{new Date(2000, i).toLocaleString("default", { month: "long" })}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Year</label>
+                <input type="number" value={numbersTarget.year} onChange={(e) => setNumbersTarget((p) => ({ ...p, year: parseInt(e.target.value) }))} className="rounded border border-slate-200 px-3 py-2 text-sm w-24" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Target (Requests)</label>
+                <input type="number" value={numbersTarget.target} onChange={(e) => setNumbersTarget((p) => ({ ...p, target: parseInt(e.target.value) || 0 }))} className="rounded border border-slate-200 px-3 py-2 text-sm w-36" />
+              </div>
+              <button
+                type="button"
+                disabled={savingTarget === "numbers"}
+                onClick={() => void saveMonthlyTarget("numbers", numbersTarget)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+              >
+                <Save size={14} />
+                {savingTarget === "numbers" ? "Saving…" : "Save"}
+              </button>
+            </div>
           </div>
         </div>
       )}

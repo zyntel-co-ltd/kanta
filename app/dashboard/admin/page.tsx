@@ -7,8 +7,6 @@ import {
   AlertTriangle,
   Ban,
   ClipboardList,
-  Sliders,
-  Save,
   Cog,
 } from "lucide-react";
 import Link from "next/link";
@@ -31,7 +29,7 @@ const LAB_SECTIONS = [
 
 const TAT_OPTIONS = [30, 45, 60, 90, 240, 1440, 4320, 7200, 17280];
 
-type Tab = "users" | "configuration" | "unmatched" | "cancellations" | "audit" | "settings";
+type Tab = "users" | "configuration" | "unmatched" | "cancellations" | "audit";
 
 type UnmatchedTest = {
   id: string;
@@ -78,22 +76,6 @@ export default function AdminPage() {
   const [, setAuditTotals] = useState({ login: 0, op: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
-
-  const [monthlyTarget, setMonthlyTarget] = useState({
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
-    target: 1500000000,
-  });
-  const [testsTarget, setTestsTarget] = useState({
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
-    target: 10000,
-  });
-  const [numbersTarget, setNumbersTarget] = useState({
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
-    target: 15000,
-  });
 
   const [unmatchedEdits, setUnmatchedEdits] = useState<
     Record<string, { labSection: string; tat: number; price: number }>
@@ -151,8 +133,7 @@ export default function AdminPage() {
     }
     t.push(
       { id: "cancellations", label: "Cancellations", icon: <Ban size={16} /> },
-      { id: "audit", label: "Audit Trail", icon: <ClipboardList size={16} /> },
-      { id: "settings", label: "Settings", icon: <Sliders size={16} /> }
+      { id: "audit", label: "Audit Trail", icon: <ClipboardList size={16} /> }
     );
     return t;
   }, [showUnmatchedTab]);
@@ -197,40 +178,6 @@ export default function AdminPage() {
     }
     return facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
   }, [facilityAuth, facilityOverride]);
-
-  const fetchTargets = useCallback(async () => {
-    try {
-      const [rev, tests, numbers] = await Promise.all([
-        fetch(
-          `/api/admin/targets/revenue?facility_id=${facilityId}&month=${monthlyTarget.month}&year=${monthlyTarget.year}`
-        ),
-        fetch(
-          `/api/admin/targets/tests?facility_id=${facilityId}&month=${testsTarget.month}&year=${testsTarget.year}`
-        ),
-        fetch(
-          `/api/admin/targets/numbers?facility_id=${facilityId}&month=${numbersTarget.month}&year=${numbersTarget.year}`
-        ),
-      ]);
-      const [revJ, testsJ, numbersJ] = await Promise.all([
-        rev.json(),
-        tests.json(),
-        numbers.json(),
-      ]);
-      if (revJ?.target != null) setMonthlyTarget((p) => ({ ...p, target: revJ.target }));
-      if (testsJ?.target != null) setTestsTarget((p) => ({ ...p, target: testsJ.target }));
-      if (numbersJ?.target != null) setNumbersTarget((p) => ({ ...p, target: numbersJ.target }));
-    } catch (e) {
-      console.error("Error fetching targets:", e);
-    }
-  }, [
-    facilityId,
-    monthlyTarget.month,
-    monthlyTarget.year,
-    testsTarget.month,
-    testsTarget.year,
-    numbersTarget.month,
-    numbersTarget.year,
-  ]);
 
   const fetchAudit = useCallback(async () => {
     const params = new URLSearchParams();
@@ -327,9 +274,6 @@ export default function AdminPage() {
     fetchData();
   }, [fetchData]);
 
-  useEffect(() => {
-    if (activeTab === "settings") fetchTargets();
-  }, [activeTab, fetchTargets]);
 
   if (facilityAuthLoading || !facilityAuth?.canAccessAdminPanel) {
     return (
@@ -420,23 +364,6 @@ export default function AdminPage() {
     }
   };
 
-  const saveTarget = async (
-    type: "revenue" | "tests" | "numbers",
-    payload: { month: number; year: number; target: number }
-  ) => {
-    try {
-      const res = await fetch(`/api/admin/targets/${type}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ facility_id: facilityId, ...payload }),
-      });
-      if (!res.ok) throw new Error("Failed");
-      setToast({ message: `${type} target saved`, type: "success" });
-    } catch {
-      setToast({ message: "Failed to save", type: "error" });
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -513,7 +440,7 @@ export default function AdminPage() {
       )}
 
       {/* Content */}
-      {isLoading && activeTab !== "settings" && activeTab !== "users" && activeTab !== "configuration" ? (
+      {isLoading && activeTab !== "users" && activeTab !== "configuration" ? (
         <div className="bg-white rounded-2xl border border-slate-100 p-12 flex items-center justify-center min-h-[16rem]">
           <LoadingBars />
         </div>
@@ -1058,191 +985,6 @@ export default function AdminPage() {
             </div>
           )}
 
-          {activeTab === "settings" && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-8">
-              <h3 className="text-lg font-semibold text-slate-800">Targets</h3>
-
-              <div>
-                <h4 className="text-sm font-medium text-slate-700 mb-3">Monthly Revenue Target (UGX)</h4>
-                <div className="flex flex-wrap gap-4 items-end">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Month</label>
-                    <select
-                      value={monthlyTarget.month}
-                      onChange={(e) =>
-                        setMonthlyTarget((p) => ({
-                          ...p,
-                          month: parseInt(e.target.value),
-                        }))
-                      }
-                      className="rounded border border-slate-200 px-3 py-2 text-sm"
-                    >
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <option key={i + 1} value={i + 1}>
-                          {new Date(2000, i).toLocaleString("default", { month: "long" })}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Year</label>
-                    <input
-                      type="number"
-                      value={monthlyTarget.year}
-                      onChange={(e) =>
-                        setMonthlyTarget((p) => ({
-                          ...p,
-                          year: parseInt(e.target.value),
-                        }))
-                      }
-                      className="rounded border border-slate-200 px-3 py-2 text-sm w-24"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Target (UGX)</label>
-                    <input
-                      type="number"
-                      value={monthlyTarget.target}
-                      onChange={(e) =>
-                        setMonthlyTarget((p) => ({
-                          ...p,
-                          target: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="rounded border border-slate-200 px-3 py-2 text-sm w-40"
-                    />
-                  </div>
-                  <button
-                    onClick={() => saveTarget("revenue", monthlyTarget)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
-                  >
-                    <Save size={14} />
-                    Save
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-slate-700 mb-3">Monthly Tests Target</h4>
-                <div className="flex flex-wrap gap-4 items-end">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Month</label>
-                    <select
-                      value={testsTarget.month}
-                      onChange={(e) =>
-                        setTestsTarget((p) => ({
-                          ...p,
-                          month: parseInt(e.target.value),
-                        }))
-                      }
-                      className="rounded border border-slate-200 px-3 py-2 text-sm"
-                    >
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <option key={i + 1} value={i + 1}>
-                          {new Date(2000, i).toLocaleString("default", { month: "long" })}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Year</label>
-                    <input
-                      type="number"
-                      value={testsTarget.year}
-                      onChange={(e) =>
-                        setTestsTarget((p) => ({
-                          ...p,
-                          year: parseInt(e.target.value),
-                        }))
-                      }
-                      className="rounded border border-slate-200 px-3 py-2 text-sm w-24"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Target (Tests)</label>
-                    <input
-                      type="number"
-                      value={testsTarget.target}
-                      onChange={(e) =>
-                        setTestsTarget((p) => ({
-                          ...p,
-                          target: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="rounded border border-slate-200 px-3 py-2 text-sm w-32"
-                    />
-                  </div>
-                  <button
-                    onClick={() => saveTarget("tests", testsTarget)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
-                  >
-                    <Save size={14} />
-                    Save
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-slate-700 mb-3">Monthly Numbers Target (Requests)</h4>
-                <div className="flex flex-wrap gap-4 items-end">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Month</label>
-                    <select
-                      value={numbersTarget.month}
-                      onChange={(e) =>
-                        setNumbersTarget((p) => ({
-                          ...p,
-                          month: parseInt(e.target.value),
-                        }))
-                      }
-                      className="rounded border border-slate-200 px-3 py-2 text-sm"
-                    >
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <option key={i + 1} value={i + 1}>
-                          {new Date(2000, i).toLocaleString("default", { month: "long" })}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Year</label>
-                    <input
-                      type="number"
-                      value={numbersTarget.year}
-                      onChange={(e) =>
-                        setNumbersTarget((p) => ({
-                          ...p,
-                          year: parseInt(e.target.value),
-                        }))
-                      }
-                      className="rounded border border-slate-200 px-3 py-2 text-sm w-24"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Target (Requests)</label>
-                    <input
-                      type="number"
-                      value={numbersTarget.target}
-                      onChange={(e) =>
-                        setNumbersTarget((p) => ({
-                          ...p,
-                          target: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="rounded border border-slate-200 px-3 py-2 text-sm w-32"
-                    />
-                  </div>
-                  <button
-                    onClick={() => saveTarget("numbers", numbersTarget)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
-                  >
-                    <Save size={14} />
-                    Save
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </>
       )}
 

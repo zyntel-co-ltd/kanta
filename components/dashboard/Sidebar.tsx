@@ -154,8 +154,6 @@ const navGroupsBase: NavGroup[] = [
         "/dashboard/equipment",
         "/dashboard/maintenance",
         "/dashboard/refrigerator",
-        "/dashboard/analytics",
-        "/dashboard/reports",
       ],
     },
     items: [
@@ -164,7 +162,6 @@ const navGroupsBase: NavGroup[] = [
       { label: "Maintenance", tooltip: "Log and review scheduled and unscheduled maintenance", icon: CalendarClock, href: "/dashboard/maintenance" },
       { label: "Refrigerator", tooltip: "Monitor cold-chain temperatures and get alerts", icon: Thermometer, href: "/dashboard/refrigerator" },
       { label: "Scan", tooltip: "Scan a QR code to check in or update a piece of equipment", icon: QrCode, href: "/dashboard/scan" },
-      { label: "Analytics", tooltip: "Equipment utilisation and performance analytics", icon: BarChart3, href: "/dashboard/analytics" },
     ],
   },
   { title: "Intelligence", items: [{ label: "AI Insights", tooltip: "Get AI-generated summaries and anomaly alerts for your lab", icon: Brain, href: "/dashboard/intelligence" }] },
@@ -175,7 +172,6 @@ const navGroupsBase: NavGroup[] = [
       { label: "Admin", tooltip: "Manage users, roles, cancellations, and audit logs", icon: Shield, href: "/dashboard/admin" },
       { label: "Hospital Settings", tooltip: "Configure your facility preferences and integrations", icon: Building2, href: "/dashboard/admin/hospital" },
       { label: "Console", tooltip: "Manage users, roles, cancellations, and audit logs", icon: Terminal, href: "/dashboard/console" },
-      { label: "Settings", tooltip: "Configure your facility preferences and integrations", icon: Settings, href: "/dashboard/settings" },
     ],
   },
 ];
@@ -395,8 +391,6 @@ function accordionGroupForPath(pathname: string): string | null {
     "/dashboard/scan",
     "/dashboard/maintenance",
     "/dashboard/refrigerator",
-    "/dashboard/analytics",
-    "/dashboard/reports",
   ];
   if (
     assetPaths.some((p) =>
@@ -467,11 +461,11 @@ export default function Sidebar() {
           {hospitalLogoUrl ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={hospitalLogoUrl} alt={hospitalName} className="flex-shrink-0 w-10 h-10 rounded-xl object-cover bg-white shadow-sm" />
+              <img src={hospitalLogoUrl} alt="Kanta" className="flex-shrink-0 w-10 h-10 rounded-xl object-cover bg-white shadow-sm" />
               {!collapsed && (
                 <div className="min-w-0">
-                  <p className="font-bold text-sm leading-tight tracking-tight text-slate-900 truncate">{hospitalName}</p>
-                  <p className="text-[10px] mt-1 font-normal text-slate-500">Operational Intelligence</p>
+                  <p className="font-bold text-sm leading-tight tracking-tight text-slate-900 truncate">Kanta</p>
+                  <p className="text-[10px] mt-1 font-normal text-slate-500">Operational Intelligence Platform</p>
                 </div>
               )}
             </>

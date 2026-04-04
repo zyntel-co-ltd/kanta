@@ -20,6 +20,52 @@ type LridsRow = {
   updated_at: string | null;
 };
 
+/** Patient-level grouping — one row per lab number. */
+type PatientRow = {
+  lab_number: string;
+  timestamp: string | null;
+  status_text: string;
+  status_css_class: LridsProgressCssClass;
+};
+
+/** Priority ordering for aggregate status (lower = higher priority / more urgent). */
+const STATUS_PRIORITY: Record<string, number> = {
+  "progress-delayed": 0,
+  "progress-overtime": 1,
+  "progress-pending": 2,
+  "progress-in-progress": 3,
+  "progress-completed": 4,
+};
+
+function groupByLabNumber(rows: LridsRow[]): PatientRow[] {
+  const map = new Map<string, PatientRow>();
+  for (const r of rows) {
+    const key = r.lab_number ?? "—";
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, {
+        lab_number: key,
+        timestamp: r.timestamp,
+        status_text: r.status_text,
+        status_css_class: r.status_css_class,
+      });
+    } else {
+      // Use the earliest time-in across tests for this patient.
+      if (r.timestamp && (!existing.timestamp || r.timestamp < existing.timestamp)) {
+        existing.timestamp = r.timestamp;
+      }
+      // Use the most urgent status (lowest priority score).
+      const existingPri = STATUS_PRIORITY[existing.status_css_class] ?? 99;
+      const newPri = STATUS_PRIORITY[r.status_css_class] ?? 99;
+      if (newPri < existingPri) {
+        existing.status_text = r.status_text;
+        existing.status_css_class = r.status_css_class;
+      }
+    }
+  }
+  return Array.from(map.values());
+}
+
 type Props = {
   facilityId: string;
   initialToken: string;
@@ -81,7 +127,7 @@ function formatTimestamp(iso: string | null): string {
 }
 
 export default function LridsBoardClient({ facilityId, initialToken }: Props) {
-  const [rows, setRows] = useState<LridsRow[]>([]);
+  const [rawRows, setRawRows] = useState<LridsRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [hospitalName, setHospitalName] = useState(() => hospitalDisplayName(null));
   const [hospitalLogoUrl, setHospitalLogoUrl] = useState(FALLBACK_LOGO);
@@ -106,10 +152,10 @@ export default function LridsBoardClient({ facilityId, initialToken }: Props) {
       setHospitalLogoUrl(
         (typeof j.hospital_logo_url === "string" && j.hospital_logo_url) || FALLBACK_LOGO
       );
-      setRows(Array.isArray(j.rows) ? j.rows : []);
+      setRawRows(Array.isArray(j.rows) ? j.rows : []);
     } catch {
       setError("Network error");
-      setRows([]);
+      setRawRows([]);
     } finally {
       setLoading(false);
     }
@@ -191,86 +237,71 @@ export default function LridsBoardClient({ facilityId, initialToken }: Props) {
             <p className="text-xl text-red-300 font-semibold">{error}</p>
             <p className="text-sm text-white/50 mt-2">Ask your administrator for a new display link.</p>
           </div>
-        ) : rows.length === 0 ? (
+        ) : rawRows.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[14rem] gap-2 text-center">
             <p className="text-2xl text-white/50 font-medium">No active requests in this window</p>
             <p className="text-lg text-white/30">Results will appear here automatically</p>
           </div>
-        ) : (
-          <div
-            className="rounded-2xl sm:rounded-3xl overflow-hidden overflow-x-auto"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
-          >
-            <table className="w-full min-w-[960px] text-left border-collapse">
-              <thead>
-                <tr style={{ background: "rgba(255,255,255,0.07)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                  {["Lab Number", "Test Name", "Status", "Section", "Time In", "Updated"].map((h) => (
-                    <th
-                      key={h}
-                      className="px-4 sm:px-6 py-4 text-white/80 font-bold uppercase tracking-widest whitespace-nowrap"
-                      style={{ fontSize: "clamp(0.65rem, 1.1vw, 0.85rem)" }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => {
-                  const st = LRIDS_PROGRESS_STYLES[row.status_css_class] ?? LRIDS_PROGRESS_STYLES["progress-pending"];
-                  return (
-                    <tr
-                      key={row.id}
-                      style={{
-                        borderBottom: "1px solid rgba(255,255,255,0.06)",
-                        background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent",
-                      }}
-                    >
-                      <td
-                        className="px-4 sm:px-6 py-4 font-mono font-bold text-white align-middle"
-                        style={{ fontSize: "clamp(1.1rem, 2vw, 1.75rem)" }}
+        ) : (() => {
+          const patients = groupByLabNumber(rawRows);
+          return (
+            <div
+              className="rounded-2xl sm:rounded-3xl overflow-hidden overflow-x-auto"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
+            >
+              <table className="w-full min-w-[500px] text-left border-collapse">
+                <thead>
+                  <tr style={{ background: "rgba(255,255,255,0.07)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                    {["Lab Number", "Time In", "Status"].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 sm:px-6 py-4 text-white/80 font-bold uppercase tracking-widest whitespace-nowrap"
+                        style={{ fontSize: "clamp(0.65rem, 1.1vw, 0.85rem)" }}
                       >
-                        {row.lab_number ?? "—"}
-                      </td>
-                      <td
-                        className="px-4 sm:px-6 py-4 text-white/90 align-middle font-medium"
-                        style={{ fontSize: "clamp(0.95rem, 1.4vw, 1.25rem)" }}
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {patients.map((row, i) => {
+                    const st = LRIDS_PROGRESS_STYLES[row.status_css_class] ?? LRIDS_PROGRESS_STYLES["progress-pending"];
+                    return (
+                      <tr
+                        key={row.lab_number}
+                        style={{
+                          borderBottom: "1px solid rgba(255,255,255,0.06)",
+                          background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent",
+                        }}
                       >
-                        {row.test_name}
-                      </td>
-                      <td className="px-4 sm:px-6 py-4 align-middle">
-                        <span
-                          className="inline-block"
-                          style={{ color: st.color, fontWeight: st.fontWeight, fontSize: "clamp(0.95rem, 1.4vw, 1.25rem)" }}
+                        <td
+                          className="px-4 sm:px-6 py-4 font-mono font-bold text-white align-middle"
+                          style={{ fontSize: "clamp(1.1rem, 2vw, 1.75rem)" }}
                         >
-                          {row.status_text}
-                        </span>
-                      </td>
-                      <td
-                        className="px-4 sm:px-6 py-4 text-white/85 align-middle"
-                        style={{ fontSize: "clamp(0.9rem, 1.3vw, 1.15rem)" }}
-                      >
-                        {row.section_label}
-                      </td>
-                      <td
-                        className="px-4 sm:px-6 py-4 text-white/60 align-middle tabular-nums"
-                        style={{ fontSize: "clamp(0.8rem, 1.1vw, 1rem)" }}
-                      >
-                        {formatTimestamp(row.timestamp)}
-                      </td>
-                      <td
-                        className="px-4 sm:px-6 py-4 text-white/50 align-middle tabular-nums"
-                        style={{ fontSize: "clamp(0.8rem, 1.1vw, 1rem)" }}
-                      >
-                        {formatTimeAgo(row.updated_at)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                          {row.lab_number}
+                        </td>
+                        <td
+                          className="px-4 sm:px-6 py-4 text-white/60 align-middle tabular-nums"
+                          style={{ fontSize: "clamp(0.9rem, 1.5vw, 1.15rem)" }}
+                        >
+                          {formatTimestamp(row.timestamp)}
+                        </td>
+                        <td className="px-4 sm:px-6 py-4 align-middle">
+                          <span
+                            className="inline-block"
+                            style={{ color: st.color, fontWeight: st.fontWeight, fontSize: "clamp(0.95rem, 1.4vw, 1.25rem)" }}
+                          >
+                            {row.status_text}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
       </main>
 
       <footer

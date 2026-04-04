@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, XCircle } from "lucide-react";
 import { LoadingBars } from "@/components/ui/PageLoader";
 import AvailableWhenOnline from "@/components/ui/AvailableWhenOnline";
 import { useSyncQueue } from "@/lib/SyncQueueContext";
@@ -17,12 +18,15 @@ type Row = {
   section_time_out: string | null;
   tat_minutes: number | null;
   status: string;
+  is_urgent?: boolean | null;
 };
 
 type Props = {
   facilityId: string;
   sectionFilterOptions: FilterOption[];
   resolveSectionLabel: (code: string) => string;
+  /** When true, shows Stamp In / Stamp Out buttons (for facilities without LIMS timestamps) */
+  showStampButtons?: boolean;
 };
 
 function fmt(iso: string | null) {
@@ -43,6 +47,7 @@ export default function TatReceptionTab({
   facilityId,
   sectionFilterOptions,
   resolveSectionLabel,
+  showStampButtons = false,
 }: Props) {
   const { isOnline } = useSyncQueue();
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -52,6 +57,7 @@ export default function TatReceptionTab({
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!isOnline) {
@@ -108,6 +114,56 @@ export default function TatReceptionTab({
         setError(e instanceof Error ? e.message : "Failed to stamp");
       } finally {
         setSavingId(null);
+      }
+    },
+    [facilityId]
+  );
+
+  const toggleUrgent = useCallback(
+    async (row: Row) => {
+      setSavingId(row.id);
+      setError(null);
+      try {
+        const res = await fetch("/api/tat/reception", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            request_id: row.id,
+            facility_id: facilityId,
+            field: "is_urgent",
+            value: !row.is_urgent,
+          }),
+        });
+        const j = (await res.json().catch(() => ({}))) as { row?: Row; error?: string };
+        if (!res.ok) throw new Error(j.error ?? "Failed");
+        if (j.row) setRows((prev) => prev.map((r) => (r.id === row.id ? { ...j.row!, patient_token: r.patient_token } : r)));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to toggle urgency");
+      } finally {
+        setSavingId(null);
+      }
+    },
+    [facilityId]
+  );
+
+  const cancelRow = useCallback(
+    async (rowId: string) => {
+      if (!confirm("Cancel this test request?")) return;
+      setCancellingId(rowId);
+      setError(null);
+      try {
+        const res = await fetch("/api/tat/cancel-test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ request_id: rowId, facility_id: facilityId }),
+        });
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) throw new Error(j.error ?? "Failed to cancel");
+        setRows((prev) => prev.filter((r) => r.id !== rowId));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to cancel");
+      } finally {
+        setCancellingId(null);
       }
     },
     [facilityId]
@@ -181,19 +237,21 @@ export default function TatReceptionTab({
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="text-left px-4 py-3 font-semibold text-slate-600">Lab Number</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600">Patient</th>
                   <th className="text-left px-4 py-3 font-semibold text-slate-600">Test</th>
                   <th className="text-left px-4 py-3 font-semibold text-slate-600">Section</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600">Time In</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600">Time Out</th>
-                  <th className="text-left px-4 py-3 font-semibold text-slate-600">TAT (min)</th>
+                  {showStampButtons && <>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600">Time In</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600">Time Out</th>
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600">TAT (min)</th>
+                  </>}
                   <th className="text-left px-4 py-3 font-semibold text-slate-600">Status</th>
+                  <th className="text-left px-4 py-3 font-semibold text-slate-600">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {sortedRows.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-slate-500">
+                    <td colSpan={showStampButtons ? 8 : 5} className="px-4 py-10 text-center text-slate-500">
                       No requests found for this date/filter.
                     </td>
                   </tr>
@@ -201,69 +259,79 @@ export default function TatReceptionTab({
                   sortedRows.map((r) => {
                     const inEditable = canEdit(r.section_time_in);
                     const outEditable = canEdit(r.section_time_out);
+                    const isBusy = savingId === r.id || cancellingId === r.id;
                     return (
-                      <tr key={r.id} className="hover:bg-slate-50/60">
+                      <tr key={r.id} className={`hover:bg-slate-50/60 ${r.is_urgent ? "bg-amber-50/40" : ""}`}>
                         <td className="px-4 py-3 font-mono text-xs text-slate-800">{r.lab_number ?? "—"}</td>
-                        <td className="px-4 py-3 font-mono text-xs text-slate-700">{r.patient_token}</td>
                         <td className="px-4 py-3 text-slate-800">{r.test_name}</td>
                         <td className="px-4 py-3 text-slate-700">{resolveSectionLabel(r.section)}</td>
-                        <td className="px-4 py-3 text-slate-700">
-                          {r.section_time_in ? (
-                            <div className="space-y-1">
-                              <div>{fmt(r.section_time_in)}</div>
-                              {inEditable && (
-                                <button
-                                  type="button"
-                                  onClick={() => void stamp(r.id, "section_time_in")}
-                                  disabled={savingId === r.id}
-                                  className="text-xs font-medium text-emerald-700 hover:underline disabled:opacity-40"
-                                >
-                                  Edit
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => void stamp(r.id, "section_time_in")}
-                              disabled={savingId === r.id}
-                              className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 disabled:opacity-40"
-                            >
-                              Stamp In
-                            </button>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-slate-700">
-                          {r.section_time_out ? (
-                            <div className="space-y-1">
-                              <div>{fmt(r.section_time_out)}</div>
-                              {outEditable && (
-                                <button
-                                  type="button"
-                                  onClick={() => void stamp(r.id, "section_time_out")}
-                                  disabled={savingId === r.id}
-                                  className="text-xs font-medium text-emerald-700 hover:underline disabled:opacity-40"
-                                >
-                                  Edit
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => void stamp(r.id, "section_time_out")}
-                              disabled={savingId === r.id}
-                              className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 disabled:opacity-40"
-                            >
-                              Stamp Out
-                            </button>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-slate-700">{r.tat_minutes ?? "—"}</td>
+                        {showStampButtons && <>
+                          <td className="px-4 py-3 text-slate-700">
+                            {r.section_time_in ? (
+                              <div className="space-y-1">
+                                <div>{fmt(r.section_time_in)}</div>
+                                {inEditable && (
+                                  <button type="button" onClick={() => void stamp(r.id, "section_time_in")} disabled={isBusy} className="text-xs font-medium text-emerald-700 hover:underline disabled:opacity-40">
+                                    Edit
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <button type="button" onClick={() => void stamp(r.id, "section_time_in")} disabled={isBusy} className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 disabled:opacity-40">
+                                Receive
+                              </button>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-slate-700">
+                            {r.section_time_out ? (
+                              <div className="space-y-1">
+                                <div>{fmt(r.section_time_out)}</div>
+                                {outEditable && (
+                                  <button type="button" onClick={() => void stamp(r.id, "section_time_out")} disabled={isBusy} className="text-xs font-medium text-emerald-700 hover:underline disabled:opacity-40">
+                                    Edit
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <button type="button" onClick={() => void stamp(r.id, "section_time_out")} disabled={isBusy} className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 disabled:opacity-40">
+                                Result
+                              </button>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-slate-700">{r.tat_minutes ?? "—"}</td>
+                        </>}
                         <td className="px-4 py-3">
                           <span className="inline-flex rounded px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-700">
                             {r.status}
                           </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => void toggleUrgent(r)}
+                              disabled={isBusy}
+                              title={r.is_urgent ? "Mark routine" : "Mark urgent"}
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold disabled:opacity-40 transition-colors ${
+                                r.is_urgent
+                                  ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                  : "bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800"
+                              }`}
+                            >
+                              <AlertTriangle size={11} />
+                              {r.is_urgent ? "Urgent" : "Routine"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void cancelRow(r.id)}
+                              disabled={isBusy}
+                              title="Cancel this test"
+                              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40 transition-colors"
+                            >
+                              <XCircle size={11} />
+                              Cancel
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

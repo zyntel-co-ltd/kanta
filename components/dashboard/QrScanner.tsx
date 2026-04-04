@@ -1,24 +1,31 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Camera } from "lucide-react";
 
 type Props = {
   onScan: (decodedText: string) => void;
   onError?: (err: string) => void;
   className?: string;
   mode?: "qr-only" | "qr-and-barcode";
+  /** When false (default), user must click to activate the camera. Set true for auto-start. */
+  autoStart?: boolean;
 };
 
-export default function QrScanner({ onScan, onError, className, mode = "qr-only" }: Props) {
+export default function QrScanner({ onScan, onError, className, mode = "qr-only", autoStart = false }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(true);
+  const [active, setActive] = useState(autoStart);
+  const [loading, setLoading] = useState(autoStart);
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null);
   const readerIdRef = useRef(`qr-reader-${Math.random().toString(36).slice(2)}`);
 
   useEffect(() => {
+    if (!active) return;
     if (!containerRef.current) return;
     let mounted = true;
+    setLoading(true);
+    setError(null);
 
     const init = async () => {
       try {
@@ -58,6 +65,7 @@ export default function QrScanner({ onScan, onError, className, mode = "qr-only"
           setError(err instanceof Error ? err.message : "Camera access failed");
           onError?.(err instanceof Error ? err.message : "Camera access failed");
           setLoading(false);
+          setActive(false);
         }
       }
     };
@@ -68,7 +76,23 @@ export default function QrScanner({ onScan, onError, className, mode = "qr-only"
       scannerRef.current?.stop().catch(() => {});
       scannerRef.current = null;
     };
-  }, [onScan, onError, mode]);
+  }, [active, onScan, onError, mode]);
+
+  if (!active) {
+    return (
+      <div className={`relative ${className ?? ""}`}>
+        <button
+          type="button"
+          onClick={() => setActive(true)}
+          className="w-full max-w-md mx-auto flex flex-col items-center justify-center gap-3 py-10 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-colors text-slate-500 hover:text-slate-700"
+        >
+          <Camera size={36} strokeWidth={1.5} />
+          <span className="text-sm font-medium">Click to activate camera</span>
+          <span className="text-xs text-slate-400">Camera will request permission when activated</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative ${className ?? ""}`}>

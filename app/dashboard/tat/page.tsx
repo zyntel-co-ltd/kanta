@@ -21,8 +21,8 @@ type TatTab = "patients" | "tests" | "reception" | "scan" | "volume";
 const TAT_TABS_BASE: { id: TatTab; label: string }[] = [
   { id: "patients", label: "Patient Tracking" },
   { id: "tests", label: "Test Tracker" },
-  { id: "scan", label: "Scan Results" },
   { id: "reception", label: "Section Capture" },
+  { id: "scan", label: "Scan Results" },
 ];
 
 export default function TATPage() {
@@ -51,10 +51,7 @@ export default function TATPage() {
   const canUsePatientTracking = (professional && showTatPatientLevel) || adminAccount;
   const canUseTestTracking = (professional && showTatTestLevel) || adminAccount;
 
-  const tatTabs = useMemo(
-    () => (showReceptionTab ? TAT_TABS_BASE : TAT_TABS_BASE.filter((t) => t.id !== "reception")),
-    [showReceptionTab]
-  );
+  const tatTabs = TAT_TABS_BASE;
   const requested = (searchParams.get("tab") || "patients") as TatTab;
   const activeTab: TatTab = tatTabs.some((t) => t.id === requested) ? requested : "patients";
 
@@ -178,6 +175,7 @@ export default function TATPage() {
               facilityId={facilityId}
               sectionFilterOptions={sectionFilterOptions}
               resolveSectionLabel={resolveSectionLabel}
+              showStampButtons={showReceptionTab}
             />
           </div>
         )}

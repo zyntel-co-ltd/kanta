@@ -146,65 +146,44 @@ export default function NumbersPage() {
   } = useFacilityConfig(facilityId);
   const { loading: testRequestsLoading, empty: testRequestsEmpty } = useTestRequestsEmpty(facilityId);
 
-  const [filters, setFilters] = useState({
-    period: "thisMonth",
-    shift: "all",
-    hospitalUnit: "all",
-    labSection: "all",
-    startDate: "",
-    endDate: "",
-  });
+  const [activeTab, setActiveTab] = useState<"patients" | "tests">("patients");
+
+  const [pFilters, setPFilters] = useState({ period: "thisMonth", shift: "all", hospitalUnit: "all", startDate: "", endDate: "" });
+  const [tFilters, setTFilters] = useState({ period: "thisMonth", labSection: "all", startDate: "", endDate: "" });
+
   const [data, setData] = useState<NumbersData | null>(null);
   const [testsData, setTestsData] = useState<TestsData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [pLoading, setPLoading] = useState(true);
+  const [tLoading, setTLoading] = useState(true);
   const [selectedUnit, setSelectedUnit] = useState("all");
 
-  const updateFilter = (key: string, value: string) =>
-    setFilters((prev) => ({ ...prev, [key]: value }));
-
-  const resetFilters = () =>
-    setFilters({ period: "thisMonth", shift: "all", hospitalUnit: "all", labSection: "all", startDate: "", endDate: "" });
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
+  const fetchPatients = useCallback(async () => {
+    setPLoading(true);
     try {
-      const params = new URLSearchParams({ facility_id: facilityId, period: filters.period });
-      if (filters.shift && filters.shift !== "all") params.append("shift", filters.shift);
-      if (filters.hospitalUnit && filters.hospitalUnit !== "all")
-        params.append("laboratory", filters.hospitalUnit);
-      if (filters.startDate) params.append("startDate", filters.startDate);
-      if (filters.endDate) params.append("endDate", filters.endDate);
+      const params = new URLSearchParams({ facility_id: facilityId, period: pFilters.period });
+      if (pFilters.shift !== "all") params.append("shift", pFilters.shift);
+      if (pFilters.hospitalUnit !== "all") params.append("laboratory", pFilters.hospitalUnit);
+      if (pFilters.startDate) params.append("startDate", pFilters.startDate);
+      if (pFilters.endDate) params.append("endDate", pFilters.endDate);
+      const res = await fetch(`/api/numbers?${params}`);
+      if (res.ok) { const j = await res.json(); if (!j.error) setData(j); }
+    } catch { setData(null); } finally { setPLoading(false); }
+  }, [facilityId, pFilters]);
 
-      const testsParams = new URLSearchParams({ facility_id: facilityId, period: filters.period });
-      if (filters.labSection && filters.labSection !== "all")
-        testsParams.append("section", filters.labSection);
-      if (filters.startDate) testsParams.append("startDate", filters.startDate);
-      if (filters.endDate) testsParams.append("endDate", filters.endDate);
+  const fetchTests = useCallback(async () => {
+    setTLoading(true);
+    try {
+      const params = new URLSearchParams({ facility_id: facilityId, period: tFilters.period });
+      if (tFilters.labSection !== "all") params.append("section", tFilters.labSection);
+      if (tFilters.startDate) params.append("startDate", tFilters.startDate);
+      if (tFilters.endDate) params.append("endDate", tFilters.endDate);
+      const res = await fetch(`/api/tests?${params}`);
+      if (res.ok) { const j = await res.json(); if (!j.error) setTestsData(j); }
+    } catch { setTestsData(null); } finally { setTLoading(false); }
+  }, [facilityId, tFilters]);
 
-      const [numbersRes, testsRes] = await Promise.all([
-        fetch(`/api/numbers?${params}`),
-        fetch(`/api/tests?${testsParams}`),
-      ]);
-
-      if (numbersRes.ok) {
-        const json = await numbersRes.json();
-        if (!json.error) setData(json);
-      }
-      if (testsRes.ok) {
-        const json = await testsRes.json();
-        if (!json.error) setTestsData(json);
-      }
-    } catch {
-      setData(null);
-      setTestsData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters, facilityId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchPatients(); }, [fetchPatients]);
+  useEffect(() => { fetchTests(); }, [fetchTests]);
 
   // ── Numbers chart data ────────────────────────────────────────────────────
 
@@ -362,98 +341,97 @@ export default function NumbersPage() {
         </div>
       )}
 
-      {/* Filter Bar */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="flex flex-wrap items-end gap-4">
-          <h1 className="text-xl font-bold text-slate-800 mr-2">Numbers</h1>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Period</label>
-            <select
-              value={filters.period}
-              onChange={(e) => updateFilter("period", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
+      {/* Header + Tabs */}
+      <div className="bg-white border-b border-slate-200 px-6 pt-4">
+        <h1 className="text-xl font-bold text-slate-800 mb-3">Volume</h1>
+        <div className="flex gap-0">
+          {(["patients", "tests"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                activeTab === tab
+                  ? "border-[var(--module-primary)] text-[var(--module-primary)]"
+                  : "border-transparent text-slate-600 hover:text-slate-900"
+              }`}
             >
-              {PERIODS.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Shift</label>
-            <select
-              value={filters.shift}
-              onChange={(e) => updateFilter("shift", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
-            >
-              {shiftFilterOptions.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Laboratory</label>
-            <select
-              value={filters.hospitalUnit}
-              onChange={(e) => updateFilter("hospitalUnit", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
-            >
-              {laboratoryFilterOptions.map((l) => (
-                <option key={l.value} value={l.value}>{l.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Lab Section</label>
-            <select
-              value={filters.labSection}
-              onChange={(e) => updateFilter("labSection", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
-            >
-              {sectionFilterOptions.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Start Date</label>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => updateFilter("startDate", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">End Date</label>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => updateFilter("endDate", e.target.value)}
-              className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
-            />
-          </div>
-
-          <button
-            onClick={resetFilters}
-            className="text-sm module-accent-text border rounded-lg px-3 py-1.5 transition-colors"
-            style={{ borderColor: "var(--module-primary)" }}
-          >
-            Reset
-          </button>
+              {tab === "patients" ? "Patient Requests" : "Tests"}
+            </button>
+          ))}
         </div>
       </div>
 
-      {isLoading && <PageLoader variant="inline" />}
+      {/* Patient Requests filter bar */}
+      {activeTab === "patients" && (
+        <div className="bg-white border-b border-slate-100 px-6 py-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Period</label>
+              <select value={pFilters.period} onChange={(e) => setPFilters((p) => ({ ...p, period: e.target.value }))} className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]">
+                {PERIODS.map((p) => (<option key={p.value} value={p.value}>{p.label}</option>))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Shift</label>
+              <select value={pFilters.shift} onChange={(e) => setPFilters((p) => ({ ...p, shift: e.target.value }))} className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]">
+                {shiftFilterOptions.map((s) => (<option key={s.value} value={s.value}>{s.label}</option>))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Laboratory</label>
+              <select value={pFilters.hospitalUnit} onChange={(e) => setPFilters((p) => ({ ...p, hospitalUnit: e.target.value }))} className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]">
+                {laboratoryFilterOptions.map((l) => (<option key={l.value} value={l.value}>{l.label}</option>))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Start Date</label>
+              <input type="date" value={pFilters.startDate} onChange={(e) => setPFilters((p) => ({ ...p, startDate: e.target.value }))} className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">End Date</label>
+              <input type="date" value={pFilters.endDate} onChange={(e) => setPFilters((p) => ({ ...p, endDate: e.target.value }))} className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]" />
+            </div>
+            <button onClick={() => setPFilters({ period: "thisMonth", shift: "all", hospitalUnit: "all", startDate: "", endDate: "" })} className="text-sm module-accent-text border rounded-lg px-3 py-1.5 transition-colors" style={{ borderColor: "var(--module-primary)" }}>Reset</button>
+          </div>
+        </div>
+      )}
 
-      {!isLoading && (
+      {/* Tests filter bar */}
+      {activeTab === "tests" && (
+        <div className="bg-white border-b border-slate-100 px-6 py-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Period</label>
+              <select value={tFilters.period} onChange={(e) => setTFilters((p) => ({ ...p, period: e.target.value }))} className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]">
+                {PERIODS.map((p) => (<option key={p.value} value={p.value}>{p.label}</option>))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Lab Section</label>
+              <select value={tFilters.labSection} onChange={(e) => setTFilters((p) => ({ ...p, labSection: e.target.value }))} className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]">
+                {sectionFilterOptions.map((s) => (<option key={s.value} value={s.value}>{s.label}</option>))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Start Date</label>
+              <input type="date" value={tFilters.startDate} onChange={(e) => setTFilters((p) => ({ ...p, startDate: e.target.value }))} className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">End Date</label>
+              <input type="date" value={tFilters.endDate} onChange={(e) => setTFilters((p) => ({ ...p, endDate: e.target.value }))} className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]" />
+            </div>
+            <button onClick={() => setTFilters({ period: "thisMonth", labSection: "all", startDate: "", endDate: "" })} className="text-sm module-accent-text border rounded-lg px-3 py-1.5 transition-colors" style={{ borderColor: "var(--module-primary)" }}>Reset</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── PATIENT REQUESTS tab ─── */}
+      {activeTab === "patients" && (
+        <>
+          {pLoading && <PageLoader variant="inline" />}
+          {!pLoading && (
         <div className="p-6 space-y-8">
-          {/* ── PATIENT REQUESTS section ─────────────────────────────────── */}
           <section>
             <SectionDivider
               title="Patient Requests"
@@ -533,8 +511,17 @@ export default function NumbersPage() {
               </div>
             </div>
           </section>
+        </div>
+        )}
+        </>
+      )}
 
-          {/* ── TESTS section ───────────────────────────────────────────── */}
+      {/* ── TESTS tab ─── */}
+      {activeTab === "tests" && (
+        <>
+          {tLoading && <PageLoader variant="inline" />}
+          {!tLoading && (
+        <div className="p-6 space-y-8">
           <section>
             <SectionDivider
               title="Tests"
@@ -621,6 +608,8 @@ export default function NumbersPage() {
             </div>
           </section>
         </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -1,16 +1,9 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import dynamic from "next/dynamic";
-import { Loader2, QrCode, Search } from "lucide-react";
+import { Loader2, QrCode, Search, RefreshCw } from "lucide-react";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
-import Link from "next/link";
-
-const QrScanner = dynamic(
-  () => import("@/components/dashboard/QrScanner").then((m) => m.default),
-  { ssr: false, loading: () => <div className="h-64 bg-slate-100 rounded-2xl animate-pulse" /> }
-);
 
 type LookupMatch = {
   section: string;
@@ -47,6 +40,24 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function QrCodeDisplay({ url }: { url: string }) {
+  const encoded = encodeURIComponent(url);
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encoded}&margin=10`;
+  return (
+    <div className="flex flex-col items-center gap-3">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={qrSrc}
+        alt="Patient results QR code"
+        width={220}
+        height={220}
+        className="rounded-xl border border-slate-200 shadow-sm"
+      />
+      <p className="text-xs text-slate-400 font-mono break-all text-center max-w-xs">{url}</p>
+    </div>
+  );
+}
+
 export default function TatScanTab() {
   const { facilityAuth } = useAuth();
   const facilityId = facilityAuth?.facilityId ?? DEFAULT_FACILITY_ID;
@@ -57,9 +68,28 @@ export default function TatScanTab() {
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [lridsUrl, setLridsUrl] = useState<string | null>(null);
+  const [lridsLoading, setLridsLoading] = useState(false);
+
+  const fetchLridsUrl = useCallback(async () => {
+    if (!facilityId) return;
+    setLridsLoading(true);
+    try {
+      const res = await fetch(`/api/lrids/token?facilityId=${encodeURIComponent(facilityId)}`);
+      const j = await res.json().catch(() => ({})) as { token?: string };
+      if (res.ok && j.token) {
+        const url = `${window.location.origin}/lrids/${encodeURIComponent(facilityId)}?token=${encodeURIComponent(j.token)}`;
+        setLridsUrl(url);
+      }
+    } finally {
+      setLridsLoading(false);
+    }
+  }, [facilityId]);
+
   useEffect(() => {
+    void fetchLridsUrl();
     inputRef.current?.focus();
-  }, []);
+  }, [fetchLridsUrl]);
 
   const runLookup = useCallback(
     async (code: string) => {
@@ -94,51 +124,59 @@ export default function TatScanTab() {
     [facilityId]
   );
 
-  const handleQrDecode = useCallback(
-    (qrCode: string) => {
-      setBarcodeInput(qrCode);
-      void runLookup(qrCode);
-    },
-    [runLookup]
-  );
-
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <QrCode size={22} className="module-accent-text" />
-            QR / Barcode Results Lookup
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Scan a patient sample barcode or enter an accession number to check test status and TAT.
-          </p>
-        </div>
-        <Link
-          href="/dashboard/scan?scanPurpose=sample"
-          className="shrink-0 text-xs font-medium module-accent-text underline underline-offset-2 hover:opacity-80 transition-opacity"
-        >
-          Open full scanner →
-        </Link>
+      <div>
+        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+          <QrCode size={22} className="module-accent-text" />
+          Patient Results QR Code
+        </h2>
+        <p className="text-sm text-slate-500 mt-1">
+          Display this QR code in the waiting room so patients can scan it to see their results status. You can also look up a specific lab number below.
+        </p>
       </div>
 
-      {/* Camera scanner */}
+      {/* QR code for patients */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-        <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
-          <QrCode size={15} className="text-slate-400" />
-          <span className="text-sm font-semibold text-slate-600">Camera Scanner</span>
+        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <QrCode size={15} className="text-slate-400" />
+            <span className="text-sm font-semibold text-slate-600">Patient Display Board QR Code</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => void fetchLridsUrl()}
+            disabled={lridsLoading}
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={12} className={lridsLoading ? "animate-spin" : ""} />
+            Refresh
+          </button>
         </div>
-        <div className="p-4">
-          <QrScanner onScan={handleQrDecode} onError={setError} mode="qr-and-barcode" />
+        <div className="p-6 flex flex-col items-center gap-4">
+          {lridsLoading ? (
+            <div className="h-56 flex items-center justify-center">
+              <Loader2 size={28} className="animate-spin text-slate-300" />
+            </div>
+          ) : lridsUrl ? (
+            <>
+              <QrCodeDisplay url={lridsUrl} />
+              <p className="text-xs text-slate-500 text-center max-w-sm">
+                Patients scan this code to view their sample status on the display board. Refresh the QR code periodically — display board links expire after 24 hours.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-slate-400">Could not generate QR code. Try refreshing.</p>
+          )}
         </div>
       </div>
 
-      {/* Manual input */}
+      {/* Manual staff lookup */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
         <div className="flex items-center gap-2 mb-1">
           <Search size={15} className="text-slate-400" />
-          <span className="text-sm font-semibold text-slate-600">Manual Lookup</span>
+          <span className="text-sm font-semibold text-slate-600">Staff Lookup — Enter Lab Number</span>
         </div>
         <div className="flex gap-2">
           <input
@@ -147,7 +185,7 @@ export default function TatScanTab() {
             value={barcodeInput}
             onChange={(e) => setBarcodeInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && runLookup(barcodeInput)}
-            placeholder="Barcode, accession number, or lab number…"
+            placeholder="Lab number or accession number…"
             className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--module-primary)]"
           />
           <button

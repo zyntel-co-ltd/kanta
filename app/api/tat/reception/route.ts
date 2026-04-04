@@ -21,6 +21,7 @@ type ReceptionRow = {
   section_time_in: string | null;
   section_time_out: string | null;
   status: string;
+  is_urgent?: boolean | null;
 };
 
 function tatMinutes(timeIn: string | null, timeOut: string | null): number | null {
@@ -65,7 +66,7 @@ export async function GET(req: NextRequest) {
     let query = db
       .from("test_requests")
       .select(
-        "id, visit_token, lab_number, test_name, section, requested_at, section_time_in, section_time_out, status"
+        "id, visit_token, lab_number, test_name, section, requested_at, section_time_in, section_time_out, status, is_urgent"
       )
       .eq("facility_id", facilityId)
       .neq("status", "cancelled")
@@ -110,26 +111,21 @@ export async function PATCH(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as
     | {
         request_id?: string;
-        field?: "section_time_in" | "section_time_out";
-        value?: string;
+        field?: "section_time_in" | "section_time_out" | "is_urgent";
+        value?: string | boolean;
         facility_id?: string;
       }
     | null;
 
   const requestId = body?.request_id?.trim();
   const field = body?.field;
-  const value = body?.value?.trim();
   const facilityId = body?.facility_id?.trim();
 
   if (!requestId) return jsonError("request_id is required", 400);
   if (!facilityId) return jsonError("facility_id is required", 400);
-  if (field !== "section_time_in" && field !== "section_time_out") {
-    return jsonError("field must be section_time_in or section_time_out", 400);
+  if (field !== "section_time_in" && field !== "section_time_out" && field !== "is_urgent") {
+    return jsonError("field must be section_time_in, section_time_out, or is_urgent", 400);
   }
-  if (!value) return jsonError("value is required", 400);
-
-  const when = new Date(value);
-  if (Number.isNaN(when.getTime())) return jsonError("value must be a valid ISO timestamp", 400);
 
   const ctx = await getAuthContext(req, { facilityIdHint: facilityId });
   const accessErr = requireFacilityAccess(ctx, facilityId);
@@ -147,25 +143,35 @@ export async function PATCH(req: NextRequest) {
 
     const { data: row, error: readErr } = await db
       .from("test_requests")
-      .select("id, facility_id, section_time_in, section_time_out")
+      .select("id, facility_id, section_time_in, section_time_out, is_urgent")
       .eq("id", requestId)
       .maybeSingle();
     if (readErr) throw readErr;
     if (!row) return jsonError("request_id not found", 404);
     if (row.facility_id !== facilityId) return jsonError("Forbidden", 403);
 
-    const existingIso = field === "section_time_in" ? row.section_time_in : row.section_time_out;
-    if (existingIso && !canEditWithin30Minutes(existingIso)) {
-      return jsonError("Edit window expired (30 minutes)", 400);
+    let updatePayload: Record<string, unknown>;
+    if (field === "is_urgent") {
+      updatePayload = { is_urgent: body?.value === true || body?.value === "true" };
+    } else {
+      const value = typeof body?.value === "string" ? body.value.trim() : "";
+      if (!value) return jsonError("value is required", 400);
+      const when = new Date(value);
+      if (Number.isNaN(when.getTime())) return jsonError("value must be a valid ISO timestamp", 400);
+      const existingIso = field === "section_time_in" ? row.section_time_in : row.section_time_out;
+      if (existingIso && !canEditWithin30Minutes(existingIso)) {
+        return jsonError("Edit window expired (30 minutes)", 400);
+      }
+      updatePayload = { [field]: when.toISOString() };
     }
 
     const { data: updated, error: updateErr } = await db
       .from("test_requests")
-      .update({ [field]: when.toISOString() })
+      .update(updatePayload)
       .eq("id", requestId)
       .eq("facility_id", facilityId)
       .select(
-        "id, visit_token, lab_number, test_name, section, requested_at, section_time_in, section_time_out, status"
+        "id, visit_token, lab_number, test_name, section, requested_at, section_time_in, section_time_out, status, is_urgent"
       )
       .single();
     if (updateErr) throw updateErr;
@@ -178,6 +184,6 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ row: payload });
   } catch (err) {
     console.error("[PATCH /api/tat/reception]", err);
-    return jsonError("Failed to update reception timestamp", 500);
+    return jsonError("Failed to update reception", 500);
   }
 }
