@@ -414,8 +414,6 @@ export default function Sidebar() {
     facilityAuth?.groupId,
     facilityAuth?.branchName
   );
-  const hospitalLogoUrl = facilityAuth?.hospitalLogoUrl || process.env.NEXT_PUBLIC_HOSPITAL_LOGO_URL || "";
-
   const navGroups = filterNavForFacilityAuth(navGroupsBase, facilityAuth, {
     loading: facilityAuthLoading,
     hasUser: !!user,
@@ -461,35 +459,19 @@ export default function Sidebar() {
         )}
       >
         <Link href="/dashboard/home" className={clsx("flex items-center focus:outline-none flex-1", collapsed ? "justify-center" : "gap-3")}>
-          {hospitalLogoUrl ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={hospitalLogoUrl} alt="Kanta" className="flex-shrink-0 w-10 h-10 rounded-xl object-cover bg-white shadow-sm" />
-              {!collapsed && (
-                <div className="min-w-0">
-                  <p className="font-bold text-sm leading-tight tracking-tight text-slate-900 truncate">Kanta</p>
-                  <p className="text-[10px] mt-1 font-normal text-slate-500">Operational Intelligence Platform</p>
-                </div>
-              )}
-            </>
-          ) : collapsed ? (
-            <Image
-              src="/kanta-mark.svg"
-              alt="Kanta"
-              width={32}
-              height={32}
-              className="flex-shrink-0 rounded-xl"
-              priority
-            />
-          ) : (
-            <Image
-              src="/kanta-logo.svg"
-              alt="Kanta"
-              width={120}
-              height={32}
-              className="flex-shrink-0 h-8 w-auto object-contain object-left"
-              priority
-            />
+          <Image
+            src="/kanta-logo.png"
+            alt="Kanta"
+            width={40}
+            height={40}
+            className="flex-shrink-0 w-10 h-10 object-contain"
+            priority
+          />
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="font-bold text-sm leading-tight tracking-tight text-slate-900 truncate">Kanta</p>
+              <p className="text-[10px] mt-1 font-normal text-slate-500">Operational Intelligence Platform</p>
+            </div>
           )}
         </Link>
 
