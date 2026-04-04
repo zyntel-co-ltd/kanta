@@ -187,7 +187,7 @@ export default function ConsoleHomePage() {
     },
     {
       title: "Feature flags",
-      description: "Per-facility PostHog module toggles.",
+      description: "Per-facility module toggles in Supabase (plan tier + facility_flags).",
       href: "/dashboard/console/flags",
       icon: Flag,
       badge: null,

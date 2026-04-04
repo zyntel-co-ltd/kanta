@@ -83,7 +83,13 @@ function resolveTabs(pathname: string, assetTabs: Tab[]): Tab[] | null {
   if (["/dashboard/quality-samples", "/dashboard/qc", "/dashboard/samples"].some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return QUALITY_TABS;
   }
-  if (["/dashboard", "/dashboard/assets", "/dashboard/scan", "/dashboard/equipment", "/dashboard/maintenance", "/dashboard/refrigerator", "/dashboard/analytics", "/dashboard/reports"].some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+  /** Asset hub + sub-routes only — do not use `pathname.startsWith("/dashboard/")` with `"/dashboard"` or Console, Intelligence, etc. would match. */
+  if (
+    pathname === "/dashboard" ||
+    ["/dashboard/assets", "/dashboard/scan", "/dashboard/equipment", "/dashboard/maintenance", "/dashboard/refrigerator", "/dashboard/analytics", "/dashboard/reports"].some(
+      (p) => pathname === p || pathname.startsWith(p + "/")
+    )
+  ) {
     return assetTabs;
   }
   return null;
@@ -120,11 +126,13 @@ export default function AppTabBar() {
   if (
     pathname === "/dashboard/home" ||
     pathname.startsWith("/dashboard/admin") ||
+    pathname.startsWith("/dashboard/console") ||
     pathname.startsWith("/dashboard/settings") ||
     pathname.startsWith("/dashboard/departments") ||
     pathname.startsWith("/dashboard/reception") ||
     pathname.startsWith("/dashboard/tracker") ||
-    pathname.startsWith("/dashboard/progress")
+    pathname.startsWith("/dashboard/progress") ||
+    pathname.startsWith("/dashboard/intelligence")
   ) {
     return null;
   }
