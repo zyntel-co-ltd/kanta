@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, requireFacilityAccess, jsonError } from "@/lib/auth/server";
+import { getAuthContext, requireFacilityAccess, requireWriteAccess, jsonError } from "@/lib/auth/server";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -28,9 +28,8 @@ export async function POST(req: NextRequest) {
   const accessErr = requireFacilityAccess(ctx, facilityId);
   if (accessErr) return accessErr;
 
-  if (!ctx.canWrite) {
-    return jsonError("Write permission required to cancel tests", 403);
-  }
+  const writeErr = requireWriteAccess(ctx);
+  if (writeErr) return writeErr;
 
   if (!supabaseConfigured) {
     return NextResponse.json({ success: true, message: "Supabase not configured (dev mode)" });
