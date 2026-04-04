@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import type { ComponentType } from "react";
 import { useAuth, type FacilityAuthState } from "@/lib/AuthContext";
 import { emptyFacilityFlagsMap } from "@/lib/featureFlagCatalog";
@@ -435,8 +435,11 @@ export default function Sidebar() {
     setModuleAttr(readModuleAttr());
   }, [pathname]);
 
-  /** Keep exactly one collapsible group open — the one that matches the current route. */
-  useEffect(() => {
+  /** Keep exactly one collapsible group open — the one that matches the current route.
+   *  useLayoutEffect (synchronous before paint) prevents a flash of the wrong accordion
+   *  being open when navigating away from an Asset-Management / QC page to, e.g., Console.
+   */
+  useLayoutEffect(() => {
     setOpenGroup(accordionGroupForPath(pathname));
   }, [pathname]);
 
