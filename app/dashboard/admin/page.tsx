@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   Ban,
   ClipboardList,
+  Save,
   Cog,
 } from "lucide-react";
 import Link from "next/link";
