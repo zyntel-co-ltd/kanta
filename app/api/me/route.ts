@@ -67,7 +67,10 @@ export async function GET(req: NextRequest) {
         .select("flag_key, enabled")
         .eq("facility_id", ctx.facilityId);
       if (flagErr) {
-        console.error("[GET /api/me] facility_flags:", flagErr.message);
+        // PGRST205 = table not yet created (migration pending) — silently skip
+        if ((flagErr as { code?: string }).code !== "PGRST205") {
+          console.error("[GET /api/me] facility_flags:", flagErr.message);
+        }
       } else {
         flags = mergeFacilityFlagsFromRows(flagRows);
       }

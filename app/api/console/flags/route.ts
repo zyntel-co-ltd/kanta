@@ -49,9 +49,10 @@ export async function GET(req: NextRequest) {
       .select("flag_key, enabled")
       .eq("facility_id", facilityId);
 
-    if (rErr) throw rErr;
+    // PGRST205 = table not found (migration pending) — treat as no flags set yet
+    if (rErr && (rErr as { code?: string }).code !== "PGRST205") throw rErr;
 
-    const flags = mergeFacilityFlagsFromRows(rows);
+    const flags = mergeFacilityFlagsFromRows(rErr ? [] : rows);
     return NextResponse.json({
       posthogConfigured: false,
       tier,
@@ -104,7 +105,7 @@ export async function PATCH(req: NextRequest) {
       const { error } = await db.from("facility_flags").upsert(upsertRows, {
         onConflict: "facility_id,flag_key",
       });
-      if (error) throw error;
+      if (error && (error as { code?: string }).code !== "PGRST205") throw error;
 
       const flags = mergeFacilityFlagsFromRows(
         KANTA_FEATURE_FLAG_NAMES.map((k) => ({ flag_key: k, enabled: !!defaults[k] }))
@@ -146,9 +147,9 @@ export async function PATCH(req: NextRequest) {
       .from("facility_flags")
       .select("flag_key, enabled")
       .eq("facility_id", facilityId);
-    if (rErr) throw rErr;
+    if (rErr && (rErr as { code?: string }).code !== "PGRST205") throw rErr;
 
-    const flags = mergeFacilityFlagsFromRows(rows);
+    const flags = mergeFacilityFlagsFromRows(rErr ? [] : rows);
     return NextResponse.json({ ok: true, flags });
   } catch (e) {
     console.error("[PATCH /api/console/flags]", e);
