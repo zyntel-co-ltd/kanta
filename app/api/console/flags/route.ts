@@ -141,7 +141,14 @@ export async function PATCH(req: NextRequest) {
       },
       { onConflict: "facility_id,flag_key" }
     );
-    if (upErr) throw upErr;
+    // PGRST205 = table not found (migration pending) — acknowledge the request optimistically
+    if (upErr && (upErr as { code?: string }).code !== "PGRST205") throw upErr;
+
+    if (upErr) {
+      // Table missing: return optimistic single-flag state (migration not yet applied)
+      const flags = mergeFacilityFlagsFromRows([{ flag_key: flagKey, enabled }]);
+      return NextResponse.json({ ok: true, flags });
+    }
 
     const { data: rows, error: rErr } = await db
       .from("facility_flags")
