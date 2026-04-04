@@ -28,6 +28,7 @@ function parseQueryConfig(body: unknown): LIMSQueryConfig {
     idColumn: q.idColumn ? String(q.idColumn).trim() : undefined,
     labNumberColumn: q.labNumberColumn ? String(q.labNumberColumn).trim() : undefined,
     updatedAtColumn: q.updatedAtColumn ? String(q.updatedAtColumn).trim() : undefined,
+    externalRefColumn: q.externalRefColumn ? String(q.externalRefColumn).trim() : undefined,
   };
 }
 

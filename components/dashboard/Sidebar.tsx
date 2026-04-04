@@ -53,6 +53,7 @@ import {
 
 type NavItem = {
   label: string;
+  tooltip?: string;
   icon: ComponentType<{ size?: number; className?: string; strokeWidth?: number; style?: React.CSSProperties }>;
   href: string;
   /** When set, a section label is rendered above this item (collapsible sub-menus only). */
@@ -75,25 +76,25 @@ function SidebarCollapseGlyph({ sidebarExpanded }: { sidebarExpanded: boolean })
   return (
     <span
       className={clsx(
-        "flex h-5 w-5 items-stretch overflow-hidden rounded-[7px] shadow-sm ring-1 ring-slate-900/12",
+        "flex h-5 w-5 items-stretch overflow-hidden rounded-[7px] shadow-sm ring-1 ring-slate-200",
         !sidebarExpanded && "scale-x-[-1]"
       )}
       aria-hidden
     >
-      <span className="flex min-w-0 flex-1 items-center justify-center bg-[var(--sidebar-active-bg)]">
-        <ArrowLeft className="h-2 w-2 shrink-0 text-white" strokeWidth={2.5} />
+      <span className="flex min-w-0 flex-1 items-center justify-center bg-slate-100">
+        <ArrowLeft className="h-2 w-2 shrink-0 text-slate-600" strokeWidth={2.5} />
       </span>
       <span className="flex w-[5px] shrink-0 flex-col items-center justify-center gap-[1.5px] bg-white py-0.5">
-        <span className="h-[1.5px] w-[1.5px] rounded-full bg-[var(--sidebar-active-bg)]" />
-        <span className="h-[1.5px] w-[1.5px] rounded-full bg-[var(--sidebar-active-bg)]" />
-        <span className="h-[1.5px] w-[1.5px] rounded-full bg-[var(--sidebar-active-bg)]" />
+        <span className="h-[1.5px] w-[1.5px] rounded-full bg-slate-400" />
+        <span className="h-[1.5px] w-[1.5px] rounded-full bg-slate-400" />
+        <span className="h-[1.5px] w-[1.5px] rounded-full bg-slate-400" />
       </span>
     </span>
   );
 }
 
 const navGroupsBase: NavGroup[] = [
-  { title: "Home", items: [{ label: "Home", icon: Home, href: "/dashboard/home" }] },
+  { title: "Home", items: [{ label: "Home", tooltip: "Go to your Kanta dashboard overview", icon: Home, href: "/dashboard/home" }] },
   {
     title: "Lab Metrics",
     collapsible: {
@@ -109,13 +110,13 @@ const navGroupsBase: NavGroup[] = [
       ],
     },
     items: [
-      { label: "Patient Tracking", icon: Timer,        href: "/dashboard/tat?tab=patients" },
-      { label: "Test Tracker", icon: Table2,           href: "/dashboard/tat?tab=tests" },
-      { label: "Section Capture", icon: ClipboardList, href: "/dashboard/tat?tab=reception" },
-      { label: "Volume",      icon: Binary,            href: "/dashboard/numbers"     },
-      { label: "Tests & Lab Mgmt", icon: TableProperties,   href: "/dashboard/meta"   },
-      { label: "Revenue",     icon: CircleDollarSign,  href: "/dashboard/revenue"     },
-      { label: "LRIDS",       icon: TestTube,          href: SIDEBAR_LRIDS_NAV_HREF },
+      { label: "Patient Tracking", tooltip: "Track individual patient turnaround from reception to result", icon: Timer, href: "/dashboard/tat?tab=patients" },
+      { label: "Test Tracker", tooltip: "Monitor test progress and status across sections", icon: Table2, href: "/dashboard/tat?tab=tests" },
+      { label: "Section Capture", tooltip: "Log timestamps as specimens move between lab sections", icon: ClipboardList, href: "/dashboard/tat?tab=reception" },
+      { label: "Volume", tooltip: "View daily and hourly test request volumes", icon: Binary, href: "/dashboard/numbers" },
+      { label: "Tests & Lab Mgmt", tooltip: "Manage your test catalogue and lab configuration", icon: TableProperties, href: "/dashboard/meta" },
+      { label: "Revenue", tooltip: "Track revenue by test type, section, and period", icon: CircleDollarSign, href: "/dashboard/revenue" },
+      { label: "LRIDS", tooltip: "Open the waiting-room results display board in a new tab", icon: TestTube, href: SIDEBAR_LRIDS_NAV_HREF },
     ],
   },
   {
@@ -126,19 +127,19 @@ const navGroupsBase: NavGroup[] = [
       activePaths: ["/dashboard/qc", "/dashboard/samples"],
     },
     items: [
-      { section: "QC", label: "QC Config",     icon: FlaskConical,  href: "/dashboard/qc?tab=config"      },
-      { label: "Data Entry",    icon: ClipboardList, href: "/dashboard/qc?tab=data"        },
-      { label: "Visualization", icon: BarChart3,      href: "/dashboard/qc?tab=visual"      },
-      { label: "QC Calculator", icon: Calculator,     href: "/dashboard/qc?tab=calc"        },
-      { label: "QC Stats",      icon: TrendingUp,     href: "/dashboard/qc?tab=stats"       },
-      { label: "Qual. Config",  icon: FlaskConical,   href: "/dashboard/qc?tab=qual-config" },
-      { label: "Qual. Entry",   icon: TestTube,       href: "/dashboard/qc?tab=qual-entry"  },
-      { label: "Qual. Log",     icon: Activity,       href: "/dashboard/qc?tab=qual-log"    },
-      { section: "Samples", label: "Dashboard",          icon: TestTubes,     href: "/dashboard/samples?tab=dashboard" },
-      { label: "Racks",              icon: Grid3X3,       href: "/dashboard/samples?tab=racks"     },
-      { label: "Pending Discarding", icon: AlertTriangle, href: "/dashboard/samples?tab=pending"   },
-      { label: "Discarded",          icon: Archive,       href: "/dashboard/samples?tab=discarded" },
-      { label: "Search",             icon: Search,        href: "/dashboard/samples?tab=search"    },
+      { section: "QC", label: "QC Config", tooltip: "Set up quality control parameters for each analyte", icon: FlaskConical, href: "/dashboard/qc?tab=config" },
+      { label: "Data Entry", tooltip: "Enter QC control results for the current run", icon: ClipboardList, href: "/dashboard/qc?tab=data" },
+      { label: "Visualization", tooltip: "View Levey-Jennings charts and Westgard rule violations", icon: BarChart3, href: "/dashboard/qc?tab=visual" },
+      { label: "QC Calculator", tooltip: "Calculate QC statistics and SD ranges", icon: Calculator, href: "/dashboard/qc?tab=calc" },
+      { label: "QC Stats", tooltip: "Summary statistics for QC performance over time", icon: TrendingUp, href: "/dashboard/qc?tab=stats" },
+      { label: "Qual. Config", tooltip: "Configure qualitative QC tests (positive/negative controls)", icon: FlaskConical, href: "/dashboard/qc?tab=qual-config" },
+      { label: "Qual. Entry", tooltip: "Record results for qualitative QC runs", icon: TestTube, href: "/dashboard/qc?tab=qual-entry" },
+      { label: "Qual. Log", tooltip: "Review the history of qualitative QC runs", icon: Activity, href: "/dashboard/qc?tab=qual-log" },
+      { section: "Samples", label: "Dashboard", tooltip: "Track lab racks and specimen progress through the lab", icon: TestTubes, href: "/dashboard/samples?tab=dashboard" },
+      { label: "Racks", tooltip: "Track lab racks and specimen progress through the lab", icon: Grid3X3, href: "/dashboard/samples?tab=racks" },
+      { label: "Pending Discarding", tooltip: "Track lab racks and specimen progress through the lab", icon: AlertTriangle, href: "/dashboard/samples?tab=pending" },
+      { label: "Discarded", tooltip: "Track lab racks and specimen progress through the lab", icon: Archive, href: "/dashboard/samples?tab=discarded" },
+      { label: "Search", tooltip: "Track lab racks and specimen progress through the lab", icon: Search, href: "/dashboard/samples?tab=search" },
     ],
   },
   {
@@ -158,23 +159,23 @@ const navGroupsBase: NavGroup[] = [
       ],
     },
     items: [
-      { label: "Overview",     icon: LayoutDashboard, href: "/dashboard/assets"       },
-      { label: "Equipment",    icon: Wrench,          href: "/dashboard/equipment"    },
-      { label: "Maintenance",  icon: CalendarClock,   href: "/dashboard/maintenance"  },
-      { label: "Refrigerator", icon: Thermometer,     href: "/dashboard/refrigerator" },
-      { label: "Scan",         icon: QrCode,          href: "/dashboard/scan"         },
-      { label: "Analytics",    icon: BarChart3,       href: "/dashboard/analytics"    },
+      { label: "Overview", tooltip: "See your full equipment inventory and status at a glance", icon: LayoutDashboard, href: "/dashboard/assets" },
+      { label: "Equipment", tooltip: "Browse and manage all registered lab equipment", icon: Wrench, href: "/dashboard/equipment" },
+      { label: "Maintenance", tooltip: "Log and review scheduled and unscheduled maintenance", icon: CalendarClock, href: "/dashboard/maintenance" },
+      { label: "Refrigerator", tooltip: "Monitor cold-chain temperatures and get alerts", icon: Thermometer, href: "/dashboard/refrigerator" },
+      { label: "Scan", tooltip: "Scan a QR code to check in or update a piece of equipment", icon: QrCode, href: "/dashboard/scan" },
+      { label: "Analytics", tooltip: "Equipment utilisation and performance analytics", icon: BarChart3, href: "/dashboard/analytics" },
     ],
   },
-  { title: "Intelligence", items: [{ label: "AI Insights", icon: Brain, href: "/dashboard/intelligence" }] },
+  { title: "Intelligence", items: [{ label: "AI Insights", tooltip: "Get AI-generated summaries and anomaly alerts for your lab", icon: Brain, href: "/dashboard/intelligence" }] },
   {
     title: "System",
     items: [
-      { label: "Departments", icon: Building2, href: "/dashboard/departments" },
-      { label: "Admin",       icon: Shield,    href: "/dashboard/admin"       },
-      { label: "Hospital Settings", icon: Building2, href: "/dashboard/admin/hospital" },
-      { label: "Console", icon: Terminal, href: "/dashboard/console" },
-      { label: "Settings",    icon: Settings,  href: "/dashboard/settings"    },
+      { label: "Departments", tooltip: "Manage users, roles, cancellations, and audit logs", icon: Building2, href: "/dashboard/departments" },
+      { label: "Admin", tooltip: "Manage users, roles, cancellations, and audit logs", icon: Shield, href: "/dashboard/admin" },
+      { label: "Hospital Settings", tooltip: "Configure your facility preferences and integrations", icon: Building2, href: "/dashboard/admin/hospital" },
+      { label: "Console", tooltip: "Manage users, roles, cancellations, and audit logs", icon: Terminal, href: "/dashboard/console" },
+      { label: "Settings", tooltip: "Configure your facility preferences and integrations", icon: Settings, href: "/dashboard/settings" },
     ],
   },
 ];
@@ -208,6 +209,7 @@ function filterNavForFacilityAuth(
       hospitalName: null,
       hospitalLogoUrl: null,
       subscriptionTier: null,
+      profileAvatarUrl: null,
       groupId: null,
       groupName: null,
       branchName: null,
@@ -335,6 +337,31 @@ function homeGroupColor(title: string): string {
   return "#334155";
 }
 
+/**
+ * Expanded: solid brand pill (readable with labels).
+ * Collapsed: Slack/Discord-style — soft surface + emerald-500 icon; selection pill is a separate rounded bar (see span).
+ */
+function navLinkTone(collapsed: boolean, active: boolean): string {
+  if (active) {
+    return collapsed
+      ? "bg-emerald-50 text-emerald-600 shadow-none ring-0"
+      : "bg-[var(--sidebar-active-bg)] text-white shadow-sm";
+  }
+  return collapsed
+    ? "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+    : "text-slate-700 hover:bg-slate-100";
+}
+
+/** Slack-style inset pill on the rail edge (collapsed only). */
+function CollapsedSelectionPill() {
+  return (
+    <span
+      className="pointer-events-none absolute left-2 top-1/2 z-10 h-5 w-[3px] -translate-y-1/2 rounded-full bg-emerald-500"
+      aria-hidden
+    />
+  );
+}
+
 /** One-time accordion open for direct URL loads (ENG-127). */
 function accordionGroupForPath(pathname: string): string | null {
   if (
@@ -384,7 +411,7 @@ function accordionGroupForPath(pathname: string): string | null {
 export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, signOut, facilityAuth, facilityAuthLoading } = useAuth();
+  const { user, signOut, facilityAuth, facilityAuthLoading, avatarUrl } = useAuth();
   const showRefrigeratorModule = useFlag("show-refrigerator-module");
   const showAiIntelligence = useFlag("show-ai-intelligence");
   const showTatTestLevel = useFlag("show-tat-test-level");
@@ -422,10 +449,10 @@ export default function Sidebar() {
   return (
     <aside
       className={clsx(
-        // Stack above main column so the edge collapse control (-right-3.5) stays clickable;
-        // TopBar is z-20 and would otherwise capture hits on the overlap strip.
-        "kanta-sidebar relative z-30 flex flex-col h-screen flex-shrink-0 transition-all duration-300 ease-in-out overflow-visible border-r border-slate-200 bg-white",
-        collapsed ? "w-[72px]" : "w-[260px]"
+        "kanta-sidebar flex flex-col h-screen transition-transform duration-300 ease-in-out overflow-visible border-r border-slate-200 bg-white",
+        collapsed
+          ? "relative z-30 flex-shrink-0 w-[76px] translate-x-0"
+          : "fixed top-0 left-0 z-[150] w-[260px] translate-x-0"
       )}
       style={{ borderRadius: "0 28px 28px 0" }}
     >
@@ -469,7 +496,15 @@ export default function Sidebar() {
           )}
         </Link>
 
-        <Tooltip label={collapsed ? "Expand sidebar" : "Collapse sidebar"} side="right">
+        <Tooltip
+          label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          description={
+            collapsed
+              ? "Show the full navigation menu"
+              : "Hide the menu to give more space to the dashboard"
+          }
+          side="right"
+        >
           <button
             type="button"
             onClick={() => setCollapsed(!collapsed)}
@@ -478,7 +513,7 @@ export default function Sidebar() {
               "absolute -right-3.5 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center",
               "border-0 bg-transparent shadow-none p-0",
               "transition-transform duration-200 hover:scale-[1.06] active:scale-[0.96]",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-active-bg)] focus-visible:ring-offset-2"
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
             )}
           >
             <SidebarCollapseGlyph sidebarExpanded={!collapsed} />
@@ -488,7 +523,7 @@ export default function Sidebar() {
 
       {/* ── Nav ── */}
       <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-visible py-4 flex flex-col">
-        <div className="flex-1 px-3">
+        <div className={clsx("flex-1", collapsed ? "px-2" : "px-3")}>
           {navGroups.map((group) => {
             /* ── Collapsible accordion group (Quality Management) ── */
             if (group.collapsible) {
@@ -514,16 +549,26 @@ export default function Sidebar() {
                   )}
 
                   {/* Parent row: icon + label + chevron toggle */}
-                  <div className="relative">
-                    {/* Active module indicator (left edge) */}
+                  <div className="relative w-full">
+                    {isCollapsibleActive && collapsed && <CollapsedSelectionPill />}
                     {isCollapsibleActive && !collapsed && (
                       <span
                         className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]"
                       />
                     )}
 
-                    <div className="flex items-center">
-                      <Tooltip label={group.title} side="right" className={clsx(!collapsed && "contents")}>
+                    <div
+                      className={clsx(
+                        "flex items-center",
+                        collapsed ? "w-full justify-center" : ""
+                      )}
+                    >
+                      <Tooltip
+                        label={group.title}
+                        description="Open this module and view related pages"
+                        side="right"
+                        className={clsx(collapsed ? "flex w-full justify-center" : "contents")}
+                      >
                         <Link
                           href={parentHref}
                           onClick={() => {
@@ -532,14 +577,11 @@ export default function Sidebar() {
                             }
                           }}
                           className={clsx(
-                            "relative z-[1] flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none flex-1",
-                            collapsed ? "justify-center px-0 translate-x-0.5" : "gap-3 px-4",
-                            isCollapsibleActive
-                              ? clsx(
-                                  "bg-[var(--sidebar-active-bg)] text-white shadow-sm",
-                                  collapsed && "ring-2 ring-offset-2 ring-offset-white ring-[var(--sidebar-active-bg)]/40"
-                                )
-                              : "text-slate-700 hover:bg-slate-100"
+                            "relative z-[1] flex items-center rounded-xl transition-all duration-150 focus:outline-none",
+                            collapsed
+                              ? "h-10 w-10 shrink-0 justify-center p-0"
+                              : "min-h-[40px] flex-1 gap-3 px-4 py-2.5",
+                            navLinkTone(collapsed, isCollapsibleActive)
                           )}
                         >
                           <ParentIcon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
@@ -578,7 +620,7 @@ export default function Sidebar() {
                   {/* Sub-items — only shown when sidebar is expanded AND accordion is open */}
                   {!collapsed && isOpen && (
                     <div className="mt-1 ml-3 pl-3 border-l border-slate-200 flex flex-col gap-0.5">
-                      {group.items.map(({ label, icon: Icon, href, section }, idx) => {
+                      {group.items.map(({ label, tooltip, icon: Icon, href, section }, idx) => {
                         const key = href + label;
                         const subActive =
                           href === SIDEBAR_LRIDS_NAV_HREF
@@ -600,14 +642,10 @@ export default function Sidebar() {
                             )}
                             <div className="relative">
                               {href === SIDEBAR_LRIDS_NAV_HREF ? (
-                                <button
+                                <Tooltip label={label} description={tooltip} side="right" className="contents">
+                                  <button
                                   type="button"
                                   disabled={!lridsFacilityId}
-                                  title={
-                                    lridsFacilityId
-                                      ? "Open display board in a new tab"
-                                      : "No facility assigned"
-                                  }
                                   onClick={() => {
                                     if (lridsFacilityId) void openLridsBoardInNewTab(lridsFacilityId);
                                   }}
@@ -620,20 +658,23 @@ export default function Sidebar() {
                                 >
                                   <Icon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
                                   <span className="truncate text-xs font-medium">{label}</span>
-                                </button>
+                                  </button>
+                                </Tooltip>
                               ) : (
-                                <Link
-                                  href={href}
-                                  className={clsx(
-                                    "relative z-[1] flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none",
-                                    subActive
-                                      ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
-                                      : "text-slate-700 hover:bg-slate-100"
-                                  )}
-                                >
-                                  <Icon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
-                                  <span className="truncate text-xs font-medium">{label}</span>
-                                </Link>
+                                <Tooltip label={label} description={tooltip} side="right" className="contents">
+                                  <Link
+                                    href={href}
+                                    className={clsx(
+                                      "relative z-[1] flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none",
+                                      subActive
+                                        ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
+                                        : "text-slate-700 hover:bg-slate-100"
+                                    )}
+                                  >
+                                    <Icon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
+                                    <span className="truncate text-xs font-medium">{label}</span>
+                                  </Link>
+                                </Tooltip>
                               )}
                             </div>
                           </div>
@@ -657,24 +698,30 @@ export default function Sidebar() {
                   </p>
                 )}
                 <div className="flex flex-col gap-0.5">
-                  {group.items.map(({ label, icon: Icon, href }) => {
+                  {group.items.map(({ label, tooltip, icon: Icon, href }) => {
                     const active      = isNavActive(pathname, href);
                     const itemKey     = href + label;
 
                     return (
-                      <div key={itemKey} className="relative">
+                      <div key={itemKey} className="relative w-full">
+                        {active && collapsed && <CollapsedSelectionPill />}
                         {active && !collapsed && (
                           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full z-10 bg-[var(--sidebar-active-bg)]" />
                         )}
-                        <Tooltip label={label} side="right" className={clsx(!collapsed && "contents")}>
+                        <Tooltip
+                          label={label}
+                          description={tooltip}
+                          side="right"
+                          className={clsx(collapsed ? "flex w-full justify-center" : "contents")}
+                        >
                           <Link
                             href={href}
                             className={clsx(
-                              "relative flex items-center py-2.5 rounded-xl transition-all duration-150 focus:outline-none z-[1] w-full",
-                              collapsed ? "justify-center px-0 translate-x-0.5" : "gap-3 px-4",
-                              active
-                                ? "bg-[var(--sidebar-active-bg)] text-white shadow-sm"
-                                : "text-slate-700 hover:bg-slate-100"
+                              "relative z-[1] flex items-center rounded-xl transition-all duration-150 focus:outline-none",
+                              collapsed
+                                ? "h-10 w-10 shrink-0 justify-center p-0"
+                                : "w-full min-h-[40px] gap-3 px-4 py-2.5",
+                              navLinkTone(collapsed, active)
                             )}
                           >
                             <Icon size={iconSize} strokeWidth={1.8} className="flex-shrink-0" />
@@ -691,16 +738,33 @@ export default function Sidebar() {
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex-shrink-0 border-t border-slate-200 pt-3 pb-4 px-3">
+        <div className={clsx("flex-shrink-0 border-t border-slate-200 pt-3 pb-4", collapsed ? "px-2" : "px-3")}>
           {user && (
-            <div className={clsx("flex items-center gap-3", collapsed ? "justify-center mb-3" : "mb-3")}>
-              <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border bg-slate-100 text-slate-700 border-slate-200">
-                {getInitials(user)}
-              </div>
+            <div
+              className={clsx(
+                "flex items-center gap-3",
+                collapsed ? "mb-3 flex-col items-center gap-2" : "mb-3"
+              )}
+            >
+              {avatarUrl?.trim() ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={avatarUrl}
+                  alt={getFirstName(user)}
+                  className="flex-shrink-0 w-9 h-9 rounded-full object-cover border border-slate-200 bg-slate-100"
+                />
+              ) : (
+                <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border bg-slate-100 text-slate-700 border-slate-200">
+                  {getInitials(user)}
+                </div>
+              )}
               {!collapsed && (
                 <div className="flex-1 min-w-0 flex items-center justify-between">
                   <p className="text-sm font-medium truncate text-slate-700">{getFirstName(user)}</p>
-                  <Tooltip label="Log out">
+                  <Tooltip
+                    label="Log out"
+                    description="Sign out of Kanta and return to the login screen"
+                  >
                     <button
                       type="button"
                       onClick={() => signOut()}
@@ -712,20 +776,23 @@ export default function Sidebar() {
                   </Tooltip>
                 </div>
               )}
-            </div>
-          )}
-          {user && collapsed && (
-            <div className="flex justify-center">
-              <Tooltip label="Log out" side="right">
-                <button
-                  type="button"
-                  onClick={() => signOut()}
-                  aria-label="Log out"
-                  className="p-2.5 rounded-xl hover:bg-red-500/20 text-red-300 transition-colors"
+              {collapsed && (
+                <Tooltip
+                  label="Log out"
+                  description="Sign out of Kanta and return to the login screen"
+                  side="right"
+                  className="flex w-full justify-center"
                 >
-                  <LogOut size={20} strokeWidth={1.5} />
-                </button>
-              </Tooltip>
+                  <button
+                    type="button"
+                    onClick={() => signOut()}
+                    aria-label="Log out"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
+                  >
+                    <LogOut size={20} strokeWidth={1.5} />
+                  </button>
+                </Tooltip>
+              )}
             </div>
           )}
         </div>

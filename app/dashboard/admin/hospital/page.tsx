@@ -22,6 +22,8 @@ type HospitalForm = {
   group_id: string | null;
   group_name: string | null;
   branch_name: string;
+  /** ENG-99 — lab identifiers purged after this many days (read-only; contact Zyntel to change). */
+  lab_number_retention_days: number;
 };
 
 type SiblingRow = { id: string; name: string; city: string | null; tier: string | null };
@@ -58,6 +60,7 @@ export default function HospitalSettingsPage() {
     group_id: null,
     group_name: null,
     branch_name: "",
+    lab_number_retention_days: 90,
   });
   const [siblings, setSiblings] = useState<SiblingRow[]>([]);
   const [siblingsLoading, setSiblingsLoading] = useState(false);
@@ -85,6 +88,10 @@ export default function HospitalSettingsPage() {
           group_id: typeof data?.group_id === "string" ? data.group_id : null,
           group_name: typeof data?.group_name === "string" ? data.group_name : null,
           branch_name: typeof data?.branch_name === "string" ? data.branch_name : "",
+          lab_number_retention_days:
+            typeof data?.lab_number_retention_days === "number" && data.lab_number_retention_days > 0
+              ? data.lab_number_retention_days
+              : 90,
         });
       })
       .catch(() => setToast({ type: "error", message: "Failed to load hospital settings" }))
@@ -251,6 +258,15 @@ export default function HospitalSettingsPage() {
               <p className="text-lg font-semibold text-slate-900">{tierPlanLabel(form.tier)}</p>
               <p className="text-xs text-slate-500 mt-1">
                 Subscription tier is set by Zyntel. Contact Zyntel to change your plan.
+              </p>
+            </div>
+
+            <div className="sm:col-span-2 rounded-lg border border-slate-100 bg-white px-3 py-2.5">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Lab number retention</p>
+              <p className="text-lg font-semibold text-slate-900">{form.lab_number_retention_days} days</p>
+              <p className="text-xs text-slate-500 mt-1">
+                After this period, sample identifiers and related bridge fields are cleared from stored test rows
+                (aggregates are kept). To change this policy, contact Zyntel.
               </p>
             </div>
           </div>

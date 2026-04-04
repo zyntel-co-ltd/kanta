@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Save, Trash2 } from "lucide-react";
+import { queuedFetch } from "@/lib/sync-queue/queuedFetch";
 
 type LabSection = {
   id: string;
@@ -75,7 +76,7 @@ export default function AdminConfigurationSection({
 
   const patchSection = async (id: string, body: Partial<LabSection>) => {
     try {
-      const res = await fetch(`/api/admin/config/sections/${id}`, {
+      const res = await queuedFetch(`/api/admin/config/sections/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -98,7 +99,7 @@ export default function AdminConfigurationSection({
       return;
     }
     try {
-      const res = await fetch("/api/admin/config/sections", {
+      const res = await queuedFetch("/api/admin/config/sections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ facility_id: facilityId, name, abbreviation, code }),
@@ -120,7 +121,7 @@ export default function AdminConfigurationSection({
       return;
     }
     try {
-      const res = await fetch("/api/admin/config/shifts", {
+      const res = await queuedFetch("/api/admin/config/shifts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -142,7 +143,7 @@ export default function AdminConfigurationSection({
 
   const patchShift = async (id: string, body: Record<string, unknown>) => {
     try {
-      const res = await fetch(`/api/admin/config/shifts/${id}`, {
+      const res = await queuedFetch(`/api/admin/config/shifts/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -159,7 +160,7 @@ export default function AdminConfigurationSection({
   const deleteShift = async (id: string) => {
     if (!confirm("Delete this shift? At least one shift must remain.")) return;
     try {
-      const res = await fetch(`/api/admin/config/shifts/${id}`, { method: "DELETE" });
+      const res = await queuedFetch(`/api/admin/config/shifts/${id}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Failed");
       onToast("Shift deleted", "success");
@@ -177,7 +178,7 @@ export default function AdminConfigurationSection({
     }));
     setSavingTat(true);
     try {
-      const res = await fetch("/api/admin/config/tat-targets", {
+      const res = await queuedFetch("/api/admin/config/tat-targets", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ facility_id: facilityId, targets }),

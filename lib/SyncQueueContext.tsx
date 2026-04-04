@@ -21,7 +21,7 @@ import {
   SYNC_QUEUED_TOAST,
 } from "@/lib/sync-queue/types";
 
-const HEALTHCHECK = "/api/healthcheck";
+const HEALTHCHECK = "/api/health";
 const PROBE_MS = 30_000;
 
 export type DashboardSyncStatus = "idle" | "syncing" | "error";
@@ -40,7 +40,7 @@ const SyncQueueContext = createContext<SyncQueueContextValue | null>(null);
 
 async function probeReachable(): Promise<boolean> {
   try {
-    const res = await fetch(HEALTHCHECK, { method: "GET", cache: "no-store" });
+    const res = await fetch(HEALTHCHECK, { method: "HEAD", cache: "no-store" });
     return res.ok;
   } catch {
     return false;

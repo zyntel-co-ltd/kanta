@@ -16,6 +16,10 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 | 2026-04-01 | `supabase/migrations/20260401120000_lims_data_bridge.sql` | ENG-87: `lims_connections`, `lims_sync_log`, `test_requests.lims_*` dedupe index; RLS for facility members |
 | 2026-04-01 | `supabase/migrations/20260401190000_rls_security_fixes.sql` | ENG-154: RLS on `login_audit`, `qc_results`, `platform_admins`, `facility_invites`, `lab_sections`, `lab_shifts`; revoke SELECT on `facility_invites.token` for anon/authenticated; `search_path` on 4 functions |
 | 2026-04-01 | `supabase/migrations/20260402120000_hospitals_parent_hospital_id.sql` | ENG-157: optional `hospitals.parent_hospital_id` FK for branch / hospital groups |
+| 2026-04-02 | `supabase/migrations/20260402130000_qc_corrective_followup_tracking.sql` | ENG-163: qualitative QC follow-up lifecycle fields (`followup_status`, rerun linkage, closure timestamps) |
+| 2026-04-02 | `supabase/migrations/20260402142000_qc_lot_review_recommendations.sql` | ENG-166: `qc_lot_recommendations` table for repeated-lot Westgard recommendation tracking |
+| 2026-04-03 | `supabase/migrations/20260403180000_facility_users_avatar_url.sql` | ENG-106: `facility_users.avatar_url` for default SVG paths or HTTPS storage URLs (per-facility) |
+| 2026-04-03 | `supabase/migrations/20260403220000_eng98_99_100_92_platform.sql` | ENG-98: `external_ref`, `test_name_mappings`, `bridge_unmatched_test_names`; ENG-99: `lab_number_retention_days`, `purge_after`, `price_ugx`, `daily_metrics`; ENG-100: `dedupe_*`, import dedupe index, `data_import_jobs`; ENG-92: `api_keys` + RLS |
 | — | *(no migration)* | ENG-156: Zyntel Console `/dashboard/console` (super-admin), `/api/console/facilities`, `POST /api/admin/users/sync` |
 
 ## Phase — ENG-157 Console hospital provisioning (2026-04-01)
@@ -73,3 +77,156 @@ See `PROJECT_STATUS/START_HERE.md`. Cursor: read that file before writing any co
 
 - **LRIDS visibility widened:** removed `show-lrids` UI gating in `components/dashboard/Sidebar.tsx`, `components/dashboard/AppTabBar.tsx`, and `app/dashboard/progress/page.tsx` so LRIDS entry points are visible to all users in-app.
 - **Token protection retained:** standalone LRIDS board still uses token-based access (`/api/lrids/token` + `/lrids/[facilityId]?token=...`), so visibility is broad while board access remains signed-link controlled.
+
+## App / ops (2026-03-30 — ENG-150 AI panel trigger availability)
+
+- **AI trigger verified on all dashboard routes:** `components/dashboard/TopBar.tsx` renders `NLQueryBar` unconditionally (no route/module gating), and `components/dashboard/DashboardChrome.tsx` mounts `TopBar` for all dashboard pages.
+- **Prop threading clarified:** `NLQueryBar` now receives `facilityId={alertsFacilityId ?? null}` and `userId={user?.id}` explicitly.
+- **Inline intent comment added:** documented above `<NLQueryBar .../>` that the AI side panel is available on all routes and opens as a right-side panel without navigation.
+
+## App / ops (2026-04-02 — ENG-63 offline-first sync queue hardening)
+
+- **Connectivity probe aligned to spec:** `lib/SyncQueueContext.tsx` now probes `"/api/health"` using `HEAD` every 30s (instead of `GET /api/healthcheck`), and `app/api/health/route.ts` now supports `HEAD` with fast `200` response.
+- **Offline queue expanded to sample operations:** `app/dashboard/samples/page.tsx` mutating calls now use `queuedFetch` for sample add/delete, rack create/delete, rack discard, and discarded-item delete; queued writes replay via existing FIFO sync flush.
+- **Top bar alert actions queue-enabled:** `components/dashboard/TopBar.tsx` alert acknowledgement/dismiss `PATCH` writes now use `queuedFetch`, preserving offline behavior consistency.
+- **Admin configuration writes queue-enabled:** `components/dashboard/admin/AdminConfigurationSection.tsx` section/shift/TAT target mutations moved to `queuedFetch`.
+
+## App / ops (2026-04-02 — ENG-148 AI panel push layout refactor)
+
+- **Shared panel state in layout context:** `lib/SidebarLayoutContext.tsx` now exposes `aiPanelOpen` and `setAiPanelOpen`; state is in-memory only (not persisted to localStorage).
+- **NLQueryBar converted from centered modal to slide panel:** `components/ai/NLQueryBar.tsx` now renders as a fixed right drawer on desktop (`w-[380px]`, full height, `translateX` transition) and a mobile bottom sheet (`translateY` transition), both via `createPortal`.
+- **Dashboard push behavior added:** `components/dashboard/DashboardChrome.tsx` now reads `aiPanelOpen` and applies a desktop-only `margin-right: 380px` transition to the main content wrapper and `main` area so TopBar/tab strip/content compress together while panel is open.
+- **Close interactions preserved:** backdrop click, close button, and Escape from input all close the panel via `setAiPanelOpen(false)`; chat logic and suggestions remain intact.
+
+## App / ops (2026-04-02 — ENG-152 expanded sidebar overlay mode)
+
+- **Expanded sidebar now overlays instead of consuming layout width:** `components/dashboard/Sidebar.tsx` uses conditional positioning — collapsed rail remains in-flow (`relative`, `w-[76px]` as of ENG-183), expanded sidebar becomes fixed overlay (`fixed top-0 left-0`, `w-[260px]`, `z-[150]`).
+- **Backdrop dismiss for overlay mode:** `components/dashboard/DashboardChrome.tsx` now renders `fixed inset-0 bg-black/30 z-[149]` when expanded; clicking backdrop collapses sidebar via `setCollapsed(true)`.
+- **Chrome structure aligned for overlay behavior:** sidebar is rendered outside the main content wrapper with a collapsed-width suspense fallback spacer, while TopBar/app tabs/main stay in the primary content column.
+- **Transition + controls preserved:** existing collapse glyph/button behavior and sidebar transitions remain intact while adopting overlay semantics.
+
+## App / ops (2026-04-02 — ENG-149 AI response navigation chips)
+
+- **Structured link extraction in AI query API:** `app/api/ai/query/route.ts` now instructs the model to append `[LINKS: ...]`, extracts/removes that block from assistant text, validates/whitelists dashboard hrefs, caps to 3 links, and returns `links` with the response.
+- **Malformed link JSON is non-fatal:** parsing failures are caught and logged (`console.warn`), while API still returns `200` with `links: []` (no hard error path).
+- **Chat message model expanded:** `components/ai/NLQueryBar.tsx` `Message` now supports optional `links` and maps `data.links` from `/api/ai/query`.
+- **Clickable route chips in assistant bubbles:** assistant messages render navigation pills with `ArrowRight`; clicking chips calls `router.push(href)` and intentionally keeps the AI panel open.
+
+## App / ops (2026-04-02 — ENG-153 tooltip UX upgrade)
+
+- **Tooltip component upgraded:** `components/ui/Tooltip.tsx` now supports optional `description` and renders two-line tooltips (headline + explanatory sub-line) while preserving existing single-line behavior and mobile hidden bubble behavior.
+- **Sidebar copy quality improved:** `components/dashboard/Sidebar.tsx` nav items now carry descriptive `tooltip` text; collapse/expand and log-out controls now explain intent instead of echoing labels.
+- **TopBar actions clarified:** `components/dashboard/TopBar.tsx` tooltips now describe alerts, sync status, dismiss/close actions, console access, and user menu behavior.
+- **Browser-native titles replaced in dashboard interactions:** removed `title=` tooltip fallbacks on key interactive elements and replaced with styled `Tooltip` triggers in `app/dashboard/numbers/page.tsx`, `components/dashboard/AppTabBar.tsx`, `components/dashboard/ScanFeed.tsx`, `components/dashboard/AddEquipmentModal.tsx`, and `components/ai/NLQueryBar.tsx`.
+
+## App / ops (2026-04-02 — ENG-151 AI panel history persistence)
+
+- **Persistence behavior confirmed by architecture:** `components/ai/NLQueryBar.tsx` now includes an explicit comment documenting why message state survives same-layout `/dashboard/*` route transitions under Next.js App Router.
+- **No storage added intentionally:** chat state remains in-memory React state only; no `localStorage`, `sessionStorage`, or backend persistence introduced.
+
+## App / ops (2026-04-02 — ENG-163 corrective-action follow-up closure)
+
+- **Qualitative follow-up lifecycle added:** `qualitative_qc_entries` now tracks `followup_status` (`none/open/closed/override`), rerun linkage (`rerun_for_entry_id`, `rerun_entry_id`), closure timestamp, and optional override reason.
+- **API linkage + closure logic:** `app/api/qc/qualitative/entries/route.ts` and `[id]/route.ts` now link reruns to failed incidents and auto-close follow-up when linked rerun passes; PATCH validates rerun targets and preserves `closed`/`override` rows on edit.
+- **Audit evidence trail:** qualitative QC create/update emit `qc.qual_entry.*` app audit rows; linked reruns also write `qc.qual_entry.followup_updated` on the **originating** failed entry; manual override logs `qc.qual_entry.followup_override`.
+- **Incident audit API + UI:** `GET /api/qc/qualitative/entries/:id/audit-trail` returns chronological events for the entry plus linked rerun/parent IDs; Qual. Log expanded rows show an **Audit trail** timeline and optional **manual closure (override)** with required justification.
+
+## App / ops (2026-04-03 — ENG-106 default avatars + Pro-gated photo upload)
+
+- **Per-facility avatar column:** `facility_users.avatar_url` stores either a public default path (`/avatars/default-01.svg` … `default-16.svg`) or an HTTPS (or localhost dev) storage URL after upload.
+- **API:** `GET /api/me` includes `profileAvatarUrl`; `PATCH /api/me/avatar` applies tier rules (defaults any plan; custom URL Professional+ with upsell error copy on 403); syncs Supabase Auth `user_metadata.avatar_url` via admin merge.
+- **Auth resolution:** `lib/AuthContext.tsx` prefers `profileAvatarUrl` over OAuth/metadata so the TopBar matches the active facility.
+- **Settings UI:** `app/dashboard/settings/page.tsx` — grid of 16 abstract SVG defaults; upload control hidden below Pro with amber upsell; Pro uploads still use Storage then `PATCH /api/me/avatar`.
+- **TopBar sizing:** `components/dashboard/TopBar.tsx` user avatar uses responsive 24px / 32px / 40px classes for crisp SVG rendering.
+- **Assets:** `public/avatars/default-01.svg`–`default-16.svg`; optional regen via `scripts/gen-default-avatars.mjs`.
+
+## App / ops (2026-04-02 — ENG-164 proactive QC drift alerts)
+
+- **Drift heuristic introduced:** `lib/westgard.ts` now exposes `detectDriftAlerts()` for same-side, non-decreasing z-score drift toward ±2 SD over configurable run windows.
+- **Runs API enriched:** `app/api/qc/runs/route.ts` now includes per-point `drift_alert` metadata alongside existing status flags.
+- **Visualization + stats signals:** `app/dashboard/qc/page.tsx` now renders proactive drift cards in QC Visualization and labels drift-flagged points distinctly in QC Stats before hard rule violations.
+
+## App / ops (2026-04-02 — ENG-166 repeated-lot review recommendations)
+
+- **Recommendation persistence:** added `qc_lot_recommendations` table for analyte/lot recommendation state (`open/acknowledged/resolved`) and violation window counts.
+- **Automatic recommendation trigger:** `app/api/qc/runs/route.ts` now upserts a recommendation when repeated flagged Westgard runs for the same lot exceed threshold in rolling window.
+- **Recommendation APIs:** added `GET /api/qc/recommendations` and `PATCH /api/qc/recommendations/:id/ack`.
+- **QC UI actioning:** QC Stats now shows “Review Lot” recommendations with acknowledge action and corresponding audit log writes.
+
+## App / ops (2026-04-02 — ENG-167 lot transition comparison)
+
+- **Previous-lot baseline detection:** QC Visualization now locates previous lot for same analyte/level and computes baseline mean/SD.
+- **First-10-run transition overlay summary:** new lot’s first 10 runs are compared to prior baseline with mean shift, SD deltas, and recommendation (`Acceptable`, `Monitor`, `Investigate`).
+
+## App / ops (2026-04-02 — ENG-165 monthly QC summary PDF export)
+
+- **One-click monthly export added:** QC Stats includes month selector and `Export Monthly PDF` action per selected analyte/config.
+- **Formatted report payload:** generated print-ready report includes monthly run table (L-J datapoints), violations section, and pass-rate summary metrics.
+
+## App / ops (2026-04-02 — ENG-168 QC expiry calendar)
+
+- **Expiry calendar surfaced:** quantitative and qualitative config views now show upcoming lot expiries in dedicated calendar-style lists.
+- **Amber lead-time warnings:** both calendars expose configurable warning threshold (N days) and mark soon-expiring vs expired lots for proactive planning.
+
+## App / ops (2026-04-02 — ENG-103 QR results scanning for TAT)
+
+- **Scan UI:** added `/dashboard/lab-metrics/tat/scan` with continuous camera scanning plus a manual payload fallback.
+- **Payload decode:** supports legacy delimiter payloads and JSON payloads via `lib/tat/qrPayload.ts`.
+- **API wiring:** added `GET|PATCH /api/tat/scan` to look up active test requests and write section `time-in/time-out` timestamps; offline writes go through `queuedFetch` so scanning works without connectivity.
+- **Navigation:** TAT `Section Capture` landing panel now links to “Open Scan Results”.
+
+## App / ops (2026-04-02 — QC export UX refinements)
+
+- **Monthly PDF availability improved:** QC Stats now auto-selects the latest month with data for the chosen control when the current month filter has no rows, preventing a disabled export state.
+- **Visualization graph export added:** each L-J chart card now includes `Download L-J Graph PDF` that exports the currently date-filtered graph.
+- **PDF metadata expanded:** visualization export includes control name, control level, lot number, selected date range, `Prepared by`, and download/print timestamp; filename also carries control/lot/date-range metadata.
+
+## App / ops (2026-04-02 — ENG-90 TAT QR sample lookup placement)
+
+- **Lab Metrics entry point added:** `app/dashboard/tat/page.tsx` Section Capture panel now includes `QR Sample Lookup (Results)` linking to `/dashboard/scan?scanPurpose=sample` (behind `show-sample-scan` flag).
+- **Scan mode deep-link support:** `app/dashboard/scan/page.tsx` now reads `scanPurpose`/`purpose` query params and initializes in sample lookup mode when requested and feature-flagged.
+
+## App / ops (2026-04-02 — ENG-169 Settings load latency)
+
+- **Dashboard prefetch gated:** `components/dashboard/DashboardProviders.tsx` now only instantiates `DashboardDataProvider` on asset home (`/dashboard`) and analytics (`/dashboard/analytics`), so `Settings` no longer triggers dashboard KPI/scan/department fetches during app start/refresh.
+
+## App / ops (2026-04-02 — ENG-90 sample lookup scanner UX)
+
+- **Keyboard-wedge barcode scanner flow improved:** `app/dashboard/scan/page.tsx` sample lookup input now auto-focuses when sample mode is active and triggers lookup on scanner Enter suffix, reducing manual taps/clicks during high-volume scanning.
+
+## App / ops (2026-04-02 — ENG-97 manual Section Capture workflow)
+
+- **Reception API added:** `GET|PATCH /api/tat/reception` now provides facility-scoped section capture rows and secure timestamp stamping (`section_time_in` / `section_time_out`) with row ownership checks.
+- **Section Capture UI implemented:** `components/tat/TatReceptionTab.tsx` adds date + section + search filters, Lab Number / anonymized patient token / test columns, green `Stamp In` / `Stamp Out` actions, and computed TAT minutes.
+- **Edit safety window enforced:** stamped values can be corrected via `Edit` only within 30 minutes, after which API returns an edit-window error.
+- **Tab visibility gated by feature flag:** `app/dashboard/tat/page.tsx` now shows the Reception/Section Capture tab only when `show-reception-tab` is enabled.
+
+## App / ops (2026-04-03 — ENG-98 / ENG-99 / ENG-100 / ENG-92 / ENG-93 platform)
+
+- **Migration:** `20260403220000_eng98_99_100_92_platform.sql` — bridge metadata, retention + `daily_metrics`, dedupe columns + `data_import_jobs`, `api_keys` (hashed keys, tier/rate limits). **Before** `idx_test_requests_import_dedupe`, the migration deletes duplicate `test_requests` rows per `(facility_id, dedupe_lab, test_name, section, dedupe_day)` (keeps latest `updated_at`) so existing prod data does not block the unique index (`23505`).
+- **LIMS sync:** `external_ref` from optional `externalRefColumn`; `test_name_mappings` + `lab_number_retention_days` from `facility_capability_profile`; unmatched names bump `bridge_unmatched_test_names`.
+- **Bridge library:** `lib/bridge/` (types, name matcher, PDF metadata via `pdf-parse`, registry).
+- **Import:** `lib/data-import/parseTestRequestFile.ts`, `POST /api/admin/data-import` (multipart, chunked upsert, job row).
+- **Purge cron:** `GET /api/cron/purge-lab-numbers` — aggregate to `daily_metrics`, null lab PII; **Vercel:** `vercel.json` schedule `5 2 * * *`.
+- **Public API (ENG-92):** Bearer `kanta_*` keys — `lib/api/authenticate.ts` (SHA-256, Upstash per-key limits); `GET|POST /api/admin/api-keys`, `PATCH /api/admin/api-keys/[id]`; `GET /api/v1/facilities/{id}/equipment/summary` (Redis cache ~5m), `GET .../tat/benchmarks`; middleware skips IP limit for `/api/v1/*`.
+- **Admin UI:** `/dashboard/admin/api-keys`, `/dashboard/admin/data-import`; subnav links; data connections: optional **external reference** column + unmatched-names banner; hospital settings: read-only **lab number retention** + Zyntel copy.
+- **TAT summary:** `GET /api/tat/summary` merges `daily_metrics` when no matching raw row for same `(date, section, test_name)` (avoids double-count).
+- **Docs / local DB (ENG-93):** `docker-compose.yml`, `scripts/create-local-db.sh`, `docs/SELF_HOSTED.md`, `.env.local.docker.example` (git-tracked via `.gitignore` exception), README Docker blurb; `docs/adr/ADR-003-api-platform-strategy.md`; public **`/api-platform`** page.
+- **Ops / env:** `.env.example` documents `CRON_SECRET` and which cron routes verify Bearer (lims-sync, weekly-summary, purge-lab-numbers).
+- **Verify:** `npm run build`, `npx tsc --noEmit`; apply migration on Supabase; set `CRON_SECRET` on Vercel for protected crons.
+
+**Follow-up (not blocking):** `GET /api/tat/anomalies` is scheduled in `vercel.json` but does not yet check `CRON_SECRET` — consider aligning with other cron routes for defense in depth.
+
+## App / ops (2026-04-03 — ENG-182 sidebar avatar sync)
+
+- **Bug:** Sidebar footer showed only initials; it never read `avatarUrl` from `AuthContext`, so avatar changes in Settings updated TopBar but not the sidebar.
+- **Fix:** `components/dashboard/Sidebar.tsx` — footer uses the same conditional as TopBar: `<img>` when `avatarUrl` is set, else initials fallback. `refreshFacilityAuth()` from Settings already updates context; no API change.
+
+## App / ops (2026-04-03 — ENG-183 / ENG-184 collapsed sidebar UX)
+
+- **ENG-183 — Rail width & padding:** Collapsed aside **76px** (was 60px); nav + footer use **`px-2`** when collapsed. **`DashboardChrome`** Suspense fallback **`w-[76px]`** matches sidebar width to avoid layout shift.
+- **ENG-184 — Collapsed active state (expanded):** Expanded nav unchanged — solid **`--sidebar-active-bg`** pill + **4px** rounded-r bar on the left.
+- **Collapsed alignment (Slack-style rail):** Nav tooltips use **`flex w-full justify-center`** so **`h-10 w-10`** link targets center on the same axis as the footer avatar and logout (fixes left-heavy icons from `inline-flex` tooltip triggers). Accordion parent rows use the same centered pattern.
+- **Collapsed selection:** **`CollapsedSelectionPill`** — thin **`rounded-full`** vertical bar (**`emerald-500`**, **`h-5 w-[3px]`**, inset **`left-2`**) so the indicator stays clear of icon geometry (Discord/Slack pattern). Active row adds **`bg-emerald-50`** + **`text-emerald-600`** on the rounded control; inactive stays neutral slate with light hover.
+- **Collapsed footer:** Avatar + logout stack in **`flex-col items-center gap-2`**; logout uses the same **`h-10 w-10`** hit area as nav icons for consistent hierarchy.
+- **Linear:** [ENG-183](https://linear.app/zyntel/issue/ENG-183), [ENG-184](https://linear.app/zyntel/issue/ENG-184).

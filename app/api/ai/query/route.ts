@@ -34,7 +34,64 @@ STRICT RULES — violating these is not permitted under any circumstances:
 6. Keep answers concise (≤ 4 sentences or a short list). Prefer numbers over words.
 7. If you cannot answer confidently from the data provided, say so clearly.
 
-You are speaking to a lab manager or administrator. Use plain language — no clinical jargon.`;
+You are speaking to a lab manager or administrator. Use plain language — no clinical jargon.
+
+If your answer refers to a specific Kanta page the user should visit, append a link block at the very end of your response using exactly this format and nothing else after it: [LINKS: [{"label": "...", "href": "..."}]]. Only include links that are genuinely useful. Maximum 3. Valid hrefs only: /dashboard/tat, /dashboard/tests, /dashboard/revenue, /dashboard/numbers, /dashboard/performance, /dashboard/qc, /dashboard/samples, /dashboard/equipment, /dashboard/intelligence, /dashboard/maintenance, /dashboard/refrigerator`;
+
+type NavigationLink = { label: string; href: string };
+
+const ALLOWED_LINK_HREFS = new Set([
+  "/dashboard/tat",
+  "/dashboard/tests",
+  "/dashboard/revenue",
+  "/dashboard/numbers",
+  "/dashboard/performance",
+  "/dashboard/qc",
+  "/dashboard/samples",
+  "/dashboard/equipment",
+  "/dashboard/intelligence",
+  "/dashboard/maintenance",
+  "/dashboard/refrigerator",
+]);
+
+function extractNavigationLinks(raw: string): {
+  answer: string;
+  links: NavigationLink[];
+} {
+  const linkMatch = raw.match(/\[LINKS:\s*(\[[\s\S]*?\])\]/);
+  if (!linkMatch) {
+    return { answer: raw, links: [] };
+  }
+
+  const cleanedAnswer = raw.replace(linkMatch[0], "").trim();
+  try {
+    const parsed = JSON.parse(linkMatch[1]) as unknown;
+    if (!Array.isArray(parsed)) {
+      return { answer: cleanedAnswer, links: [] };
+    }
+
+    const links = parsed
+      .filter(
+        (item): item is NavigationLink =>
+          typeof item === "object" &&
+          item !== null &&
+          typeof (item as { label?: unknown }).label === "string" &&
+          typeof (item as { href?: unknown }).href === "string"
+      )
+      .map((item) => ({ label: item.label.trim(), href: item.href.trim() }))
+      .filter(
+        (item) =>
+          item.label.length > 0 &&
+          ALLOWED_LINK_HREFS.has(item.href)
+      )
+      .slice(0, 3);
+
+    return { answer: cleanedAnswer, links };
+  } catch (err) {
+    console.warn("[AI query] failed to parse LINKS block", err);
+    return { answer: cleanedAnswer, links: [] };
+  }
+}
 
 async function logInference(
   supabase: ReturnType<typeof createClient>,
@@ -154,7 +211,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const answer: string = data.content?.[0]?.text ?? "No answer generated.";
+    const rawAnswer: string = data.content?.[0]?.text ?? "No answer generated.";
+    const { answer, links } = extractNavigationLinks(rawAnswer);
     const latencyMs = Date.now() - t0;
     const outputHash = await sha256(answer);
 
@@ -171,7 +229,7 @@ export async function POST(req: NextRequest) {
       latencyMs,
     }).catch(() => {});
 
-    return NextResponse.json({ answer, latency_ms: latencyMs });
+    return NextResponse.json({ answer, links, latency_ms: latencyMs });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     await logInference(supabase, {

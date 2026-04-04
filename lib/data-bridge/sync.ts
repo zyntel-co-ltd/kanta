@@ -3,11 +3,49 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { mapLimsTestName } from "@/lib/bridge/name-matcher";
 import { decryptConnectionConfig } from "./crypto";
 import { PostgreSQLLIMSConnector } from "./connectors/postgresql";
 import { MySQLLIMSConnector } from "./connectors/mysql";
 import type { LIMSQueryConfig, SyncResult } from "./types";
 import { transformLimsRowsToTestRequests } from "./transformers/tat";
+
+async function bumpUnmatchedTestName(
+  supabase: SupabaseClient,
+  facilityId: string,
+  sourceName: string
+): Promise<void> {
+  const name = sourceName.trim().slice(0, 500);
+  if (!name) return;
+  try {
+    const { data: row } = await supabase
+      .from("bridge_unmatched_test_names")
+      .select("id, occurrence_count")
+      .eq("facility_id", facilityId)
+      .eq("source_name", name)
+      .maybeSingle();
+    const now = new Date().toISOString();
+    if (row?.id) {
+      await supabase
+        .from("bridge_unmatched_test_names")
+        .update({
+          occurrence_count: Number(row.occurrence_count ?? 0) + 1,
+          last_seen: now,
+        })
+        .eq("id", row.id);
+    } else {
+      await supabase.from("bridge_unmatched_test_names").insert({
+        facility_id: facilityId,
+        source_name: name,
+        occurrence_count: 1,
+        first_seen: now,
+        last_seen: now,
+      });
+    }
+  } catch {
+    /* table may be missing on older DBs — non-fatal */
+  }
+}
 
 function sanitizeErrorMessage(e: unknown): string {
   const m = e instanceof Error ? e.message : String(e);
@@ -147,6 +185,39 @@ export async function runLIMSSync(params: RunLIMSSyncParams): Promise<SyncResult
       fallbackRequested
     );
 
+    const { data: capRow } = await supabase
+      .from("facility_capability_profile")
+      .select("test_name_mappings, lab_number_retention_days")
+      .eq("facility_id", conn.facility_id as string)
+      .maybeSingle();
+
+    const mappings = capRow?.test_name_mappings;
+    const retentionDays =
+      typeof capRow?.lab_number_retention_days === "number" && capRow.lab_number_retention_days > 0
+        ? capRow.lab_number_retention_days
+        : 90;
+
+    const purgeAfterFromRequested = (requestedAt: string): string => {
+      const base = new Date(requestedAt);
+      if (Number.isNaN(base.getTime())) {
+        const d = new Date();
+        d.setDate(d.getDate() + retentionDays);
+        return d.toISOString().slice(0, 10);
+      }
+      const d = new Date(base);
+      d.setDate(d.getDate() + retentionDays);
+      return d.toISOString().slice(0, 10);
+    };
+
+    for (const p of payloads) {
+      const orig = p.test_name.trim() || "Unknown";
+      const { kantaName, matched } = mapLimsTestName(orig, mappings);
+      p.test_name = kantaName;
+      if (matched === "none" && orig !== "Unknown") {
+        await bumpUnmatchedTestName(supabase, conn.facility_id as string, orig);
+      }
+    }
+
     const upsertRows = payloads.map((p) => ({
       facility_id: p.facility_id,
       patient_id: p.patient_id,
@@ -160,6 +231,8 @@ export async function runLIMSSync(params: RunLIMSSyncParams): Promise<SyncResult
       status: p.status,
       lims_connection_id: p.lims_connection_id,
       lims_external_id: p.lims_external_id,
+      external_ref: p.external_ref ?? null,
+      purge_after: purgeAfterFromRequested(p.requested_at),
       updated_at: fallbackRequested,
     }));
 

@@ -11,7 +11,8 @@ import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty"
 import LimsTestDataEmpty from "@/components/dashboard/LimsTestDataEmpty";
 import { useTestRequestsEmpty } from "@/lib/hooks/useTestRequestsEmpty";
 import PageLoader from "@/components/ui/PageLoader";
-import { BarChart3, Clock3 } from "lucide-react";
+import Tooltip from "@/components/ui/Tooltip";
+import { BarChart3, Clock3, Info } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const PERIODS = [
@@ -55,9 +56,16 @@ function TargetProgress({
 }) {
   const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
   return (
-    <div className="mb-5" title={tooltip}>
-      <div className="flex justify-between items-center mb-1">
-        <span className="text-sm font-semibold text-slate-700">{title}</span>
+    <div className="mb-5">
+      <div className="mb-1 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-semibold text-slate-700">{title}</span>
+          {tooltip && (
+            <Tooltip label={title} description={tooltip} side="top">
+              <Info size={13} className="cursor-help flex-shrink-0 text-slate-400" />
+            </Tooltip>
+          )}
+        </div>
         <span className="text-sm font-bold module-accent-text">{pct.toFixed(1)}%</span>
       </div>
       <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
@@ -88,12 +96,16 @@ function KPICard({
   iconId?: KpiTwemojiId;
 }) {
   return (
-    <div
-      className={`bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-2 ${full ? "col-span-2" : ""}`}
-      title={tooltip}
-    >
+    <div className={`bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-2 ${full ? "col-span-2" : ""}`}>
       {iconId && <KpiTwemojiIcon id={iconId} size={40} />}
-      <p className="text-xs text-slate-500">{title}</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-xs text-slate-500">{title}</p>
+        {tooltip && (
+          <Tooltip label={title} description={tooltip} side="top">
+            <Info size={13} className="cursor-help flex-shrink-0 text-slate-400" />
+          </Tooltip>
+        )}
+      </div>
       <p className="text-xl font-bold text-slate-800">{value ?? "—"}</p>
     </div>
   );

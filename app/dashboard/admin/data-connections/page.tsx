@@ -48,6 +48,7 @@ const defaultMapping = {
   resultAtColumn: "",
   sectionColumn: "",
   testNameColumn: "",
+  externalRefColumn: "",
 };
 
 export default function DataConnectionsPage() {
@@ -75,6 +76,7 @@ export default function DataConnectionsPage() {
   const [syncing, setSyncing] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [unmatchedRows, setUnmatchedRows] = useState<{ source_name: string; occurrence_count: number }[]>([]);
 
   const load = useCallback(async () => {
     if (!facilityId) return;
@@ -87,6 +89,15 @@ export default function DataConnectionsPage() {
       if (!res.ok) throw new Error(data?.error || "Failed to load");
       setLastError(data.lastError ?? null);
       setSyncLogs(Array.isArray(data.syncLogs) ? data.syncLogs : []);
+      try {
+        const ur = await fetch(`/api/admin/bridge/unmatched?facility_id=${encodeURIComponent(facilityId)}`, {
+          credentials: "same-origin",
+        });
+        const uj = await ur.json();
+        setUnmatchedRows(Array.isArray(uj.rows) ? uj.rows : []);
+      } catch {
+        setUnmatchedRows([]);
+      }
       const c = data.connection as ConnectionDTO | null;
       setConnection(c);
       if (c) {
@@ -105,6 +116,7 @@ export default function DataConnectionsPage() {
           resultAtColumn: String(q.resultAtColumn ?? ""),
           sectionColumn: String(q.sectionColumn ?? ""),
           testNameColumn: String(q.testNameColumn ?? ""),
+          externalRefColumn: String(q.externalRefColumn ?? ""),
         });
       } else {
         setHost("");
@@ -339,6 +351,25 @@ export default function DataConnectionsPage() {
         </div>
       )}
 
+      {unmatchedRows.length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex gap-2">
+          <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium">Unmapped LIMS test names ({unmatchedRows.length})</p>
+            <p className="text-amber-900/90 mt-0.5">
+              Recent examples:{" "}
+              {unmatchedRows
+                .slice(0, 5)
+                .map((r) => r.source_name)
+                .join(", ")}
+              {unmatchedRows.length > 5 ? "…" : ""}. Add{" "}
+              <code className="text-[11px] bg-white/80 px-1 rounded">test_name_mappings</code> via the admin API or
+              contact Zyntel to tune the bridge.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6">
         <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
           <Shield size={16} className="text-slate-500" />
@@ -448,6 +479,11 @@ export default function DataConnectionsPage() {
                 ["resultAtColumn", "Result at column", "e.g. result_time"],
                 ["sectionColumn", "Section column", "e.g. section_name"],
                 ["testNameColumn", "Test name column", "e.g. test_name"],
+                [
+                  "externalRefColumn",
+                  "External reference column (optional)",
+                  "e.g. invoice_no — maps to external_ref, not patient id",
+                ],
               ] as const
             ).map(([key, label, ph]) => (
               <div key={key} className="space-y-2">

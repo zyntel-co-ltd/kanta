@@ -39,11 +39,12 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Rate limiting (optional — requires Upstash Redis)
+  // Rate limiting (optional — requires Upstash Redis). Skip /api/v1/* — those use per-key limits (ENG-92).
   if (
     process.env.UPSTASH_REDIS_REST_URL &&
     process.env.UPSTASH_REDIS_REST_TOKEN &&
-    req.nextUrl.pathname.startsWith("/api/")
+    req.nextUrl.pathname.startsWith("/api/") &&
+    !req.nextUrl.pathname.startsWith("/api/v1/")
   ) {
     try {
       const { Ratelimit } = await import("@upstash/ratelimit");

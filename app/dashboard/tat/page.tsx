@@ -11,12 +11,13 @@ import LimsTestDataEmpty from "@/components/dashboard/LimsTestDataEmpty";
 import { useTestRequestsEmpty } from "@/lib/hooks/useTestRequestsEmpty";
 import TatPatientLevelTab from "@/components/tat/TatPatientLevelTab";
 import TatTestsLevelTab from "@/components/tat/TatTestsLevelTab";
+import TatReceptionTab from "@/components/tat/TatReceptionTab";
 import { useFlag } from "@/lib/featureFlags";
 import { isAdminAccount, isProfessionalOrAbove } from "@/lib/subscriptionTier";
 
 type TatTab = "patients" | "tests" | "reception" | "volume";
 
-const TAT_TABS: { id: TatTab; label: string }[] = [
+const TAT_TABS_BASE: { id: TatTab; label: string }[] = [
   { id: "patients", label: "Patient Tracking" },
   { id: "tests", label: "Test Tracker" },
   { id: "reception", label: "Section Capture" },
@@ -37,6 +38,8 @@ export default function TATPage() {
   const { loading: testRequestsLoading, empty: testRequestsEmpty } = useTestRequestsEmpty(facilityId);
   const showTatTestLevel = useFlag("show-tat-test-level");
   const showTatPatientLevel = useFlag("show-tat-patient-level");
+  const showReceptionTab = useFlag("show-reception-tab");
+  const showSampleScan = useFlag("show-sample-scan");
   const professional = isProfessionalOrAbove(facilityAuth?.subscriptionTier);
   const adminAccount = isAdminAccount({
     isSuperAdmin: facilityAuth?.isSuperAdmin,
@@ -46,8 +49,12 @@ export default function TATPage() {
   const canUsePatientTracking = (professional && showTatPatientLevel) || adminAccount;
   const canUseTestTracking = (professional && showTatTestLevel) || adminAccount;
 
+  const tatTabs = useMemo(
+    () => (showReceptionTab ? TAT_TABS_BASE : TAT_TABS_BASE.filter((t) => t.id !== "reception")),
+    [showReceptionTab]
+  );
   const requested = (searchParams.get("tab") || "patients") as TatTab;
-  const activeTab: TatTab = TAT_TABS.some((t) => t.id === requested) ? requested : "patients";
+  const activeTab: TatTab = tatTabs.some((t) => t.id === requested) ? requested : "patients";
 
   const setTab = (tab: TatTab) => {
     if (tab === "volume") {
@@ -69,7 +76,7 @@ export default function TATPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="flex items-center border-b border-slate-200 overflow-x-auto bg-white px-6">
-        {TAT_TABS.map((t) => (
+        {tatTabs.map((t) => (
           <button
             key={t.id}
             type="button"
@@ -143,9 +150,28 @@ export default function TATPage() {
         )}
 
         {activeTab === "reception" && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 text-slate-600">
-            This page appears when your LIMS does not supply reception timestamps automatically.
-            Connect LIMS or enable manual section capture logging.
+          <div className="space-y-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 text-slate-600 flex flex-wrap gap-2">
+              <Link
+                href="/dashboard/lab-metrics/tat/scan"
+                className="inline-flex items-center rounded-xl bg-[#21336a] px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
+              >
+                Open Scan Results
+              </Link>
+              {showSampleScan && (
+                <Link
+                  href="/dashboard/scan?scanPurpose=sample"
+                  className="inline-flex items-center rounded-xl border border-[#21336a] px-4 py-2 text-sm font-semibold text-[#21336a] hover:bg-slate-50"
+                >
+                  QR Sample Lookup (Results)
+                </Link>
+              )}
+            </div>
+            <TatReceptionTab
+              facilityId={facilityId}
+              sectionFilterOptions={sectionFilterOptions}
+              resolveSectionLabel={resolveSectionLabel}
+            />
           </div>
         )}
       </div>

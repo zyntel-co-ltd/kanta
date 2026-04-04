@@ -24,12 +24,24 @@ export async function GET(req: NextRequest) {
   let groupId: string | null = null;
   let groupName: string | null = null;
   let branchName: string | null = null;
+  let profileAvatarUrl: string | null = null;
 
   let flags = emptyFacilityFlagsMap();
 
-  if (ctx.facilityId) {
+  if (ctx.facilityId && ctx.user) {
     try {
       const db = createAdminClient();
+      const { data: fuRow } = await db
+        .from("facility_users")
+        .select("avatar_url")
+        .eq("user_id", ctx.user.id)
+        .eq("facility_id", ctx.facilityId)
+        .maybeSingle();
+      profileAvatarUrl =
+        typeof (fuRow as { avatar_url?: string } | null)?.avatar_url === "string"
+          ? (fuRow as { avatar_url: string }).avatar_url.trim() || null
+          : null;
+
       const { data } = await db
         .from("hospitals")
         .select("name, logo_url, tier, group_id, branch_name")
@@ -75,6 +87,7 @@ export async function GET(req: NextRequest) {
     groupId,
     groupName,
     branchName,
+    profileAvatarUrl,
     role: ctx.role,
     isSuperAdmin: ctx.isSuperAdmin,
     flags,

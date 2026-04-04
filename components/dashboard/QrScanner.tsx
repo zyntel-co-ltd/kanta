@@ -6,13 +6,15 @@ type Props = {
   onScan: (decodedText: string) => void;
   onError?: (err: string) => void;
   className?: string;
+  mode?: "qr-only" | "qr-and-barcode";
 };
 
-export default function QrScanner({ onScan, onError, className }: Props) {
+export default function QrScanner({ onScan, onError, className, mode = "qr-only" }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null);
+  const readerIdRef = useRef(`qr-reader-${Math.random().toString(36).slice(2)}`);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -20,8 +22,22 @@ export default function QrScanner({ onScan, onError, className }: Props) {
 
     const init = async () => {
       try {
-        const { Html5Qrcode } = await import("html5-qrcode");
-        const scanner = new Html5Qrcode(containerRef.current!.id);
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import("html5-qrcode");
+        const scanner = new Html5Qrcode(readerIdRef.current, {
+          verbose: false,
+          formatsToSupport:
+            mode === "qr-and-barcode"
+              ? [
+                  Html5QrcodeSupportedFormats.QR_CODE,
+                  Html5QrcodeSupportedFormats.CODE_128,
+                  Html5QrcodeSupportedFormats.CODE_39,
+                  Html5QrcodeSupportedFormats.EAN_13,
+                  Html5QrcodeSupportedFormats.EAN_8,
+                  Html5QrcodeSupportedFormats.UPC_A,
+                  Html5QrcodeSupportedFormats.UPC_E,
+                ]
+              : [Html5QrcodeSupportedFormats.QR_CODE],
+        });
         await scanner.start(
           { facingMode: "environment" },
           { fps: 5, qrbox: { width: 250, height: 250 } },
@@ -52,12 +68,12 @@ export default function QrScanner({ onScan, onError, className }: Props) {
       scannerRef.current?.stop().catch(() => {});
       scannerRef.current = null;
     };
-  }, [onScan, onError]);
+  }, [onScan, onError, mode]);
 
   return (
     <div className={`relative ${className ?? ""}`}>
       <div
-        id="qr-reader"
+        id={readerIdRef.current}
         ref={containerRef}
         className="w-full max-w-md mx-auto rounded-2xl overflow-hidden border border-slate-200"
       />

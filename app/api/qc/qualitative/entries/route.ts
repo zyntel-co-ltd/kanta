@@ -4,6 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthContext } from "@/lib/auth/server";
+import { writeAuditLog } from "@/lib/audit";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -61,6 +63,7 @@ export async function POST(req: NextRequest) {
     corrective_action,
     entered_by,
     submitted,
+    rerun_for_entry_id,
   } = body;
 
   if (!facility_id || !config_id || !run_at || !Array.isArray(control_results)) {
@@ -77,6 +80,30 @@ export async function POST(req: NextRequest) {
   try {
     const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
+    const isSubmitted = !!submitted;
+    const isPass = !!overall_pass;
+    const followupStatus =
+      isSubmitted && !isPass && corrective_action?.trim()
+        ? "open"
+        : "none";
+
+    let rerunForId: string | null = null;
+    if (typeof rerun_for_entry_id === "string" && rerun_for_entry_id.trim()) {
+      const candidateId = rerun_for_entry_id.trim();
+      const { data: parentRow } = await db
+        .from("qualitative_qc_entries")
+        .select("id, facility_id, submitted, overall_pass")
+        .eq("id", candidateId)
+        .single();
+      if (
+        parentRow &&
+        parentRow.facility_id === facility_id &&
+        parentRow.submitted === true &&
+        parentRow.overall_pass === false
+      ) {
+        rerunForId = candidateId;
+      }
+    }
 
     const { data, error } = await db
       .from("qualitative_qc_entries")
@@ -88,12 +115,72 @@ export async function POST(req: NextRequest) {
         overall_pass: !!overall_pass,
         corrective_action: corrective_action?.trim() || null,
         entered_by: entered_by?.trim() || null,
-        submitted: !!submitted,
+        submitted: isSubmitted,
+        rerun_for_entry_id: rerunForId,
+        followup_status: followupStatus,
       })
-      .select("id")
+      .select("id, overall_pass, submitted, rerun_for_entry_id, followup_status")
       .single();
 
     if (error) throw error;
+
+    const ctx = await getAuthContext(req);
+
+    await writeAuditLog({
+      facilityId: facility_id,
+      userId: ctx.user?.id ?? null,
+      action: "qc.qual_entry.created",
+      entityType: "qualitative_qc_entry",
+      entityId: data.id,
+      newValue: {
+        config_id,
+        run_at,
+        overall_pass: isPass,
+        submitted: isSubmitted,
+        rerun_for_entry_id: rerunForId,
+        followup_status: followupStatus,
+      },
+    });
+
+    if (data?.rerun_for_entry_id && data.submitted) {
+      const { data: parentBefore, error: parentLoadErr } = await db
+        .from("qualitative_qc_entries")
+        .select("followup_status, rerun_entry_id, followup_closed_at")
+        .eq("id", data.rerun_for_entry_id)
+        .single();
+      if (parentLoadErr) throw parentLoadErr;
+
+      const parentFollowupStatus = data.overall_pass ? "closed" : "open";
+      const closedAt = data.overall_pass ? new Date().toISOString() : null;
+      const { error: parentUpdErr } = await db
+        .from("qualitative_qc_entries")
+        .update({
+          rerun_entry_id: data.id,
+          followup_status: parentFollowupStatus,
+          followup_closed_at: closedAt,
+        })
+        .eq("id", data.rerun_for_entry_id);
+      if (parentUpdErr) throw parentUpdErr;
+
+      await writeAuditLog({
+        facilityId: facility_id,
+        userId: ctx.user?.id ?? null,
+        action: "qc.qual_entry.followup_updated",
+        entityType: "qualitative_qc_entry",
+        entityId: data.rerun_for_entry_id,
+        oldValue: {
+          followup_status: parentBefore?.followup_status,
+          rerun_entry_id: parentBefore?.rerun_entry_id,
+          followup_closed_at: parentBefore?.followup_closed_at,
+        },
+        newValue: {
+          followup_status: parentFollowupStatus,
+          rerun_entry_id: data.id,
+          followup_closed_at: closedAt,
+          trigger: "linked_rerun_submitted",
+        },
+      });
+    }
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (err) {

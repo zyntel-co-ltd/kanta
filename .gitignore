@@ -33,6 +33,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.local.docker.example
 ANTHROPIC_API_KEY
 
 # vercel
@@ -60,3 +61,6 @@ next-env.d.ts
 # Local AI codebase pack (Repomix; never commit)
 repomix-output.xml
 repomix-output.*.xml
+
+# Supabase CLI local artifacts
+supabase/.temp/

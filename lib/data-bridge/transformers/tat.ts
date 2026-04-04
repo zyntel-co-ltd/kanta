@@ -133,6 +133,15 @@ export function transformLimsRowsToTestRequests(
         ? (pick(row, q.sampleIdColumn) as string | null) ?? null
         : null;
 
+    const externalRef = q.externalRefColumn
+      ? (() => {
+          const v = pick(row, q.externalRefColumn);
+          if (v == null) return null;
+          const s = String(v).trim();
+          return s.length ? s : null;
+        })()
+      : null;
+
     out.push({
       facility_id: facilityId,
       patient_id: q.patientIdColumn ? (pick(row, q.patientIdColumn) as string | null) ?? null : null,
@@ -146,6 +155,7 @@ export function transformLimsRowsToTestRequests(
       status: inferStatus(receivedAt, resultedAt, limsStatus),
       lims_connection_id: limsConnectionId,
       lims_external_id: externalIdForRow(row, q),
+      external_ref: externalRef,
     });
   }
   return out;

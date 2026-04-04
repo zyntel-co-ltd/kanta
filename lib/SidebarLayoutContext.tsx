@@ -19,6 +19,8 @@ type SidebarLayoutContextType = {
   hidden: boolean;
   setHidden: (v: boolean) => void;
   toggleHidden: () => void;
+  aiPanelOpen: boolean;
+  setAiPanelOpen: (v: boolean) => void;
   mounted: boolean;
 };
 
@@ -29,6 +31,7 @@ export function SidebarLayoutProvider({ children }: { children: ReactNode }) {
   // Expand only if the user previously explicitly expanded it (saved "0" in localStorage).
   const [collapsed, setCollapsedState] = useState(true);
   const [hidden, setHiddenState] = useState(false);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -94,6 +97,8 @@ export function SidebarLayoutProvider({ children }: { children: ReactNode }) {
         hidden,
         setHidden,
         toggleHidden,
+        aiPanelOpen,
+        setAiPanelOpen,
         mounted,
       }}
     >

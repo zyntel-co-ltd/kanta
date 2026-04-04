@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { fetchDepartments, createEquipment, updateEquipmentDetails } from "@/lib/api";
 import { departments as mockDepartments } from "@/lib/data";
 import QRCodeDisplay from "./QRCodeDisplay";
+import Tooltip from "@/components/ui/Tooltip";
 import type { Department, Equipment } from "@/types";
 
 import { DEFAULT_HOSPITAL_ID } from "@/lib/constants";
@@ -399,9 +400,15 @@ export default function AddEquipmentModal({
             <div>
               <div className="flex items-center gap-1.5 mb-1.5">
                 <label className="text-sm font-medium text-slate-700">Category *</label>
-                <span title={CATEGORY_INFO_TITLE} className="inline-flex text-slate-400 cursor-help">
-                  <Info size={16} aria-hidden />
-                </span>
+                <Tooltip
+                  label="Equipment categories"
+                  description={CATEGORY_INFO_TITLE}
+                  side="top"
+                >
+                  <span className="inline-flex cursor-help text-slate-400">
+                    <Info size={16} aria-hidden />
+                  </span>
+                </Tooltip>
               </div>
               <fieldset className="space-y-2">
                 <legend className="sr-only">Equipment category A, B, or C</legend>

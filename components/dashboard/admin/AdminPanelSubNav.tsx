@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { Cable, LayoutDashboard, Building2, Network } from "lucide-react";
+import { Cable, LayoutDashboard, Building2, Network, KeyRound, FileUp } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
 const BASE_LINKS = [
   { href: "/dashboard/admin", label: "Admin home", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/admin/hospital", label: "Hospital settings", icon: Building2, exact: false },
+  { href: "/dashboard/admin/api-keys", label: "API keys", icon: KeyRound, exact: false },
+  { href: "/dashboard/admin/data-import", label: "Data import", icon: FileUp, exact: false },
   { href: "/dashboard/admin/data-connections", label: "Data connections", icon: Cable, exact: false },
 ] as const;
 
