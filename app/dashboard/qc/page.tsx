@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, useRef, Fragment } from "react";
+import { useRouter } from "next/navigation";
 import {
   ShieldCheck, BarChart3, TestTube, Calculator,
   TrendingUp, ClipboardList,
@@ -11,6 +12,7 @@ import { LazyLine } from "@/components/charts/LazyCharts";
 import type { ChartData, ChartOptions } from "chart.js";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/AuthContext";
+import { useFlag } from "@/lib/featureFlags";
 import { facilityBrandingLine } from "@/lib/hospitalDisplayName";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { STATUS, STRUCTURE } from "@/lib/design-tokens";
@@ -377,7 +379,25 @@ function getInitialTab(): Tab {
 }
 
 export default function QCPage() {
+  const router = useRouter();
+  const { facilityAuth, facilityAuthLoading } = useAuth();
+  const showQcModule = useFlag("show-qc-module");
   const [activeTab, setActiveTab] = useState<Tab>(getInitialTab);
+
+  useEffect(() => {
+    if (facilityAuthLoading) return;
+    if (!showQcModule && !facilityAuth?.isSuperAdmin) {
+      router.replace("/dashboard/home");
+    }
+  }, [facilityAuthLoading, showQcModule, facilityAuth?.isSuperAdmin, router]);
+
+  if (facilityAuthLoading || (!showQcModule && !facilityAuth?.isSuperAdmin)) {
+    return (
+      <div className="min-h-[40vh] flex items-center justify-center">
+        <LoadingBars />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1280px] space-y-5">

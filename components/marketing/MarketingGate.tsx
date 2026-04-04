@@ -2,16 +2,16 @@
 
 import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/lib/AuthContext";
 import { LoadingBars } from "@/components/ui/PageLoader";
 
 /**
- * Root `/` must not server-redirect before the browser can read the hash.
- * Supabase password recovery often lands on Site URL with #access_token=…
- * which is never sent to the server — a server redirect would drop it.
+ * Root `/` gate: preserve Supabase recovery hash on client; send logged-in users to the app.
  */
-function HomeGateInner() {
+function MarketingGateInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -28,33 +28,46 @@ function HomeGateInner() {
         hash.includes("type=recovery") ||
         hash.includes("type%3Drecovery")
       ) {
-        // Full navigation so the hash is not dropped by client-side routing
         const url = `${window.location.origin}/auth/confirm${window.location.search}${window.location.hash}`;
         window.location.replace(url);
         return;
       }
     }
 
-    router.replace("/dashboard/home");
-  }, [router, searchParams]);
+    if (!loading && user) {
+      router.replace("/dashboard/home");
+    }
+  }, [router, searchParams, loading, user]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950">
-      <LoadingBars onDark />
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <LoadingBars />
+      </div>
+    );
+  }
+
+  if (user) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center text-sm text-slate-500">
+        Redirecting…
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }
 
-export default function HomeGate() {
+export default function MarketingGate({ children }: { children: React.ReactNode }) {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-slate-950">
-          <LoadingBars onDark />
+        <div className="min-h-[50vh] flex items-center justify-center">
+          <LoadingBars />
         </div>
       }
     >
-      <HomeGateInner />
+      <MarketingGateInner>{children}</MarketingGateInner>
     </Suspense>
   );
 }

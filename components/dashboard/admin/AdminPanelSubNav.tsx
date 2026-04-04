@@ -3,38 +3,52 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { Cable, LayoutDashboard, Building2, Network, KeyRound, FileUp } from "lucide-react";
+import { Cable, LayoutDashboard, Building2, Network, KeyRound } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { useFlag } from "@/lib/featureFlags";
 
-const BASE_LINKS = [
-  { href: "/dashboard/admin", label: "Admin home", icon: LayoutDashboard, exact: true },
-  { href: "/dashboard/admin/hospital", label: "Hospital settings", icon: Building2, exact: false },
-  { href: "/dashboard/admin/api-keys", label: "API keys", icon: KeyRound, exact: false },
-  { href: "/dashboard/admin/data-import", label: "Data import", icon: FileUp, exact: false },
-  { href: "/dashboard/admin/data-connections", label: "Data connections", icon: Cable, exact: false },
-] as const;
+type NavLink = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact: boolean;
+};
 
 /**
  * ENG-160: Facility-scoped Admin Panel sections — Data Connections lives here, not in the System sidebar.
  * ENG-91: Hospital groups — Zyntel platform super-admins only.
+ * ENG-185: API Keys visible to super-admins only.
+ * ENG-186: Data Bridge consolidates import + live connection; gated by `show-data-bridge` or super-admin.
  */
 export default function AdminPanelSubNav() {
   const pathname = (usePathname() || "").replace(/\/$/, "") || "/";
   const { facilityAuth } = useAuth();
+  const showDataBridge = useFlag("show-data-bridge");
   const showGroups = !!facilityAuth?.isSuperAdmin;
+  const canSeeApiKeys = !!facilityAuth?.isSuperAdmin;
+  const canSeeDataBridge = !!facilityAuth?.isSuperAdmin || showDataBridge;
 
-  const links = showGroups
-    ? [
-        ...BASE_LINKS.slice(0, 2),
-        {
-          href: "/dashboard/admin/groups",
-          label: "Hospital groups",
-          icon: Network,
-          exact: false,
-        } as const,
-        ...BASE_LINKS.slice(2),
-      ]
-    : [...BASE_LINKS];
+  const links: NavLink[] = [
+    { href: "/dashboard/admin", label: "Admin home", icon: LayoutDashboard, exact: true },
+    { href: "/dashboard/admin/hospital", label: "Hospital settings", icon: Building2, exact: false },
+  ];
+
+  if (showGroups) {
+    links.push({
+      href: "/dashboard/admin/groups",
+      label: "Hospital groups",
+      icon: Network,
+      exact: false,
+    });
+  }
+
+  if (canSeeApiKeys) {
+    links.push({ href: "/dashboard/admin/api-keys", label: "API keys", icon: KeyRound, exact: false });
+  }
+
+  if (canSeeDataBridge) {
+    links.push({ href: "/dashboard/admin/data-bridge", label: "Data bridge", icon: Cable, exact: false });
+  }
 
   return (
     <nav

@@ -21,7 +21,7 @@ type TatTab = "patients" | "tests" | "reception" | "scan" | "volume";
 const TAT_TABS_BASE: { id: TatTab; label: string }[] = [
   { id: "patients", label: "Patient Tracking" },
   { id: "tests", label: "Test Tracker" },
-  { id: "reception", label: "Section Capture" },
+  { id: "reception", label: "Reception" },
   { id: "scan", label: "Scan Results" },
 ];
 
@@ -41,7 +41,6 @@ export default function TATPage() {
   const showTatTestLevel = useFlag("show-tat-test-level");
   const showTatPatientLevel = useFlag("show-tat-patient-level");
   const showReceptionTab = useFlag("show-reception-tab");
-  const showSampleScan = useFlag("show-sample-scan");
   const professional = isProfessionalOrAbove(facilityAuth?.subscriptionTier);
   const adminAccount = isAdminAccount({
     isSuperAdmin: facilityAuth?.isSuperAdmin,
@@ -69,7 +68,7 @@ export default function TATPage() {
     if (activeTab === "patients") return "Visit-grouped tracking of patient journeys.";
     if (activeTab === "tests") return "Per-test operational tracker with section filters.";
     if (activeTab === "scan") return "Scan a patient barcode or QR code to check test results and TAT status.";
-    if (activeTab === "reception") return "Manual section capture when LIMS timestamps are unavailable.";
+    if (activeTab === "reception") return "Log section time-in and time-out for tests received today.";
     return "Switch to Volume dashboard.";
   }, [activeTab]);
 
@@ -96,7 +95,7 @@ export default function TATPage() {
         {(activeTab === "reception" || activeTab === "scan") && (
           <div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              {activeTab === "scan" ? "Scan Results" : "Section Capture"}
+              {activeTab === "scan" ? "Scan Results" : "Reception"}
             </h1>
             <p className="text-sm text-slate-500 mt-0.5">{headerNote}</p>
           </div>
@@ -155,22 +154,6 @@ export default function TATPage() {
 
         {activeTab === "reception" && (
           <div className="space-y-4">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 text-slate-600 flex flex-wrap gap-2">
-              <Link
-                href="/dashboard/lab-metrics/tat/scan"
-                className="inline-flex items-center rounded-xl bg-[#21336a] px-4 py-2 text-sm font-semibold text-white hover:opacity-95"
-              >
-                Open Scan Results
-              </Link>
-              {showSampleScan && (
-                <Link
-                  href="/dashboard/scan?scanPurpose=sample"
-                  className="inline-flex items-center rounded-xl border border-[#21336a] px-4 py-2 text-sm font-semibold text-[#21336a] hover:bg-slate-50"
-                >
-                  QR Sample Lookup (Results)
-                </Link>
-              )}
-            </div>
             <TatReceptionTab
               facilityId={facilityId}
               sectionFilterOptions={sectionFilterOptions}

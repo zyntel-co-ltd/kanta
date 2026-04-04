@@ -57,6 +57,10 @@ export default function AdminApiKeysPage() {
       router.replace("/dashboard/home");
       return;
     }
+    if (!facilityAuth?.isSuperAdmin) {
+      router.replace("/dashboard/admin");
+      return;
+    }
     load();
   }, [facilityAuthLoading, facilityAuth, router, load]);
 
@@ -109,7 +113,7 @@ export default function AdminApiKeysPage() {
     }
   };
 
-  if (facilityAuthLoading || !facilityAuth?.canAccessAdminPanel) {
+  if (facilityAuthLoading || !facilityAuth?.canAccessAdminPanel || !facilityAuth?.isSuperAdmin) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
         <LoadingBars />

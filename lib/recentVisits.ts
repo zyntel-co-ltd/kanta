@@ -36,7 +36,8 @@ const PATH_LABELS: Record<string, string> = {
   "/dashboard/departments": "Departments",
   "/dashboard/admin": "Admin",
   "/dashboard/admin/hospital": "Hospital Settings",
-  "/dashboard/admin/data-connections": "Data Connections",
+  "/dashboard/admin/data-connections": "Data Bridge",
+  "/dashboard/admin/data-bridge": "Data Bridge",
   "/dashboard/console": "Console",
   "/dashboard/console/facilities": "Console — Facilities",
   "/dashboard/settings": "Settings",
@@ -46,7 +47,7 @@ function getLabel(path: string): string {
   const base = (path.split("?")[0] || "").replace(/\/$/, "") || "/dashboard";
   if (path.includes("tab=patients")) return "Patient Tracking";
   if (path.includes("tab=tests")) return "Test Tracker";
-  if (path.includes("tab=reception")) return "Section Capture";
+  if (path.includes("tab=reception")) return "Reception";
   return PATH_LABELS[base] ?? base.split("/").pop() ?? "Dashboard";
 }
 

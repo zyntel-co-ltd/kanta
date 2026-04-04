@@ -9,6 +9,7 @@ import {
   FLAG_LABELS,
   KANTA_FEATURE_FLAG_NAMES,
   getDefaultEnabledFlagsForTier,
+  isFlagAllowedForTier,
 } from "@/lib/featureFlagCatalog";
 
 type HospitalRow = {
@@ -20,9 +21,12 @@ type HospitalRow = {
 };
 
 function tierLabel(t: string | null): string {
-  if (!t) return "—";
-  if (t === "pro") return "Professional";
-  if (t === "starter") return "Starter";
+  if (!t) return "Free";
+  const x = t.toLowerCase();
+  if (x === "free") return "Free";
+  if (x === "starter") return "Starter";
+  if (x === "pro" || x === "professional") return "Professional";
+  if (x === "enterprise") return "Enterprise";
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
@@ -35,7 +39,6 @@ export default function ConsoleFlagsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const [flagsRes, setFlagsRes] = useState<{
-    posthogConfigured: boolean;
     tier: string | null;
     flags: Record<string, boolean>;
   } | null>(null);
@@ -81,7 +84,6 @@ export default function ConsoleFlagsPage() {
         throw new Error(typeof data?.error === "string" ? data.error : "Failed to load flags");
       }
       setFlagsRes({
-        posthogConfigured: !!data.posthogConfigured,
         tier: typeof data.tier === "string" || data.tier === null ? data.tier : null,
         flags: typeof data.flags === "object" && data.flags ? data.flags : {},
       });
@@ -244,8 +246,8 @@ export default function ConsoleFlagsPage() {
             Feature flags
           </h1>
           <p className="text-slate-600 text-sm max-w-2xl">
-            Per-facility module toggles stored in Supabase (<code className="text-xs bg-slate-100 px-1 rounded">facility_flags</code>
-            ). PostHog remains for analytics only.
+            Per-facility module toggles in Supabase (<code className="text-xs bg-slate-100 px-1 rounded">facility_flags</code>
+            ). Plan tier is the ceiling; flags apply within that ceiling.
           </p>
         </header>
 
@@ -335,12 +337,14 @@ export default function ConsoleFlagsPage() {
               <div className="divide-y divide-slate-100">
                 <div className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-slate-900">
-                      {selectedHospital?.name ?? "Facility"}
+                    <div className="text-sm font-semibold text-slate-900 flex flex-wrap items-center gap-2">
+                      <span>{selectedHospital?.name ?? "Facility"}</span>
+                      <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-2.5 py-0.5 text-[11px] font-semibold">
+                        {tierLabel(flagsRes.tier ?? selectedHospital?.tier ?? null)}
+                      </span>
                     </div>
-                    <div className="text-xs text-slate-500">
-                      Tier: {tierLabel(flagsRes.tier ?? selectedHospital?.tier ?? null)} · Defaults
-                      for this tier follow the matrix below.
+                    <div className="text-xs text-slate-500 mt-1">
+                      Defaults for this tier follow the matrix below. Flags outside the plan are shown as read-only.
                     </div>
                   </div>
                   <button
@@ -358,8 +362,16 @@ export default function ConsoleFlagsPage() {
                   </button>
                 </div>
 
-                <ul className="divide-y divide-slate-50">
-                  {KANTA_FEATURE_FLAG_NAMES.map((key) => {
+                {(() => {
+                  const facilityTier = flagsRes.tier ?? selectedHospital?.tier ?? null;
+                  const allowedKeys = KANTA_FEATURE_FLAG_NAMES.filter((k) =>
+                    isFlagAllowedForTier(k, facilityTier)
+                  );
+                  const lockedKeys = KANTA_FEATURE_FLAG_NAMES.filter(
+                    (k) => !isFlagAllowedForTier(k, facilityTier)
+                  );
+
+                  const row = (key: (typeof KANTA_FEATURE_FLAG_NAMES)[number], interactive: boolean) => {
                     const meta = FLAG_LABELS[key] ?? {
                       label: key,
                       description: "",
@@ -369,7 +381,9 @@ export default function ConsoleFlagsPage() {
                     return (
                       <li
                         key={key}
-                        className="px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                        className={`px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${
+                          interactive ? "" : "bg-slate-50/80"
+                        }`}
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
@@ -388,18 +402,20 @@ export default function ConsoleFlagsPage() {
                           ) : null}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          {pendingKey === key ? (
+                          {interactive && pendingKey === key ? (
                             <Loader2 size={18} className="animate-spin text-slate-400" />
                           ) : null}
                           <button
                             type="button"
                             role="switch"
                             aria-checked={on}
-                            disabled={pendingKey === key}
-                            onClick={() => void toggleFlag(key, !on)}
-                            className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                              on ? "bg-emerald-600" : "bg-slate-200"
-                            }`}
+                            disabled={!interactive || pendingKey === key}
+                            onClick={() => (interactive ? void toggleFlag(key, !on) : undefined)}
+                            className={`relative inline-flex h-8 w-14 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${
+                              interactive
+                                ? "cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                : "cursor-not-allowed opacity-70"
+                            } ${on ? "bg-emerald-600" : "bg-slate-200"}`}
                           >
                             <span
                               className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition ${
@@ -410,8 +426,25 @@ export default function ConsoleFlagsPage() {
                         </div>
                       </li>
                     );
-                  })}
-                </ul>
+                  };
+
+                  return (
+                    <>
+                      <ul className="divide-y divide-slate-50">{allowedKeys.map((key) => row(key, true))}</ul>
+                      {lockedKeys.length > 0 ? (
+                        <details className="group border-t border-slate-100 bg-slate-50/50">
+                          <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-slate-500 list-none flex items-center justify-between hover:bg-slate-100/80 [&::-webkit-details-marker]:hidden">
+                            <span>Not available on this plan ({lockedKeys.length})</span>
+                            <span className="text-slate-400 text-xs group-open:rotate-180 transition">▼</span>
+                          </summary>
+                          <ul className="divide-y divide-slate-100 border-t border-slate-100">
+                            {lockedKeys.map((key) => row(key, false))}
+                          </ul>
+                        </details>
+                      ) : null}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>

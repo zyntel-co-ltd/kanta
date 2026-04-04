@@ -112,7 +112,7 @@ const navGroupsBase: NavGroup[] = [
     items: [
       { label: "Patient Tracking", tooltip: "Track individual patient turnaround from reception to result", icon: Timer, href: "/dashboard/tat?tab=patients" },
       { label: "Test Tracker", tooltip: "Monitor test progress and status across sections", icon: Table2, href: "/dashboard/tat?tab=tests" },
-      { label: "Section Capture", tooltip: "Log timestamps as specimens move between lab sections", icon: ClipboardList, href: "/dashboard/tat?tab=reception" },
+      { label: "Reception", tooltip: "Log timestamps as specimens move between lab sections", icon: ClipboardList, href: "/dashboard/tat?tab=reception" },
       { label: "Volume", tooltip: "View daily and hourly test request volumes", icon: Binary, href: "/dashboard/numbers" },
       { label: "Tests & Lab Mgmt", tooltip: "Manage your test catalogue and lab configuration", icon: TableProperties, href: "/dashboard/meta" },
       { label: "Revenue", tooltip: "Track revenue by test type, section, and period", icon: CircleDollarSign, href: "/dashboard/revenue" },
@@ -180,6 +180,7 @@ export type NavFeatureFlags = {
   showRefrigeratorModule: boolean;
   showAiIntelligence: boolean;
   showTatTestLevel: boolean;
+  showQcModule: boolean;
 };
 
 function filterNavForFacilityAuth(
@@ -237,6 +238,7 @@ function filterNavForFacilityAuth(
     if (href.includes("/dashboard/refrigerator") && !flags.showRefrigeratorModule) return false;
     if (href.startsWith("/dashboard/intelligence") && !flags.showAiIntelligence) return false;
     if (href.startsWith("/dashboard/lab-metrics") && !flags.showTatTestLevel) return false;
+    if (href.startsWith("/dashboard/qc") && !flags.showQcModule) return false;
     if (!canWrite) {
       if (href.includes("tab=data")) return false;
       if (href.includes("tab=qual-entry")) return false;
@@ -409,6 +411,7 @@ export default function Sidebar() {
   const showRefrigeratorModule = useFlag("show-refrigerator-module");
   const showAiIntelligence = useFlag("show-ai-intelligence");
   const showTatTestLevel = useFlag("show-tat-test-level");
+  const showQcModule = useFlag("show-qc-module");
   const hospitalName = facilityBrandingLine(
     facilityAuth?.hospitalName,
     facilityAuth?.groupId,
@@ -421,6 +424,7 @@ export default function Sidebar() {
       showRefrigeratorModule,
       showAiIntelligence,
       showTatTestLevel,
+      showQcModule,
     },
   });
   const { collapsed, setCollapsed } = useSidebarLayout();

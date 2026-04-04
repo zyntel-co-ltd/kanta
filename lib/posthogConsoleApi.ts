@@ -1,7 +1,8 @@
+// LEGACY — flag management migrated to facility_flags (Supabase). Retained for PostHog analytics only.
 /**
  * PostHog REST API helpers (legacy ENG-158).
  *
- * ENG-161: Feature flags are stored in `facility_flags` — this module is unused by the app.
+ * ENG-161 / ENG-188: Feature flags are stored in `facility_flags` — this module is not used for flag toggles.
  * Kept for reference if Group Analytics is purchased later.
  */
 

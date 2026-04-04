@@ -1,5 +1,5 @@
 /**
- * Server-safe catalog: flag keys, labels, tier defaults (ENG-158).
+ * Server-safe catalog: flag keys, labels, tier ceilings, tier defaults (ENG-158, ENG-187).
  * Imported by API routes and re-exported from `lib/featureFlags.ts` for the client.
  */
 
@@ -16,9 +16,51 @@ export const KANTA_FEATURE_FLAG_NAMES = [
   "show-tat-patient-level",
   "show-tat-test-level",
   "show-unmatched-tests",
+  "show-qc-module",
+  "show-data-bridge",
 ] as const;
 
 export type KantaFeatureFlagName = (typeof KANTA_FEATURE_FLAG_NAMES)[number];
+
+/** Plan tier ordering — used for ceiling checks (ENG-187). */
+export const TIER_ORDER = ["free", "starter", "pro", "enterprise"] as const;
+export type SubscriptionTierKey = (typeof TIER_ORDER)[number];
+
+export function normalizeSubscriptionTier(tier: string | null | undefined): SubscriptionTierKey {
+  const t = (tier ?? "free").trim().toLowerCase();
+  if (t === "free") return "free";
+  if (t === "starter") return "starter";
+  if (t === "pro" || t === "professional") return "pro";
+  if (t === "enterprise") return "enterprise";
+  return "free";
+}
+
+function tierOrderIndex(tier: string | null | undefined): number {
+  return TIER_ORDER.indexOf(normalizeSubscriptionTier(tier));
+}
+
+/**
+ * Minimum subscription tier required for a flag to be eligible (ENG-187).
+ * Plan tier is the ceiling; `facility_flags` only apply within this ceiling.
+ */
+export const FLAG_TIER_REQUIREMENTS: Record<KantaFeatureFlagName, SubscriptionTierKey> = {
+  "show-ai-intelligence": "pro",
+  "show-lrids": "pro",
+  "show-reception-tab": "pro",
+  "show-refrigerator-module": "starter",
+  "show-sample-scan": "starter",
+  "show-tat-patient-level": "pro",
+  "show-tat-test-level": "pro",
+  "show-unmatched-tests": "pro",
+  "show-qc-module": "pro",
+  "show-data-bridge": "enterprise",
+};
+
+export function isFlagAllowedForTier(flagName: string, tier: string | null): boolean {
+  const req = FLAG_TIER_REQUIREMENTS[flagName as KantaFeatureFlagName];
+  if (req === undefined) return true;
+  return tierOrderIndex(tier) >= TIER_ORDER.indexOf(req);
+}
 
 /** All keys false — base map before overlaying DB rows or env (ENG-161). */
 export function emptyFacilityFlagsMap(): Record<string, boolean> {
@@ -106,41 +148,50 @@ export const FLAG_LABELS: Record<
     label: "Unmatched Tests",
     description: "Admin tab for LIMS codes not yet in Meta catalogue",
   },
+  "show-qc-module": {
+    label: "QC Module",
+    description: "Quality control configuration, entry, and charts",
+  },
+  "show-data-bridge": {
+    label: "Data Bridge",
+    description: "LIMS live sync and manual file import (admin)",
+  },
 };
 
-/** Tier values stored on `hospitals.tier` (see Console provisioning). */
-function normalizeTierKey(tier: string | null | undefined): "free" | "pro" | "enterprise" | "other" {
-  const t = (tier ?? "free").toLowerCase();
-  if (t === "free" || t === "starter") return "free";
-  if (t === "pro" || t === "professional") return "pro";
-  if (t === "enterprise") return "enterprise";
-  return "other";
-}
-
 /**
- * ENG-158: tier-appropriate defaults for Console "Reset to defaults".
- * `free`: all off. `professional` / `enterprise`: listed modules on (extend enterprise when needed).
+ * ENG-158 / ENG-187: tier-appropriate defaults for Console "Reset to defaults".
+ * `subscriptionTier === null` is treated as free.
  */
-export function getDefaultEnabledFlagsForTier(
-  tier: string | null | undefined
-): Record<string, boolean> {
+export function getDefaultEnabledFlagsForTier(tier: string | null | undefined): Record<string, boolean> {
   const out: Record<string, boolean> = {};
   for (const name of KANTA_FEATURE_FLAG_NAMES) {
     out[name] = false;
   }
-  const k = normalizeTierKey(tier);
-  if (k === "pro" || k === "enterprise") {
-    const on: KantaFeatureFlagName[] = [
+
+  const idx = tierOrderIndex(tier);
+  if (idx < 0) return out;
+
+  if (idx >= TIER_ORDER.indexOf("starter")) {
+    out["show-refrigerator-module"] = true;
+    out["show-sample-scan"] = true;
+  }
+
+  if (idx >= TIER_ORDER.indexOf("pro")) {
+    const proOn: KantaFeatureFlagName[] = [
       "show-ai-intelligence",
       "show-lrids",
       "show-reception-tab",
-      "show-refrigerator-module",
-      "show-sample-scan",
       "show-tat-test-level",
+      "show-qc-module",
     ];
-    for (const key of on) {
+    for (const key of proOn) {
       out[key] = true;
     }
   }
+
+  if (idx >= TIER_ORDER.indexOf("enterprise")) {
+    out["show-data-bridge"] = true;
+  }
+
   return out;
 }

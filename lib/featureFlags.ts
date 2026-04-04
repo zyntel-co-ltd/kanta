@@ -1,15 +1,20 @@
 "use client";
 
 import { useAuth } from "@/lib/AuthContext";
+import { isFlagAllowedForTier } from "@/lib/featureFlagCatalog";
 
 export {
   KANTA_FEATURE_FLAG_NAMES,
   FLAG_LABELS,
+  FLAG_TIER_REQUIREMENTS,
+  TIER_ORDER,
   getDefaultEnabledFlagsForTier,
   emptyFacilityFlagsMap,
   mergeFacilityFlagsFromRows,
   applyPublicEnvFlagOverrides,
   normalizeCachedFlags,
+  isFlagAllowedForTier,
+  normalizeSubscriptionTier,
 } from "@/lib/featureFlagCatalog";
 
 export type { KantaFeatureFlagName } from "@/lib/featureFlagCatalog";
@@ -42,5 +47,7 @@ export function useFlag(flagName: string): boolean {
   const envKey = flagNameToDevEnvKey(flagName);
   if (typeof process !== "undefined" && process.env[envKey] === "true") return true;
   if (typeof process !== "undefined" && process.env[envKey] === "false") return false;
+  const tierOk = isFlagAllowedForTier(flagName, facilityAuth?.subscriptionTier ?? null);
+  if (!tierOk) return false;
   return facilityAuth?.flags?.[flagName] ?? false;
 }

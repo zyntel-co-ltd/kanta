@@ -177,7 +177,7 @@ export default function TatReceptionTab({
   if (!isOnline) {
     return (
       <AvailableWhenOnline
-        title="Section Capture available when online"
+        title="Reception available when online"
         detail="Reconnect to fetch requests and stamp section time-in/time-out."
       />
     );
