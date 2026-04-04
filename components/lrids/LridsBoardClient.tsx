@@ -16,6 +16,8 @@ type LridsRow = {
   section_label: string;
   status_text: string;
   status_css_class: LridsProgressCssClass;
+  timestamp: string | null;
+  updated_at: string | null;
 };
 
 type Props = {
@@ -54,6 +56,28 @@ function LiveClock() {
       <p className="text-lg sm:text-xl text-emerald-300 mt-2 font-medium">{dateLine}</p>
     </div>
   );
+}
+
+function formatTimeAgo(iso: string | null): string {
+  if (!iso) return "—";
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${Math.floor(diffHours / 24)}d ago`;
+}
+
+function formatTimestamp(iso: string | null): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 export default function LridsBoardClient({ facilityId, initialToken }: Props) {
@@ -180,10 +204,10 @@ export default function LridsBoardClient({ facilityId, initialToken }: Props) {
             <table className="w-full min-w-[960px] text-left border-collapse">
               <thead>
                 <tr style={{ background: "rgba(255,255,255,0.07)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                  {["Lab number", "Test(s)", "Status", "Section"].map((h) => (
+                  {["Lab Number", "Test Name", "Status", "Section", "Time In", "Updated"].map((h) => (
                     <th
                       key={h}
-                      className="px-4 sm:px-6 py-4 text-white/80 font-bold uppercase tracking-widest"
+                      className="px-4 sm:px-6 py-4 text-white/80 font-bold uppercase tracking-widest whitespace-nowrap"
                       style={{ fontSize: "clamp(0.65rem, 1.1vw, 0.85rem)" }}
                     >
                       {h}
@@ -227,6 +251,18 @@ export default function LridsBoardClient({ facilityId, initialToken }: Props) {
                         style={{ fontSize: "clamp(0.9rem, 1.3vw, 1.15rem)" }}
                       >
                         {row.section_label}
+                      </td>
+                      <td
+                        className="px-4 sm:px-6 py-4 text-white/60 align-middle tabular-nums"
+                        style={{ fontSize: "clamp(0.8rem, 1.1vw, 1rem)" }}
+                      >
+                        {formatTimestamp(row.timestamp)}
+                      </td>
+                      <td
+                        className="px-4 sm:px-6 py-4 text-white/50 align-middle tabular-nums"
+                        style={{ fontSize: "clamp(0.8rem, 1.1vw, 1rem)" }}
+                      >
+                        {formatTimeAgo(row.updated_at)}
                       </td>
                     </tr>
                   );

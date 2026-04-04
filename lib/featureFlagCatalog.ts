@@ -29,6 +29,20 @@ export function emptyFacilityFlagsMap(): Record<string, boolean> {
   return out;
 }
 
+/**
+ * Normalize cached or partial API `flags` (e.g. pre-ENG-161 sessionStorage) to a full map.
+ */
+export function normalizeCachedFlags(raw: unknown): Record<string, boolean> {
+  const base = emptyFacilityFlagsMap();
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    for (const k of KANTA_FEATURE_FLAG_NAMES) {
+      const v = (raw as Record<string, unknown>)[k];
+      if (typeof v === "boolean") base[k] = v;
+    }
+  }
+  return base;
+}
+
 /** Merge `facility_flags` rows onto the default-all-false map. */
 export function mergeFacilityFlagsFromRows(
   rows: Array<{ flag_key: string; enabled: boolean }> | null | undefined

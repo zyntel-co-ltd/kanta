@@ -138,6 +138,21 @@ export async function PATCH(req: NextRequest) {
   const denied = requireAdminPanel(ctx, facilityId);
   if (denied) return denied;
 
+  // ENG-66: validate retention_days if provided
+  const ALLOWED_RETENTION_DAYS = [30, 60, 90, 180] as const;
+  type AllowedRetention = (typeof ALLOWED_RETENTION_DAYS)[number];
+  let retentionDays: AllowedRetention | undefined;
+  if (body.retention_days !== undefined) {
+    const n = Number(body.retention_days);
+    if (!ALLOWED_RETENTION_DAYS.includes(n as AllowedRetention)) {
+      return NextResponse.json(
+        { error: "retention_days must be one of: 30, 60, 90, 180" },
+        { status: 400 }
+      );
+    }
+    retentionDays = n as AllowedRetention;
+  }
+
   const updates: {
     name?: string;
     logo_url?: string | null;
@@ -192,6 +207,21 @@ export async function PATCH(req: NextRequest) {
     const { error } = await db.from("hospitals").update(updates).eq("id", facilityId);
     if (error) throw error;
 
+    // ENG-66: update retention_days in facility_capability_profile if provided
+    if (retentionDays !== undefined) {
+      const { error: capErr } = await db.from("facility_capability_profile").upsert(
+        {
+          facility_id: facilityId,
+          lab_number_retention_days: retentionDays,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "facility_id" }
+      );
+      if (capErr) {
+        console.warn("[PATCH /api/admin/hospital] capability_profile upsert failed:", capErr.message);
+      }
+    }
+
     await writeAuditLog({
       facilityId,
       userId: ctx.user?.id ?? null,
@@ -199,7 +229,7 @@ export async function PATCH(req: NextRequest) {
       entityType: "hospital",
       entityId: facilityId,
       oldValue: (prev ?? {}) as Record<string, unknown>,
-      newValue: { ...updates } as Record<string, unknown>,
+      newValue: { ...updates, ...(retentionDays !== undefined ? { retention_days: retentionDays } : {}) } as Record<string, unknown>,
     });
 
     return NextResponse.json({ ok: true });

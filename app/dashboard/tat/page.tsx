@@ -12,14 +12,16 @@ import { useTestRequestsEmpty } from "@/lib/hooks/useTestRequestsEmpty";
 import TatPatientLevelTab from "@/components/tat/TatPatientLevelTab";
 import TatTestsLevelTab from "@/components/tat/TatTestsLevelTab";
 import TatReceptionTab from "@/components/tat/TatReceptionTab";
+import TatScanTab from "@/components/tat/TatScanTab";
 import { useFlag } from "@/lib/featureFlags";
 import { isAdminAccount, isProfessionalOrAbove } from "@/lib/subscriptionTier";
 
-type TatTab = "patients" | "tests" | "reception" | "volume";
+type TatTab = "patients" | "tests" | "reception" | "scan" | "volume";
 
 const TAT_TABS_BASE: { id: TatTab; label: string }[] = [
   { id: "patients", label: "Patient Tracking" },
   { id: "tests", label: "Test Tracker" },
+  { id: "scan", label: "Scan Results" },
   { id: "reception", label: "Section Capture" },
 ];
 
@@ -69,6 +71,7 @@ export default function TATPage() {
   const headerNote = useMemo(() => {
     if (activeTab === "patients") return "Visit-grouped tracking of patient journeys.";
     if (activeTab === "tests") return "Per-test operational tracker with section filters.";
+    if (activeTab === "scan") return "Scan a patient barcode or QR code to check test results and TAT status.";
     if (activeTab === "reception") return "Manual section capture when LIMS timestamps are unavailable.";
     return "Switch to Volume dashboard.";
   }, [activeTab]);
@@ -93,9 +96,11 @@ export default function TATPage() {
       </div>
 
       <div className="p-6 space-y-4">
-        {activeTab === "reception" && (
+        {(activeTab === "reception" || activeTab === "scan") && (
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Section Capture</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+              {activeTab === "scan" ? "Scan Results" : "Section Capture"}
+            </h1>
             <p className="text-sm text-slate-500 mt-0.5">{headerNote}</p>
           </div>
         )}
@@ -148,6 +153,8 @@ export default function TATPage() {
             )}
           </div>
         )}
+
+        {activeTab === "scan" && <TatScanTab />}
 
         {activeTab === "reception" && (
           <div className="space-y-4">

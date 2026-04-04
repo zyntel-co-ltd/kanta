@@ -28,6 +28,8 @@ export type LridsDataRow = {
   section_label: string;
   status_text: string;
   status_css_class: LridsProgressCssClass;
+  timestamp: string | null;
+  updated_at: string | null;
 };
 
 export async function GET(req: NextRequest) {
@@ -105,6 +107,7 @@ export async function GET(req: NextRequest) {
       const prog = calculateLridsProgress(timeExpected, timeOut);
       const secKey = String(r.section ?? "").trim().toUpperCase();
 
+      const updated = r.resulted_at ?? r.received_at ?? r.requested_at ?? null;
       return {
         id: r.id,
         lab_number: r.lab_number ?? null,
@@ -113,6 +116,8 @@ export async function GET(req: NextRequest) {
         section_label: sectionLabel.get(secKey) ?? r.section,
         status_text: prog.text,
         status_css_class: prog.cssClass,
+        timestamp: r.requested_at ?? null,
+        updated_at: updated,
       };
     });
 

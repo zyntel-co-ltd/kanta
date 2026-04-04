@@ -109,7 +109,24 @@ const apps: AppCard[] = [
 /* ─────────────────────────── component ─────────────────────────── */
 
 export default function DashboardHomePage() {
-  const { facilityAuth } = useAuth();
+  const { user, facilityAuth, facilityAuthLoading } = useAuth();
+
+  if (facilityAuthLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-slate-500 text-sm">
+        Loading…
+      </div>
+    );
+  }
+
+  if (user && !facilityAuth) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-slate-500 text-sm">
+        Loading workspace…
+      </div>
+    );
+  }
+
   const displayHospital = facilityBrandingLine(
     facilityAuth?.hospitalName,
     facilityAuth?.groupId,

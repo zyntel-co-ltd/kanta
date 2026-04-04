@@ -10,7 +10,7 @@ import {
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { FacilityRole } from "@/lib/auth/roles";
-import { emptyFacilityFlagsMap, KANTA_FEATURE_FLAG_NAMES } from "@/lib/featureFlagCatalog";
+import { normalizeCachedFlags } from "@/lib/featureFlagCatalog";
 import posthog from "posthog-js";
 
 // Generic types — supabase-js surface can differ slightly between environments
@@ -89,18 +89,8 @@ type AuthContextType = {
 };
 
 
-const AUTH_CACHE_KEY = "zyntel_facility_auth_v1";
-
-function normalizeCachedFlags(raw: unknown): Record<string, boolean> {
-  const base = emptyFacilityFlagsMap();
-  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    for (const k of KANTA_FEATURE_FLAG_NAMES) {
-      const v = (raw as Record<string, unknown>)[k];
-      if (typeof v === "boolean") base[k] = v;
-    }
-  }
-  return base;
-}
+/** Bump when `FacilityAuthState` shape changes (e.g. ENG-161 `flags`) to avoid stale sessionStorage. */
+const AUTH_CACHE_KEY = "zyntel_facility_auth_v2";
 
 function readCachedAuth(): FacilityAuthState | null {
   if (typeof window === "undefined") return null;

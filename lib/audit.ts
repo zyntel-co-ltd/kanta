@@ -77,6 +77,11 @@ export function summariseAuditAction(row: AuditLogRowSummaryInput): string {
       return `LIMS sync: ${String(nv.recordsUpserted ?? nv.records ?? "—")} records`;
     case "lims.sync_error":
       return `LIMS sync failed: ${String(nv.error ?? "error")}`;
+    case "purge.sensitive_fields": {
+      const reqN = nv.test_requests_nullified;
+      const resN = nv.test_results_nullified;
+      return `Nightly purge: ${String(reqN ?? 0)} test_requests, ${String(resN ?? 0)} test_results nullified`;
+    }
     case "INSERT":
       return `${row.table_name}: row created`;
     case "UPDATE":

@@ -11,7 +11,7 @@ import LabMetricsConfigEmpty from "@/components/dashboard/LabMetricsConfigEmpty"
 import LimsTestDataEmpty from "@/components/dashboard/LimsTestDataEmpty";
 import { useTestRequestsEmpty } from "@/lib/hooks/useTestRequestsEmpty";
 import PageLoader from "@/components/ui/PageLoader";
-import { CircleDot, TrendingUp, TestTube } from "lucide-react";
+import { CircleDot, TrendingUp, TrendingDown, TestTube, Building2 } from "lucide-react";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const PERIODS = [
@@ -30,14 +30,24 @@ const SECTION_COLORS = [
   "#7f91c0", "#9fb0d6", "#c2cde6", "#d9e1f2",
 ];
 
+const UNIT_COLORS = [
+  "#1e3a5f", "#264d7a", "#2e6099", "#3573b8",
+  "#4a89c9", "#6fa0d5", "#95b8e0", "#bad0ec",
+];
+
 // ── Types ──────────────────────────────────────────────────────────────────
 type RevenueData = {
   today: number;
   yesterday: number;
   sameDayLastWeek: number;
+  totalRevenue: number;
+  targetRevenue: number;
+  avgDailyRevenue: number;
+  revenueGrowthRate: number;
   dailyRevenue: { date: string; revenue: number }[];
   sectionRevenue: { section: string; revenue: number }[];
   testRevenue: { test_name: string; revenue: number }[];
+  hospitalUnitRevenue: { unit: string; revenue: number }[];
   cancellationRate: number;
   pendingCount: number;
   cancelledCount: number;
@@ -67,6 +77,38 @@ function KPICard({
       <p className="text-xs text-slate-500">{title}</p>
       <p className="text-lg font-bold text-slate-800 truncate">{value}</p>
       {sub && <p className="text-xs text-slate-400">{sub}</p>}
+    </div>
+  );
+}
+
+function TargetProgress({
+  label,
+  value,
+  target,
+  format,
+}: {
+  label: string;
+  value: number;
+  target: number;
+  format: (v: number) => string;
+}) {
+  const pct = target > 0 ? Math.min(100, (value / target) * 100) : 0;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between text-xs text-slate-500">
+        <span>{label}</span>
+        <span>{target > 0 ? `${pct.toFixed(0)}%` : "–"}</span>
+      </div>
+      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, backgroundColor: "var(--module-primary)" }}
+        />
+      </div>
+      <div className="flex items-center justify-between text-xs text-slate-400">
+        <span>{format(value)}</span>
+        {target > 0 && <span className="text-slate-300">/ {format(target)}</span>}
+      </div>
     </div>
   );
 }
@@ -127,11 +169,10 @@ export default function RevenuePage() {
     fetchData();
   }, [fetchData]);
 
-  const totalRevenue = (data?.dailyRevenue ?? []).reduce((s, d) => s + d.revenue, 0);
-  const avgDaily =
-    (data?.dailyRevenue ?? []).length > 0
-      ? totalRevenue / data!.dailyRevenue.length
-      : 0;
+  const totalRevenue = data?.totalRevenue ?? (data?.dailyRevenue ?? []).reduce((s, d) => s + d.revenue, 0);
+  const targetRevenue = data?.targetRevenue ?? 0;
+  const avgDaily = data?.avgDailyRevenue ?? 0;
+  const growthRate = data?.revenueGrowthRate ?? 0;
 
   // Filter test revenue by test name if provided
   const filteredTestRevenue = filters.testName.trim()
@@ -267,6 +308,49 @@ export default function RevenuePage() {
     },
   };
 
+  // Hospital Unit Revenue chart data
+  const hospitalUnits = data?.hospitalUnitRevenue ?? [];
+  const unitLabels = hospitalUnits.map((u) => u.unit);
+  const unitValues = hospitalUnits.map((u) => u.revenue);
+  const unitChartData: ChartData<"bar"> = {
+    labels: unitLabels,
+    datasets: [
+      {
+        label: "Revenue",
+        data: unitValues,
+        backgroundColor: unitLabels.map((_, idx) => UNIT_COLORS[idx % UNIT_COLORS.length]),
+        borderRadius: 4,
+        barThickness: 18,
+      },
+    ],
+  };
+  const unitOptions: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0]?.label ?? "",
+          label: (ctx) => fmtUGX(Number(ctx.parsed.y ?? 0)),
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { font: { size: 11 } },
+      },
+      y: {
+        grid: { color: "#f1f5f9" },
+        ticks: {
+          font: { size: 10 },
+          callback: (v) => `${(Number(v) / 1000).toFixed(0)}k`,
+        },
+      },
+    },
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       {!labConfigLoading && !hasConfiguredSections && (
@@ -353,7 +437,7 @@ export default function RevenuePage() {
         <main className="flex gap-6 p-6">
           {/* Sidebar */}
           <aside className="w-72 flex-shrink-0 flex flex-col gap-4">
-            {/* Total Revenue Card */}
+            {/* Total Revenue Card with Target Progress */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
               <div className="flex items-start gap-3 mb-4">
                 <KpiTwemojiIcon id="moneyBag" size={40} />
@@ -362,7 +446,19 @@ export default function RevenuePage() {
                   <p className="text-2xl font-bold module-accent-text">{fmtUGX(totalRevenue)}</p>
                 </div>
               </div>
-              <div className="mt-4 flex flex-col gap-2 text-sm">
+
+              {targetRevenue > 0 && (
+                <div className="mb-4">
+                  <TargetProgress
+                    label="vs Monthly Target"
+                    value={totalRevenue}
+                    target={targetRevenue}
+                    format={fmtUGX}
+                  />
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Today</span>
                   <span className="font-medium text-slate-800">{fmtUGX(data?.today ?? 0)}</span>
@@ -381,10 +477,20 @@ export default function RevenuePage() {
             <div className="grid grid-cols-2 gap-3">
               <KPICard
                 title="Avg. Daily Revenue"
-                value={fmtUGX(Math.round(avgDaily))}
+                value={fmtUGX(avgDaily)}
                 iconId="banknote"
                 full
               />
+              <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-2">
+                <div className={`flex items-center gap-1 ${growthRate >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                  {growthRate >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                  <span className="text-lg font-bold">
+                    {growthRate >= 0 ? "+" : ""}{growthRate.toFixed(1)}%
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">Revenue Growth</p>
+                <p className="text-xs text-slate-400">period over period</p>
+              </div>
               <KPICard
                 title="Cancellation Rate"
                 value={`${(data?.cancellationRate ?? 0).toFixed(1)}%`}
@@ -435,11 +541,30 @@ export default function RevenuePage() {
               </div>
             </div>
 
+            {/* Row 2 – Hospital Unit Revenue bar */}
+            {hospitalUnits.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                  <Building2 size={16} className="module-accent-text" /> Hospital Unit Revenue
+                </h3>
+                <div className="h-[240px]">
+                  <LazyBar data={unitChartData} options={unitOptions} />
+                </div>
+              </div>
+            )}
+
             {/* Revenue by Test – horizontal bar */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                <TestTube size={16} className="module-accent-text" /> Revenue by Test
-              </h3>
+              <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+                <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <TestTube size={16} className="module-accent-text" /> Revenue by Test
+                </h3>
+                {filters.testName && (
+                  <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                    Filtering: &ldquo;{filters.testName}&rdquo;
+                  </span>
+                )}
+              </div>
               {filteredTestRevenue.length > 0 ? (
                 <div className="w-full" style={{ height: Math.max(300, filteredTestRevenue.length * 26) }}>
                   <LazyBar data={testChartData} options={testOptions} />

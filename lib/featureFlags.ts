@@ -9,6 +9,7 @@ export {
   emptyFacilityFlagsMap,
   mergeFacilityFlagsFromRows,
   applyPublicEnvFlagOverrides,
+  normalizeCachedFlags,
 } from "@/lib/featureFlagCatalog";
 
 export type { KantaFeatureFlagName } from "@/lib/featureFlagCatalog";

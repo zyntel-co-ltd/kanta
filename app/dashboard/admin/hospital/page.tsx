@@ -2,11 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Upload, Save, AlertCircle, Info } from "lucide-react";
+import { Building2, Upload, Save, AlertCircle, Info, Shield } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/AuthContext";
 import { DEFAULT_FACILITY_ID } from "@/lib/constants";
 import { LoadingBars } from "@/components/ui/PageLoader";
+
+const RETENTION_OPTIONS = [
+  { value: 30, label: "30 days" },
+  { value: 60, label: "60 days" },
+  { value: 90, label: "90 days (default)" },
+  { value: 180, label: "180 days" },
+] as const;
+
+type RetentionDays = (typeof RETENTION_OPTIONS)[number]["value"];
 
 type HospitalForm = {
   name: string;
@@ -22,8 +31,8 @@ type HospitalForm = {
   group_id: string | null;
   group_name: string | null;
   branch_name: string;
-  /** ENG-99 — lab identifiers purged after this many days (read-only; contact Zyntel to change). */
-  lab_number_retention_days: number;
+  /** ENG-66 / ENG-99 — facility admin can set 30/60/90/180. */
+  lab_number_retention_days: RetentionDays;
 };
 
 type SiblingRow = { id: string; name: string; city: string | null; tier: string | null };
@@ -88,10 +97,11 @@ export default function HospitalSettingsPage() {
           group_id: typeof data?.group_id === "string" ? data.group_id : null,
           group_name: typeof data?.group_name === "string" ? data.group_name : null,
           branch_name: typeof data?.branch_name === "string" ? data.branch_name : "",
-          lab_number_retention_days:
-            typeof data?.lab_number_retention_days === "number" && data.lab_number_retention_days > 0
-              ? data.lab_number_retention_days
-              : 90,
+          lab_number_retention_days: (() => {
+            const n = typeof data?.lab_number_retention_days === "number" ? data.lab_number_retention_days : 90;
+            const allowed: RetentionDays[] = [30, 60, 90, 180];
+            return (allowed.includes(n as RetentionDays) ? n : 90) as RetentionDays;
+          })(),
         });
       })
       .catch(() => setToast({ type: "error", message: "Failed to load hospital settings" }))
@@ -171,6 +181,7 @@ export default function HospitalSettingsPage() {
           phone: form.phone.trim() || null,
           city: form.city.trim() || null,
           country: form.country.trim() || null,
+          retention_days: form.lab_number_retention_days,
           ...(form.group_id
             ? { branch_name: form.branch_name.trim() || null }
             : {}),
@@ -261,13 +272,36 @@ export default function HospitalSettingsPage() {
               </p>
             </div>
 
-            <div className="sm:col-span-2 rounded-lg border border-slate-100 bg-white px-3 py-2.5">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Lab number retention</p>
-              <p className="text-lg font-semibold text-slate-900">{form.lab_number_retention_days} days</p>
-              <p className="text-xs text-slate-500 mt-1">
-                After this period, sample identifiers and related bridge fields are cleared from stored test rows
-                (aggregates are kept). To change this policy, contact Zyntel.
+            <div className="sm:col-span-2 rounded-lg border border-emerald-100 bg-emerald-50/60 px-4 py-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Shield size={15} className="text-emerald-700" />
+                <p className="text-sm font-semibold text-slate-800">Data retention period</p>
+              </div>
+              <p className="text-xs text-slate-600">
+                After this period, sensitive fields (sample identifiers, external patient references, QR codes,
+                free-text notes) are automatically nullified. Aggregate metrics (counts, TAT, revenue) are
+                preserved for analytics.
               </p>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {RETENTION_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={loading}
+                    onClick={() =>
+                      setForm((prev) => ({ ...prev, lab_number_retention_days: opt.value }))
+                    }
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                      form.lab_number_retention_days === opt.value
+                        ? "bg-emerald-700 text-white border-emerald-700"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500">Minimum 30 days. Purge runs nightly at 02:05 UTC.</p>
             </div>
           </div>
 

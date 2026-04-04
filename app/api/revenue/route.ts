@@ -21,9 +21,14 @@ export async function GET(req: NextRequest) {
         today: 0,
         yesterday: 0,
         sameDayLastWeek: 0,
+        totalRevenue: 0,
+        targetRevenue: 0,
+        avgDailyRevenue: 0,
+        revenueGrowthRate: 0,
         dailyRevenue: [],
         sectionRevenue: [],
         testRevenue: [],
+        hospitalUnitRevenue: [],
         cancellationRate: 0,
         pendingCount: 0,
         cancelledCount: 0,
@@ -60,7 +65,7 @@ export async function GET(req: NextRequest) {
 
     const { data: entries } = await db
       .from("revenue_entries")
-      .select("date, amount, section, test_name, status")
+      .select("date, amount, section, test_name, status, unit, laboratory")
       .eq("facility_id", facilityId)
       .gte("date", startStr);
 
@@ -108,14 +113,60 @@ export async function GET(req: NextRequest) {
     const pending = (entries ?? []).filter((e) => e.status === "pending").length;
     const cancellationRate = total + cancelled > 0 ? (cancelled / (total + cancelled)) * 100 : 0;
 
+    // Revenue growth rate: compare first half vs second half of the period
+    let revenueGrowthRate = 0;
+    if (dailyRevenue.length >= 2) {
+      const half = Math.floor(dailyRevenue.length / 2);
+      const firstHalf = dailyRevenue.slice(0, half).reduce((s, d) => s + d.revenue, 0);
+      const secondHalf = dailyRevenue.slice(half).reduce((s, d) => s + d.revenue, 0);
+      revenueGrowthRate = firstHalf > 0 ? ((secondHalf - firstHalf) / firstHalf) * 100 : 0;
+    }
+
+    // Hospital unit revenue (tries unit or laboratory column — graceful if absent)
+    const byUnit: Record<string, number> = {};
+    for (const e of entries ?? []) {
+      if (e.status !== "completed") continue;
+      const unitKey =
+        (e as Record<string, unknown>).unit as string | null ??
+        (e as Record<string, unknown>).laboratory as string | null;
+      if (unitKey) byUnit[unitKey] = (byUnit[unitKey] ?? 0) + Number(e.amount);
+    }
+    const hospitalUnitRevenue = Object.entries(byUnit)
+      .map(([unit, revenue]) => ({ unit, revenue }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    // Revenue target (try revenue_targets table; safe if table doesn't exist)
+    let targetRevenue = 0;
+    try {
+      const monthStart = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-01`;
+      const { data: targetRow } = await db
+        .from("revenue_targets")
+        .select("target")
+        .eq("facility_id", facilityId)
+        .eq("period", "monthly")
+        .eq("period_start", monthStart)
+        .maybeSingle();
+      targetRevenue = targetRow?.target ?? 0;
+    } catch {
+      // table may not exist — ignore
+    }
+
+    const totalRevenue = dailyRevenue.reduce((s, d) => s + d.revenue, 0);
+    const avgDailyRevenue = dailyRevenue.length > 0 ? totalRevenue / dailyRevenue.length : 0;
+
     return NextResponse.json({
       data: {
         today,
         yesterday: yesterdayTotal,
         sameDayLastWeek,
+        totalRevenue,
+        targetRevenue,
+        avgDailyRevenue: Math.round(avgDailyRevenue),
+        revenueGrowthRate: Math.round(revenueGrowthRate * 10) / 10,
         dailyRevenue,
         sectionRevenue,
         testRevenue,
+        hospitalUnitRevenue,
         cancellationRate,
         pendingCount: pending,
         cancelledCount: cancelled,
