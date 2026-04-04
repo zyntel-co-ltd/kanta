@@ -13,6 +13,8 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 - [x] **ENG-187** — `show-qc-module`, `show-data-bridge` in catalog; `FLAG_TIER_REQUIREMENTS` + `isFlagAllowedForTier`; `useFlag` enforces tier ceiling before DB flags; QC sidebar + `/dashboard/qc` gated on `show-qc-module` (super-admin exempt); migration `20260404000000_qc_module_flag_seed.sql`.
 - [x] **ENG-188** — Console flags UI: toggles for tier-allowed flags; collapsed greyed list for flags below plan; tier badge by facility name; copy updated; `lib/posthogConsoleApi.ts` legacy banner.
 - [x] **ENG-189** — Marketing route group: `/`, `/features`, `/pricing`, `/contact`; `POST /api/contact` (Resend or stub); shared nav/footer; `jspdf` added for existing QC PDF export typecheck.
+
+**Verification (ENG-185–188, 2026-04-04):** All acceptance criteria satisfied in repo — `AdminPanelSubNav` + `/api-keys` guard; Data Bridge page + redirects + `show-data-bridge` / super-admin gate; `featureFlagCatalog` + `useFlag` tier ceiling + QC nav/page + `20260404000000_qc_module_flag_seed.sql`; `GET/PATCH /api/console/flags` uses `facility_flags` only (no PostHog); Console flags page tier-partitioned; `decisions.md` rows ENG-185–188.
 - [x] **TAT reception** — Tab label **Reception**; removed duplicate scan/QR shortcuts from reception tab (scan tab covers scan); sidebar + recent visits labels aligned.
 
 ### 2026-04-02 — ENG-161 Feature flags: Supabase `facility_flags` (no PostHog for gating)

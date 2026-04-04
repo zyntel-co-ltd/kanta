@@ -47,7 +47,7 @@ export default function AdminPanelSubNav() {
   }
 
   if (canSeeDataBridge) {
-    links.push({ href: "/dashboard/admin/data-bridge", label: "Data bridge", icon: Cable, exact: false });
+    links.push({ href: "/dashboard/admin/data-bridge", label: "Data Bridge", icon: Cable, exact: false });
   }
 
   return (

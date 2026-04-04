@@ -82,7 +82,7 @@ export default function DataBridgePage() {
           }`}
         >
           <FileUp size={14} />
-          File import
+          File Import
         </button>
         <button
           type="button"
@@ -94,7 +94,7 @@ export default function DataBridgePage() {
           }`}
         >
           <Cable size={14} />
-          Live connection
+          Live Connection
         </button>
       </div>
 
