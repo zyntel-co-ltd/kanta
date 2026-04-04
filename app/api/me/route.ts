@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, requireAuth } from "@/lib/auth/server";
 import { getPermissions } from "@/lib/auth/roles";
+import {
+  applyPublicEnvFlagOverrides,
+  emptyFacilityFlagsMap,
+  mergeFacilityFlagsFromRows,
+} from "@/lib/featureFlagCatalog";
 import { createAdminClient } from "@/lib/supabase";
 
 /**
@@ -19,6 +24,8 @@ export async function GET(req: NextRequest) {
   let groupId: string | null = null;
   let groupName: string | null = null;
   let branchName: string | null = null;
+
+  let flags = emptyFacilityFlagsMap();
 
   if (ctx.facilityId) {
     try {
@@ -42,10 +49,22 @@ export async function GET(req: NextRequest) {
           .maybeSingle();
         groupName = (g as { name?: string } | null)?.name ?? null;
       }
+
+      const { data: flagRows, error: flagErr } = await db
+        .from("facility_flags")
+        .select("flag_key, enabled")
+        .eq("facility_id", ctx.facilityId);
+      if (flagErr) {
+        console.error("[GET /api/me] facility_flags:", flagErr.message);
+      } else {
+        flags = mergeFacilityFlagsFromRows(flagRows);
+      }
     } catch {
       // Keep /api/me resilient; fall back to env values in UI.
     }
   }
+
+  flags = applyPublicEnvFlagOverrides(flags);
 
   return NextResponse.json({
     user: ctx.user,
@@ -58,6 +77,7 @@ export async function GET(req: NextRequest) {
     branchName,
     role: ctx.role,
     isSuperAdmin: ctx.isSuperAdmin,
+    flags,
     ...perms,
   });
 }

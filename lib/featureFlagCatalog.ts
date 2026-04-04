@@ -4,7 +4,7 @@
  */
 
 /**
- * Canonical PostHog feature flag keys (kebab-case, per-facility via PostHog).
+ * Canonical Kanta feature flag keys (kebab-case, per-facility via `facility_flags` + `/api/me`).
  * Keep in sync with `zyntel-playbook/12-projects/kanta/feature-flags.md`.
  */
 export const KANTA_FEATURE_FLAG_NAMES = [
@@ -19,6 +19,42 @@ export const KANTA_FEATURE_FLAG_NAMES = [
 ] as const;
 
 export type KantaFeatureFlagName = (typeof KANTA_FEATURE_FLAG_NAMES)[number];
+
+/** All keys false — base map before overlaying DB rows or env (ENG-161). */
+export function emptyFacilityFlagsMap(): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  for (const name of KANTA_FEATURE_FLAG_NAMES) {
+    out[name] = false;
+  }
+  return out;
+}
+
+/** Merge `facility_flags` rows onto the default-all-false map. */
+export function mergeFacilityFlagsFromRows(
+  rows: Array<{ flag_key: string; enabled: boolean }> | null | undefined
+): Record<string, boolean> {
+  const out = emptyFacilityFlagsMap();
+  for (const r of rows ?? []) {
+    if ((KANTA_FEATURE_FLAG_NAMES as readonly string[]).includes(r.flag_key)) {
+      out[r.flag_key] = !!r.enabled;
+    }
+  }
+  return out;
+}
+
+/**
+ * Server or client: `NEXT_PUBLIC_FLAG_<KEY>` overrides (true/false) for emergency rollouts.
+ */
+export function applyPublicEnvFlagOverrides(flags: Record<string, boolean>): Record<string, boolean> {
+  const out = { ...flags };
+  for (const name of KANTA_FEATURE_FLAG_NAMES) {
+    const envKey = `NEXT_PUBLIC_FLAG_${name.toUpperCase().replace(/-/g, "_")}`;
+    const v = process.env[envKey];
+    if (v === "true") out[name] = true;
+    if (v === "false") out[name] = false;
+  }
+  return out;
+}
 
 export const FLAG_LABELS: Record<
   string,

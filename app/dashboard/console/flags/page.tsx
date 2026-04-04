@@ -112,7 +112,7 @@ export default function ConsoleFlagsPage() {
   );
 
   const toggleFlag = async (flagKey: string, enabled: boolean) => {
-    if (!selectedId || !flagsRes?.posthogConfigured) return;
+    if (!selectedId || !flagsRes) return;
     const prev = flagsRes.flags[flagKey];
     setPendingKey(flagKey);
     setFlagsRes((r) =>
@@ -164,10 +164,10 @@ export default function ConsoleFlagsPage() {
   };
 
   const resetDefaults = async () => {
-    if (!selectedId || !flagsRes?.posthogConfigured) return;
+    if (!selectedId || !flagsRes) return;
     if (
       !window.confirm(
-        "Reset all module flags for this facility to tier defaults? This updates PostHog targeting."
+        "Reset all module flags for this facility to tier defaults? This updates rows in facility_flags."
       )
     ) {
       return;
@@ -221,7 +221,6 @@ export default function ConsoleFlagsPage() {
     );
   }
 
-  const posthogOff = flagsRes && !flagsRes.posthogConfigured;
   const defaultsPreview = getDefaultEnabledFlagsForTier(flagsRes?.tier ?? selectedHospital?.tier ?? null);
 
   return (
@@ -245,9 +244,8 @@ export default function ConsoleFlagsPage() {
             Feature flags
           </h1>
           <p className="text-slate-600 text-sm max-w-2xl">
-            Per-facility PostHog overrides for Kanta modules. Group type{" "}
-            <code className="text-xs bg-slate-100 px-1 rounded">branch</code> /{" "}
-            <code className="text-xs bg-slate-100 px-1 rounded">facility_id</code>.
+            Per-facility module toggles stored in Supabase (<code className="text-xs bg-slate-100 px-1 rounded">facility_flags</code>
+            ). PostHog remains for analytics only.
           </p>
         </header>
 
@@ -326,7 +324,7 @@ export default function ConsoleFlagsPage() {
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden min-h-[320px]">
             {!selectedId ? (
               <div className="p-8 text-sm text-slate-500">
-                Select a facility to view and edit PostHog flag overrides.
+                Select a facility to view and edit module flags.
               </div>
             ) : flagsLoading || !flagsRes ? (
               <div className="p-8 flex items-center gap-2 text-sm text-slate-500">
@@ -335,23 +333,6 @@ export default function ConsoleFlagsPage() {
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
-                {posthogOff && (
-                  <div className="p-4 bg-amber-50 border-b border-amber-200 text-sm text-amber-950">
-                    <p className="font-medium text-amber-900 mb-1">PostHog API not configured</p>
-                    <p>
-                      Set{" "}
-                      <code className="text-xs bg-amber-100/80 px-1 rounded">
-                        POSTHOG_PERSONAL_API_KEY
-                      </code>{" "}
-                      and{" "}
-                      <code className="text-xs bg-amber-100/80 px-1 rounded">
-                        POSTHOG_PROJECT_ID
-                      </code>{" "}
-                      in Vercel environment variables. Toggles are disabled until then.
-                    </p>
-                  </div>
-                )}
-
                 <div className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-slate-900">
@@ -364,7 +345,7 @@ export default function ConsoleFlagsPage() {
                   </div>
                   <button
                     type="button"
-                    disabled={posthogOff || resetting}
+                    disabled={resetting}
                     onClick={() => void resetDefaults()}
                     className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -414,7 +395,7 @@ export default function ConsoleFlagsPage() {
                             type="button"
                             role="switch"
                             aria-checked={on}
-                            disabled={posthogOff || pendingKey === key}
+                            disabled={pendingKey === key}
                             onClick={() => void toggleFlag(key, !on)}
                             className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                               on ? "bg-emerald-600" : "bg-slate-200"

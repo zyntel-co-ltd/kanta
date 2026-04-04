@@ -114,15 +114,23 @@ export async function GET(req: NextRequest) {
       }).admin;
 
       if (adminAuth) {
-        const listResult = await adminAuth.listUsers({ page: 1, perPage: 1000 });
-        for (const au of listResult.data?.users ?? []) {
-          emailById.set(au.id, au.email ?? "");
-          metaById.set(au.id, au.user_metadata ?? {});
-          if (au.user_metadata?.avatar_url) {
-            avatarById.set(au.id, au.user_metadata.avatar_url);
-          }
-          if (au.last_sign_in_at) {
-            lastLoginById.set(au.id, au.last_sign_in_at);
+        // listUsers returns `{ data: { users: User[] }, error }` — always use `data?.users`, never `data` as the array.
+        const { data: listData, error: listUsersError } = await adminAuth.listUsers({
+          page: 1,
+          perPage: 1000,
+        });
+        if (listUsersError) {
+          console.error("[GET /api/admin/users] listUsers:", listUsersError);
+        } else {
+          for (const au of listData?.users ?? []) {
+            emailById.set(au.id, au.email ?? "");
+            metaById.set(au.id, au.user_metadata ?? {});
+            if (au.user_metadata?.avatar_url) {
+              avatarById.set(au.id, au.user_metadata.avatar_url);
+            }
+            if (au.last_sign_in_at) {
+              lastLoginById.set(au.id, au.last_sign_in_at);
+            }
           }
         }
 

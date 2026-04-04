@@ -23,6 +23,74 @@ function isUuid(s: string): boolean {
   );
 }
 
+/** Row shape from `audit_log` for human-readable summaries (ENG-159). */
+export type AuditLogRowSummaryInput = {
+  action: string;
+  entity_type: string | null;
+  table_name: string;
+  old_data: unknown;
+  new_data: unknown;
+};
+
+function asRecord(v: unknown): Record<string, unknown> {
+  return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+}
+
+/**
+ * ENG-159: One-line description for Console / admin audit tables.
+ */
+export function summariseAuditAction(row: AuditLogRowSummaryInput): string {
+  const nv = asRecord(row.new_data);
+
+  switch (row.action) {
+    case "user.provisioned":
+      return `Provisioned ${String(nv.role ?? "user")} account`;
+    case "user.role_changed":
+      return `Role changed to ${String(nv.role ?? "—")}`;
+    case "user.deactivated":
+      return "User deactivated";
+    case "user.reactivated":
+      return "User reactivated";
+    case "user.password_reset":
+      return "Password reset issued";
+    case "hospital.settings_updated":
+      return "Hospital settings updated";
+    case "equipment.created":
+      return "Equipment created";
+    case "equipment.updated":
+      return "Equipment updated";
+    case "qc.submitted":
+      return "QC run submitted";
+    case "tat.targets_updated":
+      return "TAT targets updated";
+    case "lab_shift.created":
+      return "Lab shift created";
+    case "lab_shift.updated":
+      return "Lab shift updated";
+    case "lab_shift.deleted":
+      return "Lab shift deleted";
+    case "lab_section.created":
+      return "Lab section created";
+    case "lab_section.updated":
+      return "Lab section updated";
+    case "lims.sync_complete":
+      return `LIMS sync: ${String(nv.recordsUpserted ?? nv.records ?? "—")} records`;
+    case "lims.sync_error":
+      return `LIMS sync failed: ${String(nv.error ?? "error")}`;
+    case "INSERT":
+      return `${row.table_name}: row created`;
+    case "UPDATE":
+      return `${row.table_name}: row updated`;
+    case "DELETE":
+      return `${row.table_name}: row deleted`;
+    default:
+      if (row.table_name && row.table_name !== AUDIT_APP_TABLE) {
+        return `${row.table_name}: ${row.action}`;
+      }
+      return row.action;
+  }
+}
+
 export async function writeAuditLog(input: WriteAuditLogInput): Promise<void> {
   try {
     const db = createAdminClient();

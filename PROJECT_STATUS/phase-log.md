@@ -6,6 +6,22 @@ Migrated in full from the former root `PROJECT_STATUS.md` on 2026-03-28.
 
 ---
 
+### 2026-04-02 — ENG-161 Feature flags: Supabase `facility_flags` (no PostHog for gating)
+
+- [x] **Migration** — `facility_flags` (PK facility_id + flag_key), RLS SELECT for facility members, seed all catalog keys enabled for existing hospitals.
+- [x] **`GET /api/me`** — `flags: Record<string, boolean>` from DB + `NEXT_PUBLIC_FLAG_*` overrides server-side.
+- [x] **`AuthContext`** — `facilityAuth.flags`; **`useFlag`** reads env then `facilityAuth.flags` (PostHog `isFeatureEnabled` removed).
+- [x] **`GET/PATCH /api/console/flags`** — Supabase upserts via service role; `posthogConfigured: false` in JSON; reset applies tier defaults.
+- [x] **Console UI** — PostHog API warning removed; copy updated.
+- [x] **`lib/posthogConsoleApi.ts`** — retained, unused.
+
+### 2026-04-02 — ENG-159 Console platform audit log (cross-facility)
+
+- [x] **`GET /api/console/audit`** — Super-admin only; query `facility_id`, `action` (ILIKE), `from`/`to`, `actor` (email substring → `user_id` filter), `cursor` (offset); joins `hospitals` for facility name; `auth.admin` user list + `getUserById` for actor emails; `summariseAuditAction` for Summary column.
+- [x] **`/dashboard/console/audit`** — Filterable table (timestamp, facility, actor, action, entity type, entity id, summary); default unfiltered; up to 200 rows with 50-row pages and Load more; Console home card links here (no “Coming soon”).
+- [x] **`lib/audit.ts`** — `summariseAuditAction()` for human-readable summaries.
+- [x] **Migration** — `20260402180000_audit_log_perf_index.sql`: documents existing `idx_audit_log_created` (no duplicate index).
+
 ### 2026-04-02 — ENG-107 Admin Hospital Settings: branch details + read-only siblings
 
 - [x] **`GET /api/admin/hospital`** — `parent_hospital_id`, `city`, `country`; graceful fallback if `parent_hospital_id` column missing.

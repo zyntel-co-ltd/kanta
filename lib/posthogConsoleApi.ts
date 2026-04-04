@@ -1,6 +1,8 @@
 /**
- * PostHog REST API helpers for Zyntel Console flag management (ENG-158).
- * Uses POSTHOG_PERSONAL_API_KEY + POSTHOG_PROJECT_ID (server-only).
+ * PostHog REST API helpers (legacy ENG-158).
+ *
+ * ENG-161: Feature flags are stored in `facility_flags` — this module is unused by the app.
+ * Kept for reference if Group Analytics is purchased later.
  */
 
 import {
@@ -55,10 +57,23 @@ type PhGroup = {
   rollout_percentage?: number | null;
 };
 
+/**
+ * Index of the `branch` group type in PostHog → Data Management → Group types (0 = first).
+ * Override with `POSTHOG_BRANCH_GROUP_TYPE_INDEX` if `branch` is not first.
+ */
+function branchGroupTypeIndex(): number {
+  const raw = process.env.POSTHOG_BRANCH_GROUP_TYPE_INDEX?.trim();
+  if (raw === undefined || raw === "") return 0;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
 type PhFlag = {
   id: number;
   key: string;
   filters?: {
+    /** Required for group-based flags; without it PostHog treats filters as person-aggregated. */
+    aggregation_group_type_index?: number;
     groups?: PhGroup[];
   };
 };
@@ -81,6 +96,7 @@ export function isFlagEnabledForFacility(
 }
 
 function makeFacilityGroup(facilityId: string): PhGroup {
+  const idx = branchGroupTypeIndex();
   return {
     properties: [
       {
@@ -88,7 +104,7 @@ function makeFacilityGroup(facilityId: string): PhGroup {
         value: facilityId,
         operator: "exact",
         type: "group",
-        group_type_index: 0,
+        group_type_index: idx,
       },
     ],
     rollout_percentage: 100,
@@ -122,10 +138,14 @@ export async function getFlagByKey(key: string): Promise<PhFlag | null> {
 }
 
 export async function patchFlagGroups(flagId: number, groups: PhGroup[]): Promise<void> {
+  const idx = branchGroupTypeIndex();
   const res = await phFetch(`/feature_flags/${flagId}/`, {
     method: "PATCH",
     body: JSON.stringify({
-      filters: { groups },
+      filters: {
+        aggregation_group_type_index: idx,
+        groups,
+      },
     }),
   });
   if (!res.ok) {

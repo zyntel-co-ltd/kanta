@@ -10,6 +10,7 @@ import {
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { FacilityRole } from "@/lib/auth/roles";
+import { emptyFacilityFlagsMap, KANTA_FEATURE_FLAG_NAMES } from "@/lib/featureFlagCatalog";
 import posthog from "posthog-js";
 
 // Generic types — supabase-js surface can differ slightly between environments
@@ -43,6 +44,8 @@ export type FacilityAuthState = {
   canViewRevenue: boolean;
   canManageUsers: boolean;
   canWrite: boolean;
+  /** ENG-161: per-flag enabled state from `facility_flags` + env overrides (GET `/api/me`). */
+  flags: Record<string, boolean>;
 };
 
 /** Bridge casts: Vercel/CI uses stricter checks on SupabaseAuthClient overlaps */
@@ -86,6 +89,17 @@ type AuthContextType = {
 
 const AUTH_CACHE_KEY = "zyntel_facility_auth_v1";
 
+function normalizeCachedFlags(raw: unknown): Record<string, boolean> {
+  const base = emptyFacilityFlagsMap();
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    for (const k of KANTA_FEATURE_FLAG_NAMES) {
+      const v = (raw as Record<string, unknown>)[k];
+      if (typeof v === "boolean") base[k] = v;
+    }
+  }
+  return base;
+}
+
 function readCachedAuth(): FacilityAuthState | null {
   if (typeof window === "undefined") return null;
   try {
@@ -97,6 +111,7 @@ function readCachedAuth(): FacilityAuthState | null {
       groupId: p.groupId ?? null,
       groupName: p.groupName ?? null,
       branchName: p.branchName ?? null,
+      flags: normalizeCachedFlags(p.flags),
     } as FacilityAuthState;
   } catch {
     return null;
@@ -152,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const applyMePayload = useCallback((data: Record<string, unknown> | null): FacilityAuthState | null => {
     if (!data) return null;
+    const flags = normalizeCachedFlags(data.flags);
     return {
       facilityId: (data.facilityId as string | null) ?? null,
       hospitalName: (data.hospitalName as string | null) ?? null,
@@ -168,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       canViewRevenue: !!data.canViewRevenue,
       canManageUsers: !!data.canManageUsers,
       canWrite: !!data.canWrite,
+      flags,
     };
   }, []);
 

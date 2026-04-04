@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import type { ComponentType } from "react";
 import { useAuth, type FacilityAuthState } from "@/lib/AuthContext";
+import { emptyFacilityFlagsMap } from "@/lib/featureFlagCatalog";
 import { facilityBrandingLine } from "@/lib/hospitalDisplayName";
 import { useFlag } from "@/lib/featureFlags";
 import { SIDEBAR_LRIDS_NAV_HREF } from "@/lib/lrids/nav";
@@ -217,6 +218,7 @@ function filterNavForFacilityAuth(
       canViewRevenue: false,
       canManageUsers: false,
       canWrite: false,
+      flags: emptyFacilityFlagsMap(),
     };
 
   if (effective.isSuperAdmin) {

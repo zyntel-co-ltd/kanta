@@ -1,17 +1,16 @@
 /**
- * GET /api/console/flags?facility_id= — per-flag override state from PostHog (super-admin only).
- * PATCH /api/console/flags — set override or reset to tier defaults (super-admin only). ENG-158
+ * GET /api/console/flags?facility_id= — flag state from `facility_flags` (super-admin only).
+ * PATCH /api/console/flags — upsert or reset to tier defaults (super-admin only). ENG-161
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, jsonError } from "@/lib/auth/server";
-import { KANTA_FEATURE_FLAG_NAMES } from "@/lib/featureFlagCatalog";
 import {
-  buildFlagStateForFacility,
-  posthogManagementConfigured,
-  resetFacilityFlagsToTierDefaults,
-  setFacilityFlagOverride,
-} from "@/lib/posthogConsoleApi";
+  getDefaultEnabledFlagsForTier,
+  KANTA_FEATURE_FLAG_NAMES,
+  mergeFacilityFlagsFromRows,
+} from "@/lib/featureFlagCatalog";
+import { createAdminClient } from "@/lib/supabase";
 
 const supabaseConfigured =
   process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -36,7 +35,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const { createAdminClient } = await import("@/lib/supabase");
     const db = createAdminClient();
     const { data: hospital } = await db
       .from("hospitals")
@@ -46,21 +44,16 @@ export async function GET(req: NextRequest) {
 
     const tier = (hospital as { tier?: string | null } | null)?.tier ?? null;
 
-    if (!posthogManagementConfigured()) {
-      const flags: Record<string, boolean> = {};
-      for (const name of KANTA_FEATURE_FLAG_NAMES) {
-        flags[name] = false;
-      }
-      return NextResponse.json({
-        posthogConfigured: false,
-        tier,
-        flags,
-      });
-    }
+    const { data: rows, error: rErr } = await db
+      .from("facility_flags")
+      .select("flag_key, enabled")
+      .eq("facility_id", facilityId);
 
-    const flags = await buildFlagStateForFacility(facilityId);
+    if (rErr) throw rErr;
+
+    const flags = mergeFacilityFlagsFromRows(rows);
     return NextResponse.json({
-      posthogConfigured: true,
+      posthogConfigured: false,
       tier,
       flags,
     });
@@ -82,23 +75,17 @@ export async function PATCH(req: NextRequest) {
   if (!ctx.user) return jsonError("Unauthorized", 401);
   if (!ctx.isSuperAdmin) return jsonError("Forbidden", 403);
 
-  if (!posthogManagementConfigured()) {
-    return jsonError(
-      "PostHog API credentials not configured. Set POSTHOG_PERSONAL_API_KEY and POSTHOG_PROJECT_ID.",
-      503
-    );
-  }
-
   const body = await req.json().catch(() => ({}));
   const facilityId = typeof body.facility_id === "string" ? body.facility_id.trim() : "";
   if (!facilityId) {
     return jsonError("facility_id is required", 400);
   }
 
+  const db = createAdminClient();
+  const userId = ctx.user.id;
+
   if (body.reset_defaults === true) {
     try {
-      const { createAdminClient } = await import("@/lib/supabase");
-      const db = createAdminClient();
       const { data: hospital } = await db
         .from("hospitals")
         .select("tier")
@@ -106,8 +93,22 @@ export async function PATCH(req: NextRequest) {
         .maybeSingle();
 
       const tier = (hospital as { tier?: string | null } | null)?.tier ?? null;
-      await resetFacilityFlagsToTierDefaults(facilityId, tier);
-      const flags = await buildFlagStateForFacility(facilityId);
+      const defaults = getDefaultEnabledFlagsForTier(tier);
+      const upsertRows = KANTA_FEATURE_FLAG_NAMES.map((flag_key) => ({
+        facility_id: facilityId,
+        flag_key,
+        enabled: !!defaults[flag_key],
+        updated_by: userId,
+      }));
+
+      const { error } = await db.from("facility_flags").upsert(upsertRows, {
+        onConflict: "facility_id,flag_key",
+      });
+      if (error) throw error;
+
+      const flags = mergeFacilityFlagsFromRows(
+        KANTA_FEATURE_FLAG_NAMES.map((k) => ({ flag_key: k, enabled: !!defaults[k] }))
+      );
       return NextResponse.json({ ok: true, tier, flags });
     } catch (e) {
       console.error("[PATCH /api/console/flags reset]", e);
@@ -130,8 +131,24 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    await setFacilityFlagOverride(flagKey, facilityId, enabled);
-    const flags = await buildFlagStateForFacility(facilityId);
+    const { error: upErr } = await db.from("facility_flags").upsert(
+      {
+        facility_id: facilityId,
+        flag_key: flagKey,
+        enabled,
+        updated_by: userId,
+      },
+      { onConflict: "facility_id,flag_key" }
+    );
+    if (upErr) throw upErr;
+
+    const { data: rows, error: rErr } = await db
+      .from("facility_flags")
+      .select("flag_key, enabled")
+      .eq("facility_id", facilityId);
+    if (rErr) throw rErr;
+
+    const flags = mergeFacilityFlagsFromRows(rows);
     return NextResponse.json({ ok: true, flags });
   } catch (e) {
     console.error("[PATCH /api/console/flags]", e);

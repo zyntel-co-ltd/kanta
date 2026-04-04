@@ -6,14 +6,6 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Building2, Flag, ScrollText, Shield, Terminal } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
-function ComingSoonBadge() {
-  return (
-    <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-      Coming soon
-    </span>
-  );
-}
-
 type PlatformAdminRow = {
   user_id: string;
   created_at: string | null;
@@ -203,8 +195,9 @@ export default function ConsoleHomePage() {
     {
       title: "Platform audit log",
       description: "Cross-tenant audit stream.",
+      href: "/dashboard/console/audit",
       icon: ScrollText,
-      badge: <ComingSoonBadge />,
+      badge: null,
     },
   ];
 
