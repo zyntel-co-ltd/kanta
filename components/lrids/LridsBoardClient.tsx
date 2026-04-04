@@ -145,7 +145,7 @@ export default function LridsBoardClient({ facilityId, initialToken }: Props) {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(typeof j.error === "string" ? j.error : "Failed to load");
-        setRows([]);
+        setRawRows([]);
         return;
       }
       setHospitalName(hospitalDisplayName(j.hospital_name as string | null));
