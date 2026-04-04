@@ -10,7 +10,6 @@ import {
   Activity,
   ShieldCheck,
   Layers,
-  FlaskConical,
   Eye,
   EyeOff,
 } from "lucide-react";
@@ -87,42 +86,26 @@ export default function LoginForm() {
         />
 
         <div className="relative z-10">
-          <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            title="Kanta — marketing site (features, pricing, contact)"
+            className="inline-block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-900"
+          >
             <Image
               src="/kanta-logo-white.svg"
-              alt="Kanta"
+              alt="Kanta — home"
               width={200}
               height={48}
               className="h-10 sm:h-12 w-auto max-w-[min(100%,220px)] object-contain object-left"
               priority
             />
-          </div>
+          </Link>
           <p
             className="mt-3 text-emerald-100/95 max-w-md leading-snug"
             style={{ fontSize: "0.9375rem", fontWeight: 600, letterSpacing: "0.03em" }}
           >
             Operational Intelligence Platform
           </p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Link
-              href="/features"
-              className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-white/15 px-4 py-2.5 text-xs font-semibold text-white shadow-sm backdrop-blur-sm hover:bg-white/25 transition-colors"
-            >
-              Features
-            </Link>
-            <Link
-              href="/pricing"
-              className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-white/15 px-4 py-2.5 text-xs font-semibold text-white shadow-sm backdrop-blur-sm hover:bg-white/25 transition-colors"
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-white/15 px-4 py-2.5 text-xs font-semibold text-white shadow-sm backdrop-blur-sm hover:bg-white/25 transition-colors"
-            >
-              Contact
-            </Link>
-          </div>
         </div>
 
         {/* Hero text */}
@@ -166,40 +149,26 @@ export default function LoginForm() {
       {/* ── RIGHT PANEL ── */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 sm:px-10 py-12">
 
-        {/* Mobile brand + marketing (desktop hero shows these on the left) */}
-        <div className="lg:hidden w-full max-w-sm mb-8">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center flex-shrink-0">
-              <FlaskConical size={16} className="text-white" />
-            </div>
-            <div>
-              <p className="font-bold text-slate-900 text-base leading-none">Kanta</p>
-              <p className="text-slate-500 text-xs mt-1 leading-snug max-w-[260px]">
-                Operational Intelligence Platform
-              </p>
-            </div>
+        {/* Mobile brand — logo links to marketing site (features, pricing, contact via nav there) */}
+        <Link
+          href="/"
+          title="Kanta — marketing site"
+          className="lg:hidden w-full max-w-sm mb-8 flex items-center gap-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-2"
+        >
+          <Image
+            src="/kanta-logo.svg"
+            alt="Kanta — home"
+            width={40}
+            height={40}
+            className="h-10 w-10 object-contain flex-shrink-0"
+          />
+          <div>
+            <p className="font-bold text-slate-900 text-base leading-none">Kanta</p>
+            <p className="text-slate-500 text-xs mt-1 leading-snug max-w-[260px]">
+              Operational Intelligence Platform
+            </p>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link
-              href="/features"
-              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 shadow-sm hover:border-emerald-400 hover:text-emerald-900 transition-colors"
-            >
-              Features
-            </Link>
-            <Link
-              href="/pricing"
-              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 shadow-sm hover:border-emerald-400 hover:text-emerald-900 transition-colors"
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 shadow-sm hover:border-emerald-400 hover:text-emerald-900 transition-colors"
-            >
-              Contact
-            </Link>
-          </div>
-        </div>
+        </Link>
 
         <div className="w-full max-w-sm">
           <div className="mb-8">
