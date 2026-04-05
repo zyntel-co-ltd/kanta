@@ -48,6 +48,18 @@ BEGIN
   ALTER TABLE public.qc_runs ADD COLUMN IF NOT EXISTS westgard_flags jsonb DEFAULT '[]';
   ALTER TABLE public.qc_runs ADD COLUMN IF NOT EXISTS created_at timestamptz;
 
+  -- Legacy qc_runs rows need a material FK; empty qc_materials means UPDATE above is a no-op.
+  IF EXISTS (SELECT 1 FROM public.hospitals LIMIT 1)
+     AND NOT EXISTS (SELECT 1 FROM public.qc_materials LIMIT 1) THEN
+    INSERT INTO public.qc_materials (
+      facility_id, name, lot_number, level, analyte, target_mean, target_sd
+    )
+    SELECT h.id, 'Legacy migration placeholder', 'LEGACY-1', 1, 'GLU', 5.0::decimal(12,4), 0.5::decimal(12,4)
+    FROM public.hospitals h
+    ORDER BY h.created_at ASC NULLS LAST
+    LIMIT 1;
+  END IF;
+
   UPDATE public.qc_runs r
   SET material_id = (SELECT id FROM public.qc_materials ORDER BY created_at ASC NULLS LAST LIMIT 1)
   WHERE r.material_id IS NULL AND EXISTS (SELECT 1 FROM public.qc_materials LIMIT 1);
@@ -58,6 +70,9 @@ BEGIN
   UPDATE public.qc_runs SET run_at = COALESCE(run_at, now()) WHERE run_at IS NULL;
   UPDATE public.qc_runs SET created_at = COALESCE(created_at, now()) WHERE created_at IS NULL;
   UPDATE public.qc_runs SET westgard_flags = COALESCE(westgard_flags, '[]'::jsonb) WHERE westgard_flags IS NULL;
+
+  -- Still-null material_id (e.g. no hospitals): remove orphan rows so NOT NULL can apply.
+  DELETE FROM public.qc_runs WHERE material_id IS NULL;
 
   ALTER TABLE public.qc_runs ALTER COLUMN material_id SET NOT NULL;
   ALTER TABLE public.qc_runs ALTER COLUMN facility_id SET NOT NULL;
