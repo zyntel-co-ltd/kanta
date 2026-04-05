@@ -42,6 +42,31 @@ CREATE TABLE IF NOT EXISTS public.lab_sections (
   CONSTRAINT lab_sections_facility_code_unique UNIQUE (facility_id, code)
 );
 
+-- Legacy lab_sections may exist without facility_id; CREATE TABLE IF NOT EXISTS skips.
+DO $$
+BEGIN
+  IF to_regclass('public.lab_sections') IS NULL THEN
+    RETURN;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'lab_sections' AND column_name = 'facility_id'
+  ) THEN
+    ALTER TABLE public.lab_sections ADD COLUMN facility_id uuid REFERENCES public.hospitals (id) ON DELETE CASCADE;
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'lab_sections' AND column_name = 'hospital_id'
+  ) THEN
+    UPDATE public.lab_sections SET facility_id = hospital_id WHERE facility_id IS NULL;
+  END IF;
+  UPDATE public.lab_sections ls
+  SET facility_id = (SELECT id FROM public.hospitals ORDER BY created_at ASC NULLS LAST LIMIT 1)
+  WHERE ls.facility_id IS NULL AND EXISTS (SELECT 1 FROM public.hospitals LIMIT 1);
+  DELETE FROM public.lab_sections WHERE facility_id IS NULL;
+  ALTER TABLE public.lab_sections ALTER COLUMN facility_id SET NOT NULL;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_lab_sections_facility ON public.lab_sections (facility_id);
 CREATE INDEX IF NOT EXISTS idx_lab_sections_facility_active ON public.lab_sections (facility_id, is_active);
 
@@ -56,6 +81,30 @@ CREATE TABLE IF NOT EXISTS public.lab_shifts (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+DO $$
+BEGIN
+  IF to_regclass('public.lab_shifts') IS NULL THEN
+    RETURN;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'lab_shifts' AND column_name = 'facility_id'
+  ) THEN
+    ALTER TABLE public.lab_shifts ADD COLUMN facility_id uuid REFERENCES public.hospitals (id) ON DELETE CASCADE;
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'lab_shifts' AND column_name = 'hospital_id'
+  ) THEN
+    UPDATE public.lab_shifts SET facility_id = hospital_id WHERE facility_id IS NULL;
+  END IF;
+  UPDATE public.lab_shifts ls
+  SET facility_id = (SELECT id FROM public.hospitals ORDER BY created_at ASC NULLS LAST LIMIT 1)
+  WHERE ls.facility_id IS NULL AND EXISTS (SELECT 1 FROM public.hospitals LIMIT 1);
+  DELETE FROM public.lab_shifts WHERE facility_id IS NULL;
+  ALTER TABLE public.lab_shifts ALTER COLUMN facility_id SET NOT NULL;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_lab_shifts_facility ON public.lab_shifts (facility_id);
 
