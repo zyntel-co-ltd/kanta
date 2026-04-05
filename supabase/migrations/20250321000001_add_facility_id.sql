@@ -12,6 +12,11 @@ BEGIN
     UPDATE public.departments SET facility_id = hospital_id WHERE facility_id IS NULL;
   END IF;
 END $$;
+-- Rows still null (no legacy hospital_id): attach to any existing hospital — bootstrap seeds one.
+UPDATE public.departments d
+SET facility_id = (SELECT id FROM public.hospitals ORDER BY created_at ASC NULLS LAST LIMIT 1)
+WHERE d.facility_id IS NULL
+  AND EXISTS (SELECT 1 FROM public.hospitals LIMIT 1);
 ALTER TABLE departments ALTER COLUMN facility_id SET NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_departments_facility ON departments(facility_id);
 
@@ -26,6 +31,10 @@ BEGIN
     UPDATE public.equipment SET facility_id = hospital_id WHERE facility_id IS NULL;
   END IF;
 END $$;
+UPDATE public.equipment e
+SET facility_id = (SELECT id FROM public.hospitals ORDER BY created_at ASC NULLS LAST LIMIT 1)
+WHERE e.facility_id IS NULL
+  AND EXISTS (SELECT 1 FROM public.hospitals LIMIT 1);
 ALTER TABLE equipment ALTER COLUMN facility_id SET NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_equipment_facility ON equipment(facility_id);
 
@@ -40,6 +49,10 @@ BEGIN
     UPDATE public.scan_events SET facility_id = hospital_id WHERE facility_id IS NULL;
   END IF;
 END $$;
+UPDATE public.scan_events s
+SET facility_id = (SELECT id FROM public.hospitals ORDER BY created_at ASC NULLS LAST LIMIT 1)
+WHERE s.facility_id IS NULL
+  AND EXISTS (SELECT 1 FROM public.hospitals LIMIT 1);
 ALTER TABLE scan_events ALTER COLUMN facility_id SET NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_scans_facility ON scan_events(facility_id);
 
@@ -54,6 +67,10 @@ BEGIN
     UPDATE public.technicians SET facility_id = hospital_id WHERE facility_id IS NULL;
   END IF;
 END $$;
+UPDATE public.technicians t
+SET facility_id = (SELECT id FROM public.hospitals ORDER BY created_at ASC NULLS LAST LIMIT 1)
+WHERE t.facility_id IS NULL
+  AND EXISTS (SELECT 1 FROM public.hospitals LIMIT 1);
 ALTER TABLE technicians ALTER COLUMN facility_id SET NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_technicians_facility ON technicians(facility_id);
 
@@ -68,5 +85,9 @@ BEGIN
     UPDATE public.equipment_snapshots SET facility_id = hospital_id WHERE facility_id IS NULL;
   END IF;
 END $$;
+UPDATE public.equipment_snapshots es
+SET facility_id = (SELECT id FROM public.hospitals ORDER BY created_at ASC NULLS LAST LIMIT 1)
+WHERE es.facility_id IS NULL
+  AND EXISTS (SELECT 1 FROM public.hospitals LIMIT 1);
 ALTER TABLE equipment_snapshots ALTER COLUMN facility_id SET NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_snapshots_facility ON equipment_snapshots(facility_id);

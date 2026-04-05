@@ -151,6 +151,11 @@ BEGIN
   ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS next_maintenance_at timestamptz;
   ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
   ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+
+  UPDATE public.equipment e
+  SET facility_id = (SELECT id FROM public.hospitals ORDER BY created_at ASC NULLS LAST LIMIT 1)
+  WHERE e.facility_id IS NULL
+    AND EXISTS (SELECT 1 FROM public.hospitals LIMIT 1);
 END $$;
 
 create table if not exists equipment (
