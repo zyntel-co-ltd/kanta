@@ -25,7 +25,7 @@ VALUES (
   '11111111-1111-4111-a111-111111111111', -- Mazra General Hospital
   'postgresql',
   -- connection_config: set MAZRA_LIMS_DB_URL env var; bridge reads this at sync time
-  '{"note": "Mazra General Hospital Supabase LIMS — set actual URL in env MAZRA_LIMS_DB_URL", "placeholder": true}'::jsonb,
+  '{"note": "Mazra General Hospital, Kampala, Uganda — Supabase LIMS. Set actual URL in env MAZRA_LIMS_DB_URL", "placeholder": true}'::jsonb,
   -- query_config: canonical mapping from Mazra LIMS schema to Kanta test_requests
   '{
     "sync_query": "SELECT to.id                          AS lims_external_id, to.patient_id::text         AS patient_id, to.id::text                  AS lab_number, tc.test_name                 AS test_name, ls.name                      AS section, to.ordered_at                AS requested_at, to.priority                  AS priority, COALESCE(tr.status, ''pending'') AS status, tr.resulted_at               AS resulted_at, to.section_id::text          AS section_id, tc.price_ugx::numeric        AS price_ugx FROM test_orders to LEFT JOIN test_catalog tc ON to.test_id = tc.id LEFT JOIN lab_sections ls ON to.section_id = ls.id LEFT JOIN test_results tr ON to.id = tr.order_id WHERE to.ordered_at > NOW() - INTERVAL ''7 days'' ORDER BY to.ordered_at DESC LIMIT 500",

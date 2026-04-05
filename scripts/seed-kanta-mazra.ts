@@ -187,7 +187,7 @@ async function main() {
     id: HOSPITAL_ID,
     name: "Mazra General Hospital",
     country: "Uganda",
-    city: "Gulu",
+    city: "Kampala",
     classification: "general_hospital",
     subscription_status: "demo",
     tier: "pro",
