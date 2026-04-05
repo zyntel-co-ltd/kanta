@@ -18,34 +18,31 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_table ON audit_log(table_name);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at DESC);
 
 -- Generic audit trigger function
+-- Resolve facility via JSON so legacy hospital_id rows and facility_id-only rows both work
+-- (direct NEW.hospital_id fails when the table has no such column).
 CREATE OR REPLACE FUNCTION audit_trigger_fn()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE
   fid uuid;
+  j jsonb;
 BEGIN
   IF TG_OP = 'DELETE' THEN
-    fid := OLD.facility_id;
-    IF fid IS NULL AND OLD.hospital_id IS NOT NULL THEN
-      fid := OLD.hospital_id;
-    END IF;
+    j := to_jsonb(OLD);
+    fid := COALESCE((j->>'facility_id')::uuid, (j->>'hospital_id')::uuid);
     INSERT INTO audit_log (table_name, record_id, facility_id, action, old_data)
-    VALUES (TG_TABLE_NAME, OLD.id, fid, 'DELETE', to_jsonb(OLD));
+    VALUES (TG_TABLE_NAME, (j->>'id')::uuid, fid, 'DELETE', j);
     RETURN OLD;
   ELSIF TG_OP = 'UPDATE' THEN
-    fid := NEW.facility_id;
-    IF fid IS NULL AND NEW.hospital_id IS NOT NULL THEN
-      fid := NEW.hospital_id;
-    END IF;
+    j := to_jsonb(NEW);
+    fid := COALESCE((j->>'facility_id')::uuid, (j->>'hospital_id')::uuid);
     INSERT INTO audit_log (table_name, record_id, facility_id, action, old_data, new_data)
-    VALUES (TG_TABLE_NAME, NEW.id, fid, 'UPDATE', to_jsonb(OLD), to_jsonb(NEW));
+    VALUES (TG_TABLE_NAME, (j->>'id')::uuid, fid, 'UPDATE', to_jsonb(OLD), j);
     RETURN NEW;
   ELSIF TG_OP = 'INSERT' THEN
-    fid := NEW.facility_id;
-    IF fid IS NULL AND NEW.hospital_id IS NOT NULL THEN
-      fid := NEW.hospital_id;
-    END IF;
+    j := to_jsonb(NEW);
+    fid := COALESCE((j->>'facility_id')::uuid, (j->>'hospital_id')::uuid);
     INSERT INTO audit_log (table_name, record_id, facility_id, action, new_data)
-    VALUES (TG_TABLE_NAME, NEW.id, fid, 'INSERT', to_jsonb(NEW));
+    VALUES (TG_TABLE_NAME, (j->>'id')::uuid, fid, 'INSERT', j);
     RETURN NEW;
   END IF;
   RETURN NULL;

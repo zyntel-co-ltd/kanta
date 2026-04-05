@@ -155,8 +155,6 @@ async function wipe(sb: SupabaseClient<any, "public", any>) {
   ];
   for (const t of tables) {
     await (sb as unknown as { from: (t: string) => { delete: () => { eq: (c: string, v: string) => Promise<unknown> } } })
-      .from(t).delete().eq("hospital_id", HOSPITAL_ID);
-    await (sb as unknown as { from: (t: string) => { delete: () => { eq: (c: string, v: string) => Promise<unknown> } } })
       .from(t).delete().eq("facility_id", HOSPITAL_ID);
     await (sb as unknown as { from: (t: string) => { delete: () => { eq: (c: string, v: string) => Promise<unknown> } } })
       .from(t).delete().eq("id", HOSPITAL_ID);
@@ -213,7 +211,6 @@ async function main() {
 
     await sb.from("equipment").upsert({
       id: eq.id,
-      hospital_id: HOSPITAL_ID,
       facility_id: HOSPITAL_ID,
       department_id: eq.deptId,
       name: eq.name,
@@ -244,7 +241,6 @@ async function main() {
   for (const f of FRIDGES) {
     await sb.from("equipment").upsert({
       id: f.id,
-      hospital_id: HOSPITAL_ID,
       facility_id: HOSPITAL_ID,
       department_id: DEPT_LAB_ID,
       name: f.name,
@@ -280,7 +276,6 @@ async function main() {
   for (const t of TECHNICIANS) {
     await sb.from("technicians").upsert({
       id: t.id,
-      hospital_id: HOSPITAL_ID,
       facility_id: HOSPITAL_ID,
       department_id: DEPT_LAB_ID,
       name: t.name,
@@ -477,7 +472,6 @@ async function main() {
       const scannedAt = isoAt(d, 9 + Math.floor(Math.abs(Math.sin(seed)) * 7), Math.floor(Math.abs(Math.sin(seed + 1)) * 60));
       scanRows.push({
         id: randomUUID(),
-        hospital_id: HOSPITAL_ID,
         facility_id: HOSPITAL_ID,
         equipment_id: eq.id,
         scanned_by: bmEng.name,

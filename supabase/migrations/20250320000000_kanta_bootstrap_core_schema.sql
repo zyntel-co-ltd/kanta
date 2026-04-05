@@ -1,18 +1,8 @@
--- ============================================================
--- Kanta — Supabase PostgreSQL Schema
--- Prefer: `npx supabase@latest db push` (includes migration
--- 20250320000000_kanta_bootstrap_core_schema.sql before other migrations).
--- Or paste this into: Supabase Dashboard → SQL Editor → Run
---
--- Tenant FK is facility_id → hospitals(id). In this product,
--- facility = hospital; older docs used hospital_id — migrations
--- and seeds use facility_id only.
--- ============================================================
+-- Bootstrap core tables for empty databases so later migrations (e.g. 20250321000001)
+-- can ALTER them. Mirrors supabase/schema.sql — keep in sync when editing schema.sql.
 
--- Enable UUID generation
 create extension if not exists "pgcrypto";
 
--- ── Hospitals ────────────────────────────────────────────────
 create table if not exists hospitals (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
@@ -22,7 +12,6 @@ create table if not exists hospitals (
   created_at  timestamptz not null default now()
 );
 
--- ── Departments ──────────────────────────────────────────────
 create table if not exists departments (
   id          uuid primary key default gen_random_uuid(),
   facility_id uuid not null references hospitals(id) on delete cascade,
@@ -32,7 +21,6 @@ create table if not exists departments (
 
 create index if not exists idx_departments_facility on departments(facility_id);
 
--- ── Equipment ────────────────────────────────────────────────
 create table if not exists equipment (
   id                   uuid primary key default gen_random_uuid(),
   facility_id          uuid not null references hospitals(id) on delete cascade,
@@ -58,7 +46,6 @@ create index if not exists idx_equipment_department on equipment(department_id);
 create index if not exists idx_equipment_status     on equipment(status);
 create index if not exists idx_equipment_qr         on equipment(qr_code);
 
--- Auto-update updated_at
 create or replace function update_updated_at()
 returns trigger language plpgsql as $$
 begin
@@ -72,7 +59,6 @@ create trigger equipment_updated_at
   before update on equipment
   for each row execute function update_updated_at();
 
--- ── Scan Events ──────────────────────────────────────────────
 create table if not exists scan_events (
   id               uuid primary key default gen_random_uuid(),
   facility_id      uuid not null references hospitals(id) on delete cascade,
@@ -89,7 +75,6 @@ create index if not exists idx_scans_facility   on scan_events(facility_id);
 create index if not exists idx_scans_equipment  on scan_events(equipment_id);
 create index if not exists idx_scans_created_at on scan_events(created_at desc);
 
--- ── Technicians ──────────────────────────────────────────────
 create table if not exists technicians (
   id               uuid primary key default gen_random_uuid(),
   facility_id      uuid not null references hospitals(id) on delete cascade,
@@ -104,7 +89,6 @@ create table if not exists technicians (
 create index if not exists idx_technicians_facility    on technicians(facility_id);
 create index if not exists idx_technicians_department  on technicians(department_id);
 
--- ── Equipment Snapshots (for monthly status charts) ──────────
 create table if not exists equipment_snapshots (
   id            uuid primary key default gen_random_uuid(),
   facility_id   uuid not null references hospitals(id) on delete cascade,
@@ -116,8 +100,6 @@ create table if not exists equipment_snapshots (
 create index if not exists idx_snapshots_facility on equipment_snapshots(facility_id);
 create index if not exists idx_snapshots_date     on equipment_snapshots(snapshot_date desc);
 
--- ── Plan config (tier → limits, maps to pricing) ──────────────
--- Used by API for rate limits, equipment caps, history retention.
 create table if not exists plan_config (
   tier          text primary key check (tier in ('free','starter','pro','enterprise')),
   equipment_limit int not null default 5,
@@ -134,8 +116,6 @@ values
   ('enterprise', -1, -1, -1, '{"api_access": true, "webhooks": true, "custom_integrations": true}'::jsonb)
 on conflict (tier) do nothing;
 
--- ── Row Level Security ───────────────────────────────────────
--- Enable RLS on all tables (auth integration added in next phase)
 alter table hospitals         enable row level security;
 alter table departments       enable row level security;
 alter table equipment         enable row level security;
@@ -143,8 +123,6 @@ alter table scan_events       enable row level security;
 alter table technicians       enable row level security;
 alter table equipment_snapshots enable row level security;
 
--- Temporary open policy for development (replace with auth-based policies)
--- Safe to re-run: drop first so CREATE POLICY does not 42710 on second run.
 drop policy if exists "dev_allow_all_hospitals"          on hospitals;
 drop policy if exists "dev_allow_all_departments"        on departments;
 drop policy if exists "dev_allow_all_equipment"          on equipment;
@@ -159,12 +137,10 @@ create policy "dev_allow_all_scans"              on scan_events       for all us
 create policy "dev_allow_all_technicians"        on technicians       for all using (true) with check (true);
 create policy "dev_allow_all_snapshots"          on equipment_snapshots for all using (true) with check (true);
 
--- ── Seed: Demo hospital ──────────────────────────────────────
 insert into hospitals (id, name, country, city, tier)
 values ('00000000-0000-0000-0000-000000000001', 'Mulago National Referral Hospital', 'Uganda', 'Kampala', 'starter')
 on conflict (id) do nothing;
 
--- Seed departments for demo hospital (standard general hospital departments)
 insert into departments (id, facility_id, name)
 values
   ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000001', 'ICU'),

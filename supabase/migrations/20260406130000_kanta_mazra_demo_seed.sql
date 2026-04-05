@@ -34,35 +34,35 @@ VALUES
   ('22220002-0000-4000-a000-000000000002', '11111111-1111-4111-a111-111111111111', 'Biomedical Engineering', now())
 ON CONFLICT (id) DO NOTHING;
 
--- ── Equipment ─────────────────────────────────────────────────────────────────
+-- ── Equipment (facility_id only — hospital_id removed in newer Kanta schemas) ──
 INSERT INTO public.equipment (
-  id, hospital_id, facility_id, department_id, name, model, serial_number,
+  id, facility_id, department_id, name, model, serial_number,
   manufacturer, qr_code, category, status, location,
   next_maintenance_at, updated_at, created_at
 ) VALUES
-  ('33330001-0000-4000-a000-000000000001','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','SYSMEX XP-300 Haematology Analyser','XP-300','eq-01','Sysmex','MAZRA-EQ-01','A','operational','Main Laboratory',now() + interval '12 days',now(),now()),
-  ('33330002-0000-4000-a000-000000000002','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','HUMA Star 180 Chemistry Analyser','Star 180','eq-02','Human','MAZRA-EQ-02','A','operational','Main Laboratory',now() + interval '18 days',now(),now()),
-  ('33330003-0000-4000-a000-000000000003','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','HUMA Star 300 Chemistry Analyser (BU)','Star 300','eq-03','Human','MAZRA-EQ-03','A','operational','Main Laboratory',now() + interval '5 days',now(),now()),
-  ('33330004-0000-4000-a000-000000000004','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','GeneXpert IV (4-module)','GX-IV','eq-04','Cepheid','MAZRA-EQ-04','A','operational','Main Laboratory',now() + interval '45 days',now(),now()),
-  ('33330005-0000-4000-a000-000000000005','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Binocular Microscope (Haem)','CX23','eq-05','Olympus','MAZRA-EQ-05','B','operational','Main Laboratory',now() + interval '60 days',now(),now()),
-  ('33330006-0000-4000-a000-000000000006','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Binocular Microscope (Micro)','CX23','eq-06','Olympus','MAZRA-EQ-06','B','operational','Main Laboratory',now() + interval '30 days',now(),now()),
-  ('33330007-0000-4000-a000-000000000007','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','CO2 Incubator','Galaxy 170R','eq-07','Eppendorf','MAZRA-EQ-07','B','operational','Main Laboratory',now() + interval '70 days',now(),now()),
-  ('33330008-0000-4000-a000-000000000008','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Autoclave (50L)','SX-700','eq-08','Tomy','MAZRA-EQ-08','B','operational','Main Laboratory',now() + interval '22 days',now(),now()),
-  ('33330009-0000-4000-a000-000000000009','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Centrifuge (24-slot)','5810R','eq-09','Eppendorf','MAZRA-EQ-09','B','operational','Main Laboratory',now() + interval '35 days',now(),now()),
-  ('33330010-0000-4000-a000-000000000010','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Centrifuge (12-slot)','5424','eq-10','Eppendorf','MAZRA-EQ-10','B','operational','Main Laboratory',now() + interval '50 days',now(),now()),
-  ('33330011-0000-4000-a000-000000000011','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Biosafety Cabinet Class II','Safe 2020','eq-11','Thermo','MAZRA-EQ-11','A','operational','Main Laboratory',now() + interval '15 days',now(),now()),
-  ('33330012-0000-4000-a000-000000000012','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','BD FACSCount (CD4 Analyser)','FACSCount','eq-12','BD','MAZRA-EQ-12','A','operational','Main Laboratory',now() + interval '8 days',now(),now()),
-  ('33330013-0000-4000-a000-000000000013','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','RPR Rotator','RS12','eq-13','Stuart','MAZRA-EQ-13','C','operational','Main Laboratory',now() + interval '90 days',now(),now()),
-  ('33330014-0000-4000-a000-000000000014','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Water Bath (37°C)','WB-200','eq-14','Memmert','MAZRA-EQ-14','C','operational','Main Laboratory',now() + interval '55 days',now(),now()),
-  ('33330015-0000-4000-a000-000000000015','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Urine Analyser (strip reader)','Clinitek','eq-15','Siemens','MAZRA-EQ-15','B','operational','Main Laboratory',now() + interval '40 days',now(),now()),
-  ('33330016-0000-4000-a000-000000000016','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Haematocrit Centrifuge','Z300','eq-16','Hermle','MAZRA-EQ-16','C','operational','Main Laboratory',now() + interval '80 days',now(),now()),
-  ('33330017-0000-4000-a000-000000000017','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Label Printer (barcode)','ZD420','eq-17','Zebra','MAZRA-EQ-17','C','operational','Main Laboratory',now() + interval '105 days',now(),now()),
-  ('33330018-0000-4000-a000-000000000018','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Tube Roller Mixer','StuartRoller','eq-18','Stuart','MAZRA-EQ-18','C','operational','Main Laboratory',now() + interval '60 days',now(),now()),
+  ('33330001-0000-4000-a000-000000000001','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','SYSMEX XP-300 Haematology Analyser','XP-300','eq-01','Sysmex','MAZRA-EQ-01','A','operational','Main Laboratory',now() + interval '12 days',now(),now()),
+  ('33330002-0000-4000-a000-000000000002','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','HUMA Star 180 Chemistry Analyser','Star 180','eq-02','Human','MAZRA-EQ-02','A','operational','Main Laboratory',now() + interval '18 days',now(),now()),
+  ('33330003-0000-4000-a000-000000000003','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','HUMA Star 300 Chemistry Analyser (BU)','Star 300','eq-03','Human','MAZRA-EQ-03','A','operational','Main Laboratory',now() + interval '5 days',now(),now()),
+  ('33330004-0000-4000-a000-000000000004','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','GeneXpert IV (4-module)','GX-IV','eq-04','Cepheid','MAZRA-EQ-04','A','operational','Main Laboratory',now() + interval '45 days',now(),now()),
+  ('33330005-0000-4000-a000-000000000005','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Binocular Microscope (Haem)','CX23','eq-05','Olympus','MAZRA-EQ-05','B','operational','Main Laboratory',now() + interval '60 days',now(),now()),
+  ('33330006-0000-4000-a000-000000000006','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Binocular Microscope (Micro)','CX23','eq-06','Olympus','MAZRA-EQ-06','B','operational','Main Laboratory',now() + interval '30 days',now(),now()),
+  ('33330007-0000-4000-a000-000000000007','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','CO2 Incubator','Galaxy 170R','eq-07','Eppendorf','MAZRA-EQ-07','B','operational','Main Laboratory',now() + interval '70 days',now(),now()),
+  ('33330008-0000-4000-a000-000000000008','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Autoclave (50L)','SX-700','eq-08','Tomy','MAZRA-EQ-08','B','operational','Main Laboratory',now() + interval '22 days',now(),now()),
+  ('33330009-0000-4000-a000-000000000009','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Centrifuge (24-slot)','5810R','eq-09','Eppendorf','MAZRA-EQ-09','B','operational','Main Laboratory',now() + interval '35 days',now(),now()),
+  ('33330010-0000-4000-a000-000000000010','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Centrifuge (12-slot)','5424','eq-10','Eppendorf','MAZRA-EQ-10','B','operational','Main Laboratory',now() + interval '50 days',now(),now()),
+  ('33330011-0000-4000-a000-000000000011','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Biosafety Cabinet Class II','Safe 2020','eq-11','Thermo','MAZRA-EQ-11','A','operational','Main Laboratory',now() + interval '15 days',now(),now()),
+  ('33330012-0000-4000-a000-000000000012','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','BD FACSCount (CD4 Analyser)','FACSCount','eq-12','BD','MAZRA-EQ-12','A','operational','Main Laboratory',now() + interval '8 days',now(),now()),
+  ('33330013-0000-4000-a000-000000000013','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','RPR Rotator','RS12','eq-13','Stuart','MAZRA-EQ-13','C','operational','Main Laboratory',now() + interval '90 days',now(),now()),
+  ('33330014-0000-4000-a000-000000000014','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Water Bath (37°C)','WB-200','eq-14','Memmert','MAZRA-EQ-14','C','operational','Main Laboratory',now() + interval '55 days',now(),now()),
+  ('33330015-0000-4000-a000-000000000015','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Urine Analyser (strip reader)','Clinitek','eq-15','Siemens','MAZRA-EQ-15','B','operational','Main Laboratory',now() + interval '40 days',now(),now()),
+  ('33330016-0000-4000-a000-000000000016','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Haematocrit Centrifuge','Z300','eq-16','Hermle','MAZRA-EQ-16','C','operational','Main Laboratory',now() + interval '80 days',now(),now()),
+  ('33330017-0000-4000-a000-000000000017','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Label Printer (barcode)','ZD420','eq-17','Zebra','MAZRA-EQ-17','C','operational','Main Laboratory',now() + interval '105 days',now(),now()),
+  ('33330018-0000-4000-a000-000000000018','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Tube Roller Mixer','StuartRoller','eq-18','Stuart','MAZRA-EQ-18','C','operational','Main Laboratory',now() + interval '60 days',now(),now()),
   -- Fridges as equipment rows (for scan_events)
-  ('44440001-0000-4000-a000-000000000001','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Blood Bank Fridge','LF-140','fridge-01','Vestfrost','MAZRA-FRIDGE-01','A','operational','Blood Bank section',now() + interval '60 days',now(),now()),
-  ('44440002-0000-4000-a000-000000000002','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Reagent Fridge A','LF-140','fridge-02','Vestfrost','MAZRA-FRIDGE-02','A','operational','Chemistry / Haem',now() + interval '60 days',now(),now()),
-  ('44440003-0000-4000-a000-000000000003','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Reagent Fridge B','LF-140','fridge-03','Vestfrost','MAZRA-FRIDGE-03','A','operational','Serology section',now() + interval '60 days',now(),now()),
-  ('44440004-0000-4000-a000-000000000004','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Sample Storage Fridge','LF-140','fridge-04','Vestfrost','MAZRA-FRIDGE-04','A','operational','Microbiology section',now() + interval '60 days',now(),now())
+  ('44440001-0000-4000-a000-000000000001','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Blood Bank Fridge','LF-140','fridge-01','Vestfrost','MAZRA-FRIDGE-01','A','operational','Blood Bank section',now() + interval '60 days',now(),now()),
+  ('44440002-0000-4000-a000-000000000002','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Reagent Fridge A','LF-140','fridge-02','Vestfrost','MAZRA-FRIDGE-02','A','operational','Chemistry / Haem',now() + interval '60 days',now(),now()),
+  ('44440003-0000-4000-a000-000000000003','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Reagent Fridge B','LF-140','fridge-03','Vestfrost','MAZRA-FRIDGE-03','A','operational','Serology section',now() + interval '60 days',now(),now()),
+  ('44440004-0000-4000-a000-000000000004','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Sample Storage Fridge','LF-140','fridge-04','Vestfrost','MAZRA-FRIDGE-04','A','operational','Microbiology section',now() + interval '60 days',now(),now())
 ON CONFLICT (id) DO NOTHING;
 
 -- ── Maintenance schedule ──────────────────────────────────────────────────────
@@ -85,17 +85,17 @@ VALUES
   ('44440004-0000-4000-a000-000000000004','11111111-1111-4111-a111-111111111111','Sample Storage Fridge','Microbiology section',4,8,true,now())
 ON CONFLICT (id) DO NOTHING;
 
--- ── Technicians ───────────────────────────────────────────────────────────────
-INSERT INTO public.technicians (id, hospital_id, facility_id, department_id, name, avatar_initials, on_duty, shift_start, created_at)
+-- ── Technicians (facility_id only) ───────────────────────────────────────────
+INSERT INTO public.technicians (id, facility_id, department_id, name, avatar_initials, on_duty, shift_start, created_at)
 VALUES
-  ('66660001-0000-4000-a000-000000000001','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Okwi Emmanuel','OE',true,'08:00',now()),
-  ('66660002-0000-4000-a000-000000000002','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Atim Grace','AG',true,'08:00',now()),
-  ('66660003-0000-4000-a000-000000000003','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Opio David','OD',true,'08:00',now()),
-  ('66660004-0000-4000-a000-000000000004','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Apio Faith','AF',false,'20:00',now()),
-  ('66660005-0000-4000-a000-000000000005','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Omara Isaac','OI',false,'20:00',now()),
-  ('66660006-0000-4000-a000-000000000006','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220002-0000-4000-a000-000000000002','Musiime Robert','MR',true,'08:00',now()),
-  ('66660007-0000-4000-a000-000000000007','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Nakato Sarah','NS',true,'08:00',now()),
-  ('66660008-0000-4000-a000-000000000008','11111111-1111-4111-a111-111111111111','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Otim Charles','OC',true,'08:00',now())
+  ('66660001-0000-4000-a000-000000000001','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Okwi Emmanuel','OE',true,'08:00',now()),
+  ('66660002-0000-4000-a000-000000000002','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Atim Grace','AG',true,'08:00',now()),
+  ('66660003-0000-4000-a000-000000000003','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Opio David','OD',true,'08:00',now()),
+  ('66660004-0000-4000-a000-000000000004','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Apio Faith','AF',false,'20:00',now()),
+  ('66660005-0000-4000-a000-000000000005','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Omara Isaac','OI',false,'20:00',now()),
+  ('66660006-0000-4000-a000-000000000006','11111111-1111-4111-a111-111111111111','22220002-0000-4000-a000-000000000002','Musiime Robert','MR',true,'08:00',now()),
+  ('66660007-0000-4000-a000-000000000007','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Nakato Sarah','NS',true,'08:00',now()),
+  ('66660008-0000-4000-a000-000000000008','11111111-1111-4111-a111-111111111111','22220001-0000-4000-a000-000000000001','Otim Charles','OC',true,'08:00',now())
 ON CONFLICT (id) DO NOTHING;
 
 -- ── QC materials ──────────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ INSERT INTO public.facility_settings (facility_id, pipeline_type, pipeline_confi
 VALUES (
   '11111111-1111-4111-a111-111111111111',
   'postgres',
-  '{"description": "Direct PostgreSQL connection to Mazra General Hospital LIMS, Kampala, Uganda"}'::jsonb
+  '{"description": "Direct PostgreSQL connection to Mazra Hospital LIMS, Kampala, Uganda"}'::jsonb
 )
 ON CONFLICT (facility_id) DO UPDATE SET
   pipeline_type   = EXCLUDED.pipeline_type,
@@ -152,7 +152,7 @@ VALUES (
 )
 ON CONFLICT (facility_id) DO NOTHING;
 
--- ── LIMS connection (Mazra General Hospital) ──────────────────────────────────
+-- ── LIMS connection (Mazra Hospital) ─────────────────────────────────────────
 -- Set connection_config.url to the Mazra Supabase Postgres URL after deploying.
 -- Format: postgresql://postgres.[ref]:[password]@aws-0-af-south-1.pooler.supabase.com:6543/postgres
 INSERT INTO public.lims_connections (
