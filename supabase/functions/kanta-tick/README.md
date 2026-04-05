@@ -1,6 +1,6 @@
 # kanta-tick Edge Function
 
-Simulates what Kanta users actually do in the app for Mazra General Hospital.
+Simulates what Kanta users actually do in the app for Mazra Hospital.
 Runs every 60 minutes via Supabase Cron.
 
 ## Deploy

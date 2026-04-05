@@ -1,4 +1,4 @@
--- ENG: Mazra General Hospital LIMS connection seed
+-- ENG: Mazra Hospital LIMS connection seed
 -- Seeds the lims_connections record for Mazra's PostgreSQL LIMS.
 -- Kanta treats Mazra identically to any other hospital running a real LIMS.
 --
@@ -22,10 +22,10 @@ INSERT INTO public.lims_connections (
 )
 VALUES (
   '77770001-0000-4000-a000-000000000001',
-  '11111111-1111-4111-a111-111111111111', -- Mazra General Hospital
+  '11111111-1111-4111-a111-111111111111', -- Mazra Hospital
   'postgresql',
   -- connection_config: set MAZRA_LIMS_DB_URL env var; bridge reads this at sync time
-  '{"note": "Mazra General Hospital, Kampala, Uganda — Supabase LIMS. Set actual URL in env MAZRA_LIMS_DB_URL", "placeholder": true}'::jsonb,
+  '{"note": "Mazra Hospital, Kampala, Uganda — Supabase LIMS. Set actual URL in env MAZRA_LIMS_DB_URL", "placeholder": true}'::jsonb,
   -- query_config: canonical mapping from Mazra LIMS schema to Kanta test_requests
   '{
     "sync_query": "SELECT to.id                          AS lims_external_id, to.patient_id::text         AS patient_id, to.id::text                  AS lab_number, tc.test_name                 AS test_name, ls.name                      AS section, to.ordered_at                AS requested_at, to.priority                  AS priority, COALESCE(tr.status, ''pending'') AS status, tr.resulted_at               AS resulted_at, to.section_id::text          AS section_id, tc.price_ugx::numeric        AS price_ugx FROM test_orders to LEFT JOIN test_catalog tc ON to.test_id = tc.id LEFT JOIN lab_sections ls ON to.section_id = ls.id LEFT JOIN test_results tr ON to.id = tr.order_id WHERE to.ordered_at > NOW() - INTERVAL ''7 days'' ORDER BY to.ordered_at DESC LIMIT 500",
@@ -73,7 +73,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- Insert a reference lims_sync_log entry to show expected schema usage
 COMMENT ON TABLE public.lims_connections IS
 'Each row represents a LIMS database that Kanta can sync test_requests from.
-Mazra General Hospital record: id = 77770001-0000-4000-a000-000000000001.
+Mazra Hospital record: id = 77770001-0000-4000-a000-000000000001.
 The sync_query in query_config runs against the Mazra Supabase PostgreSQL instance.
 Set connection_config.url to the Mazra Postgres connection string before setting is_active = true.';
 

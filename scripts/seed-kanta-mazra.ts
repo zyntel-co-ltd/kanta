@@ -1,7 +1,7 @@
 /**
  * seed-kanta-mazra.ts
  *
- * Seeds Kanta's database with Mazra General Hospital demo data.
+ * Seeds Kanta's database with Mazra Hospital demo data.
  * Simulates the data a Kanta installation at a real hospital would accumulate:
  *   - Hospital registration + facility config
  *   - Lab equipment (with QR codes), maintenance schedules
@@ -25,6 +25,7 @@
  *   MAZRA_LIMS_DB_URL   (optional — Mazra Supabase Postgres URL for lims_connections)
  */
 import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
 
@@ -142,7 +143,7 @@ function pick<T>(arr: T[], seed: number): T {
 }
 
 // ── Wipe Mazra demo data from Kanta ─────────────────────────────────────────
-async function wipe(sb: ReturnType<typeof createClient>) {
+async function wipe(sb: SupabaseClient<any, "public", any>) {
   console.log("Wiping existing Mazra demo data from Kanta...");
   const tables = [
     "operational_alerts","qc_violations","qc_runs","qc_results",
@@ -175,17 +176,17 @@ async function main() {
   }
 
   const days = parseDays();
-  const sb = createClient(url, key);
+  const sb = createClient(url, key) as SupabaseClient<any, "public", any>;
 
   if (shouldWipe()) await wipe(sb);
 
-  console.log(`\nKanta — Mazra General Hospital demo seed (${days} days)\n`);
+  console.log(`\nKanta — Mazra Hospital demo seed (${days} days)\n`);
 
   // ── Hospital ──────────────────────────────────────────────────────────────
   console.log("1/12  hospitals");
   await sb.from("hospitals").upsert({
     id: HOSPITAL_ID,
-    name: "Mazra General Hospital",
+    name: "Mazra Hospital",
     country: "Uganda",
     city: "Kampala",
     classification: "general_hospital",
@@ -197,8 +198,8 @@ async function main() {
   // ── Departments ───────────────────────────────────────────────────────────
   console.log("2/12  departments");
   await sb.from("departments").upsert([
-    { id: DEPT_LAB_ID,   hospital_id: HOSPITAL_ID, facility_id: HOSPITAL_ID, name: "Laboratory" },
-    { id: DEPT_BMENG_ID, hospital_id: HOSPITAL_ID, facility_id: HOSPITAL_ID, name: "Biomedical Engineering" },
+    { id: DEPT_LAB_ID,   facility_id: HOSPITAL_ID, name: "Laboratory" },
+    { id: DEPT_BMENG_ID, facility_id: HOSPITAL_ID, name: "Biomedical Engineering" },
   ], { onConflict: "id", ignoreDuplicates: true });
 
   // ── Equipment ─────────────────────────────────────────────────────────────
@@ -356,7 +357,7 @@ async function main() {
     facility_id: HOSPITAL_ID,
     connector_type: "postgresql",
     connection_config: limsDbUrl
-      ? { url: limsDbUrl, note: "Mazra General Hospital Supabase LIMS" }
+      ? { url: limsDbUrl, note: "Mazra Hospital Supabase LIMS" }
       : { note: "Set MAZRA_LIMS_DB_URL env var with the Supabase Postgres URL", placeholder: true },
     query_config: {
       // Maps Mazra LIMS columns → Kanta test_requests columns

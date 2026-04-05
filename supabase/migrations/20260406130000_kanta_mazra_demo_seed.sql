@@ -1,4 +1,4 @@
--- Kanta — Mazra General Hospital demo seed
+-- Kanta — Mazra Hospital demo seed
 -- Run this in the Supabase SQL editor (Kanta project).
 -- Safe to re-run: uses INSERT ... ON CONFLICT DO NOTHING / DO UPDATE throughout.
 -- Populates: hospital, departments, equipment, maintenance_schedule, technicians,
@@ -15,7 +15,7 @@
 INSERT INTO public.hospitals (id, name, country, city, tier, created_at)
 VALUES (
   '11111111-1111-4111-a111-111111111111',
-  'Mazra General Hospital',
+  'Mazra Hospital',
   'Uganda',
   'Kampala',
   'pro',
@@ -27,8 +27,8 @@ ON CONFLICT (id) DO UPDATE SET
   city    = EXCLUDED.city,
   tier    = EXCLUDED.tier;
 
--- ── Departments ───────────────────────────────────────────────────────────────
-INSERT INTO public.departments (id, hospital_id, name, created_at)
+-- ── Departments (facility_id — canonical column in Kanta; hospital_id may not exist) ──
+INSERT INTO public.departments (id, facility_id, name, created_at)
 VALUES
   ('22220001-0000-4000-a000-000000000001', '11111111-1111-4111-a111-111111111111', 'Laboratory', now()),
   ('22220002-0000-4000-a000-000000000002', '11111111-1111-4111-a111-111111111111', 'Biomedical Engineering', now())
@@ -161,7 +161,7 @@ INSERT INTO public.lims_connections (
   '77770001-0000-4000-a000-000000000001',
   '11111111-1111-4111-a111-111111111111',
   'postgresql',
-  '{"note": "Mazra General Hospital, Kampala — LIMS Supabase. Paste Postgres URL here.", "placeholder": true}'::jsonb,
+  '{"note": "Mazra Hospital, Kampala — LIMS Supabase. Paste Postgres URL here.", "placeholder": true}'::jsonb,
   '{
     "sync_query": "SELECT to2.id AS lims_external_id, to2.patient_id::text AS patient_id, to2.id::text AS lab_number, tc.test_name, ls.name AS section, to2.ordered_at AS requested_at, to2.priority, COALESCE(tr.status, ''pending'') AS status, tr.resulted_at, tc.price_ugx::numeric AS price_ugx FROM test_orders to2 LEFT JOIN test_catalog tc ON to2.test_id = tc.id LEFT JOIN lab_sections ls ON to2.section_id = ls.id LEFT JOIN test_results tr ON to2.id = tr.order_id WHERE to2.ordered_at > NOW() - INTERVAL ''7 days'' ORDER BY to2.ordered_at DESC LIMIT 500",
     "lims_external_id_column": "lims_external_id",

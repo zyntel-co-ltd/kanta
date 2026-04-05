@@ -1,7 +1,7 @@
 /**
  * kanta-tick — Supabase Edge Function
  *
- * Simulates what hospital staff actually do in Kanta for Mazra General Hospital.
+ * Simulates what hospital staff actually do in Kanta for Mazra Hospital.
  * Runs every 60 minutes via pg_cron / Supabase Cron.
  *
  * Each tick simulates:
@@ -18,7 +18,7 @@
  * Environment variables (auto-injected by Supabase runtime):
  *   SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY
- *   KANTA_DEMO_FACILITY_ID   — UUID of Mazra General Hospital in Kanta
+ *   KANTA_DEMO_FACILITY_ID   — UUID of Mazra Hospital in Kanta
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
