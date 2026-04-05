@@ -22,6 +22,85 @@ create table if not exists hospitals (
   created_at  timestamptz not null default now()
 );
 
+-- If tables already exist with hospital_id only, add facility_id before indexes (see bootstrap migration).
+DO $$
+BEGIN
+  IF to_regclass('public.departments') IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'departments' AND column_name = 'facility_id'
+    ) THEN
+      ALTER TABLE public.departments ADD COLUMN facility_id uuid REFERENCES public.hospitals(id) ON DELETE CASCADE;
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'departments' AND column_name = 'hospital_id'
+      ) THEN
+        UPDATE public.departments SET facility_id = hospital_id WHERE facility_id IS NULL;
+      END IF;
+    END IF;
+  END IF;
+
+  IF to_regclass('public.equipment') IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'equipment' AND column_name = 'facility_id'
+    ) THEN
+      ALTER TABLE public.equipment ADD COLUMN facility_id uuid REFERENCES public.hospitals(id) ON DELETE CASCADE;
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'equipment' AND column_name = 'hospital_id'
+      ) THEN
+        UPDATE public.equipment SET facility_id = hospital_id WHERE facility_id IS NULL;
+      END IF;
+    END IF;
+  END IF;
+
+  IF to_regclass('public.scan_events') IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'scan_events' AND column_name = 'facility_id'
+    ) THEN
+      ALTER TABLE public.scan_events ADD COLUMN facility_id uuid REFERENCES public.hospitals(id) ON DELETE CASCADE;
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'scan_events' AND column_name = 'hospital_id'
+      ) THEN
+        UPDATE public.scan_events SET facility_id = hospital_id WHERE facility_id IS NULL;
+      END IF;
+    END IF;
+  END IF;
+
+  IF to_regclass('public.technicians') IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'technicians' AND column_name = 'facility_id'
+    ) THEN
+      ALTER TABLE public.technicians ADD COLUMN facility_id uuid REFERENCES public.hospitals(id) ON DELETE CASCADE;
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'technicians' AND column_name = 'hospital_id'
+      ) THEN
+        UPDATE public.technicians SET facility_id = hospital_id WHERE facility_id IS NULL;
+      END IF;
+    END IF;
+  END IF;
+
+  IF to_regclass('public.equipment_snapshots') IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'equipment_snapshots' AND column_name = 'facility_id'
+    ) THEN
+      ALTER TABLE public.equipment_snapshots ADD COLUMN facility_id uuid REFERENCES public.hospitals(id) ON DELETE CASCADE;
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'equipment_snapshots' AND column_name = 'hospital_id'
+      ) THEN
+        UPDATE public.equipment_snapshots SET facility_id = hospital_id WHERE facility_id IS NULL;
+      END IF;
+    END IF;
+  END IF;
+END $$;
+
 -- ── Departments ──────────────────────────────────────────────
 create table if not exists departments (
   id          uuid primary key default gen_random_uuid(),
