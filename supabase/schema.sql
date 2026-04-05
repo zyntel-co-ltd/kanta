@@ -127,7 +127,8 @@ BEGIN
   END IF;
 
   ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS name text;
-  UPDATE public.equipment SET name = 'Unnamed equipment' WHERE name IS NULL;
+  UPDATE public.equipment SET name = 'Unnamed equipment'
+  WHERE name IS NULL OR btrim(name) = '';
   ALTER TABLE public.equipment ALTER COLUMN name SET NOT NULL;
 
   ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS model text;
