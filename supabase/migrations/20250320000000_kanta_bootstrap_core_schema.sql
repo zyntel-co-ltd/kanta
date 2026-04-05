@@ -1,5 +1,10 @@
 -- Bootstrap core tables for empty databases so later migrations (e.g. 20250321000001)
 -- can ALTER them. Mirrors supabase/schema.sql — keep in sync when editing schema.sql.
+--
+-- Kanta is a real app DB (equipment scans, QC, alerts, LIMS bridge). Mazra is only the
+-- upstream LIMS this project reads via Postgres — you still need this schema in Kanta.
+-- The block below repairs half-migrated remotes in one shot (old hospital_id tables, or
+-- equipment missing columns like qr_code) so CREATE TABLE IF NOT EXISTS + indexes work.
 
 create extension if not exists "pgcrypto";
 
@@ -101,19 +106,50 @@ create table if not exists departments (
 
 create index if not exists idx_departments_facility on departments(facility_id);
 
--- Legacy equipment may exist without department_id (very old schema); add FK before indexes.
+-- Legacy `equipment` rows may pre-date current bootstrap (missing qr_code, model, etc.).
+-- CREATE TABLE IF NOT EXISTS skips — add every column this file indexes or the trigger uses.
 DO $$
 BEGIN
-  IF to_regclass('public.equipment') IS NOT NULL
-     AND to_regclass('public.departments') IS NOT NULL THEN
-    IF NOT EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'equipment' AND column_name = 'department_id'
-    ) THEN
-      ALTER TABLE public.equipment
-        ADD COLUMN department_id uuid REFERENCES public.departments(id) ON DELETE SET NULL;
-    END IF;
+  IF to_regclass('public.equipment') IS NULL THEN
+    RETURN;
   END IF;
+
+  IF to_regclass('public.departments') IS NOT NULL
+     AND NOT EXISTS (
+       SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'equipment' AND column_name = 'department_id'
+     ) THEN
+    ALTER TABLE public.equipment
+      ADD COLUMN department_id uuid REFERENCES public.departments(id) ON DELETE SET NULL;
+  END IF;
+
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS name text;
+  UPDATE public.equipment SET name = 'Unnamed equipment' WHERE name IS NULL;
+  ALTER TABLE public.equipment ALTER COLUMN name SET NOT NULL;
+
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS model text;
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS serial_number text;
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS qr_code text;
+  UPDATE public.equipment
+  SET qr_code = 'MAZRA-QR-' || replace(id::text, '-', '')
+  WHERE COALESCE(btrim(qr_code), '') = '';
+  ALTER TABLE public.equipment ALTER COLUMN qr_code SET NOT NULL;
+
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS category text;
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS status text;
+  UPDATE public.equipment SET category = COALESCE(category, 'Other') WHERE category IS NULL;
+  UPDATE public.equipment SET status = COALESCE(status, 'operational') WHERE status IS NULL;
+  ALTER TABLE public.equipment ALTER COLUMN category SET NOT NULL;
+  ALTER TABLE public.equipment ALTER COLUMN status SET NOT NULL;
+  ALTER TABLE public.equipment ALTER COLUMN category SET DEFAULT 'Other';
+  ALTER TABLE public.equipment ALTER COLUMN status SET DEFAULT 'operational';
+
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS location text;
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS last_scanned_at timestamptz;
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS last_scanned_by text;
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS next_maintenance_at timestamptz;
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
+  ALTER TABLE public.equipment ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
 END $$;
 
 create table if not exists equipment (
