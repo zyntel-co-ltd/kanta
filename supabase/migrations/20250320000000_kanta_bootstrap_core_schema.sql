@@ -101,6 +101,21 @@ create table if not exists departments (
 
 create index if not exists idx_departments_facility on departments(facility_id);
 
+-- Legacy equipment may exist without department_id (very old schema); add FK before indexes.
+DO $$
+BEGIN
+  IF to_regclass('public.equipment') IS NOT NULL
+     AND to_regclass('public.departments') IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'equipment' AND column_name = 'department_id'
+    ) THEN
+      ALTER TABLE public.equipment
+        ADD COLUMN department_id uuid REFERENCES public.departments(id) ON DELETE SET NULL;
+    END IF;
+  END IF;
+END $$;
+
 create table if not exists equipment (
   id                   uuid primary key default gen_random_uuid(),
   facility_id          uuid not null references hospitals(id) on delete cascade,
@@ -165,6 +180,20 @@ create table if not exists technicians (
   shift_start      text,
   created_at       timestamptz not null default now()
 );
+
+DO $$
+BEGIN
+  IF to_regclass('public.technicians') IS NOT NULL
+     AND to_regclass('public.departments') IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'technicians' AND column_name = 'department_id'
+    ) THEN
+      ALTER TABLE public.technicians
+        ADD COLUMN department_id uuid REFERENCES public.departments(id) ON DELETE SET NULL;
+    END IF;
+  END IF;
+END $$;
 
 create index if not exists idx_technicians_facility    on technicians(facility_id);
 create index if not exists idx_technicians_department  on technicians(department_id);
