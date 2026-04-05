@@ -161,6 +161,16 @@ ALTER TABLE public.tat_targets
 
 CREATE INDEX IF NOT EXISTS idx_tat_targets_section_id ON public.tat_targets (section_id);
 
+-- Legacy table may lack UNIQUE (facility_id, code) — ON CONFLICT requires it.
+DELETE FROM public.lab_sections a
+WHERE EXISTS (
+  SELECT 1 FROM public.lab_sections b
+  WHERE b.facility_id IS NOT DISTINCT FROM a.facility_id
+    AND b.code IS NOT DISTINCT FROM a.code
+    AND b.id < a.id
+);
+CREATE UNIQUE INDEX IF NOT EXISTS lab_sections_facility_code_unique ON public.lab_sections (facility_id, code);
+
 -- ── Seed default sections for every hospital (idempotent) ──
 INSERT INTO public.lab_sections (facility_id, name, abbreviation, code, is_active, sort_order)
 SELECT h.id, v.name, v.abbr, v.code, true, v.ord
